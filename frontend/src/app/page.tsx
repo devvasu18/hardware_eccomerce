@@ -2,6 +2,9 @@ import Link from 'next/link';
 import Header from '@/app/components/Header';
 import ProductCard from '@/app/components/ProductCard';
 import HeroSlider from '@/app/components/HeroSlider';
+import CategorySection from '@/app/components/CategorySection';
+import WhyChooseUs from '@/app/components/WhyChooseUs';
+import SpecialOffers from '@/app/components/SpecialOffers';
 
 interface Product {
     _id: string;
@@ -50,6 +53,12 @@ export default async function Home() {
                     ))}
                 </div>
             </section>
+
+            <CategorySection />
+
+            <SpecialOffers />
+
+            <WhyChooseUs />
 
             <footer>
                 <div className="container" style={{ textAlign: 'center', opacity: 0.8 }}>

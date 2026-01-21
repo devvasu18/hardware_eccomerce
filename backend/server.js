@@ -24,6 +24,9 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/tally', require('./routes/tallyRoutes')); // The integration core
 app.use('/api/banners', require('./routes/bannerRoutes')); // Dynamic Hero Slider
 app.use('/api/users', require('./routes/userRoutes')); // User Management
+app.use('/api/categories', require('./routes/categoryRoutes')); // Category Management
+app.use('/api/special-offers', require('./routes/specialOfferRoutes')); // Special Offers
+app.use('/api/homepage', require('./routes/homepageRoutes')); // Homepage Features & Trust Indicators
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

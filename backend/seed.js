@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const Product = require('./models/Product');
 const User = require('./models/User');
 
 dotenv.config();
@@ -10,55 +9,7 @@ const seedData = async () => {
         await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/hardware_system');
         console.log('MongoDB Connected for Seeding');
 
-        await Product.deleteMany({});
         await User.deleteMany({});
-
-        const products = [
-            {
-                name: "Heavy Duty Ball Bearing 6204",
-                description: "Industrial grade SKF compatible ball bearing. High RPM support.",
-                basePrice: 450,
-                wholesalePrice: 400,
-                stock: 150,
-                category: "Bearings",
-                images: ["https://placehold.co/400?text=Bearing+6204"],
-                isVisible: true,
-                isOnDemand: false
-            },
-            {
-                name: "Hydraulic Cylinder 5 Ton",
-                description: "Double acting hydraulic cylinder for heavy machinery.",
-                basePrice: 5500,
-                wholesalePrice: 4800,
-                stock: 12,
-                category: "Hydraulics",
-                images: ["https://placehold.co/400?text=Hydraulic+Cylinder"],
-                isVisible: true,
-                isOnDemand: false
-            },
-            {
-                name: "Industrial V-Belt B-52",
-                description: "Rubber V-Belt for transmission drives.",
-                basePrice: 200,
-                wholesalePrice: 150,
-                stock: 500,
-                category: "Transmission",
-                images: ["https://placehold.co/400?text=V-Belt+B-52"],
-                isVisible: true,
-                isOnDemand: false
-            },
-            {
-                name: "Siemens Contactor 3TF",
-                description: "Special procurement item. 3-pole contactor.",
-                basePrice: 3200,
-                wholesalePrice: 2900,
-                stock: 0,
-                category: "Electrical",
-                images: ["https://placehold.co/400?text=Siemens+Contactor"],
-                isVisible: true,
-                isOnDemand: true // ON DEMAND ITEM
-            }
-        ];
 
         const users = [
             {
@@ -86,7 +37,6 @@ const seedData = async () => {
             }
         ];
 
-        await Product.insertMany(products);
         await User.insertMany(users);
 
         console.log('Seed Data Inserted Successfully');
