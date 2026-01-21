@@ -39,6 +39,9 @@ const productSchema = new mongoose.Schema({
     specifications: { type: Map, of: String }, // e.g., { "Material": "Steel", "Diameter": "10mm" }
     compatibilityTags: [{ type: String }],
     unit: { type: String, default: 'piece' }, // kg, set, meter
+
+    // Size Variants (optional - for products like safety gear, clothing, etc.)
+    availableSizes: [{ type: String }], // e.g., ['SM', 'M', 'L', 'XL']
 }, { timestamps: true });
 
 module.exports = mongoose.model('Product', productSchema);

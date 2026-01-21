@@ -14,6 +14,7 @@ interface Product {
     stock: number;
     isOnDemand: boolean;
     images: string[];
+    availableSizes?: string[]; // Optional size variants
 }
 
 export default function ProductActionArea({ product }: { product: Product }) {
@@ -28,8 +29,10 @@ export default function ProductActionArea({ product }: { product: Product }) {
     // Customer Contact for Request (Guest)
     const [contact, setContact] = useState({ name: user?.username || '', mobile: (user as any)?.mobile || '' });
 
-    // Available sizes (can be made dynamic based on product)
-    const sizes = ['SM', 'M', 'L', 'XL'];
+    // Available sizes (from product data or default)
+    const sizes = product.availableSizes && product.availableSizes.length > 0
+        ? product.availableSizes
+        : ['SM', 'M', 'L', 'XL'];
 
     // Logic: 
     const isStrictlyOnDemand = product.isOnDemand;
@@ -78,7 +81,8 @@ export default function ProductActionArea({ product }: { product: Product }) {
             name: product.name,
             price: finalPrice,
             quantity: quantity,
-            image: product.images && product.images.length > 0 ? product.images[0] : ''
+            image: product.images && product.images.length > 0 ? product.images[0] : '',
+            size: product.availableSizes && product.availableSizes.length > 0 ? selectedSize : undefined
         });
         showSuccess(`Successfully added ${quantity} ${quantity === 1 ? 'item' : 'items'} to your cart!`, 'Added to Cart');
     };
@@ -99,12 +103,15 @@ export default function ProductActionArea({ product }: { product: Product }) {
                 {/* Pricing */}
                 <div className="pricing-section">
                     <div className="price-display">
-                        {(product.discountedPrice > 0 && product.discountedPrice < product.basePrice) && (
-                            <span className="price-strike">₹{originalPrice} / ₹{finalPrice}</span>
+                        {(product.discountedPrice > 0 && product.discountedPrice < product.basePrice) ? (
+                            <>
+                                <span className="price-original">₹{originalPrice}</span>
+                                <span className="price-separator">/</span>
+                                <span className="price-current">₹{finalPrice}</span>
+                            </>
+                        ) : (
+                            <span className="price-current">₹{originalPrice}</span>
                         )}
-                        {!product.discountedPrice || product.discountedPrice >= product.basePrice ? (
-                            <span className="price-strike">₹{originalPrice}</span>
-                        ) : null}
                     </div>
                     {user?.wholesaleDiscount && user.wholesaleDiscount > 0 && (
                         <span className="wholesale-badge">
@@ -113,21 +120,23 @@ export default function ProductActionArea({ product }: { product: Product }) {
                     )}
                 </div>
 
-                {/* Size Selector */}
-                <div className="size-selector-section">
-                    <label className="section-label">SIZE</label>
-                    <div className="size-options">
-                        {sizes.map((size) => (
-                            <button
-                                key={size}
-                                className={`size-btn ${selectedSize === size ? 'active' : ''}`}
-                                onClick={() => setSelectedSize(size)}
-                            >
-                                {size}
-                            </button>
-                        ))}
+                {/* Size Selector - Only show if product has available sizes */}
+                {product.availableSizes && product.availableSizes.length > 0 && (
+                    <div className="size-selector-section">
+                        <label className="section-label">SIZE</label>
+                        <div className="size-options">
+                            {sizes.map((size) => (
+                                <button
+                                    key={size}
+                                    className={`size-btn ${selectedSize === size ? 'active' : ''}`}
+                                    onClick={() => setSelectedSize(size)}
+                                >
+                                    {size}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 {/* Quantity Selector */}
                 <div className="quantity-selector-section">

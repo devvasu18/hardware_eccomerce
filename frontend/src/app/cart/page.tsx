@@ -30,6 +30,7 @@ export default function CartPage() {
                             </div>
                             <div style={{ flex: 1 }}>
                                 <h4 style={{ marginBottom: '0.25rem' }}>{item.name}</h4>
+                                {item.size && <p style={{ color: '#F37021', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>Size: {item.size}</p>}
                                 <p style={{ color: '#64748B', fontSize: '0.9rem' }}>Unit Price: ₹{item.price}</p>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>

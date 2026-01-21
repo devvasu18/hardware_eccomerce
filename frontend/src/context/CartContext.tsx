@@ -8,6 +8,7 @@ export interface CartItem {
     price: number;
     quantity: number;
     image?: string;
+    size?: string; // Optional size (e.g., 'SM', 'M', 'L', 'XL')
 }
 
 interface CartContextType {
@@ -48,10 +49,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     const addToCart = (newItem: CartItem) => {
         setItems((prev) => {
-            const existing = prev.find(i => i.productId === newItem.productId);
+            // Match by both productId AND size (if size exists)
+            const existing = prev.find(i =>
+                i.productId === newItem.productId &&
+                (newItem.size ? i.size === newItem.size : !i.size)
+            );
             if (existing) {
                 return prev.map(i =>
-                    i.productId === newItem.productId
+                    (i.productId === newItem.productId &&
+                        (newItem.size ? i.size === newItem.size : !i.size))
                         ? { ...i, quantity: i.quantity + newItem.quantity }
                         : i
                 );
