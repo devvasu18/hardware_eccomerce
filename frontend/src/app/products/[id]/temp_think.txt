@@ -1,0 +1,25 @@
+"use client";
+
+import Link from 'next/link';
+
+interface Product {
+    _id: string;
+    name: string;
+    description: string;
+    basePrice: number;
+    wholesalePrice: number;
+    stock: number;
+    category: string;
+    images: string[];
+    isOnDemand: boolean;
+}
+
+interface ProductDetailProps {
+    product: Product;
+    // We import ProductActionArea dynamically or use it directly
+    // but in this file, we want to just render the shell if product exists
+}
+
+// Since ProductActionArea is a client component in the same dir and this is a server page (by default in app dir)
+// we passed product to it. But wait, I see "use client" at top of ProductActionArea.
+// The Page itself can be server-side.

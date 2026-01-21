@@ -1,0 +1,409 @@
+/* White Minimalist Header Styles (Pepperfry-like) */
+:root {
+    --header-white: #ffffff;
+    --header-accent-orange: #ff7035;
+    /* Pepperfry-like orange */
+    --header-text-dark: #2d2d2d;
+    --header-text-gray: #848484;
+    --header-border-color: #e7e7e7;
+}
+
+.header-container {
+    width: 100%;
+    font-family: 'Outfit', 'Inter', sans-serif;
+    background-color: var(--header-white);
+    border-bottom: 1px solid var(--header-border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Main Top Bar */
+.header-main-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 80px;
+    padding: 0 2rem;
+    max-width: 1440px;
+    margin: 0 auto;
+}
+
+/* Left: Logo (Now Left) */
+.header-logo-area {
+    flex: 0 0 auto;
+    /* Don't grow, just take needed space + margin */
+    margin-right: 3rem;
+    display: flex;
+    align-items: center;
+}
+
+.logo-text {
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: var(--header-accent-orange);
+    letter-spacing: -1px;
+    text-decoration: none;
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Center: Search (Now Center) */
+.header-search-area {
+    flex: 1;
+    max-width: 600px;
+    /* Search can take more space now */
+    position: relative;
+    margin: 0 1rem;
+}
+
+.search-input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.search-input {
+    width: 100%;
+    padding: 10px 40px 10px 15px;
+    /* Adjust padding for better look in center */
+    font-size: 0.95rem;
+    border: 1px solid #ddd;
+    /* Full border looks better in center usually, or keep bottom only? User asked for "like this" referring to Pepperfry which often has a distinct search bar. The previous simple bottom border is fine, but let's make it slighty more defined if it's central focus. Let's stick to the previous style but maybe refined. */
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    outline: none;
+    color: var(--header-text-dark);
+    transition: all 0.3s;
+}
+
+.search-input:focus {
+    border-color: var(--header-accent-orange);
+    background-color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.search-icon-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--header-accent-orange);
+    padding: 4px;
+}
+
+/* Right: Actions */
+.header-actions-area {
+    flex: 0 0 auto;
+    /* Don't flex 1, pushing it to far right is done by justify-content: space-between on parent and the flex-grow of search if needed, but here search has max-width. */
+    margin-left: auto;
+    /* Push to right if search doesn't take full space */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.action-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: var(--header-text-dark);
+    text-decoration: none;
+}
+
+.action-item:hover .action-icon,
+.action-item:hover .action-text-main {
+    color: var(--header-accent-orange);
+}
+
+.action-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    line-height: 1.1;
+}
+
+.action-text-sub {
+    font-size: 0.7rem;
+    color: var(--header-accent-orange);
+    font-weight: 500;
+}
+
+.action-text-main {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--header-text-dark);
+    transition: color 0.2s;
+}
+
+.action-icon {
+    width: 26px;
+    height: 26px;
+    stroke-width: 1.5;
+    transition: stroke 0.2s;
+}
+
+/* Bottom Nav */
+.header-nav-bar {
+    border-top: 1px solid var(--header-border-color);
+    background-color: #fafafa;
+}
+
+.nav-links-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    padding: 0.8rem 1rem;
+    max-width: 1440px;
+    margin: 0 auto;
+    overflow-x: auto;
+    scrollbar-width: none;
+    /* Hide scrollbar Firefox */
+}
+
+.nav-links-container::-webkit-scrollbar {
+    display: none;
+    /* Hide scrollbar Chrome/Safari */
+}
+
+.nav-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--header-text-dark);
+    white-space: nowrap;
+    cursor: pointer;
+    padding: 4px 0;
+    position: relative;
+    transition: color 0.2s;
+    text-transform: capitalize;
+}
+
+.nav-link:after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: var(--header-accent-orange);
+    transition: width 0.3s;
+}
+
+.nav-link:hover {
+    color: var(--header-accent-orange);
+}
+
+.nav-link:hover:after {
+    width: 100%;
+}
+
+@media (max-width: 900px) {
+    .header-main-bar {
+        padding: 0 1rem;
+        height: 70px;
+    }
+
+    .header-nav-bar {
+        display: none;
+        /* Hide details on mobile or use hamburger */
+    }
+
+    .header-actions-area {
+        gap: 0.8rem;
+    }
+
+    .action-text {
+        display: none;
+    }
+
+    .logo-text {
+        font-size: 1.8rem;
+    }
+
+    .header-logo-area {
+        margin-right: 1rem;
+    }
+
+    .header-search-area {
+        display: none;
+        /* Often hidden on mobile header or moved below */
+    }
+}
+
+/* Search Dropdown */
+.search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 0 0 6px 6px;
+    padding: 1.5rem;
+    z-index: 1001;
+    border: 1px solid #e0e0e0;
+    border-top: none;
+}
+
+.dropdown-title {
+    font-size: 0.95rem;
+    color: #9b4d1b;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    text-transform: capitalize;
+}
+
+.tags-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.search-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #fff;
+    color: #555;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.search-tag:hover {
+    border-color: var(--header-accent-orange);
+    color: var(--header-accent-orange);
+    background: #fff8f5;
+}
+
+.trend-icon {
+    margin-right: 6px;
+    color: #999;
+    font-size: 0.9rem;
+}
+
+.search-tag:hover .trend-icon {
+    color: var(--header-accent-orange);
+}
+
+/* User Dropdown Styles */
+.relative-wrapper {
+    position: relative;
+    padding: 5px 0;
+    /* Add touch target vertical padding */
+}
+
+/* Ensure the link inside takes styling */
+.login-link-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: calc(100% + 5px);
+    /* Just below the item */
+    right: -10px;
+    /* Align roughly with right edge */
+    width: 240px;
+    background-color: var(--header-white);
+    border: 1px solid var(--header-border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    padding: 0.5rem 0;
+    z-index: 1002;
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.dropdown-item {
+    padding: 0.75rem 1.25rem;
+    color: var(--header-text-dark);
+    font-size: 0.9rem;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: block;
+    cursor: pointer;
+    text-align: left;
+    background: none;
+    border: none;
+    width: 100%;
+}
+
+.dropdown-item:hover {
+    background-color: #f7f7f7;
+    color: var(--header-accent-orange);
+    padding-left: 1.5rem;
+    /* Subtle shift */
+}
+
+.dropdown-item-text {
+    padding: 0.75rem 1.25rem;
+    color: #666;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    cursor: default;
+    border-bottom: 1px solid #f0f0f0;
+    margin-bottom: 0.25rem;
+}
+
+.dropdown-item-text strong {
+    color: var(--header-text-dark);
+    font-weight: 600;
+    display: block;
+    font-size: 0.95rem;
+    margin-top: 2px;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background-color: #f0f0f0;
+    margin: 0.25rem 0;
+}
+
+.logout-btn {
+    color: #d32f2f;
+    font-weight: 500;
+}
+
+.logout-btn:hover {
+    background-color: #fff5f5;
+    color: #b71c1c;
+}
+
+/* Arrow tip for dropdown */
+.user-dropdown:before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    right: 20px;
+    width: 12px;
+    height: 12px;
+    background-color: var(--header-white);
+    transform: rotate(45deg);
+    border-top: 1px solid var(--header-border-color);
+    border-left: 1px solid var(--header-border-color);
+}

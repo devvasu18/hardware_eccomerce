@@ -1,0 +1,117 @@
+'use client';
+
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
+
+export default function SignupPage() {
+    const [formData, setFormData] = useState({
+        username: '',
+        mobile: '',
+        password: '',
+        address: '',
+        email: ''
+    });
+    const [error, setError] = useState('');
+    const { login } = useAuth();
+    const router = useRouter();
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        try {
+            const res = await fetch('http://localhost:5000/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                login(data.token, data.user);
+                router.push('/');
+            } else {
+                setError(data.message || 'Registration failed');
+            }
+        } catch (err) {
+            setError('Network error. Please try again later.');
+        }
+    };
+
+    return (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'linear-gradient(135deg, #0F172A 0%, #1e293b 100%)' }}>
+            <div className="card" style={{ width: '100%', maxWidth: '450px', padding: '2rem', background: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                <h1 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.5rem', color: '#1E293B', fontWeight: 700 }}>Join Selfmade Hardware</h1>
+
+                {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</div>}
+
+                <form onSubmit={handleSubmit}>
+                    <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: '#475569' }}>Full Name</label>
+                        <input
+                            type="text"
+                            name="username"
+                            value={formData.username}
+                            onChange={handleChange}
+                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                            placeholder="John Doe"
+                            required
+                        />
+                    </div>
+
+                    <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: '#475569' }}>Mobile Number</label>
+                        <input
+                            type="tel"
+                            name="mobile"
+                            value={formData.mobile}
+                            onChange={handleChange}
+                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                            placeholder="9876543210"
+                            pattern="[0-9]{10}"
+                            title="Please enter a valid 10-digit mobile number"
+                            required
+                        />
+                    </div>
+
+                    <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: '#475569' }}>Email Address <span style={{ fontWeight: 400, color: '#94a3b8' }}>(Optional)</span></label>
+                        <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                            placeholder="you@example.com"
+                        />
+                    </div>
+
+                    <div style={{ marginBottom: '1.5rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: '#475569' }}>Password</label>
+                        <input
+                            type="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                            placeholder="********"
+                            required
+                        />
+                    </div>
+
+                    <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.75rem', fontSize: '1rem', fontWeight: 600 }}>Create Account</button>
+
+                    <p style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: '#64748B' }}>
+                        Already have an account? <Link href="/login" style={{ color: '#F37021', textDecoration: 'none', fontWeight: 600 }}>Login here</Link>
+                    </p>
+                </form>
+            </div>
+        </div>
+    );
+}
