@@ -42,7 +42,10 @@ export default function AdminSidebar() {
             display: 'flex',
             flexDirection: 'column',
             boxShadow: '4px 0 10px rgba(0,0,0,0.1)',
-            zIndex: 100
+            zIndex: 100,
+            position: 'sticky',
+            top: 0,
+            height: '100vh'
         }}>
             <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #334155' }}>
                 {!collapsed && <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F37021', letterSpacing: '1px' }}>CHAMUNDA</span>}

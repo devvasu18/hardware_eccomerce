@@ -47,6 +47,17 @@ export default function ProductManager() {
         fetchCategories();
     }, []);
 
+    useEffect(() => {
+        if (showForm) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, [showForm]);
+
     const fetchProducts = async () => {
         const res = await fetch('http://localhost:5000/api/products');
         if (res.ok) setProducts(await res.json());
@@ -175,237 +186,295 @@ export default function ProductManager() {
             </div>
 
             {showForm && editingProduct && (
-                <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', marginBottom: '2rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}>
-                    <h3 style={{ marginBottom: '1rem' }}>{editingProduct._id ? 'Edit Product' : 'New Product'}</h3>
-                    <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Product Name</label>
-                            <input type="text" value={editingProduct.name ?? ''} onChange={e => setEditingProduct({ ...editingProduct, name: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} required />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Category</label>
-                            <select
-                                value={editingProduct.category ?? ''}
-                                onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}
-                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-                                required
+                <div
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0,0,0,0.5)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        backdropFilter: 'blur(4px)'
+                    }}
+                    onClick={() => setShowForm(false)}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: 'white',
+                            padding: '2rem',
+                            borderRadius: '12px',
+                            width: '90%',
+                            maxWidth: '800px',
+                            maxHeight: '90vh',
+                            overflowY: 'auto',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                            position: 'relative'
+                        }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>
+                                {editingProduct._id ? 'Edit Product' : 'New Product'}
+                            </h3>
+                            <button
+                                onClick={() => setShowForm(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    fontSize: '1.5rem',
+                                    cursor: 'pointer',
+                                    color: '#64748b'
+                                }}
                             >
-                                <option value="">-- Select Category --</option>
-                                {categories.map(cat => (
-                                    <option key={cat._id} value={cat.slug}>{cat.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Original Price (MRP) (₹)</label>
-                            <input
-                                type="number"
-                                value={editingProduct.basePrice ?? ''}
-                                onChange={e => setEditingProduct({ ...editingProduct, basePrice: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Discounted Price (Selling) (₹)</label>
-                            <input
-                                type="number"
-                                value={editingProduct.discountedPrice ?? ''}
-                                onChange={e => setEditingProduct({ ...editingProduct, discountedPrice: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-                                required
-                            />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>HSN Code (Tax)</label>
-                            <input type="text" value={editingProduct.hsnCode ?? ''} onChange={e => setEditingProduct({ ...editingProduct, hsnCode: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} required />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>GST Rate (%)</label>
-                            <select value={editingProduct.gstRate} onChange={e => setEditingProduct({ ...editingProduct, gstRate: parseFloat(e.target.value) })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}>
-                                <option value="5">5%</option>
-                                <option value="12">12%</option>
-                                <option value="18">18%</option>
-                                <option value="28">28%</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Stock Quantity</label>
-                            <input type="number" value={editingProduct.stock ?? ''} onChange={e => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                                ×
+                            </button>
                         </div>
 
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Description</label>
-                            <textarea
-                                value={editingProduct.description ?? ''}
-                                onChange={e => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                                rows={4}
-                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', resize: 'vertical' }}
-                                placeholder="Detailed product description..."
-                            />
-                        </div>
+                        <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Product Name</label>
+                                <input type="text" value={editingProduct.name ?? ''} onChange={e => setEditingProduct({ ...editingProduct, name: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} required />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Category</label>
+                                <select
+                                    value={editingProduct.category ?? ''}
+                                    onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                                    required
+                                >
+                                    <option value="">-- Select Category --</option>
+                                    {categories.map(cat => (
+                                        <option key={cat._id} value={cat.slug}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Original Price (MRP) (₹)</label>
+                                <input
+                                    type="number"
+                                    value={editingProduct.basePrice ?? ''}
+                                    onChange={e => setEditingProduct({ ...editingProduct, basePrice: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Discounted Price (Selling) (₹)</label>
+                                <input
+                                    type="number"
+                                    value={editingProduct.discountedPrice ?? ''}
+                                    onChange={e => setEditingProduct({ ...editingProduct, discountedPrice: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
+                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>HSN Code (Tax)</label>
+                                <input type="text" value={editingProduct.hsnCode ?? ''} onChange={e => setEditingProduct({ ...editingProduct, hsnCode: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} required />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>GST Rate (%)</label>
+                                <select value={editingProduct.gstRate} onChange={e => setEditingProduct({ ...editingProduct, gstRate: parseFloat(e.target.value) })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
+                                    <option value="5">5%</option>
+                                    <option value="12">12%</option>
+                                    <option value="18">18%</option>
+                                    <option value="28">28%</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Stock Quantity</label>
+                                <input type="number" value={editingProduct.stock ?? ''} onChange={e => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
+                            </div>
 
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Brand</label>
-                            <input type="text" value={editingProduct.brand ?? ''} onChange={e => setEditingProduct({ ...editingProduct, brand: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="e.g. Bosch, Stanley" />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Material</label>
-                            <input type="text" value={editingProduct.material ?? ''} onChange={e => setEditingProduct({ ...editingProduct, material: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="e.g. Stainless Steel" />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Warranty</label>
-                            <input type="text" value={editingProduct.warranty ?? ''} onChange={e => setEditingProduct({ ...editingProduct, warranty: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="e.g. 1 Year Manufacturer" />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Country of Origin</label>
-                            <input type="text" value={editingProduct.countryOfOrigin ?? ''} onChange={e => setEditingProduct({ ...editingProduct, countryOfOrigin: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="e.g. India" />
-                        </div>
+                            <div style={{ gridColumn: '1 / -1' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Description</label>
+                                <textarea
+                                    value={editingProduct.description ?? ''}
+                                    onChange={e => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                                    rows={4}
+                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px', resize: 'vertical' }}
+                                    placeholder="Detailed product description..."
+                                />
+                            </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <input
-                                type="checkbox"
-                                id="isFeatured"
-                                checked={editingProduct.isFeatured || false}
-                                onChange={e => setEditingProduct({ ...editingProduct, isFeatured: e.target.checked })}
-                                style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                            />
-                            <label htmlFor="isFeatured" style={{ fontWeight: 600, cursor: 'pointer', userSelect: 'none' }}>
-                                ⭐ Mark as Featured Product
-                            </label>
-                        </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Brand</label>
+                                <input type="text" value={editingProduct.brand ?? ''} onChange={e => setEditingProduct({ ...editingProduct, brand: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} placeholder="e.g. Bosch, Stanley" />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Material</label>
+                                <input type="text" value={editingProduct.material ?? ''} onChange={e => setEditingProduct({ ...editingProduct, material: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} placeholder="e.g. Stainless Steel" />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Warranty</label>
+                                <input type="text" value={editingProduct.warranty ?? ''} onChange={e => setEditingProduct({ ...editingProduct, warranty: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} placeholder="e.g. 1 Year Manufacturer" />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Country of Origin</label>
+                                <input type="text" value={editingProduct.countryOfOrigin ?? ''} onChange={e => setEditingProduct({ ...editingProduct, countryOfOrigin: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} placeholder="e.g. India" />
+                            </div>
 
-                        <div style={{ gridColumn: '1 / -1' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Product Image</label>
-
-                            <div style={{ marginBottom: '1rem', display: 'flex', gap: '1.5rem' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                    <input
-                                        type="radio"
-                                        name="imageInputType"
-                                        value="upload"
-                                        checked={imageInputType === 'upload'}
-                                        onChange={() => {
-                                            setImageInputType('upload');
-                                            // Optional: Clear preview if switching types? 
-                                            // Let's keep the preview until they actually upload/change something to avoid accidental loss.
-                                        }}
-                                        style={{ accentColor: '#3b82f6' }}
-                                    />
-                                    <span>Upload Image</span>
-                                </label>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                    <input
-                                        type="radio"
-                                        name="imageInputType"
-                                        value="url"
-                                        checked={imageInputType === 'url'}
-                                        onChange={() => {
-                                            setImageInputType('url');
-                                        }}
-                                        style={{ accentColor: '#3b82f6' }}
-                                    />
-                                    <span>Image URL</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <input
+                                    type="checkbox"
+                                    id="isFeatured"
+                                    checked={editingProduct.isFeatured || false}
+                                    onChange={e => setEditingProduct({ ...editingProduct, isFeatured: e.target.checked })}
+                                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#3b82f6' }}
+                                />
+                                <label htmlFor="isFeatured" style={{ fontWeight: 600, cursor: 'pointer', userSelect: 'none' }}>
+                                    ⭐ Mark as Featured Product
                                 </label>
                             </div>
 
-                            {imageInputType === 'upload' ? (
-                                <>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.5rem',
-                                            border: '1px solid #cbd5e1',
-                                            borderRadius: '4px',
-                                            cursor: 'pointer'
-                                        }}
-                                    />
-                                    <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem' }}>
-                                        Recommended: Square image (500x500px or larger). Max size: 5MB
-                                    </p>
-                                </>
-                            ) : (
-                                <input
-                                    type="text"
-                                    placeholder="https://example.com/image.jpg"
-                                    value={imageUrlInput}
-                                    onChange={(e) => {
-                                        const url = e.target.value;
-                                        setImageUrlInput(url);
-                                        // Update preview immediately for URL
-                                        setImagePreview(url);
-                                        if (editingProduct) {
-                                            setEditingProduct({ ...editingProduct, images: [url] });
-                                        }
-                                    }}
-                                    style={{
-                                        width: '100%',
-                                        padding: '0.5rem',
-                                        border: '1px solid #cbd5e1',
-                                        borderRadius: '4px'
-                                    }}
-                                />
-                            )}
-                        </div>
-
-                        {imagePreview && (
                             <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Image Preview</label>
-                                <div style={{
-                                    position: 'relative',
-                                    width: '200px',
-                                    height: '200px',
-                                    border: '2px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    overflow: 'hidden',
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                }}>
-                                    <img
-                                        src={imagePreview}
-                                        alt="Product preview"
-                                        style={{
-                                            width: '100%',
-                                            height: '100%',
-                                            objectFit: 'cover'
-                                        }}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setImagePreview('');
-                                            setImageUrlInput('');
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Product Image</label>
+
+                                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1.5rem' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="radio"
+                                            name="imageInputType"
+                                            value="upload"
+                                            checked={imageInputType === 'upload'}
+                                            onChange={() => {
+                                                setImageInputType('upload');
+                                            }}
+                                            style={{ accentColor: '#3b82f6' }}
+                                        />
+                                        <span>Upload Image</span>
+                                    </label>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="radio"
+                                            name="imageInputType"
+                                            value="url"
+                                            checked={imageInputType === 'url'}
+                                            onChange={() => {
+                                                setImageInputType('url');
+                                            }}
+                                            style={{ accentColor: '#3b82f6' }}
+                                        />
+                                        <span>Image URL</span>
+                                    </label>
+                                </div>
+
+                                {imageInputType === 'upload' ? (
+                                    <>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleImageUpload}
+                                            style={{
+                                                width: '100%',
+                                                padding: '0.75rem',
+                                                border: '1px solid #cbd5e1',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer'
+                                            }}
+                                        />
+                                        <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>
+                                            Recommended: Square image (500x500px or larger). Max size: 5MB
+                                        </p>
+                                    </>
+                                ) : (
+                                    <input
+                                        type="text"
+                                        placeholder="https://example.com/image.jpg"
+                                        value={imageUrlInput}
+                                        onChange={(e) => {
+                                            const url = e.target.value;
+                                            setImageUrlInput(url);
+                                            setImagePreview(url);
                                             if (editingProduct) {
-                                                setEditingProduct({ ...editingProduct, images: [] });
+                                                setEditingProduct({ ...editingProduct, images: [url] });
                                             }
                                         }}
                                         style={{
-                                            position: 'absolute',
-                                            top: '8px',
-                                            right: '8px',
-                                            background: 'rgba(239, 68, 68, 0.9)',
-                                            color: 'white',
-                                            border: 'none',
-                                            borderRadius: '4px',
-                                            padding: '4px 8px',
-                                            cursor: 'pointer',
-                                            fontSize: '0.875rem',
-                                            fontWeight: 600
+                                            width: '100%',
+                                            padding: '0.75rem',
+                                            border: '1px solid #cbd5e1',
+                                            borderRadius: '6px'
                                         }}
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
+                                    />
+                                )}
                             </div>
-                        )}
 
-                        <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                            <button type="button" onClick={() => setShowForm(false)} className="btn btn-outline" style={{ borderColor: '#ef4444', color: '#ef4444' }}>Cancel</button>
-                            <button type="submit" className="btn btn-primary">Save Product</button>
-                        </div>
-                    </form>
+                            {imagePreview && (
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Image Preview</label>
+                                    <div style={{
+                                        position: 'relative',
+                                        width: '200px',
+                                        height: '200px',
+                                        border: '2px solid #e2e8f0',
+                                        borderRadius: '12px',
+                                        overflow: 'hidden',
+                                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                                    }}>
+                                        <img
+                                            src={imagePreview}
+                                            alt="Product preview"
+                                            style={{
+                                                width: '100%',
+                                                height: '100%',
+                                                objectFit: 'cover'
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setImagePreview('');
+                                                setImageUrlInput('');
+                                                if (editingProduct) {
+                                                    setEditingProduct({ ...editingProduct, images: [] });
+                                                }
+                                            }}
+                                            style={{
+                                                position: 'absolute',
+                                                top: '8px',
+                                                right: '8px',
+                                                background: 'rgba(239, 68, 68, 0.9)',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                padding: '6px 10px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.875rem',
+                                                fontWeight: 600,
+                                                backdropFilter: 'blur(2px)'
+                                            }}
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem' }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowForm(false)}
+                                    className="btn btn-outline"
+                                    style={{ borderColor: '#ef4444', color: '#ef4444', borderRadius: '8px', padding: '0.75rem 1.5rem' }}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn btn-primary"
+                                    style={{ borderRadius: '8px', padding: '0.75rem 1.5rem' }}
+                                >
+                                    Save Product
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )
             }
