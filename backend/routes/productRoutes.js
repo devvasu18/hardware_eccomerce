@@ -64,8 +64,32 @@ router.get('/new-arrivals', async (req, res) => {
 // Get Products
 router.get('/', async (req, res) => {
     try {
-        const products = await Product.find({ isVisible: true });
+        const query = { isVisible: true };
+
+        // Handle category query param
+        if (req.query.category) {
+            console.log(`[API] Filtering by category: "${req.query.category}"`);
+            // Case-insensitive regex match for better UX
+            query.category = { $regex: new RegExp(`^${req.query.category}$`, 'i') };
+        } else {
+            console.log('[API] No category filter provided. Fetching all visible products.');
+        }
+
+        const products = await Product.find(query);
         res.json(products);
+    } catch (err) {
+        res.status(500).json(err);
+    }
+});
+
+// Get Single Product
+router.get('/:id', async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id);
+        if (!product) {
+            return res.status(404).json({ message: "Product not found" });
+        }
+        res.json(product);
     } catch (err) {
         res.status(500).json(err);
     }

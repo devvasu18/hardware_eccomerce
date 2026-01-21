@@ -20,12 +20,16 @@ export default function ProductActionArea({ product }: { product: Product }) {
     const { user } = useAuth();
     const { addToCart } = useCart();
     const [quantity, setQuantity] = useState(1);
+    const [selectedSize, setSelectedSize] = useState('M');
     const [submitting, setSubmitting] = useState(false);
     const [requestSent, setRequestSent] = useState(false);
     const { modalState, hideModal, showSuccess, showError } = useModal();
 
     // Customer Contact for Request (Guest)
     const [contact, setContact] = useState({ name: user?.username || '', mobile: (user as any)?.mobile || '' });
+
+    // Available sizes (can be made dynamic based on product)
+    const sizes = ['SM', 'M', 'L', 'XL'];
 
     // Logic: 
     const isStrictlyOnDemand = product.isOnDemand;
@@ -91,93 +95,112 @@ export default function ProductActionArea({ product }: { product: Product }) {
 
     return (
         <>
-            <div>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem' }}>
-                            {(product.discountedPrice > 0 && product.discountedPrice < product.basePrice) && (
-                                <span style={{ textDecoration: 'line-through', color: '#dc2626', fontSize: '1.2rem', fontWeight: 600 }}>₹{originalPrice}</span>
-                            )}
-                            <h2 style={{ fontSize: '2rem', color: '#1E293B' }}>₹{finalPrice} <span style={{ fontSize: '1rem', color: '#64748B', fontWeight: 'normal' }}>/ unit</span></h2>
-                        </div>
-                        {user?.wholesaleDiscount && user.wholesaleDiscount > 0 && (
-                            <span className="badge badge-sale" style={{ width: 'fit-content' }}>
-                                WHOLESALE DISCOUNT: -{user.wholesaleDiscount}%
-                            </span>
+            <div className="product-action-section">
+                {/* Pricing */}
+                <div className="pricing-section">
+                    <div className="price-display">
+                        {(product.discountedPrice > 0 && product.discountedPrice < product.basePrice) && (
+                            <span className="price-strike">₹{originalPrice} / ₹{finalPrice}</span>
                         )}
+                        {!product.discountedPrice || product.discountedPrice >= product.basePrice ? (
+                            <span className="price-strike">₹{originalPrice}</span>
+                        ) : null}
                     </div>
-
-                    {!isStrictlyOnDemand && (
-                        <span className={(product.stock > 0 && quantity <= product.stock) ? 'badge badge-new' : 'badge badge-sale'} style={{ alignSelf: 'center' }}>
-                            {product.stock > 0 ? `Stock: ${product.stock}` : 'Out of Stock'}
+                    {user?.wholesaleDiscount && user.wholesaleDiscount > 0 && (
+                        <span className="wholesale-badge">
+                            WHOLESALE DISCOUNT: -{user.wholesaleDiscount}%
                         </span>
                     )}
                 </div>
 
-                {/* Quantity Input */}
-                <div style={{ marginBottom: '2rem' }}>
-                    <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem' }}>Quantity Required</label>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                {/* Size Selector */}
+                <div className="size-selector-section">
+                    <label className="section-label">SIZE</label>
+                    <div className="size-options">
+                        {sizes.map((size) => (
+                            <button
+                                key={size}
+                                className={`size-btn ${selectedSize === size ? 'active' : ''}`}
+                                onClick={() => setSelectedSize(size)}
+                            >
+                                {size}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Quantity Selector */}
+                <div className="quantity-selector-section">
+                    <label className="section-label">QUANTITY</label>
+                    <div className="quantity-controls">
                         <button
+                            className="qty-btn"
                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                            style={{ width: '40px', height: '40px', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontSize: '1.2rem' }}
-                        >-</button>
+                        >
+                            -
+                        </button>
                         <input
                             type="number"
                             value={quantity}
                             onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                            style={{ width: '80px', textAlign: 'center', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '1.1rem' }}
+                            className="qty-input"
                         />
                         <button
+                            className="qty-btn"
                             onClick={() => setQuantity(quantity + 1)}
-                            style={{ width: '40px', height: '40px', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer', fontSize: '1.2rem' }}
-                        >+</button>
+                        >
+                            +
+                        </button>
                     </div>
 
+                    {!isStrictlyOnDemand && (
+                        <span className={`stock-badge ${(product.stock > 0 && quantity <= product.stock) ? 'in-stock' : 'out-stock'}`}>
+                            {product.stock > 0 ? `${product.stock} in stock` : 'Out of Stock'}
+                        </span>
+                    )}
+
                     {isHybridShift && !isStrictlyOnDemand && (
-                        <p style={{ marginTop: '0.5rem', fontSize: '0.9rem', color: '#dc2626' }}>
-                            ⚠️ You are requesting more than available stock ({product.stock}). This order will be processed as a <strong>Special Procurement Request</strong>.
+                        <p className="warning-text">
+                            ⚠️ Requesting more than available stock ({product.stock}). This will be processed as a <strong>Special Procurement Request</strong>.
                         </p>
                     )}
                 </div>
 
-                {/* Form or Button */}
+                {/* Action Button or Form */}
                 {isRequestFlow ? (
-                    <div style={{ background: '#fff7ed', padding: '1.5rem', borderRadius: '8px', border: '1px solid #fdba74' }}>
-                        <h4 style={{ marginBottom: '1rem', color: '#9a3412' }}>Procurement Form</h4>
-                        <div style={{ display: 'grid', gap: '1rem', marginBottom: '1rem' }}>
+                    <div className="procurement-form">
+                        <h4 className="form-title">Procurement Form</h4>
+                        <div className="form-inputs">
                             <input
                                 type="text"
                                 placeholder="Your Name / Company Name"
                                 value={contact.name}
                                 onChange={(e) => setContact({ ...contact, name: e.target.value })}
-                                style={{ padding: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%' }}
+                                className="form-input"
                             />
                             <input
                                 type="tel"
                                 placeholder="Mobile Number (Required)"
                                 value={contact.mobile}
                                 onChange={(e) => setContact({ ...contact, mobile: e.target.value })}
-                                style={{ padding: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', width: '100%' }}
+                                className="form-input"
                             />
                         </div>
                         <button
-                            className="btn btn-primary"
-                            style={{ width: '100%', background: '#ea580c' }}
+                            className="btn-submit-request"
                             disabled={!contact.mobile || submitting}
                             onClick={handleCreateRequest}
                         >
                             {submitting ? 'Sending...' : 'Submit Request'}
                         </button>
-                        <p style={{ fontSize: '0.8rem', color: '#9a3412', marginTop: '0.5rem', textAlign: 'center' }}>We will contact you with a quote and delivery timeline.</p>
+                        <p className="form-note">We will contact you with a quote and delivery timeline.</p>
                     </div>
                 ) : (
                     <button
-                        className="btn btn-primary"
-                        style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+                        className="btn-add-to-cart"
                         onClick={handleAddToCart}
                     >
-                        Add to Cart - ₹{finalPrice * quantity}
+                        ADD TO CART
                     </button>
                 )}
 

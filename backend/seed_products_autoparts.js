@@ -161,25 +161,67 @@ async function seedAutoPartsProducts() {
             const products = autoPartsProducts[category.slug];
 
             if (products && products.length > 0) {
-                const productsToInsert = products.map(product => ({
-                    ...product,
-                    category: category.slug,
-                    imageUrl: `/images/products/${category.slug}/${product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.jpg`,
-                    images: [
-                        `/images/products/${category.slug}/${product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-1.jpg`,
-                        `/images/products/${category.slug}/${product.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-2.jpg`
-                    ],
-                    isVisible: true,
-                    isFeatured: Math.random() > 0.8, // 20% chance of being featured
-                    isTopSale: Math.random() > 0.85, // 15% chance of being top sale
-                    isNewArrival: Math.random() > 0.9, // 10% chance of being new arrival
-                    specifications: {
-                        'Brand': ['Bosch', 'NGK', 'Mahle', 'Gates', 'OEM', 'Aftermarket'][Math.floor(Math.random() * 6)],
-                        'Warranty': ['6 Months', '1 Year', '2 Years'][Math.floor(Math.random() * 3)],
-                        'Condition': 'New'
-                    },
-                    unit: 'piece'
-                }));
+                const productsToInsert = products.map(product => {
+                    // Select image based on category
+                    const categoryImages = {
+                        'engine-parts': [
+                            'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=800&auto=format&fit=crop', // Engine
+                            'https://images.unsplash.com/photo-1597758399580-0a2da484274c?q=80&w=800&auto=format&fit=crop'  // Pistons
+                        ],
+                        'brake-system': [
+                            'https://images.unsplash.com/photo-1601000676461-291771457805?q=80&w=800&auto=format&fit=crop', // Brake disc
+                            'https://images.unsplash.com/photo-1582298538104-fe2e74c2ed54?q=80&w=800&auto=format&fit=crop'  // Car parts
+                        ],
+                        'suspension-steering': [
+                            'https://images.unsplash.com/photo-1550508538-34c56aec7f43?q=80&w=800&auto=format&fit=crop', // Undercarriage
+                            'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?q=80&w=800&auto=format&fit=crop'  // Mechanic
+                        ],
+                        'electrical-parts': [
+                            'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?q=80&w=800&auto=format&fit=crop', // Battery
+                            'https://images.unsplash.com/photo-1555627228-59424294b4e9?q=80&w=800&auto=format&fit=crop'  // Multimeter
+                        ],
+                        'filters-fluids': [
+                            'https://images.unsplash.com/photo-1635773173369-02c38d61749a?q=80&w=800&auto=format&fit=crop', // Oil
+                            'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?q=80&w=800&auto=format&fit=crop'  // Pouring oil
+                        ],
+                        'body-parts': [
+                            'https://images.unsplash.com/photo-1627454820574-fb600aa5d4e1?q=80&w=800&auto=format&fit=crop', // Door
+                            'https://images.unsplash.com/photo-1618609571343-41bbd9646bde?q=80&w=800&auto=format&fit=crop'  // Modern car
+                        ],
+                        'lighting': [
+                            'https://images.unsplash.com/photo-1580273916550-e323be2ebdd9?q=80&w=800&auto=format&fit=crop', // Headlight
+                            'https://images.unsplash.com/photo-1549480606-5386f6874402?q=80&w=800&auto=format&fit=crop'  // Car lights
+                        ],
+                        'tires-wheels': [
+                            'https://images.unsplash.com/photo-1580274455191-1c62238fa333?q=80&w=800&auto=format&fit=crop', // Tire
+                            'https://images.unsplash.com/photo-1578844251758-2f71da645217?q=80&w=800&auto=format&fit=crop'  // Wheel
+                        ]
+                    };
+
+                    const fallbackImage = 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=800&auto=format&fit=crop';
+
+                    // Pick a random image from the category list or use fallback
+                    const catImages = categoryImages[category.slug] || [fallbackImage];
+                    const selectedImage = catImages[Math.floor(Math.random() * catImages.length)];
+                    const secondaryImage = catImages[(Math.floor(Math.random() * catImages.length) + 1) % catImages.length];
+
+                    return {
+                        ...product,
+                        category: category.slug,
+                        imageUrl: selectedImage,
+                        images: [selectedImage, secondaryImage],
+                        isVisible: true,
+                        isFeatured: Math.random() > 0.8, // 20% chance of being featured
+                        isTopSale: Math.random() > 0.85, // 15% chance of being top sale
+                        isNewArrival: Math.random() > 0.9, // 10% chance of being new arrival
+                        specifications: {
+                            'Brand': ['Bosch', 'NGK', 'Mahle', 'Gates', 'OEM', 'Aftermarket'][Math.floor(Math.random() * 6)],
+                            'Warranty': ['6 Months', '1 Year', '2 Years'][Math.floor(Math.random() * 3)],
+                            'Condition': 'New'
+                        },
+                        unit: 'piece'
+                    };
+                });
 
                 await Product.insertMany(productsToInsert);
 

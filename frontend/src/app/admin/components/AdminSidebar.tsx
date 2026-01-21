@@ -22,6 +22,8 @@ export default function AdminSidebar() {
         { label: 'User Management', path: '/admin/users', icon: '👥', roles: ['super_admin'] },
         { label: 'System Logs', path: '/admin/logs', icon: '🛡️', roles: ['super_admin'] },
         { label: 'Banner Config', path: '/admin/banners', icon: '🖼️', roles: ['super_admin', 'ops_admin'] },
+        { label: 'Shop by Category', path: '/admin/categories', icon: '📂', roles: ['super_admin', 'ops_admin'] },
+        { label: 'Special Deals', path: '/admin/special-deals', icon: '🏷️', roles: ['super_admin', 'ops_admin'] },
     ];
 
     // Filter based on role (simple include check)

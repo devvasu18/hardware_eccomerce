@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext'; // Import AuthContext
 import './Header.css';
@@ -9,6 +9,22 @@ const Header = () => {
     const { user, logout } = useAuth();
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
+    const [categories, setCategories] = useState<{ _id: string, name: string, slug: string }[]>([]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/categories');
+                if (res.ok) {
+                    const data = await res.json();
+                    setCategories(data);
+                }
+            } catch (error) {
+                console.error('Failed to load menu categories', error);
+            }
+        };
+        fetchCategories();
+    }, []);
 
     return (
         <header className="header-container">
@@ -78,7 +94,6 @@ const Header = () => {
 
                 {/* Right: User Actions */}
                 <div className="header-actions-area">
-                    {/* Login / Profile */}
                     {/* Login / Profile */}
                     <div
                         className="action-item relative-wrapper"
@@ -155,15 +170,19 @@ const Header = () => {
             {/* Bottom Nav Bar: Categories */}
             <div className="header-nav-bar">
                 <div className="nav-links-container">
-                    <Link href="/furniture" className="nav-link">Furniture</Link>
-                    <Link href="/sofas" className="nav-link">Sofas & Seating</Link>
-                    <Link href="/mattresses" className="nav-link">Mattresses</Link>
-                    <Link href="/decor" className="nav-link">Home Decor</Link>
-                    <Link href="/furnishings" className="nav-link">Furnishings</Link>
-                    <Link href="/lamps" className="nav-link">Lamps & Lighting</Link>
-                    <Link href="/kitchen" className="nav-link">Kitchen & Dining</Link>
-                    <Link href="/luxury" className="nav-link">Luxury</Link>
-                    <Link href="/modular" className="nav-link">Modular</Link>
+                    {categories.length > 0 ? (
+                        categories.map((category) => (
+                            <Link
+                                key={category._id}
+                                href={`/products?category=${category.slug}`}
+                                className="nav-link"
+                            >
+                                {category.name}
+                            </Link>
+                        ))
+                    ) : (
+                        <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Loading categories...</span>
+                    )}
                 </div>
             </div>
         </header>

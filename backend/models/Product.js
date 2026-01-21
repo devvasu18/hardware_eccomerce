@@ -29,6 +29,12 @@ const productSchema = new mongoose.Schema({
     sgst: { type: Number, default: 9 },
     igst: { type: Number, default: 18 },
 
+    // Product Details
+    brand: { type: String },
+    warranty: { type: String },
+    material: { type: String },
+    countryOfOrigin: { type: String, default: 'India' },
+
     // Technical Data
     specifications: { type: Map, of: String }, // e.g., { "Material": "Steel", "Diameter": "10mm" }
     compatibilityTags: [{ type: String }],

@@ -152,7 +152,7 @@
 /* Bottom Nav */
 .header-nav-bar {
     border-top: 1px solid var(--header-border-color);
-    background-color: #fafafa;
+    background-color: #db7850;
 }
 
 .nav-links-container {
@@ -196,7 +196,7 @@
 }
 
 .nav-link:hover {
-    color: var(--header-accent-orange);
+    color: #ffffff;
 }
 
 .nav-link:hover:after {

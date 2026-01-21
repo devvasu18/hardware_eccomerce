@@ -106,13 +106,8 @@ export default function SpecialOffers() {
                     {offers.map((offer) => (
                         <div key={offer._id} className="deal-card">
                             <div className="deal-badge-container">
-                                <span className="deal-badge">{offer.badge}</span>
-                                {offer.isLimitedStock && (
-                                    <span className="limited-badge">
-                                        <span className="pulse-dot" />
-                                        Limited Stock
-                                    </span>
-                                )}
+
+
                             </div>
 
                             <div className="deal-image-container">
@@ -124,8 +119,8 @@ export default function SpecialOffers() {
                                     <Image
                                         src={offer.productId.imageUrl || offer.productId.images[0]}
                                         alt={offer.title}
-                                        width={300}
-                                        height={240}
+                                        width={280}
+                                        height={180}
                                         className="deal-product-image"
                                     />
                                 ) : (

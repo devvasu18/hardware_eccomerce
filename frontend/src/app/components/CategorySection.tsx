@@ -44,7 +44,7 @@ export default async function CategorySection() {
                             Explore our comprehensive range of auto parts and accessories
                         </p>
                     </div>
-                    <Link href="/products" className="view-all-link">
+                    <Link href="/categories" className="view-all-link">
                         View All Categories
                         <span className="arrow">→</span>
                     </Link>
@@ -59,7 +59,6 @@ export default async function CategorySection() {
                         >
                             <div
                                 className="category-icon-wrapper"
-                                style={{ background: category.gradient }}
                             >
                                 <div className="category-image">
                                     {category.imageUrl ? (

@@ -19,10 +19,22 @@ interface Product {
     isDailyOffer: boolean;
     isNewArrival: boolean;
     images?: string[];
+    description?: string;
+    brand?: string;
+    warranty?: string;
+    material?: string;
+    countryOfOrigin?: string;
+}
+
+interface Category {
+    _id: string;
+    name: string;
+    slug: string;
 }
 
 export default function ProductManager() {
     const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [imagePreview, setImagePreview] = useState<string>('');
@@ -32,11 +44,17 @@ export default function ProductManager() {
 
     useEffect(() => {
         fetchProducts();
+        fetchCategories();
     }, []);
 
     const fetchProducts = async () => {
         const res = await fetch('http://localhost:5000/api/products');
         if (res.ok) setProducts(await res.json());
+    };
+
+    const fetchCategories = async () => {
+        const res = await fetch('http://localhost:5000/api/categories');
+        if (res.ok) setCategories(await res.json());
     };
 
     const handleSave = async (e: React.FormEvent) => {
@@ -125,7 +143,26 @@ export default function ProductManager() {
                 <h1>Product Manager</h1>
                 <button
                     onClick={() => {
-                        setEditingProduct({ name: '', basePrice: 0, discountedPrice: 0, stock: 0, gstRate: 18, hsnCode: '', category: '', isOnDemand: false, isFeatured: false, isTopSale: false, isDailyOffer: false, isNewArrival: false, images: [] } as any);
+                        setEditingProduct({
+                            name: '',
+                            basePrice: 0,
+                            discountedPrice: 0,
+                            stock: 0,
+                            gstRate: 18,
+                            hsnCode: '',
+                            category: '',
+                            isOnDemand: false,
+                            isFeatured: false,
+                            isTopSale: false,
+                            isDailyOffer: false,
+                            isNewArrival: false,
+                            images: [],
+                            description: '',
+                            brand: '',
+                            warranty: '',
+                            material: '',
+                            countryOfOrigin: 'India'
+                        } as any);
                         setImagePreview('');
                         setImageInputType('upload');
                         setImageUrlInput('');
@@ -147,7 +184,17 @@ export default function ProductManager() {
                         </div>
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Category</label>
-                            <input type="text" value={editingProduct.category ?? ''} onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                            <select
+                                value={editingProduct.category ?? ''}
+                                onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                required
+                            >
+                                <option value="">-- Select Category --</option>
+                                {categories.map(cat => (
+                                    <option key={cat._id} value={cat.slug}>{cat.name}</option>
+                                ))}
+                            </select>
                         </div>
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Original Price (MRP) (₹)</label>
@@ -185,6 +232,34 @@ export default function ProductManager() {
                         <div>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Stock Quantity</label>
                             <input type="number" value={editingProduct.stock ?? ''} onChange={e => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                        </div>
+
+                        <div style={{ gridColumn: '1 / -1' }}>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Description</label>
+                            <textarea
+                                value={editingProduct.description ?? ''}
+                                onChange={e => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                                rows={4}
+                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', resize: 'vertical' }}
+                                placeholder="Detailed product description..."
+                            />
+                        </div>
+
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Brand</label>
+                            <input type="text" value={editingProduct.brand ?? ''} onChange={e => setEditingProduct({ ...editingProduct, brand: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="e.g. Bosch, Stanley" />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Material</label>
+                            <input type="text" value={editingProduct.material ?? ''} onChange={e => setEditingProduct({ ...editingProduct, material: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="e.g. Stainless Steel" />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Warranty</label>
+                            <input type="text" value={editingProduct.warranty ?? ''} onChange={e => setEditingProduct({ ...editingProduct, warranty: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="e.g. 1 Year Manufacturer" />
+                        </div>
+                        <div>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Country of Origin</label>
+                            <input type="text" value={editingProduct.countryOfOrigin ?? ''} onChange={e => setEditingProduct({ ...editingProduct, countryOfOrigin: e.target.value })} style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} placeholder="e.g. India" />
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
