@@ -1,0 +1,38 @@
+[
+    {
+        "id": "hsn_001",
+        "name": "HSN Code Master",
+        "path": "/admin/masters/hsn",
+        "status": "Implemented (Full)"
+    },
+    {
+        "id": "brand_001",
+        "name": "Brand Master",
+        "path": "/admin/masters/brands",
+        "status": "Implemented (Full)"
+    },
+    {
+        "id": "offers_001",
+        "name": "Offers Master",
+        "path": "/admin/masters/offers",
+        "status": "Implemented (Full)"
+    },
+    {
+        "id": "sub_001",
+        "name": "Sub-Category Master",
+        "path": "/admin/masters/sub-categories",
+        "status": "Implemented (Full)"
+    },
+    {
+        "id": "edit_prod",
+        "name": "Edit Product Page",
+        "path": "/admin/products/[id]/edit",
+        "status": "Implemented (Full)"
+    },
+    {
+        "id": "prod_list",
+        "name": "Product List Action",
+        "path": "/admin/products",
+        "status": "Implemented (Full)"
+    }
+]

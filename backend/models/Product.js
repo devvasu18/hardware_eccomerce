@@ -1,53 +1,65 @@
 const mongoose = require('mongoose');
 
 const productSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    description: { type: String },
-    basePrice: { type: Number, required: true }, // Original Price (Striked)
-    discountedPrice: { type: Number, required: true }, // Active Selling Price
-    // wholesalePrice field removed
-    stock: { type: Number, default: 0 },
-    category: { type: String },
-    imageUrl: { type: String }, // Primary product image (base64 or URL)
-    images: [{ type: String }],
+    // Core Info
+    title: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
+    subtitle: { type: String },
+    part_number: { type: String },
 
-    // On-Demand Logic
-    isOnDemand: { type: Boolean, default: false }, // If true, stock is irrelevant, user requests it
-    isVisible: { type: Boolean, default: true },
+    // Relationships
+    category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+    sub_category: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory' }], // Single product can have multiple sub-categories
+    brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand' },
+    offer: { type: mongoose.Schema.Types.ObjectId, ref: 'Offer' },
 
-    // Homepage Display Categories
-    isFeatured: { type: Boolean, default: false }, // Mark product as featured for homepage
-    isTopSale: { type: Boolean, default: false }, // Mark product as top selling item
-    isDailyOffer: { type: Boolean, default: false }, // Mark product as daily offer/deal
-    isNewArrival: { type: Boolean, default: false }, // Mark product as new arrival
-    newArrivalPriority: { type: Number, default: 0 }, // Priority for new arrivals section
-    newArrivalCreatedAt: { type: Date, default: Date.now },
+    // HSN & Tax
+    hsn_code: { type: mongoose.Schema.Types.ObjectId, ref: 'HSNCode' }, // Link to master
+    gst_rate: { type: Number }, // Percentage (auto-fetched or overridden)
 
-    // Dynamic Pricing/Config
-    // Dynamic Pricing/Config
-    hsnCode: { type: String, required: true },
-    gstRate: { type: Number, default: 18 }, // Combined GST
-    cgst: { type: Number, default: 9 },
-    sgst: { type: Number, default: 9 },
-    igst: { type: Number, default: 18 },
+    // Description
+    description: { type: String }, // Rich Text
+    specifications: { type: Map, of: String }, // JSON key-value pairs
 
-    // Product Details
-    brand: { type: String },
-    warranty: { type: String },
-    material: { type: String },
-    countryOfOrigin: { type: String, default: 'India' },
+    // Pricing
+    mrp: { type: Number, required: true },
+    selling_price_a: { type: Number }, // Standard
+    selling_price_b: { type: Number }, // Wholesale
+    selling_price_c: { type: Number }, // Special
+    delivery_charge: { type: Number, default: 0 },
 
-    // Technical Data
-    specifications: { type: Map, of: String }, // e.g., { "Material": "Steel", "Diameter": "10mm" }
-    compatibilityTags: [{ type: String }],
-    unit: { type: String, default: 'piece' }, // kg, set, meter
+    // Inventory
+    opening_stock: { type: Number, default: 0 },
+    opening_price: { type: Number }, // Cost price
+    max_unit_buy: { type: Number },
+    product_quantity: { type: String }, // Pack size e.g. "1 Pc"
+    low_stock_threshold: { type: Number, default: 5 },
 
-    // Size Variants (optional - for products like safety gear, clothing, etc.)
-    availableSizes: [{ type: String }], // e.g., ['SM', 'M', 'L', 'XL']
+    // Variants
+    color_name: { type: String },
+    color_hex: { type: String },
+    other_color_products: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
+    size: { type: String },
+
+    // Media
+    featured_image: { type: String }, // Main thumbnail
+    featured_image_2: { type: String }, // Hover/Second view
+    // gallery_images: [{ type: String }],
+    gallery_images: { type: [String], default: [] },
+    size_chart: { type: String },
+
+    // SEO
+    meta_title: { type: String },
+    meta_description: { type: String },
+    keywords: [{ type: String }],
+
+    // Status
+    isActive: { type: Boolean, default: true },
+
+    // Legacy fields preservation (optional, if needed to avoid breaking existing code immediately)
+    // stock: { type: Number }, => maps to opening_stock
+    // price: { type: Number }, => maps to selling_price_a
+
 }, { timestamps: true });
-
-productSchema.index({ isNewArrival: 1 });
-productSchema.index({ createdAt: -1 });
-productSchema.index({ isVisible: 1, stock: 1, isNewArrival: 1 });
 
 module.exports = mongoose.model('Product', productSchema);

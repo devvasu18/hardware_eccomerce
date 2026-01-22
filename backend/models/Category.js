@@ -3,12 +3,13 @@ const mongoose = require('mongoose');
 const categorySchema = new mongoose.Schema({
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
+    image: { type: String }, // Renamed from imageUrl to match requirement, but can keep both or alias
     description: { type: String },
-    imageUrl: { type: String, required: true }, // Category image
-    displayOrder: { type: Number, default: 0 }, // For ordering categories
+    displayOrder: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
-    productCount: { type: Number, default: 0 }, // Auto-calculated or manual
-    gradient: { type: String, default: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }, // Background gradient
 }, { timestamps: true });
+
+// Cascade delete middleware would go here typically, but user requested "system MUST warn the user". 
+// We will handle the check in the controller for safety.
 
 module.exports = mongoose.model('Category', categorySchema);

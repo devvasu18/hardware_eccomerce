@@ -23,6 +23,8 @@ mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://
 // Routes
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/admin/products', require('./routes/adminProductRoutes')); // Admin Product Management
+app.use('/api/admin', require('./routes/adminMasterRoutes')); // HSN, Categories, Brands, Offers (mounted at /api/admin/hsn, etc)
+
 app.use('/api/cart', require('./routes/cartRoutes')); // Cart Management
 
 // Test endpoint to verify backend is working

@@ -1,630 +1,142 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Modal from '../../components/Modal';
-import { useModal } from '../../hooks/useModal';
+import { useEffect, useState } from "react";
+import api from "../../utils/api";
+import Link from "next/link";
+import Image from "next/image";
+import { FiEdit2, FiTrash2, FiPlus, FiEye } from "react-icons/fi";
 
 interface Product {
     _id: string;
-    name: string;
-    basePrice: number; // Original Price
-    discountedPrice: number; // Selling Price
-    stock: number;
-    gstRate: number;
-    hsnCode: string;
-    category: string;
-    isOnDemand: boolean;
-    isFeatured: boolean;
-    isTopSale: boolean;
-    isDailyOffer: boolean;
-    isNewArrival: boolean;
-    newArrivalPriority?: number;
-    images?: string[];
-    description?: string;
-    brand?: string;
-    warranty?: string;
-    material?: string;
-    countryOfOrigin?: string;
-}
-
-interface Category {
-    _id: string;
-    name: string;
+    title: string;
     slug: string;
+    category: {
+        _id: string;
+        name: string;
+    };
+    brand: {
+        _id: string;
+        name: string;
+    };
+    mrp: number;
+    selling_price_a: number;
+    selling_price_b: number;
+    selling_price_c: number;
+    opening_stock: number;
+    featured_image: string;
+    gst_rate: number;
+    hsn_code: string;
 }
 
-export default function ProductManager() {
+export default function ProductList() {
     const [products, setProducts] = useState<Product[]>([]);
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-    const [showForm, setShowForm] = useState(false);
-    const [imagePreview, setImagePreview] = useState<string>('');
-    const [imageInputType, setImageInputType] = useState<'upload' | 'url'>('upload');
-    const [imageUrlInput, setImageUrlInput] = useState('');
-    const { modalState, hideModal, showSuccess, showError } = useModal();
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchProducts();
-        fetchCategories();
     }, []);
 
-    useEffect(() => {
-        if (showForm) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [showForm]);
-
     const fetchProducts = async () => {
-        const res = await fetch('http://localhost:5000/api/products');
-        if (res.ok) setProducts(await res.json());
-    };
-
-    const fetchCategories = async () => {
-        const res = await fetch('http://localhost:5000/api/categories');
-        if (res.ok) setCategories(await res.json());
-    };
-
-    const handleSave = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!editingProduct) return;
-
-        // Validation: Discount Price <= Original Price
-        if (editingProduct.discountedPrice > editingProduct.basePrice) {
-            showError('Discounted Price cannot be greater than Original Price.');
-            return;
-        }
-
         try {
-            const url = editingProduct._id
-                ? `http://localhost:5000/api/products/${editingProduct._id}`
-                : `http://localhost:5000/api/products`;
-
-            const method = editingProduct._id ? 'PUT' : 'POST';
-
-            const res = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editingProduct)
-            });
-
-            if (res.ok) {
-                showSuccess('Product has been saved successfully!');
-                setShowForm(false);
-                setEditingProduct(null);
-                fetchProducts();
-            } else {
-                const errorData = await res.json();
-                console.error('Save failed:', errorData);
-                showError('Failed to save product. Please try again.');
-            }
-        } catch (err) {
-            showError('Network error. Please check your connection and try again.');
+            const res = await api.get('/admin/products');
+            setProducts(res.data);
+        } catch (error) {
+            console.error("Failed to fetch products", error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            // Check file size (limit to 5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                showError('Image size should be less than 5MB');
-                return;
-            }
-
-            // Check file type
-            if (!file.type.startsWith('image/')) {
-                showError('Please upload an image file');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result as string;
-                setImagePreview(base64String);
-                if (editingProduct) {
-                    setEditingProduct({ ...editingProduct, images: [base64String] });
-                }
-            };
-            reader.readAsDataURL(file);
+    const handleDelete = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this product?")) return;
+        try {
+            await api.delete(`/admin/products/${id}`);
+            setProducts(prev => prev.filter(p => p._id !== id));
+            alert("Product deleted successfully");
+        } catch (error) {
+            console.error(error);
+            alert("Failed to delete product");
         }
-    };
-
-    const startEdit = (p: Product) => {
-        setEditingProduct(p);
-        const currentImage = p.images?.[0] || '';
-        setImagePreview(currentImage);
-
-        if (currentImage.startsWith('http') || currentImage.startsWith('https')) {
-            setImageInputType('url');
-            setImageUrlInput(currentImage);
-        } else {
-            setImageInputType('upload');
-            setImageUrlInput('');
-        }
-        setShowForm(true);
     };
 
     return (
-        <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h1>Product Manager</h1>
-                <button
-                    onClick={() => {
-                        setEditingProduct({
-                            name: '',
-                            basePrice: 0,
-                            discountedPrice: 0,
-                            stock: 0,
-                            gstRate: 18,
-                            hsnCode: '',
-                            category: '',
-                            isOnDemand: false,
-                            isFeatured: false,
-                            isTopSale: false,
-                            isDailyOffer: false,
-                            isNewArrival: false,
-                            newArrivalPriority: 0,
-                            images: [],
-                            description: '',
-                            brand: '',
-                            warranty: '',
-                            material: '',
-                            countryOfOrigin: 'India'
-                        } as any);
-                        setImagePreview('');
-                        setImageInputType('upload');
-                        setImageUrlInput('');
-                        setShowForm(true);
-                    }}
-                    className="btn btn-primary"
-                >
-                    + Add New Product
-                </button>
+        <div className="container mx-auto pb-10">
+            <div className="flex justify-between items-center mb-6">
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-800">Product Manager</h1>
+                    <p className="text-gray-500 text-sm">Manage inventory, pricing and specifications from here.</p>
+                </div>
+                <Link href="/admin/products/add" className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition flex items-center gap-2 font-medium">
+                    <FiPlus /> Add New Product
+                </Link>
             </div>
 
-            {showForm && editingProduct && (
-                <div
-                    style={{
-                        position: 'fixed',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: 'rgba(0,0,0,0.5)',
-                        zIndex: 1000,
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        backdropFilter: 'blur(4px)'
-                    }}
-                    onClick={() => setShowForm(false)}
-                >
-                    <div
-                        onClick={e => e.stopPropagation()}
-                        style={{
-                            background: 'white',
-                            padding: '2rem',
-                            borderRadius: '12px',
-                            width: '90%',
-                            maxWidth: '800px',
-                            maxHeight: '90vh',
-                            overflowY: 'auto',
-                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                            position: 'relative'
-                        }}
-                    >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', margin: 0 }}>
-                                {editingProduct._id ? 'Edit Product' : 'New Product'}
-                            </h3>
-                            <button
-                                onClick={() => setShowForm(false)}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    fontSize: '1.5rem',
-                                    cursor: 'pointer',
-                                    color: '#64748b'
-                                }}
-                            >
-                                ×
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Product Name</label>
-                                <input type="text" value={editingProduct.name ?? ''} onChange={e => setEditingProduct({ ...editingProduct, name: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} required />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Category</label>
-                                <select
-                                    value={editingProduct.category ?? ''}
-                                    onChange={e => setEditingProduct({ ...editingProduct, category: e.target.value })}
-                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
-                                    required
-                                >
-                                    <option value="">-- Select Category --</option>
-                                    {categories.map(cat => (
-                                        <option key={cat._id} value={cat.slug}>{cat.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Original Price (MRP) (₹)</label>
-                                <input
-                                    type="number"
-                                    value={editingProduct.basePrice ?? ''}
-                                    onChange={e => setEditingProduct({ ...editingProduct, basePrice: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Discounted Price (Selling) (₹)</label>
-                                <input
-                                    type="number"
-                                    value={editingProduct.discountedPrice ?? ''}
-                                    onChange={e => setEditingProduct({ ...editingProduct, discountedPrice: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
-                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>HSN Code (Tax)</label>
-                                <input type="text" value={editingProduct.hsnCode ?? ''} onChange={e => setEditingProduct({ ...editingProduct, hsnCode: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} required />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>GST Rate (%)</label>
-                                <select value={editingProduct.gstRate} onChange={e => setEditingProduct({ ...editingProduct, gstRate: parseFloat(e.target.value) })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}>
-                                    <option value="5">5%</option>
-                                    <option value="12">12%</option>
-                                    <option value="18">18%</option>
-                                    <option value="28">28%</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Stock Quantity</label>
-                                <input type="number" value={editingProduct.stock ?? ''} onChange={e => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} />
-                            </div>
-
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Description</label>
-                                <textarea
-                                    value={editingProduct.description ?? ''}
-                                    onChange={e => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                                    rows={4}
-                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px', resize: 'vertical' }}
-                                    placeholder="Detailed product description..."
-                                />
-                            </div>
-
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Brand</label>
-                                <input type="text" value={editingProduct.brand ?? ''} onChange={e => setEditingProduct({ ...editingProduct, brand: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} placeholder="e.g. Bosch, Stanley" />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Material</label>
-                                <input type="text" value={editingProduct.material ?? ''} onChange={e => setEditingProduct({ ...editingProduct, material: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} placeholder="e.g. Stainless Steel" />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Warranty</label>
-                                <input type="text" value={editingProduct.warranty ?? ''} onChange={e => setEditingProduct({ ...editingProduct, warranty: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} placeholder="e.g. 1 Year Manufacturer" />
-                            </div>
-                            <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Country of Origin</label>
-                                <input type="text" value={editingProduct.countryOfOrigin ?? ''} onChange={e => setEditingProduct({ ...editingProduct, countryOfOrigin: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} placeholder="e.g. India" />
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fffbeb', padding: '0.75rem', borderRadius: '6px', border: '1px solid #fcd34d' }}>
-                                <input
-                                    type="checkbox"
-                                    id="isOnDemand"
-                                    checked={editingProduct.isOnDemand || false}
-                                    onChange={e => setEditingProduct({ ...editingProduct, isOnDemand: e.target.checked })}
-                                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#fbbf24' }}
-                                />
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <label htmlFor="isOnDemand" style={{ fontWeight: 600, cursor: 'pointer', userSelect: 'none', color: '#92400e' }}>
-                                        ⚠️ Mark as On-Demand / Procurement Only
-                                    </label>
-                                    <span style={{ fontSize: '0.75rem', color: '#b45309' }}>Stock will be ignored. Users can request a quote/procurement.</span>
-                                </div>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                <input
-                                    type="checkbox"
-                                    id="isFeatured"
-                                    checked={editingProduct.isFeatured || false}
-                                    onChange={e => setEditingProduct({ ...editingProduct, isFeatured: e.target.checked })}
-                                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#3b82f6' }}
-                                />
-                                <label htmlFor="isFeatured" style={{ fontWeight: 600, cursor: 'pointer', userSelect: 'none' }}>
-                                    ⭐ Mark as Featured Product
-                                </label>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <input
-                                        type="checkbox"
-                                        id="isNewArrival"
-                                        checked={editingProduct.isNewArrival || false}
-                                        onChange={e => setEditingProduct({ ...editingProduct, isNewArrival: e.target.checked })}
-                                        style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10b981' }}
-                                    />
-                                    <label htmlFor="isNewArrival" style={{ fontWeight: 600, cursor: 'pointer', userSelect: 'none' }}>
-                                        🆕 Tag as New Arrival
-                                    </label>
-                                </div>
-
-                                {editingProduct.isNewArrival && (
-                                    <div style={{ flex: 1 }}>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '0.25rem' }}>Priority</label>
-                                        <input
-                                            type="number"
-                                            value={editingProduct.newArrivalPriority || 0}
-                                            onChange={e => setEditingProduct({ ...editingProduct, newArrivalPriority: parseInt(e.target.value) || 0 })}
-                                            style={{ width: '80px', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Product Image</label>
-
-                                <div style={{ marginBottom: '1rem', display: 'flex', gap: '1.5rem' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name="imageInputType"
-                                            value="upload"
-                                            checked={imageInputType === 'upload'}
-                                            onChange={() => {
-                                                setImageInputType('upload');
-                                            }}
-                                            style={{ accentColor: '#3b82f6' }}
-                                        />
-                                        <span>Upload Image</span>
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                        <input
-                                            type="radio"
-                                            name="imageInputType"
-                                            value="url"
-                                            checked={imageInputType === 'url'}
-                                            onChange={() => {
-                                                setImageInputType('url');
-                                            }}
-                                            style={{ accentColor: '#3b82f6' }}
-                                        />
-                                        <span>Image URL</span>
-                                    </label>
-                                </div>
-
-                                {imageInputType === 'upload' ? (
-                                    <>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={handleImageUpload}
-                                            style={{
-                                                width: '100%',
-                                                padding: '0.75rem',
-                                                border: '1px solid #cbd5e1',
-                                                borderRadius: '6px',
-                                                cursor: 'pointer'
-                                            }}
-                                        />
-                                        <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.5rem' }}>
-                                            Recommended: Square image (500x500px or larger). Max size: 5MB
-                                        </p>
-                                    </>
-                                ) : (
-                                    <input
-                                        type="text"
-                                        placeholder="https://example.com/image.jpg"
-                                        value={imageUrlInput}
-                                        onChange={(e) => {
-                                            const url = e.target.value;
-                                            setImageUrlInput(url);
-                                            setImagePreview(url);
-                                            if (editingProduct) {
-                                                setEditingProduct({ ...editingProduct, images: [url] });
-                                            }
-                                        }}
-                                        style={{
-                                            width: '100%',
-                                            padding: '0.75rem',
-                                            border: '1px solid #cbd5e1',
-                                            borderRadius: '6px'
-                                        }}
-                                    />
-                                )}
-                            </div>
-
-                            {imagePreview && (
-                                <div style={{ gridColumn: '1 / -1' }}>
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Image Preview</label>
-                                    <div style={{
-                                        position: 'relative',
-                                        width: '200px',
-                                        height: '200px',
-                                        border: '2px solid #e2e8f0',
-                                        borderRadius: '12px',
-                                        overflow: 'hidden',
-                                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
-                                    }}>
-                                        <img
-                                            src={imagePreview}
-                                            alt="Product preview"
-                                            style={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover'
-                                            }}
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                setImagePreview('');
-                                                setImageUrlInput('');
-                                                if (editingProduct) {
-                                                    setEditingProduct({ ...editingProduct, images: [] });
-                                                }
-                                            }}
-                                            style={{
-                                                position: 'absolute',
-                                                top: '8px',
-                                                right: '8px',
-                                                background: 'rgba(239, 68, 68, 0.9)',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                padding: '6px 10px',
-                                                cursor: 'pointer',
-                                                fontSize: '0.875rem',
-                                                fontWeight: 600,
-                                                backdropFilter: 'blur(2px)'
-                                            }}
-                                        >
-                                            Remove
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '1.5rem' }}>
-                                <button
-                                    type="button"
-                                    onClick={() => setShowForm(false)}
-                                    className="btn btn-outline"
-                                    style={{ borderColor: '#ef4444', color: '#ef4444', borderRadius: '8px', padding: '0.75rem 1.5rem' }}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="btn btn-primary"
-                                    style={{ borderRadius: '8px', padding: '0.75rem 1.5rem' }}
-                                >
-                                    Save Product
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )
-            }
-
-            <div style={{ background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.1)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 border-b border-slate-200">
                         <tr>
-                            <th style={{ padding: '1rem' }}>Image</th>
-                            <th style={{ padding: '1rem' }}>Name</th>
-                            <th style={{ padding: '1rem' }}>Category</th>
-                            <th style={{ padding: '1rem' }}>Pricing (MRP / Selling)</th>
-                            <th style={{ padding: '1rem' }}>Stock</th>
-                            <th style={{ padding: '1rem' }}>Featured</th>
-                            <th style={{ padding: '1rem' }}>New Arrival</th>
-                            <th style={{ padding: '1rem' }}>Tax Info</th>
-                            <th style={{ padding: '1rem' }}>Action</th>
+                            <th className="p-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Product</th>
+                            <th className="p-4 font-semibold text-slate-600 text-xs uppercase tracking-wider">Category & Brand</th>
+                            <th className="p-4 font-semibold text-slate-600 text-xs uppercase tracking-wider text-right">Pricing (A/B/C)</th>
+                            <th className="p-4 font-semibold text-slate-600 text-xs uppercase tracking-wider text-center">Stock</th>
+                            <th className="p-4 font-semibold text-slate-600 text-xs uppercase tracking-wider text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        {products.map(p => (
-                            <tr key={p._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={{ padding: '1rem' }}>
-                                    {p.images && p.images.length > 0 ? (
-                                        <img
-                                            src={p.images[0]}
-                                            alt={p.name}
-                                            style={{
-                                                width: '50px',
-                                                height: '50px',
-                                                objectFit: 'cover',
-                                                borderRadius: '4px',
-                                                border: '1px solid #e2e8f0'
-                                            }}
-                                        />
-                                    ) : (
-                                        <div style={{
-                                            width: '50px',
-                                            height: '50px',
-                                            background: '#f1f5f9',
-                                            borderRadius: '4px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            fontSize: '0.75rem',
-                                            color: '#94a3b8'
-                                        }}>
-                                            No Image
+                    <tbody className="divide-y divide-slate-100">
+                        {products.map(product => (
+                            <tr key={product._id} className="hover:bg-slate-50 transition">
+                                <td className="p-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 relative bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border">
+                                            {product.featured_image ? (
+                                                <Image src={`/api/${product.featured_image}`} alt={product.title} fill className="object-contain" />
+                                            ) : (
+                                                <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">N/A</div>
+                                            )}
                                         </div>
-                                    )}
-                                </td>
-                                <td style={{ padding: '1rem', fontWeight: 600 }}>{p.name}</td>
-                                <td style={{ padding: '1rem' }}>{p.category}</td>
-                                <td style={{ padding: '1rem' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                        {(p.discountedPrice > 0 && p.discountedPrice < p.basePrice) && (
-                                            <span style={{ textDecoration: 'line-through', color: '#94a3b8', fontSize: '0.875rem' }}>₹{p.basePrice}</span>
-                                        )}
-                                        <span style={{ fontWeight: 600, color: '#16a34a' }}>₹{p.discountedPrice || p.basePrice}</span>
+                                        <div>
+                                            <div className="font-semibold text-slate-700 clamp-1" title={product.title}>{product.title}</div>
+                                            <div className="text-xs text-slate-400">SKU: {product.slug}</div>
+                                        </div>
                                     </div>
                                 </td>
-                                <td style={{ padding: '1rem' }}>
-                                    <span className={p.stock < 10 ? 'badge badge-sale' : 'badge badge-new'}>{p.stock}</span>
+                                <td className="p-4">
+                                    <div className="text-sm font-medium text-slate-600">{product.category?.name || 'Uncategorized'}</div>
+                                    <div className="text-xs text-slate-400">{product.brand?.name}</div>
                                 </td>
-                                <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                    {p.isFeatured ? (
-                                        <span style={{ fontSize: '1.5rem', color: '#f59e0b' }} title="Featured Product">⭐</span>
-                                    ) : (
-                                        <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>—</span>
-                                    )}
+                                <td className="p-4 text-right">
+                                    <div className="font-bold text-slate-700">₹{product.selling_price_a}</div>
+                                    <div className="text-xs text-slate-400">
+                                        B: {product.selling_price_b || '-'} / C: {product.selling_price_c || '-'}
+                                    </div>
+                                    <div className="text-[10px] text-red-400 line-through">MRP: ₹{product.mrp}</div>
                                 </td>
-                                <td style={{ padding: '1rem', textAlign: 'center' }}>
-                                    {p.isNewArrival ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                                            <span style={{ fontSize: '1.25rem' }} title="New Arrival">🆕</span>
-                                            <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>P: {p.newArrivalPriority || 0}</span>
-                                        </div>
-                                    ) : (
-                                        <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>—</span>
-                                    )}
+                                <td className="p-4 text-center">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${product.opening_stock < 10 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                                        {product.opening_stock}
+                                    </span>
                                 </td>
-                                <td style={{ padding: '1rem' }}>
-                                    <span style={{ display: 'block', fontSize: '0.9rem' }}>GST: {p.gstRate || 18}%</span>
-                                    <span style={{ fontSize: '0.8rem', color: '#64748B' }}>HSN: {p.hsnCode}</span>
-                                </td>
-                                <td style={{ padding: '1rem' }}>
-                                    <button onClick={() => startEdit(p)} style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Edit</button>
+                                <td className="p-4 text-right">
+                                    <div className="flex justify-end gap-2">
+                                        <Link href={`/products/${product.slug}`} target="_blank" className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition"><FiEye /></Link>
+                                        <Link href={`/admin/products/${product._id}/edit`} className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded transition"><FiEdit2 /></Link>
+                                        <button onClick={() => handleDelete(product._id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition"><FiTrash2 /></button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
+                {loading && <div className="p-10 text-center text-slate-500">Loading inventory...</div>}
+                {!loading && products.length === 0 && (
+                    <div className="p-10 text-center flex flex-col items-center">
+                        <div className="text-4xl mb-4">📦</div>
+                        <h3 className="text-lg font-semibold text-slate-700">No Products Found</h3>
+                        <p className="text-slate-500 mb-4">Start by adding your first product to the inventory.</p>
+                        <Link href="/admin/products/add" className="text-orange-500 font-medium hover:underline">Add First Product</Link>
+                    </div>
+                )}
             </div>
-
-            <Modal
-                isOpen={modalState.isOpen}
-                onClose={hideModal}
-                title={modalState.title}
-                message={modalState.message}
-                type={modalState.type}
-                confirmText={modalState.confirmText}
-                cancelText={modalState.cancelText}
-                onConfirm={modalState.onConfirm}
-                showCancel={modalState.showCancel}
-            />
-        </div >
+        </div>
     );
 }

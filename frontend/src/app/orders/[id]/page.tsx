@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import Header from '@/app/components/Header';
 import Link from 'next/link';
 
@@ -39,7 +39,8 @@ interface Order {
     busDetails?: any;
 }
 
-export default function OrderTrackingPage({ params }: { params: { id: string } }) {
+export default function OrderTrackingPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params); // Unwrap params
     const [order, setOrder] = useState<Order | null>(null);
     const [statusHistory, setStatusHistory] = useState<StatusLog[]>([]);
     const [shipment, setShipment] = useState<Shipment | null>(null);
@@ -47,7 +48,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
 
     useEffect(() => {
         fetchOrderDetails();
-    }, [params.id]);
+    }, [id]);
 
     const fetchOrderDetails = async () => {
         setLoading(true);
@@ -57,14 +58,14 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
             if (token) headers['Authorization'] = `Bearer ${token}`;
 
             // Fetch order
-            const orderRes = await fetch(`http://localhost:5000/api/orders/${params.id}`, { headers });
+            const orderRes = await fetch(`http://localhost:5000/api/orders/${id}`, { headers });
             const orderData = await orderRes.json();
 
             if (orderData.success) {
                 setOrder(orderData.order);
 
                 // Fetch status history
-                const historyRes = await fetch(`http://localhost:5000/api/status/history/${params.id}`, { headers });
+                const historyRes = await fetch(`http://localhost:5000/api/status/history/${id}`, { headers });
                 const historyData = await historyRes.json();
                 if (historyData.success) {
                     setStatusHistory(historyData.statusHistory);
@@ -72,7 +73,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
 
                 // Fetch shipment if assigned
                 try {
-                    const shipmentRes = await fetch(`http://localhost:5000/api/shipments/order/${params.id}`, { headers });
+                    const shipmentRes = await fetch(`http://localhost:5000/api/shipments/order/${id}`, { headers });
                     const shipmentData = await shipmentRes.json();
                     if (shipmentData.success) {
                         setShipment(shipmentData.shipment);
@@ -279,9 +280,9 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
                     {/* Left Column: Timeline and Items */}
-                    <div>
+                    <div style={{ flex: '1 1 500px' }}>
                         {/* Status Timeline */}
                         <div className="card" style={{ marginBottom: '2rem' }}>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem' }}>
@@ -414,7 +415,7 @@ export default function OrderTrackingPage({ params }: { params: { id: string } }
                     </div>
 
                     {/* Right Column: Shipment Details and Summary */}
-                    <div>
+                    <div style={{ flex: '1 1 400px' }}>
                         {/* Shipment Details Card */}
                         {shipment ? (
                             <div className="card" style={{ marginBottom: '2rem' }}>
