@@ -54,10 +54,30 @@ router.get('/daily-offers', async (req, res) => {
 // Get New Arrivals
 router.get('/new-arrivals', async (req, res) => {
     try {
-        const products = await Product.find({ isVisible: true, isNewArrival: true });
+        const limit = req.query.limit ? parseInt(req.query.limit) : 0;
+
+        // Query: Only visible, in-stock products marked as New Arrival
+        // If sorting by latest created date is also needed as a fallback, we could expand this.
+        // But the requirement says "Mark any product as New Arrival" and "Everything must be managed from Admin", 
+        // so we'll fetch products where isNewArrival is true.
+        const query = {
+            isVisible: true,
+            isNewArrival: true,
+            stock: { $gt: 0 }
+        };
+
+        let productsQuery = Product.find(query)
+            .sort({ newArrivalPriority: -1, newArrivalCreatedAt: -1, createdAt: -1 });
+
+        if (limit > 0) {
+            productsQuery = productsQuery.limit(limit);
+        }
+
+        const products = await productsQuery;
         res.json(products);
     } catch (err) {
-        res.status(500).json(err);
+        console.error('Error fetching new arrivals:', err);
+        res.status(500).json({ message: "Error fetching new arrivals", error: err.message });
     }
 });
 

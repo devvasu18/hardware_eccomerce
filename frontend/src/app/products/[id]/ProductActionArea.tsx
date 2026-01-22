@@ -52,8 +52,6 @@ export default function ProductActionArea({ product }: { product: Product }) {
         finalPrice = Math.round(sellingPrice * (1 - user.wholesaleDiscount / 100));
     }
 
-    const savings = originalPrice - finalPrice;
-
     const handleCreateRequest = async () => {
         setSubmitting(true);
         try {
@@ -121,7 +119,7 @@ export default function ProductActionArea({ product }: { product: Product }) {
                 </div>
 
                 {/* Size Selector - Only show if product has available sizes */}
-                {product.availableSizes && product.availableSizes.length > 0 && (
+                {product.availableSizes && product.availableSizes.length > 0 ? (
                     <div className="size-selector-section">
                         <label className="section-label">SIZE</label>
                         <div className="size-options">
@@ -136,7 +134,7 @@ export default function ProductActionArea({ product }: { product: Product }) {
                             ))}
                         </div>
                     </div>
-                )}
+                ) : null}
 
                 {/* Quantity Selector */}
                 <div className="quantity-selector-section">

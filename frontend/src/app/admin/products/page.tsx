@@ -18,6 +18,7 @@ interface Product {
     isTopSale: boolean;
     isDailyOffer: boolean;
     isNewArrival: boolean;
+    newArrivalPriority?: number;
     images?: string[];
     description?: string;
     brand?: string;
@@ -167,6 +168,7 @@ export default function ProductManager() {
                             isTopSale: false,
                             isDailyOffer: false,
                             isNewArrival: false,
+                            newArrivalPriority: 0,
                             images: [],
                             description: '',
                             brand: '',
@@ -332,6 +334,33 @@ export default function ProductManager() {
                                 </label>
                             </div>
 
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <input
+                                        type="checkbox"
+                                        id="isNewArrival"
+                                        checked={editingProduct.isNewArrival || false}
+                                        onChange={e => setEditingProduct({ ...editingProduct, isNewArrival: e.target.checked })}
+                                        style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#10b981' }}
+                                    />
+                                    <label htmlFor="isNewArrival" style={{ fontWeight: 600, cursor: 'pointer', userSelect: 'none' }}>
+                                        🆕 Tag as New Arrival
+                                    </label>
+                                </div>
+
+                                {editingProduct.isNewArrival && (
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '0.25rem' }}>Priority</label>
+                                        <input
+                                            type="number"
+                                            value={editingProduct.newArrivalPriority || 0}
+                                            onChange={e => setEditingProduct({ ...editingProduct, newArrivalPriority: parseInt(e.target.value) || 0 })}
+                                            style={{ width: '80px', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
                             <div style={{ gridColumn: '1 / -1' }}>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Product Image</label>
 
@@ -489,6 +518,7 @@ export default function ProductManager() {
                             <th style={{ padding: '1rem' }}>Pricing (MRP / Selling)</th>
                             <th style={{ padding: '1rem' }}>Stock</th>
                             <th style={{ padding: '1rem' }}>Featured</th>
+                            <th style={{ padding: '1rem' }}>New Arrival</th>
                             <th style={{ padding: '1rem' }}>Tax Info</th>
                             <th style={{ padding: '1rem' }}>Action</th>
                         </tr>
@@ -541,6 +571,16 @@ export default function ProductManager() {
                                 <td style={{ padding: '1rem', textAlign: 'center' }}>
                                     {p.isFeatured ? (
                                         <span style={{ fontSize: '1.5rem', color: '#f59e0b' }} title="Featured Product">⭐</span>
+                                    ) : (
+                                        <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>—</span>
+                                    )}
+                                </td>
+                                <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                    {p.isNewArrival ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                            <span style={{ fontSize: '1.25rem' }} title="New Arrival">🆕</span>
+                                            <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 600 }}>P: {p.newArrivalPriority || 0}</span>
+                                        </div>
                                     ) : (
                                         <span style={{ fontSize: '0.875rem', color: '#94a3b8' }}>—</span>
                                     )}

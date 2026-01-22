@@ -1,0 +1,35 @@
+.new-arrivals-section {
+    padding: 4rem 0;
+}
+
+.new-arrivals-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 2rem;
+}
+
+.new-arrivals-title {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.new-arrivals-subtitle {
+    color: var(--text-muted);
+}
+
+.view-all-btn {
+    padding: 0.75rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-weight: 600;
+    color: var(--primary);
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.view-all-btn:hover {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}

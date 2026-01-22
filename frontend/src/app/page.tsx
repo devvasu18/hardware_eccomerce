@@ -5,14 +5,16 @@ import HeroSlider from '@/app/components/HeroSlider';
 import CategorySection from '@/app/components/CategorySection';
 import WhyChooseUs from '@/app/components/WhyChooseUs';
 import SpecialOffers from '@/app/components/SpecialOffers';
+import NewArrivals from '@/app/components/NewArrivals';
 
 interface Product {
     _id: string;
     name: string;
     basePrice: number;
-    wholesalePrice: number;
+    discountedPrice: number;
     stock: number;
     category: string;
+    imageUrl?: string;
     images: string[];
     isOnDemand: boolean;
 }
@@ -55,6 +57,8 @@ export default async function Home() {
             </section>
 
             <CategorySection />
+
+            <NewArrivals />
 
             <SpecialOffers />
 

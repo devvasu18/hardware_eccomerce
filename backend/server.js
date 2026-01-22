@@ -18,6 +18,8 @@ mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://
 
 // Routes
 app.use('/api/products', require('./routes/productRoutes'));
+app.use('/api/admin/products', require('./routes/adminProductRoutes')); // Admin Product Management
+app.use('/api/cart', require('./routes/cartRoutes')); // Cart Management
 app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/requests', require('./routes/requestRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));

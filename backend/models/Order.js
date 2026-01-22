@@ -1,11 +1,32 @@
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    // User reference - optional for guest orders
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: false // Allow guest orders
+    },
+
+    // Guest customer details (for non-logged-in users)
+    guestCustomer: {
+        name: { type: String },
+        phone: { type: String },
+        email: { type: String },
+        address: { type: String }
+    },
+
+    // Flag to identify order type
+    isGuestOrder: {
+        type: Boolean,
+        default: false
+    },
+
     items: [{
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
         quantity: { type: Number, required: true },
         priceAtBooking: { type: Number, required: true },
+        size: { type: String }, // Product size variant if applicable
         gstRate: { type: Number },
         cgst: { type: Number },
         sgst: { type: Number },
@@ -18,13 +39,25 @@ const orderSchema = new mongoose.Schema({
     // Invoicing
     invoiceNumber: { type: String, unique: true, sparse: true },
     invoiceDate: { type: Date },
-    shippingAddress: { type: String },
+    shippingAddress: { type: String, required: true },
     billingAddress: { type: String },
+
+    // Payment
+    paymentStatus: {
+        type: String,
+        enum: ['Pending', 'Paid', 'Failed', 'Refunded', 'COD'],
+        default: 'Pending'
+    },
+    paymentMethod: {
+        type: String,
+        enum: ['COD', 'Online', 'UPI', 'Card', 'NetBanking'],
+        default: 'COD'
+    },
 
     status: {
         type: String,
-        enum: ['Order Placed', 'Packed', 'Assigned to Bus', 'Delivered', 'Cancelled', 'Request Pending', 'Request Approved'],
-        default: 'Order Placed'
+        enum: ['Pending', 'Processing', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Request Pending', 'Request Approved'],
+        default: 'Pending'
     },
 
     // Logistics (Bus System)

@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 
 interface User {
     id: string;
@@ -15,6 +15,8 @@ interface AuthContextType {
     login: (token: string, userData: User) => void;
     logout: () => void;
     loading: boolean;
+    onLoginCallbacks: Array<() => void>;
+    registerLoginCallback: (callback: () => void) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [loginCallbacks, setLoginCallbacks] = useState<Array<() => void>>([]);
 
     useEffect(() => {
         // Check localStorage on mount
@@ -37,21 +40,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
     }, []);
 
+    const registerLoginCallback = useCallback((callback: () => void) => {
+        setLoginCallbacks(prev => [...prev, callback]);
+    }, []);
+
     const login = (token: string, userData: User) => {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
         setUser(userData);
+
+        // Execute all login callbacks (e.g., cart sync)
+        loginCallbacks.forEach(callback => {
+            try {
+                callback();
+            } catch (error) {
+                console.error('Login callback error:', error);
+            }
+        });
     };
 
     const logout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('cart'); // Clear cart on logout
         setUser(null);
         window.location.href = '/login';
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading }}>
+        <AuthContext.Provider value={{
+            user,
+            login,
+            logout,
+            loading,
+            onLoginCallbacks: loginCallbacks,
+            registerLoginCallback
+        }}>
             {children}
         </AuthContext.Provider>
     );

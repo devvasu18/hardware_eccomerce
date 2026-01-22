@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext'; // Import AuthContext
+import { useCart } from '../../context/CartContext'; // Import CartContext
 import './Header.css';
 
 const Header = () => {
     const { user, logout } = useAuth();
+    const { cartCount, openCart } = useCart();
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const [categories, setCategories] = useState<{ _id: string, name: string, slug: string }[]>([]);
@@ -156,12 +158,21 @@ const Header = () => {
                     </div>
 
                     {/* Cart */}
-                    <div className="action-item">
-                        <svg className="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                            <circle cx="9" cy="21" r="1" />
-                            <circle cx="20" cy="21" r="1" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
-                        </svg>
+                    <div
+                        className="action-item cart-btn-wrapper"
+                        onClick={openCart}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        <div className="cart-icon-container">
+                            <svg className="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="9" cy="21" r="1" />
+                                <circle cx="20" cy="21" r="1" />
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
+                            </svg>
+                            {cartCount > 0 && (
+                                <span className="cart-badge">{cartCount}</span>
+                            )}
+                        </div>
                     </div>
 
                 </div>

@@ -1,5 +1,17 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const fs = require('fs');
+const path = require('path');
+
+const logToFile = (message) => {
+    try {
+        const timestamp = new Date().toISOString();
+        const logMessage = `[${timestamp}] ${message}\n`;
+        fs.appendFileSync(path.join(__dirname, '../auth_logs.txt'), logMessage);
+    } catch (err) {
+        console.error('Failed to log to file:', err.message);
+    }
+};
 
 const protect = async (req, res, next) => {
     let token;
@@ -7,27 +19,55 @@ const protect = async (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
             token = req.headers.authorization.split(' ')[1];
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            // FALLBACK SECRET to match authRoutes.js
+            const secret = process.env.JWT_SECRET || 'chamunda_secret_key_123';
+            const decoded = jwt.verify(token, secret);
             req.user = await User.findById(decoded.id).select('-password');
+
+            const logInfo = `🔐 Auth - User authenticated: ${JSON.stringify({
+                id: req.user?._id,
+                username: req.user?.username,
+                role: req.user?.role
+            })}`;
+            console.log(logInfo);
+            logToFile(logInfo);
+
             next();
         } catch (error) {
-            console.error(error);
-            res.status(401).json({ message: 'Not authorized, token failed' });
+            const errLog = `❌ Auth - Token verification failed: ${error.message} | Token provided: ${token ? token.substring(0, 10) + '...' : 'none'}`;
+            console.error(errLog);
+            logToFile(errLog);
+            return res.status(401).json({ message: 'Not authorized, token failed' });
         }
-    }
-
-    if (!token) {
-        res.status(401).json({ message: 'Not authorized, no token' });
+    } else {
+        const noTokenLog = `❌ Auth - No token provided or invalid format: ${req.headers.authorization}`;
+        console.error(noTokenLog);
+        logToFile(noTokenLog);
+        return res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
 
 const admin = (req, res, next) => {
     const adminRoles = ['super_admin', 'ops_admin', 'logistics_admin', 'accounts_admin', 'support_staff', 'admin'];
 
+    const logInfo = `🔑 Admin Check - User: ${req.user?.username} | Role: ${req.user?.role} | Required: ${adminRoles}`;
+    console.log(logInfo);
+    logToFile(logInfo);
+
     if (req.user && adminRoles.includes(req.user.role)) {
+        const successLog = '✅ Admin Check - Access granted';
+        console.log(successLog);
+        logToFile(successLog);
         next();
     } else {
-        res.status(401).json({ message: 'Not authorized as an admin' });
+        const failLog = `❌ Admin Check - Access denied for role: ${req.user?.role}`;
+        console.log(failLog);
+        logToFile(failLog);
+        res.status(401).json({
+            message: 'Not authorized as an admin',
+            your_role: req.user?.role,
+            debug_info: 'Role must be one of: ' + adminRoles.join(', ')
+        });
     }
 };
 

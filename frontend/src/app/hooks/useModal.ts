@@ -45,20 +45,20 @@ export function useModal() {
         setModalState(prev => ({ ...prev, isOpen: false }));
     }, []);
 
-    const showSuccess = useCallback((message: string, title: string = 'Success') => {
-        showModal(title, message, 'success');
+    const showSuccess = useCallback((message: string, title: string = 'Success', options?: Partial<Omit<ModalState, 'isOpen' | 'title' | 'message' | 'type'>>) => {
+        showModal(title, message, 'success', options);
     }, [showModal]);
 
-    const showError = useCallback((message: string, title: string = 'Error') => {
-        showModal(title, message, 'error');
+    const showError = useCallback((message: string, title: string = 'Error', options?: Partial<Omit<ModalState, 'isOpen' | 'title' | 'message' | 'type'>>) => {
+        showModal(title, message, 'error', options);
     }, [showModal]);
 
-    const showWarning = useCallback((message: string, title: string = 'Warning') => {
-        showModal(title, message, 'warning');
+    const showWarning = useCallback((message: string, title: string = 'Warning', options?: Partial<Omit<ModalState, 'isOpen' | 'title' | 'message' | 'type'>>) => {
+        showModal(title, message, 'warning', options);
     }, [showModal]);
 
-    const showInfo = useCallback((message: string, title: string = 'Information') => {
-        showModal(title, message, 'info');
+    const showInfo = useCallback((message: string, title: string = 'Information', options?: Partial<Omit<ModalState, 'isOpen' | 'title' | 'message' | 'type'>>) => {
+        showModal(title, message, 'info', options);
     }, [showModal]);
 
     return {

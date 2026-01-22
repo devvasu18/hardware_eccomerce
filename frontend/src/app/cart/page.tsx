@@ -4,7 +4,16 @@ import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
 
 export default function CartPage() {
-    const { items, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
+    const { items, loading, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
+
+    if (loading) {
+        return (
+            <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+                <div className="loading-spinner" style={{ margin: '0 auto 1rem' }}></div>
+                <p>Loading your cart...</p>
+            </div>
+        );
+    }
 
     if (items.length === 0) {
         return (
@@ -24,9 +33,9 @@ export default function CartPage() {
                 {/* Cart Items */}
                 <div className="card">
                     {items.map((item) => (
-                        <div key={item.productId} style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                        <div key={`${item.productId}-${item.size || 'default'}`} style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', marginBottom: '1rem' }}>
                             <div style={{ width: '80px', height: '80px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
-                                {item.image ? <img src={item.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                                {item.image ? <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                             </div>
                             <div style={{ flex: 1 }}>
                                 <h4 style={{ marginBottom: '0.25rem' }}>{item.name}</h4>
@@ -35,12 +44,12 @@ export default function CartPage() {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <button onClick={() => updateQuantity(item.productId, item.quantity - 1)} style={{ padding: '0 0.5rem', cursor: 'pointer' }}>-</button>
+                                    <button onClick={() => updateQuantity(item.productId, item.quantity - 1, item.size)} style={{ padding: '0 0.5rem', cursor: 'pointer' }}>-</button>
                                     <span>{item.quantity}</span>
-                                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1)} style={{ padding: '0 0.5rem', cursor: 'pointer' }}>+</button>
+                                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1, item.size)} style={{ padding: '0 0.5rem', cursor: 'pointer' }}>+</button>
                                 </div>
                                 <span style={{ fontWeight: 700 }}>₹{item.price * item.quantity}</span>
-                                <button onClick={() => removeFromCart(item.productId)} style={{ color: '#ef4444', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
+                                <button onClick={() => removeFromCart(item.productId, item.size)} style={{ color: '#ef4444', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
                             </div>
                         </div>
                     ))}

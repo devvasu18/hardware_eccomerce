@@ -27,8 +27,12 @@ export default function LoginPage() {
                 login(data.token, data.user);
 
                 // Redirect based on role
-                if (data.user.role === 'admin') router.push('/admin');
-                else router.push('/');
+                const adminRoles = ['super_admin', 'ops_admin', 'logistics_admin', 'accounts_admin', 'support_staff', 'admin'];
+                if (adminRoles.includes(data.user.role)) {
+                    router.push('/admin');
+                } else {
+                    router.push('/');
+                }
 
             } else {
                 setError(data.message || 'Login failed');

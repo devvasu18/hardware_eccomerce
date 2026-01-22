@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Modal from '../../components/Modal';
 import { useModal } from '../../hooks/useModal';
+import './banners.css';
 
 interface Banner {
     _id: string;
@@ -88,12 +90,16 @@ export default function BannerManager() {
                 confirmText: 'Delete',
                 onConfirm: async () => {
                     try {
-                        await fetch(`http://localhost:5000/api/banners/${id}`, {
+                        const res = await fetch(`http://localhost:5000/api/banners/${id}`, {
                             method: 'DELETE',
                             headers: { 'Authorization': `Bearer ${token}` }
                         });
-                        fetchBanners();
-                        showSuccess('Banner deleted successfully!');
+                        if (res.ok) {
+                            fetchBanners();
+                            showSuccess('Banner deleted successfully!');
+                        } else {
+                            throw new Error('Failed');
+                        }
                     } catch (error) {
                         showError('Failed to delete banner. Please try again.');
                     }
@@ -103,61 +109,150 @@ export default function BannerManager() {
     };
 
     return (
-        <div>
-            <h1 style={{ marginBottom: '2rem' }}>Banner Management</h1>
+        <div className="banner-container">
+            <header className="page-header">
+                <h1 className="page-title">Banner Management</h1>
+            </header>
 
-            <div className="card" style={{ marginBottom: '2rem' }}>
-                <h3>Add New Slide</h3>
-                <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
-                    <div className="form-group">
-                        <label>Title</label>
-                        <input className="input" required value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
-                    </div>
-                    <div className="form-group">
-                        <label>Subtitle</label>
-                        <input className="input" required value={formData.subtitle} onChange={e => setFormData({ ...formData, subtitle: e.target.value })} />
-                    </div>
-                    <div className="form-group">
-                        <label>Image URL (Unsplash recommended)</label>
-                        <input className="input" required value={formData.image} onChange={e => setFormData({ ...formData, image: e.target.value })} />
-                    </div>
-                    <div className="form-group">
-                        <label>Text Position</label>
-                        <select className="input" value={formData.position} onChange={e => setFormData({ ...formData, position: e.target.value })}>
-                            {POSITIONS.map(p => (
-                                <option key={p.value} value={p.value}>{p.label}</option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="form-group">
-                        <label>Order (0 = First)</label>
-                        <input type="number" className="input" value={formData.order} onChange={e => setFormData({ ...formData, order: parseInt(e.target.value) })} />
-                    </div>
-
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <button type="submit" className="btn btn-primary">Add Banner</button>
-                    </div>
-                </form>
-            </div>
-
-            <div className="grid">
-                {loading ? (
-                    <p>Loading banners...</p>
-                ) : Array.isArray(banners) && banners.length > 0 ? (
-                    banners.map(banner => (
-                        <div key={banner._id} className="card" style={{ position: 'relative', overflow: 'hidden' }}>
-                            <span className="badge" style={{ position: 'absolute', top: '10px', right: '10px', background: 'rgba(0,0,0,0.5)', color: 'white' }}>
-                                Pos: {banner.position}
-                            </span>
-                            <div style={{ height: '150px', background: `url(${banner.image}) center/cover`, borderRadius: '4px', marginBottom: '1rem' }}></div>
-                            <h4>{banner.title}</h4>
-                            <p>{banner.subtitle}</p>
-                            <button onClick={() => handleDelete(banner._id)} className="btn btn-outline" style={{ marginTop: '1rem', width: '100%', borderColor: 'red', color: 'red' }}>Delete</button>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="admin-card"
+            >
+                <h3 className="card-title">
+                    <span style={{ color: 'var(--primary)' }}>✦</span> Add New Hero Slide
+                </h3>
+                <div className="form-preview-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: '2rem' }}>
+                    <form onSubmit={handleSubmit} className="form-grid">
+                        <div className="form-group">
+                            <label className="form-label">Title</label>
+                            <input
+                                className="form-input"
+                                placeholder="e.g. Premium Engine Parts"
+                                required
+                                value={formData.title}
+                                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                            />
                         </div>
-                    ))
-                ) : (
-                    <p>No banners found. Add your first banner above!</p>
-                )}
+                        <div className="form-group">
+                            <label className="form-label">Subtitle</label>
+                            <input
+                                className="form-input"
+                                placeholder="e.g. Quality you can trust for every mile"
+                                required
+                                value={formData.subtitle}
+                                onChange={e => setFormData({ ...formData, subtitle: e.target.value })}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Image URL</label>
+                            <input
+                                className="form-input"
+                                placeholder="Unsplash URL recommended"
+                                required
+                                value={formData.image}
+                                onChange={e => setFormData({ ...formData, image: e.target.value })}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Text Position</label>
+                            <select
+                                className="form-input"
+                                value={formData.position}
+                                onChange={e => setFormData({ ...formData, position: e.target.value })}
+                            >
+                                {POSITIONS.map(p => (
+                                    <option key={p.value} value={p.value}>{p.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Display Order</label>
+                            <input
+                                type="number"
+                                className="form-input"
+                                min="0"
+                                value={formData.order}
+                                onChange={e => setFormData({ ...formData, order: parseInt(e.target.value) })}
+                            />
+                        </div>
+
+                        <div className="submit-area">
+                            <button type="submit" className="btn-add">
+                                Add Banner Slide
+                            </button>
+                        </div>
+                    </form>
+
+                    <div className="preview-panel" style={{ borderLeft: '1px solid var(--border)', paddingLeft: '2rem' }}>
+                        <label className="form-label" style={{ marginBottom: '1rem', display: 'block', color: 'var(--text-muted)' }}>Live Preview</label>
+                        <div className="banner-item" style={{ width: '100%', pointerEvents: 'none', margin: 0 }}>
+                            <div className="banner-preview" style={{ height: '160px' }}>
+                                {formData.image ? (
+                                    <img src={formData.image} alt="Preview" className="banner-img" />
+                                ) : (
+                                    <div style={{ background: '#f1f5f9', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>Image Preview</div>
+                                )}
+                                <div className="banner-overlay">
+                                    <h4 style={{ color: 'white', fontSize: '0.9rem', marginBottom: '0.2rem' }}>{formData.title || 'Main Title'}</h4>
+                                    <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.7rem' }}>{formData.subtitle || 'Your subtitle here'}</p>
+                                </div>
+                                <span className="banner-pos-badge" style={{ fontSize: '0.6rem', padding: '0.2rem 0.5rem' }}>{formData.position}</span>
+                            </div>
+                        </div>
+                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '1.5rem', lineHeight: '1.4' }}>
+                            <strong style={{ color: 'var(--primary)' }}>Note:</strong> This is a thumbnail preview. The actual banner will fill the homepage hero section.
+                        </p>
+                    </div>
+                </div>
+            </motion.div>
+
+            <div className="banners-grid">
+                <AnimatePresence>
+                    {loading ? (
+                        <div className="empty-state">
+                            <h3>Loading...</h3>
+                            <p>Fetching your billboard slides</p>
+                        </div>
+                    ) : Array.isArray(banners) && banners.length > 0 ? (
+                        banners.map((banner, index) => (
+                            <motion.div
+                                key={banner._id}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.9 }}
+                                transition={{ delay: index * 0.1 }}
+                                className="banner-item"
+                            >
+                                <div className="banner-preview">
+                                    <div className="banner-order-badge">{banner.order}</div>
+                                    <span className="banner-pos-badge">
+                                        {banner.position}
+                                    </span>
+                                    <img src={banner.image} alt={banner.title} className="banner-img" />
+                                    <div className="banner-overlay">
+                                        <h4 style={{ color: 'white', marginBottom: '0.2rem' }}>{banner.title}</h4>
+                                        <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem' }}>{banner.subtitle}</p>
+                                    </div>
+                                </div>
+                                <div className="banner-content">
+                                    <div className="banner-title">{banner.title}</div>
+                                    <div className="banner-subtitle">{banner.subtitle}</div>
+                                    <div className="banner-actions">
+                                        <button onClick={() => handleDelete(banner._id)} className="btn-delete">
+                                            <span>Remove Slide</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))
+                    ) : (
+                        <div className="empty-state">
+                            <h3>No Banners Yet</h3>
+                            <p>Capture your customer's attention with a stunning homepage banner.</p>
+                        </div>
+                    )}
+                </AnimatePresence>
             </div>
 
             <Modal

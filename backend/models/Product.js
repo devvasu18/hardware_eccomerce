@@ -20,6 +20,8 @@ const productSchema = new mongoose.Schema({
     isTopSale: { type: Boolean, default: false }, // Mark product as top selling item
     isDailyOffer: { type: Boolean, default: false }, // Mark product as daily offer/deal
     isNewArrival: { type: Boolean, default: false }, // Mark product as new arrival
+    newArrivalPriority: { type: Number, default: 0 }, // Priority for new arrivals section
+    newArrivalCreatedAt: { type: Date, default: Date.now },
 
     // Dynamic Pricing/Config
     // Dynamic Pricing/Config
@@ -43,5 +45,9 @@ const productSchema = new mongoose.Schema({
     // Size Variants (optional - for products like safety gear, clothing, etc.)
     availableSizes: [{ type: String }], // e.g., ['SM', 'M', 'L', 'XL']
 }, { timestamps: true });
+
+productSchema.index({ isNewArrival: 1 });
+productSchema.index({ createdAt: -1 });
+productSchema.index({ isVisible: 1, stock: 1, isNewArrival: 1 });
 
 module.exports = mongoose.model('Product', productSchema);

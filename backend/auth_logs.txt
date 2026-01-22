@@ -1,0 +1,42 @@
+[2026-01-21T13:38:51.541Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:38:51.548Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:38:51.560Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:38:51.621Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:38:51.640Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:38:51.665Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:39:25.602Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:39:25.689Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:39:25.743Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:39:25.805Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:39:25.827Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:39:25.905Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:39:48.728Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:39:48.730Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:39:48.731Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:39:48.755Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:39:48.758Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:39:48.761Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:40:10.423Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:40:10.432Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:40:10.455Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:40:10.486Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:40:10.489Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:40:10.498Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:45:02.717Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:45:02.786Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:45:02.948Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:45:03.224Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:45:03.315Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:45:03.338Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:56:19.736Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:56:19.738Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:56:19.739Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:56:19.764Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:56:19.767Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:56:19.767Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:56:24.572Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:56:24.573Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:56:24.574Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-21T13:56:24.603Z] 🔐 Auth - User authenticated: {}
+[2026-01-21T13:56:24.608Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-21T13:56:24.609Z] ❌ Admin Check - Access denied for role: undefined

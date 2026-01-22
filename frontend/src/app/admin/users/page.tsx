@@ -40,7 +40,15 @@ export default function UserManagement() {
 
     const fetchUsers = async () => {
         const token = localStorage.getItem('token');
+        const storedUser = localStorage.getItem('user');
+
+        console.log('Fetching users...');
+        console.log('Token exists:', !!token);
+        console.log('Stored user:', storedUser);
+
         if (!token) {
+            console.error('No token found in localStorage');
+            alert('No authentication token found. Please login again.');
             setLoading(false);
             return;
         }
@@ -51,22 +59,31 @@ export default function UserManagement() {
                     'Authorization': `Bearer ${token}`
                 }
             });
+
+            console.log('Response status:', res.status);
+
             if (res.ok) {
                 const data = await res.json();
+                console.log('Successfully fetched', data.length, 'users');
                 setUsers(data);
             } else {
+                const errorData = await res.json().catch(() => ({ message: res.statusText }));
+                console.error('API Error:', res.status, errorData);
+
                 if (res.status === 401 || res.status === 403) {
-                    alert('Access Denied: You are not authorized to view users. Please login as Admin.');
+                    alert(`Access Denied: ${errorData.message || 'You are not authorized to view users.'}\n\nYour role: ${currentUser?.role || 'unknown'}\nPlease login as Super Admin.`);
                 } else {
-                    alert('Failed to fetch users: ' + res.statusText);
+                    alert('Failed to fetch users: ' + (errorData.message || res.statusText));
                 }
             }
         } catch (error) {
-            alert('Failed to fetch users (Network Error)');
+            console.error('Network error:', error);
+            alert('Failed to fetch users (Network Error). Check if backend is running.');
         } finally {
             setLoading(false);
         }
     };
+
 
     const filteredUsers = users.filter(u => {
         const matchesSearch = (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase())) ||

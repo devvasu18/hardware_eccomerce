@@ -9,6 +9,7 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
+import CartSidebar from './components/CartSidebar';
 
 export default function RootLayout({
     children,
@@ -21,6 +22,7 @@ export default function RootLayout({
                 <AuthProvider>
                     <CartProvider>
                         {children}
+                        <CartSidebar />
                     </CartProvider>
                 </AuthProvider>
             </body>
