@@ -56,8 +56,8 @@ const orderSchema = new mongoose.Schema({
 
     status: {
         type: String,
-        enum: ['Pending', 'Processing', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Request Pending', 'Request Approved'],
-        default: 'Pending'
+        enum: ['Order Placed', 'Packed', 'Assigned to Bus', 'Delivered', 'Cancelled'],
+        default: 'Order Placed'
     },
 
     // Logistics (Bus System)

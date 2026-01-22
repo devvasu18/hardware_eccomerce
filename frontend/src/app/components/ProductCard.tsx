@@ -1,6 +1,8 @@
 'use client';
 import Link from 'next/link';
+import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useWishlist } from '../../context/WishlistContext';
 import ProductImage from './ProductImage';
 
 interface Product {
@@ -16,6 +18,8 @@ interface Product {
 
 export default function ProductCard({ product }: { product: Product }) {
     const { user } = useAuth();
+    const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+    const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
 
     // Pricing Logic
     const originalPrice = product.basePrice;
@@ -25,6 +29,28 @@ export default function ProductCard({ product }: { product: Product }) {
     if (user?.customerType === 'wholesale' && user.wholesaleDiscount) {
         finalPrice = Math.round(sellingPrice * (1 - user.wholesaleDiscount / 100));
     }
+
+    const inWishlist = isInWishlist(product._id);
+
+    const handleWishlistClick = async (e: React.MouseEvent) => {
+        e.preventDefault(); // Prevent navigation to product page
+        e.stopPropagation();
+
+        if (isAddingToWishlist) return;
+
+        setIsAddingToWishlist(true);
+        try {
+            if (inWishlist) {
+                await removeFromWishlist(product._id);
+            } else {
+                await addToWishlist(product._id);
+            }
+        } catch (error) {
+            console.error('Error toggling wishlist:', error);
+        } finally {
+            setIsAddingToWishlist(false);
+        }
+    };
 
     return (
         <Link href={`/products/${product._id}`} className="product-card">
@@ -41,6 +67,25 @@ export default function ProductCard({ product }: { product: Product }) {
                     </div>
                 )}
 
+                {/* Wishlist Button */}
+                <button
+                    className={`wishlist-btn ${inWishlist ? 'active' : ''}`}
+                    onClick={handleWishlistClick}
+                    disabled={isAddingToWishlist}
+                    aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill={inWishlist ? 'currentColor' : 'none'}
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                    >
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                </button>
 
             </div>
 
@@ -59,7 +104,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     </div>
 
                     <div className="product-action">
-                        <span className="btn-card-action">ADD</span>
+                        <span className="btn-card-action">View</span>
                     </div>
                 </div>
             </div>

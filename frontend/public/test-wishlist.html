@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wishlist API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f4f4f4;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Wishlist API Test</h1>
+    
+    <h2>Step 1: Test Backend Connection</h2>
+    <button onclick="testBackend()">Test Backend (http://localhost:5000/api/test)</button>
+    <div id="testResult" class="result"></div>
+
+    <h2>Step 2: Get Token</h2>
+    <p>Token: <span id="tokenDisplay">Not found</span></p>
+    <p>User: <span id="userDisplay">Not found</span></p>
+    <button onclick="showAuth()">Check Auth</button>
+
+    <h2>Step 3: Test Wishlist API</h2>
+    <input type="text" id="productId" placeholder="Enter Product ID" style="padding: 10px; width: 300px;">
+    <button onclick="testWishlist()">Add to Wishlist</button>
+    <div id="wishlistResult" class="result"></div>
+
+    <script>
+        function showAuth() {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            document.getElementById('tokenDisplay').textContent = token ? token.substring(0, 50) + '...' : 'Not found';
+            document.getElementById('userDisplay').textContent = user || 'Not found';
+        }
+
+        async function testBackend() {
+            const resultDiv = document.getElementById('testResult');
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/test');
+                const data = await response.json();
+                resultDiv.textContent = 'SUCCESS!\n' + JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+            } catch (error) {
+                resultDiv.textContent = 'ERROR!\n' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testWishlist() {
+            const resultDiv = document.getElementById('wishlistResult');
+            const productId = document.getElementById('productId').value;
+            
+            if (!productId) {
+                alert('Please enter a product ID');
+                return;
+            }
+
+            resultDiv.textContent = 'Testing...';
+            resultDiv.className = 'result';
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                resultDiv.textContent = 'ERROR: No token found. Please login first.';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            try {
+                console.log('Making request to add to wishlist...');
+                const response = await fetch('http://localhost:5000/api/wishlist/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({ productId }),
+                });
+
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
+
+                if (response.ok) {
+                    resultDiv.textContent = 'SUCCESS!\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.textContent = 'API ERROR!\nStatus: ' + response.status + '\n' + JSON.stringify(data, null, 2);
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.textContent = 'NETWORK ERROR!\n' + error.message;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // Auto-check auth on load
+        showAuth();
+    </script>
+</body>
+</html>

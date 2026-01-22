@@ -24,10 +24,18 @@ const protect = async (req, res, next) => {
             const decoded = jwt.verify(token, secret);
             req.user = await User.findById(decoded.id).select('-password');
 
+            // Check if user was found in database
+            if (!req.user) {
+                const errLog = `❌ Auth - User not found in database for ID: ${decoded.id}`;
+                console.error(errLog);
+                logToFile(errLog);
+                return res.status(401).json({ message: 'User not found. Please login again.' });
+            }
+
             const logInfo = `🔐 Auth - User authenticated: ${JSON.stringify({
-                id: req.user?._id,
-                username: req.user?.username,
-                role: req.user?.role
+                id: req.user._id,
+                username: req.user.username,
+                role: req.user.role
             })}`;
             console.log(logInfo);
             logToFile(logInfo);

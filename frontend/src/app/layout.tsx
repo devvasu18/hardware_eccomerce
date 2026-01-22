@@ -9,7 +9,9 @@ export const metadata: Metadata = {
 
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
+import { WishlistProvider } from '@/context/WishlistContext';
 import CartSidebar from './components/CartSidebar';
+import WishlistSidebar from './components/WishlistSidebar';
 
 export default function RootLayout({
     children,
@@ -21,8 +23,11 @@ export default function RootLayout({
             <body>
                 <AuthProvider>
                     <CartProvider>
-                        {children}
-                        <CartSidebar />
+                        <WishlistProvider>
+                            {children}
+                            <CartSidebar />
+                            <WishlistSidebar />
+                        </WishlistProvider>
                     </CartProvider>
                 </AuthProvider>
             </body>

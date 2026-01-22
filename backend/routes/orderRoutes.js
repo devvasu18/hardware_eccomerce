@@ -3,6 +3,8 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const StatusLog = require('../models/StatusLog');
+const User = require('../models/User');
 const TaxCalculator = require('../utils/taxCalculator');
 const { authenticateToken, optionalAuth } = require('../middleware/auth');
 
@@ -36,6 +38,12 @@ router.post('/create', optionalAuth, async (req, res) => {
                     message: 'Guest orders require name and phone number.'
                 });
             }
+        }
+
+        // Fetch user details for logs if logged in
+        let dbUser = null;
+        if (!isGuestOrder) {
+            dbUser = await User.findById(req.user.id);
         }
 
         // Extract State from Shipping Address for tax calculation
@@ -124,7 +132,7 @@ router.post('/create', optionalAuth, async (req, res) => {
             billingAddress: billingAddress || shippingAddress,
             paymentMethod: paymentMethod || 'COD',
             paymentStatus: paymentMethod === 'COD' ? 'COD' : 'Pending',
-            status: 'Pending',
+            status: 'Order Placed', // Updated to new status flow
             isGuestOrder
         };
 
@@ -142,6 +150,18 @@ router.post('/create', optionalAuth, async (req, res) => {
 
         const newOrder = new Order(orderData);
         const savedOrder = await newOrder.save();
+
+        // Create initial status log
+        const statusLog = new StatusLog({
+            order: savedOrder._id,
+            status: 'Order Placed',
+            updatedBy: isGuestOrder ? savedOrder._id : req.user.id, // Use order ID for guest orders
+            updatedByName: isGuestOrder ? 'Customer (Guest)' : (dbUser ? (dbUser.username || dbUser.email) : 'Customer'),
+            updatedByRole: isGuestOrder ? 'guest' : 'customer',
+            notes: 'Order created successfully',
+            isSystemGenerated: true
+        });
+        await statusLog.save();
 
         // Clear cart for logged-in users
         if (!isGuestOrder) {
@@ -247,7 +267,7 @@ router.patch('/:id/status', authenticateToken, async (req, res) => {
     try {
         const { status } = req.body;
 
-        const validStatuses = ['Pending', 'Processing', 'Packed', 'Shipped', 'Delivered', 'Cancelled'];
+        const validStatuses = ['Order Placed', 'Packed', 'Assigned to Bus', 'Delivered', 'Cancelled'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ message: 'Invalid status' });
         }
@@ -370,7 +390,7 @@ router.patch('/:id/cancel', optionalAuth, async (req, res) => {
         }
 
         // Can only cancel if not shipped
-        if (['Shipped', 'Delivered'].includes(order.status)) {
+        if (['Assigned to Bus', 'Delivered'].includes(order.status)) {
             return res.status(400).json({
                 message: 'Cannot cancel order that has been shipped or delivered'
             });

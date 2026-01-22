@@ -265,6 +265,62 @@ footer {
   border: 1px solid #fee2e2;
 }
 
+/* Wishlist Button on Product Card */
+.wishlist-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 10;
+  color: #64748b;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.wishlist-btn svg {
+  width: 20px;
+  height: 20px;
+  transition: all 0.3s ease;
+}
+
+.wishlist-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: #ff6b6b;
+  color: #ff6b6b;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+}
+
+.wishlist-btn.active {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+  border-color: #ff6b6b;
+  color: white;
+}
+
+.wishlist-btn.active:hover {
+  background: linear-gradient(135deg, #ee5a6f 0%, #dc2f55 100%);
+  transform: scale(1.1);
+}
+
+.wishlist-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wishlist-btn:active {
+  transform: scale(0.95);
+}
+
+
 .product-card-content {
   padding: 0 0.85rem 0.85rem 0.85rem;
   display: flex;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -9,7 +9,7 @@ import { useModal } from '@/app/hooks/useModal';
 
 export default function CheckoutPage() {
     const { items, clearCart } = useCart();
-    const { user } = useAuth();
+    const { user, login } = useAuth();
     const router = useRouter();
 
     // Split items into Available and On-Demand
@@ -23,6 +23,7 @@ export default function CheckoutPage() {
     const [guestName, setGuestName] = useState('');
     const [guestPhone, setGuestPhone] = useState('');
     const [guestEmail, setGuestEmail] = useState('');
+    const [orderPlaced, setOrderPlaced] = useState(false);
 
     const [selectedAddressId, setSelectedAddressId] = useState<string>('new');
     const [newAddress, setNewAddress] = useState({
@@ -56,13 +57,85 @@ export default function CheckoutPage() {
 
     const { modalState, hideModal, showError, showWarning, showSuccess } = useModal();
 
+    // Move duplicate Logic up to respect Hook Rules
+    const submitButtonText = useMemo(() => {
+        if (loading) return 'Processing...';
+        if (availableItems.length > 0 && requestItems.length > 0) return `Place Order & Submit Request`;
+        if (availableItems.length > 0) return `Place Order (${paymentMethod})`;
+        return 'Submit Request (No Payment Required)';
+    }, [loading, availableItems.length, requestItems.length, paymentMethod]);
+
+    useEffect(() => {
+        if (items.length === 0 && !orderPlaced) {
+            router.push('/cart');
+        }
+    }, [items, router, orderPlaced]);
+
     if (items.length === 0) {
-        if (typeof window !== 'undefined') router.push('/cart');
         return null;
     }
 
     const taxAmount = Math.round(cartTotal * 0.18);
     const grandTotal = cartTotal + taxAmount;
+
+    const handleSaveAddress = async () => {
+        if (!newAddress.street || !newAddress.city || !newAddress.state || !newAddress.pincode) {
+            showWarning('Please fill in all required address fields.', 'Address Incomplete');
+            return;
+        }
+
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+
+            // We use a separate loading state or just reuse loading? 
+            // Better to avoid blocking the whole form, but reuse loading for simplicity or local
+            // Let's use a local lock effectively by checking loading
+            if (loading) return;
+
+            // Or just allow it.
+
+            const res = await fetch('http://localhost:5000/api/auth/address', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ ...newAddress, isDefault: false })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                if (user) {
+                    // Update user context with new addresses
+                    const updatedUser = { ...user, savedAddresses: data.savedAddresses };
+                    login(token, updatedUser);
+                }
+
+                // Select the new address
+                const newAddr = data.savedAddresses[data.savedAddresses.length - 1];
+                if (newAddr && newAddr._id) {
+                    setSelectedAddressId(newAddr._id);
+                }
+
+                // Reset form
+                setNewAddress({
+                    street: '',
+                    landmark: '',
+                    city: '',
+                    state: 'Rajasthan',
+                    pincode: ''
+                });
+
+                showSuccess('Address saved to your account!');
+            } else {
+                showError(data.message || 'Failed to save address.');
+            }
+        } catch (e) {
+            console.error(e);
+            showError('Failed to save address. Please try again.');
+        }
+    };
 
     const handlePlaceOrder = async () => {
         // Validation helpers
@@ -186,6 +259,7 @@ export default function CheckoutPage() {
 
             // Final Outcome
             if ((availableItems.length === 0 || results.orderSuccess) && (requestItems.length === 0 || results.requestSuccess)) {
+                setOrderPlaced(true);
                 clearCart();
 
                 let successMessage = '';
@@ -222,12 +296,7 @@ export default function CheckoutPage() {
         }
     };
 
-    const submitButtonText = useMemo(() => {
-        if (loading) return 'Processing...';
-        if (availableItems.length > 0 && requestItems.length > 0) return `Place Order & Submit Request`;
-        if (availableItems.length > 0) return `Place Order (${paymentMethod})`;
-        return 'Submit Request (No Payment Required)';
-    }, [loading, availableItems.length, requestItems.length, paymentMethod]);
+
 
     return (
         <div className="container" style={{ padding: '4rem 0' }}>
@@ -386,6 +455,28 @@ export default function CheckoutPage() {
                                         />
                                     </div>
                                 </div>
+
+                                {user && (
+                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                                        <button
+                                            type="button"
+                                            onClick={handleSaveAddress}
+                                            style={{
+                                                background: '#3b82f6',
+                                                color: 'white',
+                                                border: 'none',
+                                                padding: '0.6rem 1.2rem',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontWeight: 600,
+                                                fontSize: '0.9rem',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                            }}
+                                        >
+                                            Save Address
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

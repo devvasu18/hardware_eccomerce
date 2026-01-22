@@ -38,6 +38,7 @@ export default function BannerManager() {
         position: 'center',
         order: 0
     });
+    const [editId, setEditId] = useState<string | null>(null);
     const { modalState, hideModal, showSuccess, showError, showModal } = useModal();
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -59,11 +60,33 @@ export default function BannerManager() {
         }
     };
 
+    const handleEdit = (banner: Banner) => {
+        setFormData({
+            title: banner.title,
+            subtitle: banner.subtitle,
+            image: banner.image,
+            position: banner.position,
+            order: banner.order
+        });
+        setEditId(banner._id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const resetForm = () => {
+        setFormData({ title: '', subtitle: '', image: '', position: 'center', order: 0 });
+        setEditId(null);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await fetch('http://localhost:5000/api/banners', {
-                method: 'POST',
+            const url = editId
+                ? `http://localhost:5000/api/banners/${editId}`
+                : 'http://localhost:5000/api/banners';
+            const method = editId ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -71,9 +94,9 @@ export default function BannerManager() {
                 body: JSON.stringify(formData)
             });
             if (res.ok) {
-                setFormData({ title: '', subtitle: '', image: '', position: 'center', order: 0 });
+                resetForm();
                 fetchBanners();
-                showSuccess('Banner has been added successfully!');
+                showSuccess(editId ? 'Banner updated successfully!' : 'Banner has been added successfully!');
             }
         } catch (error) {
             showError('Failed to add banner. Please try again.');
@@ -120,7 +143,7 @@ export default function BannerManager() {
                 className="admin-card"
             >
                 <h3 className="card-title">
-                    <span style={{ color: 'var(--primary)' }}>✦</span> Add New Hero Slide
+                    <span style={{ color: 'var(--primary)' }}>✦</span> {editId ? 'Edit Banner Slide' : 'Add New Hero Slide'}
                 </h3>
                 <div className="form-preview-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: '2rem' }}>
                     <form onSubmit={handleSubmit} className="form-grid">
@@ -179,8 +202,13 @@ export default function BannerManager() {
 
                         <div className="submit-area">
                             <button type="submit" className="btn-add">
-                                Add Banner Slide
+                                {editId ? 'Update Banner Slide' : 'Add Banner Slide'}
                             </button>
+                            {editId && (
+                                <button type="button" onClick={resetForm} className="btn-cancel" style={{ marginLeft: '1rem', padding: '0.75rem 1.5rem', background: '#ccc', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+                                    Cancel Edit
+                                </button>
+                            )}
                         </div>
                     </form>
 
@@ -241,6 +269,9 @@ export default function BannerManager() {
                                     <div className="banner-actions">
                                         <button onClick={() => handleDelete(banner._id)} className="btn-delete">
                                             <span>Remove Slide</span>
+                                        </button>
+                                        <button onClick={() => handleEdit(banner)} className="btn-edit" style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <span>Edit</span>
                                         </button>
                                     </div>
                                 </div>

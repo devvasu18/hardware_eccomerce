@@ -28,6 +28,7 @@ export default function CategoryManager() {
         gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         isActive: true
     });
+    const [editId, setEditId] = useState<string | null>(null);
 
     const { modalState, hideModal, showSuccess, showError, showModal } = useModal();
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -50,6 +51,33 @@ export default function CategoryManager() {
         }
     };
 
+    const handleEdit = (category: Category) => {
+        setFormData({
+            name: category.name,
+            slug: category.slug,
+            description: category.description,
+            imageUrl: category.imageUrl,
+            displayOrder: category.displayOrder,
+            gradient: category.gradient,
+            isActive: category.isActive
+        });
+        setEditId(category._id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const resetForm = () => {
+        setFormData({
+            name: '',
+            slug: '',
+            description: '',
+            imageUrl: '',
+            displayOrder: 0,
+            gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            isActive: true
+        });
+        setEditId(null);
+    };
+
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const name = e.target.value;
         const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -59,8 +87,13 @@ export default function CategoryManager() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await fetch('http://localhost:5000/api/categories', {
-                method: 'POST',
+            const url = editId
+                ? `http://localhost:5000/api/categories/${editId}`
+                : 'http://localhost:5000/api/categories';
+            const method = editId ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
@@ -69,17 +102,9 @@ export default function CategoryManager() {
             });
 
             if (res.ok) {
-                setFormData({
-                    name: '',
-                    slug: '',
-                    description: '',
-                    imageUrl: '',
-                    displayOrder: 0,
-                    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    isActive: true
-                });
+                resetForm();
                 fetchCategories();
-                showSuccess('Category created successfully!');
+                showSuccess(editId ? 'Category updated successfully!' : 'Category created successfully!');
             } else {
                 const err = await res.json();
                 showError(err.message || 'Failed to create category');
@@ -123,7 +148,7 @@ export default function CategoryManager() {
             <h1 style={{ marginBottom: '2rem' }}>Category Management</h1>
 
             <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', marginBottom: '3rem' }}>
-                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>Add New Category</h3>
+                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>{editId ? 'Edit Category' : 'Add New Category'}</h3>
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
                     <div className="form-group">
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Category Name</label>
@@ -207,8 +232,28 @@ export default function CategoryManager() {
                             onMouseOver={(e) => e.currentTarget.style.background = '#e65e0d'}
                             onMouseOut={(e) => e.currentTarget.style.background = '#F37021'}
                         >
-                            Create Category
+                            {editId ? 'Update Category' : 'Create Category'}
                         </button>
+                        {editId && (
+                            <button
+                                type="button"
+                                onClick={resetForm}
+                                className="btn"
+                                style={{
+                                    marginLeft: '1rem',
+                                    background: '#cbd5e1',
+                                    border: 'none',
+                                    padding: '0.75rem 2rem',
+                                    borderRadius: '6px',
+                                    color: '#475569',
+                                    fontWeight: 600,
+                                    fontSize: '1rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Cancel
+                            </button>
+                        )}
                     </div>
                 </form>
             </div>
@@ -236,7 +281,22 @@ export default function CategoryManager() {
                             <p style={{ fontSize: '0.85rem', color: '#64748b' }}>{cat.slug}</p>
                             <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>{cat.productCount} Products</p>
 
-                            <button onClick={() => handleDelete(cat._id)} className="btn btn-outline" style={{ width: '100%', borderColor: 'red', color: 'red' }}>Delete</button>
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                                <button
+                                    onClick={() => handleEdit(cat)}
+                                    className="btn btn-outline"
+                                    style={{ flex: 1, borderColor: '#3b82f6', color: '#3b82f6' }}
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(cat._id)}
+                                    className="btn btn-outline"
+                                    style={{ flex: 1, borderColor: 'red', color: 'red' }}
+                                >
+                                    Delete
+                                </button>
+                            </div>
                         </div>
                     ))
                 ) : (
