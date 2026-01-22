@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import Image from 'next/image';
 import './WhyChooseUs.css';
 
@@ -122,13 +122,13 @@ export default function WhyChooseUs() {
                 {trustIndicators.length > 0 && (
                     <div className="trust-indicators">
                         {trustIndicators.map((indicator, index) => (
-                            <div key={indicator._id}>
+                            <Fragment key={indicator._id}>
                                 {index > 0 && <div className="trust-divider" />}
                                 <div className="trust-item">
                                     <div className="trust-number">{indicator.value}</div>
                                     <div className="trust-label">{indicator.label}</div>
                                 </div>
-                            </div>
+                            </Fragment>
                         ))}
                     </div>
                 )}

@@ -321,6 +321,22 @@ export default function ProductManager() {
                                 <input type="text" value={editingProduct.countryOfOrigin ?? ''} onChange={e => setEditingProduct({ ...editingProduct, countryOfOrigin: e.target.value })} style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '6px' }} placeholder="e.g. India" />
                             </div>
 
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fffbeb', padding: '0.75rem', borderRadius: '6px', border: '1px solid #fcd34d' }}>
+                                <input
+                                    type="checkbox"
+                                    id="isOnDemand"
+                                    checked={editingProduct.isOnDemand || false}
+                                    onChange={e => setEditingProduct({ ...editingProduct, isOnDemand: e.target.checked })}
+                                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: '#fbbf24' }}
+                                />
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label htmlFor="isOnDemand" style={{ fontWeight: 600, cursor: 'pointer', userSelect: 'none', color: '#92400e' }}>
+                                        ⚠️ Mark as On-Demand / Procurement Only
+                                    </label>
+                                    <span style={{ fontSize: '0.75rem', color: '#b45309' }}>Stock will be ignored. Users can request a quote/procurement.</span>
+                                </div>
+                            </div>
+
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <input
                                     type="checkbox"

@@ -15,7 +15,15 @@ const userSchema = new mongoose.Schema({
         enum: ['regular', 'specialCustomer', 'superSpecialCustomer', 'wholesale'],
         default: 'regular'
     },
-    address: { type: String },
+    // address: { type: String }, // Deprecated in favor of savedAddresses
+    savedAddresses: [{
+        street: String,
+        city: String,
+        state: String,
+        pincode: String,
+        landmark: String,
+        isDefault: { type: Boolean, default: false }
+    }],
     wholesaleDiscount: { type: Number, default: 0 }, // Percentage discount for wholesale customers
     tallyLedgerName: { type: String }, // To map to Tally Ledger
 }, { timestamps: true });

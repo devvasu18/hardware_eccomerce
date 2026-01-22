@@ -36,42 +36,19 @@ export default function ProductActionArea({ product }: { product: Product }) {
 
     // Logic: 
     const isStrictlyOnDemand = product.isOnDemand;
-    const isHybridShift = !isStrictlyOnDemand && (quantity > product.stock);
-    const isRequestFlow = isStrictlyOnDemand || isHybridShift;
+    // Out of Stock if NOT on-demand AND stock < 1
+    const isOutOfStock = !isStrictlyOnDemand && product.stock < 1;
+    // Backorder if NOT on-demand, NOT out of stock, but quantity > stock
+    const isBackorder = !isStrictlyOnDemand && !isOutOfStock && (quantity > product.stock);
 
-    // Pricing Logic
     // Pricing Logic
     const originalPrice = product.basePrice;
     const sellingPrice = product.discountedPrice || product.basePrice;
 
     let finalPrice = sellingPrice;
-    const isWholesale = user?.customerType === 'wholesale';
-    // Also support legacy special types if they have discount set? For now strictly follow wholesale instruction or use generic discount check
     if (user?.wholesaleDiscount && user.wholesaleDiscount > 0) {
-        // Apply discount for any user with a discount set (Wholesale primarily)
         finalPrice = Math.round(sellingPrice * (1 - user.wholesaleDiscount / 100));
     }
-
-    const handleCreateRequest = async () => {
-        setSubmitting(true);
-        try {
-            const res = await fetch('http://localhost:5000/api/requests', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    productId: product._id,
-                    quantity: quantity,
-                    customerContact: contact
-                })
-            });
-            if (res.ok) setRequestSent(true);
-            else showError('Failed to submit request. Please try again.');
-        } catch (e) {
-            showError('Network error. Please check your connection and try again.');
-        } finally {
-            setSubmitting(false);
-        }
-    };
 
     const handleAddToCart = () => {
         addToCart({
@@ -80,20 +57,18 @@ export default function ProductActionArea({ product }: { product: Product }) {
             price: finalPrice,
             quantity: quantity,
             image: product.images && product.images.length > 0 ? product.images[0] : '',
-            size: product.availableSizes && product.availableSizes.length > 0 ? selectedSize : undefined
+            size: product.availableSizes && product.availableSizes.length > 0 ? selectedSize : undefined,
+            isOnDemand: product.isOnDemand || (product.stock < quantity) // Consider it on-demand for cart purposes if checking strictly or backorder? Actually simpler: just pass product.isOnDemand. The backend/cart logic handles overrides if needed.
+            // Wait, the user requirement for checkout implies we need to distinguishing.
+            // "if a customer adds two available items and one on-demand item..."
+            // The backorder case (ordering 5 when stock is 2) was called "Special Procurement Request" in text, so it should probably be treated as onDemand too? 
+            // The prompt says "Items that are checked as On-Demand ... should not show Out of Stock".
+            // Let's stick to product.isOnDemand for now, unless the user specific request for 'quantity > stock' to be split. 
+            // "Requesting more than available stock... processed as Special Procurement Request". 
+            // So yes, if backorder, treat as onDemand for checkout separation.
         });
         showSuccess(`Successfully added ${quantity} ${quantity === 1 ? 'item' : 'items'} to your cart!`, 'Added to Cart');
     };
-
-    if (requestSent) {
-        return (
-            <div style={{ background: '#ecfdf5', padding: '1.5rem', borderRadius: '8px', border: '1px solid #10b981', color: '#064e3b' }}>
-                <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Request Submitted!</h3>
-                <p>Your procurement request for <strong>{quantity} units</strong> has been sent to our admin team. We will call you at {contact.mobile} explicitly.</p>
-                <button onClick={() => setRequestSent(false)} style={{ marginTop: '1rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', color: '#065f46' }}>Make another request</button>
-            </div>
-        )
-    }
 
     return (
         <>
@@ -111,7 +86,7 @@ export default function ProductActionArea({ product }: { product: Product }) {
                             <span className="price-current">₹{originalPrice}</span>
                         )}
                     </div>
-                    {user?.wholesaleDiscount && user.wholesaleDiscount > 0 && (
+                    {(user?.wholesaleDiscount || 0) > 0 && (
                         <span className="wholesale-badge">
                             WHOLESALE DISCOUNT: -{user.wholesaleDiscount}%
                         </span>
@@ -143,6 +118,7 @@ export default function ProductActionArea({ product }: { product: Product }) {
                         <button
                             className="qty-btn"
                             onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            disabled={isOutOfStock}
                         >
                             -
                         </button>
@@ -151,66 +127,47 @@ export default function ProductActionArea({ product }: { product: Product }) {
                             value={quantity}
                             onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
                             className="qty-input"
+                            disabled={isOutOfStock}
                         />
                         <button
                             className="qty-btn"
                             onClick={() => setQuantity(quantity + 1)}
+                            disabled={isOutOfStock}
                         >
                             +
                         </button>
                     </div>
 
                     {!isStrictlyOnDemand && (
-                        <span className={`stock-badge ${(product.stock > 0 && quantity <= product.stock) ? 'in-stock' : 'out-stock'}`}>
-                            {product.stock > 0 ? `${product.stock} in stock` : 'Out of Stock'}
-                        </span>
+                        <div className="stock-info">
+                            <span className={`stock-badge ${!isOutOfStock ? 'in-stock' : 'out-stock'}`}>
+                                {!isOutOfStock ? `${product.stock} in stock` : 'Out of Stock'}
+                            </span>
+                        </div>
                     )}
 
-                    {isHybridShift && !isStrictlyOnDemand && (
+                    {isBackorder && !isStrictlyOnDemand && (
                         <p className="warning-text">
-                            ⚠️ Requesting more than available stock ({product.stock}). This will be processed as a <strong>Special Procurement Request</strong>.
+                            ⚠️ Ordering more than available stock ({product.stock}). The excess ({quantity - product.stock}) will be backordered.
+                        </p>
+                    )}
+
+                    {isStrictlyOnDemand && (
+                        <p className="info-text" style={{ color: '#F37021', fontWeight: 600, marginTop: '0.5rem' }}>
+                            ℹ️ This is an On-Demand item. It will be added to your procurement request list.
                         </p>
                     )}
                 </div>
 
-                {/* Action Button or Form */}
-                {isRequestFlow ? (
-                    <div className="procurement-form">
-                        <h4 className="form-title">Procurement Form</h4>
-                        <div className="form-inputs">
-                            <input
-                                type="text"
-                                placeholder="Your Name / Company Name"
-                                value={contact.name}
-                                onChange={(e) => setContact({ ...contact, name: e.target.value })}
-                                className="form-input"
-                            />
-                            <input
-                                type="tel"
-                                placeholder="Mobile Number (Required)"
-                                value={contact.mobile}
-                                onChange={(e) => setContact({ ...contact, mobile: e.target.value })}
-                                className="form-input"
-                            />
-                        </div>
-                        <button
-                            className="btn-submit-request"
-                            disabled={!contact.mobile || submitting}
-                            onClick={handleCreateRequest}
-                        >
-                            {submitting ? 'Sending...' : 'Submit Request'}
-                        </button>
-                        <p className="form-note">We will contact you with a quote and delivery timeline.</p>
-                    </div>
-                ) : (
-                    <button
-                        className="btn-add-to-cart"
-                        onClick={handleAddToCart}
-                    >
-                        ADD TO CART
-                    </button>
-                )}
-
+                {/* Action Button */}
+                <button
+                    className="btn-add-to-cart"
+                    onClick={handleAddToCart}
+                    disabled={isOutOfStock}
+                    style={isOutOfStock ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                >
+                    {isOutOfStock ? 'OUT OF STOCK' : 'ADD TO CART'}
+                </button>
             </div>
 
             <Modal

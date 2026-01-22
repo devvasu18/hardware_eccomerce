@@ -41,12 +41,8 @@ router.post('/add', authenticateToken, async (req, res) => {
         }
 
         // Validate stock (if not on-demand)
-        if (!product.isOnDemand && product.stock < quantity) {
-            return res.status(400).json({
-                message: 'Insufficient stock',
-                availableStock: product.stock
-            });
-        }
+        // STRICT CHECK REMOVED to allow Backorders/Hybrid Shift
+        // if (!product.isOnDemand && product.stock < quantity) { ... }
 
         let cart = await Cart.findOne({ user: req.user.id });
 
@@ -130,13 +126,9 @@ router.patch('/update', authenticateToken, async (req, res) => {
         }
 
         // Validate stock
-        const product = await Product.findById(productId);
-        if (product && !product.isOnDemand && product.stock < quantity) {
-            return res.status(400).json({
-                message: 'Insufficient stock',
-                availableStock: product.stock
-            });
-        }
+        // STRICT CHECK REMOVED to allow Backorders
+        // const product = await Product.findById(productId);
+        // if (product && !product.isOnDemand && product.stock < quantity) { ... }
 
         cart.items[itemIndex].quantity = quantity;
         await cart.save();

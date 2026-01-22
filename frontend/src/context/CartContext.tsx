@@ -10,6 +10,7 @@ export interface CartItem {
     quantity: number;
     image?: string;
     size?: string;
+    isOnDemand?: boolean;
 }
 
 interface CartContextType {
@@ -126,7 +127,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         price: item.price,
                         quantity: item.quantity,
                         image: item.product?.imageUrl || item.product?.images?.[0] || '',
-                        size: item.size
+                        size: item.size,
+                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
                     }));
                 setItems(dbItems);
             }
@@ -172,7 +174,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         price: item.price,
                         quantity: item.quantity,
                         image: item.product?.imageUrl || item.product?.images?.[0] || '',
-                        size: item.size
+                        size: item.size,
+                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
                     }));
                 setItems(syncedItems);
                 localStorage.removeItem('cart'); // Clear localStorage after successful sync
@@ -220,7 +223,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                             price: item.price,
                             quantity: item.quantity,
                             image: item.product?.imageUrl || item.product?.images?.[0] || '',
-                            size: item.size
+                            size: item.size,
+                            isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
                         }));
                     setItems(updatedItems);
                     openCart(); // Open sidebar on add
@@ -279,7 +283,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         price: item.price,
                         quantity: item.quantity,
                         image: item.product.imageUrl || item.product.images?.[0],
-                        size: item.size
+                        size: item.size,
+                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
                     }));
                     setItems(updatedItems);
                 } else {
@@ -327,7 +332,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         price: item.price,
                         quantity: item.quantity,
                         image: item.product.imageUrl || item.product.images?.[0],
-                        size: item.size
+                        size: item.size,
+                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
                     }));
                     setItems(updatedItems);
                 }

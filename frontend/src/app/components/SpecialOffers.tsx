@@ -91,10 +91,7 @@ export default function SpecialOffers() {
             <div className="container">
                 <div className="offers-header">
                     <div className="offers-title-section">
-                        <div className="flash-badge">
-                            <span className="flash-icon">⚡</span>
-                            <span>Limited Time Offers</span>
-                        </div>
+
                         <h2 className="offers-title">Special Deals This Week</h2>
                         <p className="offers-subtitle">
                             Grab these exclusive deals before they're gone. Wholesale prices slashed even further!

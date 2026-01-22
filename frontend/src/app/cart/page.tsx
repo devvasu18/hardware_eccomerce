@@ -53,7 +53,7 @@ export default function CartPage() {
                             </div>
                         </div>
                     ))}
-                    <button onClick={clearCart} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>Clear Cart</button>
+
                 </div>
 
                 {/* Summary */}

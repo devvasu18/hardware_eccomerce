@@ -8,6 +8,16 @@ interface User {
     role: string;
     customerType: string;
     wholesaleDiscount?: number;
+    mobile?: string;
+    savedAddresses?: Array<{
+        _id?: string;
+        street: string;
+        city: string;
+        state: string;
+        pincode: string;
+        landmark?: string;
+        isDefault?: boolean;
+    }>;
 }
 
 interface AuthContextType {

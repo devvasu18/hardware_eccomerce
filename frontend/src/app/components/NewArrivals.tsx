@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import ProductCard from './ProductCard';
+import NewArrivalsSlider from './NewArrivalsSlider';
 import './NewArrivals.css';
 
 interface Product {
@@ -15,7 +15,7 @@ interface Product {
 }
 
 async function getNewArrivals(): Promise<Product[]> {
-    const res = await fetch('http://localhost:5000/api/products/new-arrivals?limit=6', { cache: 'no-store' });
+    const res = await fetch('http://localhost:5000/api/products/new-arrivals?limit=10', { cache: 'no-store' });
     if (!res.ok) {
         return [];
     }
@@ -28,7 +28,7 @@ export default async function NewArrivals() {
     if (products.length === 0) return null;
 
     return (
-        <section className="container new-arrivals-section">
+        <section className="container new-arrivals-section" style={{ overflow: 'visible' }}>
             <div className="new-arrivals-header">
                 <div>
                     <h2 className="new-arrivals-title">New Arrivals</h2>
@@ -39,11 +39,7 @@ export default async function NewArrivals() {
                 </Link>
             </div>
 
-            <div className="grid">
-                {products.map((item) => (
-                    <ProductCard key={item._id} product={item} />
-                ))}
-            </div>
+            <NewArrivalsSlider products={products} />
         </section>
     );
 }

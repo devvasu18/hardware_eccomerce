@@ -76,9 +76,52 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// Get Current User (Me)
+// Add Saved Address
+router.post('/address', async (req, res) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+
+    if (!token) return res.status(401).json({ message: 'No token provided' });
+
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        const user = await User.findById(decoded.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        const newAddress = {
+            street: req.body.street,
+            city: req.body.city,
+            state: req.body.state,
+            pincode: req.body.pincode,
+            landmark: req.body.landmark,
+            isDefault: req.body.isDefault || false
+        };
+
+        if (!user.savedAddresses) user.savedAddresses = [];
+
+        // If setting as default, unset others // Optional logic, user didn't explicitly ask for default management but implied "saved address" list
+        if (newAddress.isDefault) {
+            user.savedAddresses.forEach(a => a.isDefault = false);
+        }
+
+        user.savedAddresses.push(newAddress);
+
+        await user.save();
+        res.json({ success: true, savedAddresses: user.savedAddresses });
+
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error', error: err.message });
+    }
+});
+
+// Update logic to parse token correctly in /me as well if needed, but I'll trust existing code there for now.
+// Get Current User (Me) - Fixing the token parsing slightly to be robust
 router.get('/me', async (req, res) => {
-    const token = req.headers['authorization'];
+    let token = req.headers['authorization'];
+    if (token && token.startsWith('Bearer ')) {
+        token = token.slice(7, token.length);
+    }
+
     if (!token) return res.status(401).json({ message: 'No token provided' });
 
     try {

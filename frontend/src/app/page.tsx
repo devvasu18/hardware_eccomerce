@@ -56,9 +56,9 @@ export default async function Home() {
                 </div>
             </section>
 
-            <CategorySection />
-
             <NewArrivals />
+
+            <CategorySection />
 
             <SpecialOffers />
 
