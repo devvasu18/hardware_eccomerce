@@ -1,14 +1,16 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import api from "../../../utils/api";
+import api from "../../../../../utils/api";
 import { useRouter } from "next/navigation";
-import { FiSave, FiTag } from "react-icons/fi";
-import { useState } from "react";
+import { FiSave } from "react-icons/fi";
+import { useState, useEffect } from "react";
 
-export default function AddCouponPage() {
+export default function EditCouponPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
-    const { register, handleSubmit, watch, setValue } = useForm({
+    const [couponId, setCouponId] = useState<string | null>(null);
+
+    const { register, handleSubmit, watch, setValue, reset } = useForm({
         defaultValues: {
             code: '',
             description: '',
@@ -17,28 +19,60 @@ export default function AddCouponPage() {
             max_discount_amount: 0,
             min_cart_value: 0,
             usage_limit: 0,
-            status: true,
-            statusBool: "true" // For radio group
+            statusBool: "true"
         }
     });
 
     const discountType = watch("discount_type");
 
-    const onSubmit = async (data: any) => {
+    useEffect(() => {
+        params.then(p => {
+            setCouponId(p.id);
+            fetchCoupon(p.id);
+        });
+    }, [params]);
+
+    const fetchCoupon = async (id: string) => {
         try {
-            const payload = { ...data, status: data.statusBool === "true" };
-            await api.post('/coupons', payload);
-            alert('Coupon created!');
-            router.push('/admin/coupons');
-        } catch (error: any) {
-            console.error(error);
-            alert(error.response?.data?.message || 'Failed to create coupon');
+            // My route getCoupons returns ALL. I don't have getById.
+            // I'll just fetch all and find it. Not efficient but works for now as per my controller.
+            const res = await api.get('/coupons');
+            const found = res.data.find((c: any) => c._id === id);
+
+            if (found) {
+                reset({
+                    code: found.code,
+                    description: found.description,
+                    discount_type: found.discount_type,
+                    discount_value: found.discount_value,
+                    max_discount_amount: found.max_discount_amount,
+                    min_cart_value: found.min_cart_value,
+                    usage_limit: found.usage_limit,
+                    statusBool: found.status ? "true" : "false"
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load coupon', error);
         }
     };
 
+    const onSubmit = async (data: any) => {
+        try {
+            const payload = { ...data, status: data.statusBool === "true" };
+            await api.put(`/coupons/${couponId}`, payload);
+            alert('Coupon updated!');
+            router.push('/admin/coupons');
+        } catch (error: any) {
+            console.error(error);
+            alert(error.response?.data?.message || 'Failed to update coupon');
+        }
+    };
+
+    if (!couponId) return <div className="p-10">Loading...</div>;
+
     return (
         <div className="container">
-            <h1 className="page-title">Create New Coupon</h1>
+            <h1 className="page-title">Edit Coupon</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} style={{ maxWidth: '800px' }}>
                 <div className="card">
@@ -50,18 +84,14 @@ export default function AddCouponPage() {
                             <input
                                 {...register("code", { required: true, pattern: /^[A-Z0-9]+$/ })}
                                 className="form-input"
-                                placeholder="e.g. SUMMER50"
                                 style={{ textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 'bold' }}
-                                onChange={(e) => {
-                                    setValue('code', e.target.value.toUpperCase());
-                                }}
+                                onChange={(e) => setValue('code', e.target.value.toUpperCase())}
                             />
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Uppercase letters and numbers only.</p>
                         </div>
 
                         <div className="form-group">
                             <label className="form-label">Description *</label>
-                            <input {...register("description", { required: true })} className="form-input" placeholder="e.g. Get 50% off on all items" />
+                            <input {...register("description", { required: true })} className="form-input" />
                         </div>
 
                         {/* Discount Logic */}
@@ -79,12 +109,12 @@ export default function AddCouponPage() {
                             <div className="form-grid">
                                 <div className="form-group">
                                     <label className="form-label">Discount Value * {discountType === 'Percentage' ? '(%)' : '(₹)'}</label>
-                                    <input type="number" {...register("discount_value", { required: true, min: 1 })} className="form-input" placeholder="0" />
+                                    <input type="number" {...register("discount_value", { required: true, min: 1 })} className="form-input" />
                                 </div>
                                 {discountType === 'Percentage' && (
                                     <div className="form-group">
                                         <label className="form-label">Max Discount Amount (₹)</label>
-                                        <input type="number" {...register("max_discount_amount")} className="form-input" placeholder="0 (No Limit)" />
+                                        <input type="number" {...register("max_discount_amount")} className="form-input" />
                                     </div>
                                 )}
                             </div>
@@ -93,11 +123,11 @@ export default function AddCouponPage() {
                         {/* Constraints */}
                         <div className="form-group">
                             <label className="form-label">Minimum Cart Value (₹)</label>
-                            <input type="number" {...register("min_cart_value")} className="form-input" placeholder="0" />
+                            <input type="number" {...register("min_cart_value")} className="form-input" />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Total Usage Limit</label>
-                            <input type="number" {...register("usage_limit")} className="form-input" placeholder="0 (Unlimited)" />
+                            <input type="number" {...register("usage_limit")} className="form-input" />
                         </div>
 
                         <div className="form-group">
@@ -114,9 +144,12 @@ export default function AddCouponPage() {
 
                     </div>
 
-                    <div style={{ marginTop: '2rem' }}>
+                    <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem' }}>
                         <button type="submit" className="btn btn-primary">
-                            <FiSave /> Create Coupon
+                            <FiSave /> Update Coupon
+                        </button>
+                        <button type="button" onClick={() => router.push('/admin/coupons')} className="btn btn-secondary">
+                            Cancel
                         </button>
                     </div>
 
