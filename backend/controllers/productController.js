@@ -11,6 +11,45 @@ const deleteFile = (filePath) => {
     });
 };
 
+// @desc    Get all products (Admin)
+// @route   GET /api/admin/products
+// @access  Admin
+exports.getAdminProducts = async (req, res) => {
+    try {
+        const products = await Product.find({})
+            .populate('category', 'name')
+            .populate('sub_category', 'name')
+            .populate('brand', 'name')
+            .populate('offer', 'title percentage')
+            .populate('hsn_code', 'hsn_code gst_rate')
+            .sort({ createdAt: -1 });
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch products', error: error.message });
+    }
+};
+
+// @desc    Get single product (Admin)
+// @route   GET /api/admin/products/:id
+// @access  Admin
+exports.getAdminProductById = async (req, res) => {
+    try {
+        const product = await Product.findById(req.params.id)
+            .populate('category')
+            .populate('sub_category')
+            .populate('brand')
+            .populate('offer')
+            .populate('hsn_code');
+
+        if (!product) {
+            return res.status(404).json({ message: 'Product not found' });
+        }
+        res.json(product);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to fetch product', error: error.message });
+    }
+};
+
 // @desc    Create new product
 // @route   POST /api/admin/products
 // @access  Admin

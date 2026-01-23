@@ -45,6 +45,9 @@ app.use('/api/users', require('./routes/userRoutes')); // User Management
 app.use('/api/categories', require('./routes/categoryRoutes')); // Category Management
 app.use('/api/special-offers', require('./routes/specialOfferRoutes')); // Special Offers
 app.use('/api/homepage', require('./routes/homepageRoutes')); // Homepage Features & Trust Indicators
+app.use('/api/admin/parties', require('./routes/partyRoutes')); // Party Master
+app.use('/api/admin/stock', require('./routes/stockRoutes')); // Stock Entry & Ledger
+app.use('/api/coupons', require('./routes/couponRoutes')); // Coupon Management
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

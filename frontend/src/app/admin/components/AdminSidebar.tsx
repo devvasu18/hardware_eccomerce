@@ -34,6 +34,7 @@ export default function AdminSidebar() {
     const [collapsed, setCollapsed] = useState(false);
     const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
         'Product Manager': true,
+        'Stock Manager': false,
         'System Settings': false
     });
 
@@ -54,6 +55,15 @@ export default function AdminSidebar() {
         { label: 'Dashboard', path: '/admin', icon: <FiGrid />, roles: ['super_admin', 'ops_admin'] },
         { label: 'Orders & Logistics', path: '/admin/orders', icon: <FiTruck />, roles: ['super_admin', 'ops_admin', 'logistics_admin'] },
         { label: 'Procurement Requests', path: '/admin/requests', icon: <FiFileText />, roles: ['super_admin', 'ops_admin', 'support_staff'] },
+        {
+            label: 'Stock Manager', path: '/admin/stock', icon: <FiGrid />, roles: ['super_admin', 'ops_admin', 'logistics_admin'], children: [
+                { label: 'Stock Entry', path: '/admin/stock', roles: ['super_admin', 'ops_admin'] },
+                { label: 'Party Master', path: '/admin/masters/parties', roles: ['super_admin', 'ops_admin'] }
+            ]
+        },
+        { label: 'Banner Manager', path: '/admin/banners', icon: <FiImage />, roles: ['super_admin', 'ops_admin'] },
+        { label: 'Coupons', path: '/admin/coupons', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
+
 
         // Grouped Product Manager
         {

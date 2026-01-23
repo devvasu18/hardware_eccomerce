@@ -3,7 +3,7 @@ const router = express.Router();
 const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
-const { createProduct, updateProduct, deleteProduct } = require('../controllers/productController');
+const { createProduct, updateProduct, deleteProduct, getAdminProducts, getAdminProductById } = require('../controllers/productController');
 
 // Upload configuration for product images
 const productUploads = upload.fields([
@@ -43,6 +43,8 @@ router.patch('/:id/new-arrival', protect, admin, async (req, res) => {
 });
 
 // CRUD Routes
+router.get('/', protect, admin, getAdminProducts);
+router.get('/:id', protect, admin, getAdminProductById);
 router.post('/', protect, admin, productUploads, createProduct);
 router.put('/:id', protect, admin, productUploads, updateProduct);
 router.delete('/:id', protect, admin, deleteProduct);

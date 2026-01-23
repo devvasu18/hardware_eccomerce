@@ -40,3 +40,43 @@
 [2026-01-21T13:56:24.603Z] 🔐 Auth - User authenticated: {}
 [2026-01-21T13:56:24.608Z] 🔑 Admin Check - User: undefined | Role: undefined | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
 [2026-01-21T13:56:24.609Z] ❌ Admin Check - Access denied for role: undefined
+[2026-01-23T05:31:51.278Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:33:15.875Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:33:17.327Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:34:05.978Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:34:06.675Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:34:06.680Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:34:06.681Z] ✅ Admin Check - Access granted
+[2026-01-23T05:34:06.686Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:34:06.687Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:34:06.688Z] ✅ Admin Check - Access granted
+[2026-01-23T05:34:06.746Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:34:06.747Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:34:06.747Z] ✅ Admin Check - Access granted
+[2026-01-23T05:34:06.848Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:34:06.849Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:34:06.850Z] ✅ Admin Check - Access granted
+[2026-01-23T05:37:09.022Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:37:09.024Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:37:09.025Z] ✅ Admin Check - Access granted
+[2026-01-23T05:37:09.029Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:37:09.036Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:37:09.037Z] ✅ Admin Check - Access granted
+[2026-01-23T05:37:09.263Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:37:09.267Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:37:09.268Z] ✅ Admin Check - Access granted
+[2026-01-23T05:37:09.299Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:37:09.300Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:37:09.301Z] ✅ Admin Check - Access granted
+[2026-01-23T05:40:04.649Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:40:04.652Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:40:04.656Z] ✅ Admin Check - Access granted
+[2026-01-23T05:40:04.698Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:40:04.699Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:40:04.699Z] ✅ Admin Check - Access granted
+[2026-01-23T05:40:34.239Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:40:34.240Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:40:34.241Z] ✅ Admin Check - Access granted
+[2026-01-23T05:40:34.243Z] 🔐 Auth - User authenticated: {"id":"697080d684794c8f7e66e41d","username":"Super Admin","role":"super_admin"}
+[2026-01-23T05:40:34.243Z] 🔑 Admin Check - User: Super Admin | Role: super_admin | Required: super_admin,ops_admin,logistics_admin,accounts_admin,support_staff,admin
+[2026-01-23T05:40:34.244Z] ✅ Admin Check - Access granted

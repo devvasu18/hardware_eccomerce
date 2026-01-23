@@ -1,17 +1,8 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const fs = require('fs');
-const path = require('path');
 
-const logToFile = (message) => {
-    try {
-        const timestamp = new Date().toISOString();
-        const logMessage = `[${timestamp}] ${message}\n`;
-        fs.appendFileSync(path.join(__dirname, '../auth_logs.txt'), logMessage);
-    } catch (err) {
-        console.error('Failed to log to file:', err.message);
-    }
-};
+
+
 
 const protect = async (req, res, next) => {
     let token;
@@ -28,7 +19,7 @@ const protect = async (req, res, next) => {
             if (!req.user) {
                 const errLog = `❌ Auth - User not found in database for ID: ${decoded.id}`;
                 console.error(errLog);
-                logToFile(errLog);
+
                 return res.status(401).json({ message: 'User not found. Please login again.' });
             }
 
@@ -38,19 +29,19 @@ const protect = async (req, res, next) => {
                 role: req.user.role
             })}`;
             console.log(logInfo);
-            logToFile(logInfo);
+
 
             next();
         } catch (error) {
             const errLog = `❌ Auth - Token verification failed: ${error.message} | Token provided: ${token ? token.substring(0, 10) + '...' : 'none'}`;
             console.error(errLog);
-            logToFile(errLog);
+
             return res.status(401).json({ message: 'Not authorized, token failed' });
         }
     } else {
         const noTokenLog = `❌ Auth - No token provided or invalid format: ${req.headers.authorization}`;
         console.error(noTokenLog);
-        logToFile(noTokenLog);
+
         return res.status(401).json({ message: 'Not authorized, no token' });
     }
 };
@@ -60,17 +51,17 @@ const admin = (req, res, next) => {
 
     const logInfo = `🔑 Admin Check - User: ${req.user?.username} | Role: ${req.user?.role} | Required: ${adminRoles}`;
     console.log(logInfo);
-    logToFile(logInfo);
+
 
     if (req.user && adminRoles.includes(req.user.role)) {
         const successLog = '✅ Admin Check - Access granted';
         console.log(successLog);
-        logToFile(successLog);
+
         next();
     } else {
         const failLog = `❌ Admin Check - Access denied for role: ${req.user?.role}`;
         console.log(failLog);
-        logToFile(failLog);
+
         res.status(401).json({
             message: 'Not authorized as an admin',
             your_role: req.user?.role,

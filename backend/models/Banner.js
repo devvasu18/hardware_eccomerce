@@ -1,24 +1,51 @@
 const mongoose = require('mongoose');
 
 const bannerSchema = new mongoose.Schema({
-    title: { type: String, required: true },
-    subtitle: { type: String, required: true },
-    image: { type: String, required: true },
-    position: {
+    title: {
         type: String,
-        enum: [
-            'top-left', 'top-center', 'top-right',
-            'center-left', 'center', 'center-right',
-            'bottom-left', 'bottom-center', 'bottom-right'
-        ],
-        default: 'center'
+        required: true,
+        trim: true
     },
-    buttonText: { type: String, default: 'Browse Catalog' },
-    buttonLink: { type: String, default: '/products' },
-    isActive: { type: Boolean, default: true },
-    order: { type: Number, default: 0 }
+    slug: {
+        type: String,
+        unique: true
+    },
+    description: {
+        type: String
+    },
+    image: {
+        type: String,
+        required: true
+    },
+    offer_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Offer'
+    },
+    product_ids: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product'
+    }],
+    isActive: {
+        type: Boolean,
+        default: true
+    }
 }, {
-    timestamps: true
+    timestamps: true // created_at logic
+});
+
+// Auto-generate slug before save
+bannerSchema.pre('save', function (next) {
+    if (this.isModified('title')) {
+        // Simple slugify implementation
+        this.slug = this.title
+            .toString()
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, '-')     // Replace spaces with -
+            .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+            .replace(/\-\-+/g, '-');  // Replace multiple - with single -
+    }
+    next();
 });
 
 module.exports = mongoose.model('Banner', bannerSchema);

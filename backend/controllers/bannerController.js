@@ -1,0 +1,162 @@
+const Banner = require('../models/Banner');
+const Product = require('../models/Product');
+const fs = require('fs');
+const path = require('path');
+
+// Helper to delete file
+const deleteFile = (filePath) => {
+    if (!filePath) return;
+    const fullPath = path.join(__dirname, '..', filePath);
+    fs.unlink(fullPath, (err) => {
+        if (err) console.error(`Failed to delete file: ${fullPath}`, err);
+    });
+};
+
+// @desc    Get all banners
+// @route   GET /api/banners
+// @access  Public
+exports.getBanners = async (req, res) => {
+    try {
+        const banners = await Banner.find({})
+            .populate('offer_id', 'title percentage')
+            .populate('product_ids', 'title opening_stock')
+            .sort({ createdAt: -1 });
+        res.json(banners);
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching banners', error: error.message });
+    }
+};
+
+// @desc    Create banner
+// @route   POST /api/banners
+// @access  Admin
+exports.createBanner = async (req, res) => {
+    try {
+        const { title, description, offer_id, manual_product_ids } = req.body;
+
+        if (!req.file) {
+            return res.status(400).json({ message: 'Image is required' });
+        }
+
+        const image = req.file.path.replace(/\\/g, '/');
+
+        // Logic: Calculate product_ids
+        let product_ids = [];
+
+        if (offer_id) {
+            // Fetch all products linked to this offer
+            const offerProducts = await Product.find({ offer: offer_id }).select('_id');
+            product_ids = offerProducts.map(p => p._id);
+        } else if (manual_product_ids) {
+            // Parse if coming as string/JSON or array
+            // If from FormData, it might be a comma separated string
+            if (typeof manual_product_ids === 'string') {
+                product_ids = manual_product_ids.split(',').filter(id => id.trim() !== '');
+            } else if (Array.isArray(manual_product_ids)) {
+                product_ids = manual_product_ids;
+            }
+        }
+
+        const banner = await Banner.create({
+            title,
+            description,
+            image,
+            offer_id: offer_id || undefined,
+            product_ids
+        });
+
+        res.status(201).json(banner);
+
+    } catch (error) {
+        if (req.file) deleteFile(req.file.path); // Cleanup
+        res.status(400).json({ message: 'Failed to create banner', error: error.message });
+    }
+};
+
+// @desc    Update banner
+// @route   PUT /api/banners/:id
+// @access  Admin
+exports.updateBanner = async (req, res) => {
+    try {
+        const banner = await Banner.findById(req.params.id);
+        if (!banner) return res.status(404).json({ message: 'Banner not found' });
+
+        const { title, description, offer_id, manual_product_ids } = req.body;
+
+        // Update basic fields
+        if (title) banner.title = title;
+        if (description !== undefined) banner.description = description;
+
+        // Update image if provided
+        if (req.file) {
+            deleteFile(banner.image);
+            banner.image = req.file.path.replace(/\\/g, '/');
+        }
+
+        // Logic: Re-calculate product_ids if linking changes
+        // If offer_id is explicitly sent (even empty), we process it
+        if (offer_id !== undefined) {
+            banner.offer_id = offer_id || undefined;
+            if (offer_id) {
+                const offerProducts = await Product.find({ offer: offer_id }).select('_id');
+                banner.product_ids = offerProducts.map(p => p._id);
+            } else {
+                // Cleared offer, potentially clear products or keep existing? 
+                // Usually if switching logic, we reset.
+                // If manual_product_ids is NOT provided, we might keep current products? 
+                // Let's assume if offer is cleared, usage switches to manual or empty.
+                if (!manual_product_ids) banner.product_ids = [];
+            }
+        }
+
+        if (manual_product_ids !== undefined && !banner.offer_id) {
+            if (typeof manual_product_ids === 'string') {
+                banner.product_ids = manual_product_ids.split(',').filter(id => id.trim() !== '');
+            } else if (Array.isArray(manual_product_ids)) {
+                banner.product_ids = manual_product_ids;
+            }
+        }
+
+        const updatedBanner = await banner.save();
+        res.json(updatedBanner);
+
+    } catch (error) {
+        if (req.file) deleteFile(req.file.path);
+        res.status(400).json({ message: 'Failed to update banner', error: error.message });
+    }
+};
+
+// @desc    Delete banner
+// @route   DELETE /api/banners/:id
+// @access  Admin
+exports.deleteBanner = async (req, res) => {
+    try {
+        const banner = await Banner.findById(req.params.id);
+        if (!banner) return res.status(404).json({ message: 'Banner not found' });
+
+        deleteFile(banner.image);
+        await banner.deleteOne();
+
+        res.json({ message: 'Banner deleted' });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to delete banner', error: error.message });
+    }
+};
+
+// @desc    Remove product from banner
+// @route   DELETE /api/banners/:id/products/:productId
+// @access  Admin
+exports.removeProductFromBanner = async (req, res) => {
+    try {
+        const { id, productId } = req.params;
+        const banner = await Banner.findById(id);
+        if (!banner) return res.status(404).json({ message: 'Banner not found' });
+
+        banner.product_ids = banner.product_ids.filter(pid => pid.toString() !== productId);
+        await banner.save();
+
+        res.json({ message: 'Product removed from banner', banner });
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to remove product', error: error.message });
+    }
+};
