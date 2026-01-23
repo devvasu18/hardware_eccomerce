@@ -24,7 +24,8 @@ router.post('/', async (req, res) => {
 // Get Featured Products (must come before generic GET /)
 router.get('/featured', async (req, res) => {
     try {
-        const products = await Product.find({ isVisible: true, isFeatured: true });
+        const products = await Product.find({ isVisible: true, isFeatured: true })
+            .populate('category', 'name');
         res.json(products);
     } catch (err) {
         res.status(500).json(err);
@@ -34,7 +35,8 @@ router.get('/featured', async (req, res) => {
 // Get Top Sales Products
 router.get('/top-sales', async (req, res) => {
     try {
-        const products = await Product.find({ isVisible: true, isTopSale: true });
+        const products = await Product.find({ isVisible: true, isTopSale: true })
+            .populate('category', 'name');
         res.json(products);
     } catch (err) {
         res.status(500).json(err);
@@ -44,7 +46,8 @@ router.get('/top-sales', async (req, res) => {
 // Get Daily Offers
 router.get('/daily-offers', async (req, res) => {
     try {
-        const products = await Product.find({ isVisible: true, isDailyOffer: true });
+        const products = await Product.find({ isVisible: true, isDailyOffer: true })
+            .populate('category', 'name');
         res.json(products);
     } catch (err) {
         res.status(500).json(err);
@@ -67,6 +70,7 @@ router.get('/new-arrivals', async (req, res) => {
         };
 
         let productsQuery = Product.find(query)
+            .populate('category', 'name')
             .sort({ newArrivalPriority: -1, newArrivalCreatedAt: -1, createdAt: -1 });
 
         if (limit > 0) {
@@ -95,7 +99,8 @@ router.get('/', async (req, res) => {
             console.log('[API] No category filter provided. Fetching all visible products.');
         }
 
-        const products = await Product.find(query);
+        const products = await Product.find(query)
+            .populate('category', 'name');
         res.json(products);
     } catch (err) {
         res.status(500).json(err);

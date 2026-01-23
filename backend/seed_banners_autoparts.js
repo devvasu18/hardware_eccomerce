@@ -8,7 +8,7 @@ const banners = [
     {
         title: 'Premium Engine Components',
         subtitle: 'Uncompromising performance for your vehicle. Explore our range of high-performance engine parts.',
-        image: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=1600&auto=format&fit=crop',
+        image: 'https://loremflickr.com/1600/800/engine,car',
         position: 'center-left',
         buttonText: 'Shop Engines',
         buttonLink: '/products?category=engine-parts',
@@ -17,7 +17,7 @@ const banners = [
     {
         title: 'Safety First: Precision Brakes',
         subtitle: 'Responsive braking power you can trust. High-quality pads, rotors, and calipers for every make.',
-        image: 'https://images.unsplash.com/photo-1601000676461-291771457805?q=80&w=1600&auto=format&fit=crop',
+        image: 'https://loremflickr.com/1600/800/brake,car',
         position: 'center-right',
         buttonText: 'View Brake Kits',
         buttonLink: '/products?category=brake-system',
@@ -26,7 +26,7 @@ const banners = [
     {
         title: 'Illuminate the Road Ahead',
         subtitle: 'Crystal clear visibility with our premium lighting solutions. LED kits and headlight assemblies.',
-        image: 'https://images.unsplash.com/photo-1580273916550-e323be2ebdd9?q=80&w=1600&auto=format&fit=crop',
+        image: 'https://loremflickr.com/1600/800/car,light',
         position: 'bottom-left',
         buttonText: 'Shop Lighting',
         buttonLink: '/products?category=lighting',
@@ -35,7 +35,7 @@ const banners = [
     {
         title: 'Master Your Suspension',
         subtitle: 'Smooth handling and superior control. Shock absorbers, struts, and more for the perfect ride.',
-        image: 'https://images.unsplash.com/photo-1550508538-34c56aec7f43?q=80&w=1600&auto=format&fit=crop',
+        image: 'https://loremflickr.com/1600/800/suspension,mechanic',
         position: 'center',
         buttonText: 'Upgrade Suspension',
         buttonLink: '/products?category=suspension-steering',

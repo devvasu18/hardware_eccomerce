@@ -114,11 +114,17 @@ export default function SpecialOffers() {
                                 </div>
                                 {offer.productId?.imageUrl || offer.productId?.images?.[0] ? (
                                     <Image
-                                        src={offer.productId.imageUrl || offer.productId.images[0]}
+                                        src={(offer.productId.imageUrl || offer.productId.images?.[0])?.startsWith('http')
+                                            ? (offer.productId.imageUrl || offer.productId.images?.[0])
+                                            : `http://localhost:5000/${(offer.productId.imageUrl || offer.productId.images?.[0])?.startsWith('/')
+                                                ? (offer.productId.imageUrl || offer.productId.images?.[0]).slice(1)
+                                                : (offer.productId.imageUrl || offer.productId.images?.[0])}`
+                                        }
                                         alt={offer.title}
-                                        width={280}
-                                        height={180}
+                                        width={240}
+                                        height={130}
                                         className="deal-product-image"
+                                        unoptimized={true}
                                     />
                                 ) : (
                                     <div className="deal-image-placeholder">
@@ -159,7 +165,7 @@ export default function SpecialOffers() {
                 </div>
 
                 <div className="view-all-deals">
-                    <Link href="/products?filter=deals" className="view-all-deals-btn">
+                    <Link href="/special-deals" className="view-all-deals-btn">
                         View All Special Offers
                         <span className="btn-shine" />
                     </Link>

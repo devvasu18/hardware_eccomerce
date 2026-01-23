@@ -89,7 +89,12 @@ export default function ProductList() {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                         <div className="img-preview">
                                             {product.featured_image ? (
-                                                <Image src={`/api/${product.featured_image}`} alt={product.title} fill style={{ objectFit: 'contain' }} />
+                                                <Image
+                                                    src={product.featured_image.startsWith('http') ? product.featured_image : `http://localhost:5000/${product.featured_image}`}
+                                                    alt={product.title}
+                                                    fill
+                                                    style={{ objectFit: 'contain' }}
+                                                />
                                             ) : (
                                                 <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#ccc' }}>N/A</div>
                                             )}

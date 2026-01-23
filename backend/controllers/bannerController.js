@@ -78,6 +78,14 @@ exports.createBanner = async (req, res) => {
 // @access  Admin
 exports.updateBanner = async (req, res) => {
     try {
+        console.log('Banner Update Request:', {
+            params: req.params,
+            body: req.body,
+            file: req.file ? 'File present' : 'No file',
+            offer_id_type: typeof req.body.offer_id,
+            manual_product_ids_type: typeof req.body.manual_product_ids
+        });
+
         const banner = await Banner.findById(req.params.id);
         if (!banner) return res.status(404).json({ message: 'Banner not found' });
 
@@ -94,26 +102,41 @@ exports.updateBanner = async (req, res) => {
         }
 
         // Logic: Re-calculate product_ids if linking changes
-        // If offer_id is explicitly sent (even empty), we process it
+        // If offer_id is explicitly sent. 
+        // Handles "null", "undefined", "" strings from FormData
         if (offer_id !== undefined) {
-            banner.offer_id = offer_id || undefined;
-            if (offer_id) {
-                const offerProducts = await Product.find({ offer: offer_id }).select('_id');
+            let cleanOfferId = offer_id;
+            if (offer_id === 'null' || offer_id === 'undefined' || offer_id === '') {
+                cleanOfferId = null;
+            }
+
+            banner.offer_id = cleanOfferId;
+
+            if (cleanOfferId) {
+                const offerProducts = await Product.find({ offer: cleanOfferId }).select('_id');
                 banner.product_ids = offerProducts.map(p => p._id);
             } else {
-                // Cleared offer, potentially clear products or keep existing? 
-                // Usually if switching logic, we reset.
-                // If manual_product_ids is NOT provided, we might keep current products? 
-                // Let's assume if offer is cleared, usage switches to manual or empty.
-                if (!manual_product_ids) banner.product_ids = [];
+                // Determine if we should clear products or rely on manual_product_ids
+                // If switching to manual (offer cleared), we expect manual_product_ids to populate it
+                // If manual_product_ids is NOT present, we might clear it.
+                // But the next block handles manual_product_ids
             }
         }
 
-        if (manual_product_ids !== undefined && !banner.offer_id) {
-            if (typeof manual_product_ids === 'string') {
-                banner.product_ids = manual_product_ids.split(',').filter(id => id.trim() !== '');
-            } else if (Array.isArray(manual_product_ids)) {
-                banner.product_ids = manual_product_ids;
+        if (manual_product_ids !== undefined) {
+            // Only update manual products if offer_id is NOT set (or we just cleared it)
+            // effective offer_id is checked on the banner instance
+            if (!banner.offer_id) {
+                if (typeof manual_product_ids === 'string') {
+                    // Check for empty string case which means empty array
+                    if (!manual_product_ids.trim()) {
+                        banner.product_ids = [];
+                    } else {
+                        banner.product_ids = manual_product_ids.split(',').filter(id => id.trim() !== '');
+                    }
+                } else if (Array.isArray(manual_product_ids)) {
+                    banner.product_ids = manual_product_ids;
+                }
             }
         }
 
@@ -121,6 +144,13 @@ exports.updateBanner = async (req, res) => {
         res.json(updatedBanner);
 
     } catch (error) {
+        console.error('Banner Update Error:', error);
+
+        // Log to file for deep debugging
+        const logPath = path.join(__dirname, '../banner_error.log');
+        const logEntry = `[${new Date().toISOString()}] Error: ${error.message}\nStack: ${error.stack}\nBody: ${JSON.stringify(req.body)}\n\n`;
+        fs.appendFile(logPath, logEntry, (err) => { if (err) console.error("Log write failed", err) });
+
         if (req.file) deleteFile(req.file.path);
         res.status(400).json({ message: 'Failed to update banner', error: error.message });
     }

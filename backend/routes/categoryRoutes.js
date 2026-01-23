@@ -8,18 +8,24 @@ router.get('/', async (req, res) => {
     try {
         const categories = await Category.find({ isActive: true })
             .sort({ displayOrder: 1 })
-            .select('-__v');
+            .select('-__v')
+            .lean(); // Use lean for better performance
 
-        // Optionally calculate product count dynamically
-        for (let category of categories) {
-            const count = await Product.countDocuments({
-                category: category.slug,
-                isVisible: true
-            });
-            category.productCount = count;
-        }
+        // Calculate product count dynamically
+        const categoriesWithCount = await Promise.all(
+            categories.map(async (category) => {
+                const count = await Product.countDocuments({
+                    category: category._id, // Use ObjectId instead of slug
+                    isVisible: true
+                });
+                return {
+                    ...category,
+                    productCount: count
+                };
+            })
+        );
 
-        res.json(categories);
+        res.json(categoriesWithCount);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

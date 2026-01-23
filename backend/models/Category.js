@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const categorySchema = new mongoose.Schema({
     name: { type: String, required: true },
     slug: { type: String, required: true, unique: true },
-    image: { type: String }, // Renamed from imageUrl to match requirement, but can keep both or alias
+    imageUrl: { type: String }, // Renamed to match frontend
     description: { type: String },
     displayOrder: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },

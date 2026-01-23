@@ -8,12 +8,15 @@ import { useModal } from '@/app/hooks/useModal';
 
 interface Product {
     _id: string;
-    name: string;
+    title?: string;
+    name?: string;
     basePrice: number;
     discountedPrice: number;
     stock: number;
     isOnDemand: boolean;
-    images: string[];
+    featured_image?: string;
+    gallery_images?: string[];
+    images?: string[];
     availableSizes?: string[]; // Optional size variants
 }
 
@@ -51,12 +54,17 @@ export default function ProductActionArea({ product }: { product: Product }) {
     }
 
     const handleAddToCart = () => {
+        const productName = product.title || product.name || 'Product';
+        const productImage = product.featured_image ||
+            (product.gallery_images && product.gallery_images.length > 0 ? product.gallery_images[0] : '') ||
+            (product.images && product.images.length > 0 ? product.images[0] : '');
+
         addToCart({
             productId: product._id,
-            name: product.name,
+            name: productName,
             price: finalPrice,
             quantity: quantity,
-            image: product.images && product.images.length > 0 ? product.images[0] : '',
+            image: productImage,
             size: product.availableSizes && product.availableSizes.length > 0 ? selectedSize : undefined,
             isOnDemand: product.isOnDemand || (product.stock < quantity) // Consider it on-demand for cart purposes if checking strictly or backorder? Actually simpler: just pass product.isOnDemand. The backend/cart logic handles overrides if needed.
             // Wait, the user requirement for checkout implies we need to distinguishing.

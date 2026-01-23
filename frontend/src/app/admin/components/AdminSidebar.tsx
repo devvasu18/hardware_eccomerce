@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -33,12 +33,18 @@ export default function AdminSidebar() {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
     const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
-        'Product Manager': true,
+        'Product Manager': false,
         'Stock Manager': false,
         'System Settings': false
     });
 
-    const isActive = (path: string) => pathname === path || pathname?.startsWith(path + '/');
+    const isActive = (path: string) => {
+        if (path === '/admin') {
+            return pathname === '/admin';
+        }
+        return pathname === path || pathname?.startsWith(path + '/');
+    };
+
     const isParentActive = (item: MenuItem) => {
         if (isActive(item.path)) return true;
         if (item.children) {
@@ -53,17 +59,6 @@ export default function AdminSidebar() {
 
     const menuItems: MenuItem[] = [
         { label: 'Dashboard', path: '/admin', icon: <FiGrid />, roles: ['super_admin', 'ops_admin'] },
-        { label: 'Orders & Logistics', path: '/admin/orders', icon: <FiTruck />, roles: ['super_admin', 'ops_admin', 'logistics_admin'] },
-        { label: 'Procurement Requests', path: '/admin/requests', icon: <FiFileText />, roles: ['super_admin', 'ops_admin', 'support_staff'] },
-        {
-            label: 'Stock Manager', path: '/admin/stock', icon: <FiGrid />, roles: ['super_admin', 'ops_admin', 'logistics_admin'], children: [
-                { label: 'Stock Entry', path: '/admin/stock', roles: ['super_admin', 'ops_admin'] },
-                { label: 'Party Master', path: '/admin/masters/parties', roles: ['super_admin', 'ops_admin'] }
-            ]
-        },
-        { label: 'Banner Manager', path: '/admin/banners', icon: <FiImage />, roles: ['super_admin', 'ops_admin'] },
-        { label: 'Coupons', path: '/admin/coupons', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
-
 
         // Grouped Product Manager
         {
@@ -81,8 +76,24 @@ export default function AdminSidebar() {
             ]
         },
 
+        { label: 'On Demand Request', path: '/admin/requests', icon: <FiFileText />, roles: ['super_admin', 'ops_admin', 'support_staff'] },
+
+        {
+            label: 'Stock Manager', path: '/admin/stock', icon: <FiGrid />, roles: ['super_admin', 'ops_admin', 'logistics_admin'], children: [
+                { label: 'Stock Entry', path: '/admin/stock', roles: ['super_admin', 'ops_admin'] },
+                { label: 'Party Master', path: '/admin/masters/parties', roles: ['super_admin', 'ops_admin'] }
+            ]
+        },
+
+        { label: 'Banner Manager', path: '/admin/banners', icon: <FiImage />, roles: ['super_admin', 'ops_admin'] },
+        { label: 'Coupons', path: '/admin/coupons', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
         { label: 'Special Deals', path: '/admin/special-deals', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
-        { label: 'Tally & Accounting', path: '/admin/tally', icon: <FiPieChart />, roles: ['super_admin', 'accounts_admin'] },
+
+        { label: 'User Management', path: '/admin/users', icon: <FiUsers />, roles: ['super_admin'] },
+
+        { label: 'Orders & Logistics', path: '/admin/orders', icon: <FiTruck />, roles: ['super_admin', 'ops_admin', 'logistics_admin'] },
+        { label: 'Transactions', path: '/admin/transactions', icon: <FiFileText />, roles: ['super_admin', 'accounts_admin'] },
+
         { label: 'Returns & Refunds', path: '/admin/returns', icon: <FiRefreshCw />, roles: ['super_admin', 'ops_admin', 'accounts_admin'] },
 
         // Grouped System Settings
@@ -92,12 +103,22 @@ export default function AdminSidebar() {
             icon: <FiSettings />,
             roles: ['super_admin'],
             children: [
-                { label: 'User Management', path: '/admin/users', roles: ['super_admin'] },
                 { label: 'System Logs', path: '/admin/logs', roles: ['super_admin'] },
                 { label: 'Banner Config', path: '/admin/banners', roles: ['super_admin', 'ops_admin'] },
             ]
         },
+
+        { label: 'Tally & Accounting', path: '/admin/tally', icon: <FiPieChart />, roles: ['super_admin', 'accounts_admin'] },
     ];
+
+    // Auto-expand menu if child is active
+    useEffect(() => {
+        menuItems.forEach(item => {
+            if (item.children && item.children.some(child => isActive(child.path))) {
+                setExpandedMenus(prev => ({ ...prev, [item.label]: true }));
+            }
+        });
+    }, [pathname]);
 
     // TEMPORARY: Show all items for everyone for easier testing
     const filteredMenu = menuItems;

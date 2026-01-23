@@ -14,8 +14,8 @@ const bannerSchema = new mongoose.Schema({
         type: String
     },
     image: {
-        type: String,
-        required: true
+        type: String
+        // Not required here - we validate on creation in controller
     },
     offer_id: {
         type: mongoose.Schema.Types.ObjectId,
@@ -34,7 +34,8 @@ const bannerSchema = new mongoose.Schema({
 });
 
 // Auto-generate slug before save
-bannerSchema.pre('save', function (next) {
+// Auto-generate slug before save
+bannerSchema.pre('save', async function () {
     if (this.isModified('title')) {
         // Simple slugify implementation
         this.slug = this.title
@@ -45,7 +46,6 @@ bannerSchema.pre('save', function (next) {
             .replace(/[^\w\-]+/g, '') // Remove all non-word chars
             .replace(/\-\-+/g, '-');  // Replace multiple - with single -
     }
-    next();
 });
 
 module.exports = mongoose.model('Banner', bannerSchema);

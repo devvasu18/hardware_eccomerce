@@ -6,13 +6,16 @@ import './product-detail.css';
 
 interface Product {
     _id: string;
-    name: string;
+    title?: string;
+    name?: string;
     description: string;
     basePrice: number;
     discountedPrice: number;
     stock: number;
     category: string;
-    images: string[];
+    featured_image?: string;
+    gallery_images?: string[];
+    images?: string[];
     isOnDemand: boolean;
     brand?: string;
     warranty?: string;
@@ -61,6 +64,13 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         ? Math.round(((product.basePrice - product.discountedPrice) / product.basePrice) * 100)
         : 0;
 
+    // Combine featured_image and gallery_images into a single array for easier handling
+    const productImages = [
+        ...(product.featured_image ? [product.featured_image] : []),
+        ...(product.gallery_images || [])
+    ];
+    const productName = product.title || product.name || 'Product';
+
     return (
         <main>
             <Header />
@@ -85,10 +95,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                         )}
 
                         <div className="main-image">
-                            {product.images && product.images.length > 0 ? (
+                            {productImages.length > 0 ? (
                                 <ProductImage
-                                    src={product.images[0]}
-                                    alt={product.name}
+                                    src={productImages[0]}
+                                    alt={productName}
                                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                 />
                             ) : (
@@ -97,15 +107,15 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                         </div>
 
                         {/* Thumbnail Gallery */}
-                        {product.images && product.images.length > 1 && (
+                        {productImages.length > 1 && (
                             <div className="thumbnail-gallery">
                                 <h4>OTHER VARIATIONS</h4>
                                 <div className="thumbnails">
-                                    {product.images.slice(0, 3).map((img, idx) => (
+                                    {productImages.slice(0, 3).map((img, idx) => (
                                         <div key={idx} className="thumbnail">
                                             <ProductImage
                                                 src={img}
-                                                alt={`${product.name} - view ${idx + 1}`}
+                                                alt={`${productName} - view ${idx + 1}`}
                                                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                             />
                                         </div>
@@ -129,7 +139,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                             )}
                         </div>
 
-                        <h1 className="product-name">{product.name}</h1>
+                        <h1 className="product-name">{productName}</h1>
 
                         <div className="product-rating">
                             <div className="stars">
@@ -220,10 +230,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                                     className="related-product-card"
                                 >
                                     <div className="related-product-image">
-                                        {relatedProduct.images && relatedProduct.images.length > 0 ? (
+                                        {(relatedProduct.featured_image || (relatedProduct.gallery_images && relatedProduct.gallery_images.length > 0)) ? (
                                             <ProductImage
-                                                src={relatedProduct.images[0]}
-                                                alt={relatedProduct.name}
+                                                src={relatedProduct.featured_image || relatedProduct.gallery_images![0]}
+                                                alt={relatedProduct.title || relatedProduct.name || 'Product'}
                                                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                             />
                                         ) : (
@@ -232,7 +242,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                                     </div>
                                     <div className="related-product-info">
                                         <p className="related-category">{relatedProduct.category}</p>
-                                        <h3 className="related-name">{relatedProduct.name}</h3>
+                                        <h3 className="related-name">{relatedProduct.title || relatedProduct.name}</h3>
                                         <div className="related-price">
                                             {relatedProduct.discountedPrice && relatedProduct.discountedPrice < relatedProduct.basePrice ? (
                                                 <>

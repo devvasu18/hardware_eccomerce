@@ -91,7 +91,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
 
                         <div className="form-group" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>
                             <label className="form-label">Wholesale Logic</label>
-                            <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem' }}>Setting a discount > 0 automatically makes them a 'Wholesale' customer.</div>
+                            <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.5rem' }}>Setting a discount &gt; 0 automatically makes them a &apos;Wholesale&apos; customer.</div>
                             <label className="form-label" style={{ fontSize: '0.85rem' }}>Fixed Discount %</label>
                             <input type="number" {...register("wholesaleDiscount")} className="form-input" placeholder="0" />
                         </div>

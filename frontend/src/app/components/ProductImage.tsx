@@ -10,7 +10,15 @@ interface ProductImageProps {
 }
 
 export default function ProductImage({ src, alt, style }: ProductImageProps) {
-    const [imgSrc, setImgSrc] = useState(src);
+    const formatSrc = (url: string) => {
+        if (!url) return '';
+        if (url.startsWith('http') || url.startsWith('data:')) return url;
+        // Remove leading slash if present to avoid double slashes when appending
+        const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+        return `http://localhost:5000/${cleanUrl}`;
+    };
+
+    const [imgSrc, setImgSrc] = useState(formatSrc(src));
 
     return (
         <img

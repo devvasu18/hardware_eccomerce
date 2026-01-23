@@ -7,12 +7,15 @@ import ProductImage from './ProductImage';
 
 interface Product {
     _id: string;
-    name: string;
+    title?: string;
+    name?: string;
     basePrice: number;
     discountedPrice: number;
     stock: number;
-    category: string;
-    images: string[];
+    category: any;
+    featured_image?: string;
+    gallery_images?: string[];
+    images?: string[];
     isOnDemand: boolean;
 }
 
@@ -55,10 +58,10 @@ export default function ProductCard({ product }: { product: Product }) {
     return (
         <Link href={`/products/${product._id}`} className="product-card">
             <div className="product-card-image-container">
-                {product.images && product.images.length > 0 ? (
+                {(product.featured_image || (product.gallery_images && product.gallery_images.length > 0) || (product.images && product.images.length > 0)) ? (
                     <ProductImage
-                        src={product.images[0]}
-                        alt={product.name}
+                        src={product.featured_image || product.gallery_images?.[0] || product.images?.[0] || ''}
+                        alt={product.title || product.name || 'Product'}
                         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     />
                 ) : (
@@ -90,8 +93,14 @@ export default function ProductCard({ product }: { product: Product }) {
             </div>
 
             <div className="product-card-content">
-                <p className="product-category">{product.category}</p>
-                <h3 className="product-title" title={product.name}>{product.name}</h3>
+                <p className="product-category">
+                    {typeof product.category === 'object' && product.category?.name
+                        ? product.category.name
+                        : typeof product.category === 'string' && product.category.length > 10
+                            ? 'Auto Part'
+                            : product.category}
+                </p>
+                <h3 className="product-title" title={product.title || product.name}>{product.title || product.name}</h3>
 
                 <div className="product-card-footer">
                     <div className="product-price">

@@ -14,7 +14,7 @@ const categories = [
         name: 'Engine Parts',
         slug: 'engine-parts',
         description: 'Complete range of engine components and accessories',
-        imageUrl: 'https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?q=80&w=800&auto=format&fit=crop',
+        imageUrl: 'https://loremflickr.com/800/600/engine',
         displayOrder: 1,
         gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         productCount: 0
@@ -23,7 +23,7 @@ const categories = [
         name: 'Brake System',
         slug: 'brake-system',
         description: 'Brake pads, discs, calipers and complete brake kits',
-        imageUrl: 'https://images.unsplash.com/photo-1601000676461-291771457805?q=80&w=800&auto=format&fit=crop',
+        imageUrl: 'https://loremflickr.com/800/600/brakes',
         displayOrder: 2,
         gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
         productCount: 0
@@ -32,7 +32,7 @@ const categories = [
         name: 'Suspension & Steering',
         slug: 'suspension-steering',
         description: 'Shock absorbers, struts, control arms and steering parts',
-        imageUrl: 'https://images.unsplash.com/photo-1550508538-34c56aec7f43?q=80&w=800&auto=format&fit=crop',
+        imageUrl: 'https://loremflickr.com/800/600/suspension',
         displayOrder: 3,
         gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
         productCount: 0
@@ -41,7 +41,7 @@ const categories = [
         name: 'Electrical Parts',
         slug: 'electrical-parts',
         description: 'Batteries, alternators, starters and wiring components',
-        imageUrl: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?q=80&w=800&auto=format&fit=crop',
+        imageUrl: 'https://loremflickr.com/800/600/battery,car',
         displayOrder: 4,
         gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
         productCount: 0
@@ -50,7 +50,7 @@ const categories = [
         name: 'Filters & Fluids',
         slug: 'filters-fluids',
         description: 'Oil filters, air filters, fuel filters and automotive fluids',
-        imageUrl: 'https://images.unsplash.com/photo-1635773173369-02c38d61749a?q=80&w=800&auto=format&fit=crop',
+        imageUrl: 'https://loremflickr.com/800/600/oil,car',
         displayOrder: 5,
         gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
         productCount: 0
@@ -59,7 +59,7 @@ const categories = [
         name: 'Body Parts',
         slug: 'body-parts',
         description: 'Bumpers, fenders, doors, hoods and body panels',
-        imageUrl: 'https://images.unsplash.com/photo-1627454820574-fb600aa5d4e1?q=80&w=800&auto=format&fit=crop',
+        imageUrl: 'https://loremflickr.com/800/600/car,body',
         displayOrder: 6,
         gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
         productCount: 0
@@ -68,7 +68,7 @@ const categories = [
         name: 'Lighting',
         slug: 'lighting',
         description: 'Headlights, tail lights, fog lights and LED accessories',
-        imageUrl: 'https://images.unsplash.com/photo-1580273916550-e323be2ebdd9?q=80&w=800&auto=format&fit=crop',
+        imageUrl: 'https://loremflickr.com/800/600/headlight',
         displayOrder: 7,
         gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
         productCount: 0
@@ -77,7 +77,7 @@ const categories = [
         name: 'Tires & Wheels',
         slug: 'tires-wheels',
         description: 'All season tires, alloy wheels and wheel accessories',
-        imageUrl: 'https://images.unsplash.com/photo-1580274455191-1c62238fa333?q=80&w=800&auto=format&fit=crop',
+        imageUrl: 'https://loremflickr.com/800/600/tire,wheel',
         displayOrder: 8,
         gradient: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
         productCount: 0

@@ -66,30 +66,16 @@ const Header = () => {
                             <div className="popular-searches-section">
                                 <h4 className="dropdown-title">Popular Searches</h4>
                                 <div className="tags-grid">
-                                    <div className="search-tag">
-                                        <span className="trend-icon">↗</span> 4 Door Wardrobes
-                                    </div>
-                                    <div className="search-tag">
-                                        <span className="trend-icon">↗</span> Book Shelves
-                                    </div>
-                                    <div className="search-tag">
-                                        <span className="trend-icon">↗</span> Centre Tables
-                                    </div>
-                                    <div className="search-tag">
-                                        <span className="trend-icon">↗</span> Sofa Cum Beds
-                                    </div>
-                                    <div className="search-tag">
-                                        <span className="trend-icon">↗</span> TV Units
-                                    </div>
-                                    <div className="search-tag">
-                                        <span className="trend-icon">↗</span> Bed
-                                    </div>
-                                    <div className="search-tag">
-                                        <span className="trend-icon">↗</span> Bed Side Table
-                                    </div>
-                                    <div className="search-tag">
-                                        <span className="trend-icon">↗</span> Dining Table
-                                    </div>
+                                    {categories.slice(0, 10).map((category) => (
+                                        <Link
+                                            key={category._id}
+                                            href={`/products?category=${category.slug}`}
+                                            className="search-tag"
+                                            onClick={() => setIsSearchFocused(false)}
+                                        >
+                                            <span className="trend-icon">↗</span> {category.name}
+                                        </Link>
+                                    ))}
                                 </div>
                             </div>
                         </div>

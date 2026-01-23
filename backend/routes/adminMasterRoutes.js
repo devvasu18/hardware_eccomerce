@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 const masterController = require('../controllers/masterController');
+const brandController = require('../controllers/brandController');
 
 // Stats
 router.get('/stats', protect, admin, masterController.getStats);
@@ -29,8 +30,9 @@ router.post('/sub-categories', protect, admin, upload.single('image'), masterCon
 router.delete('/sub-categories/:id', protect, admin, masterController.deleteSubCategory);
 
 // Brands
-router.get('/brands', protect, admin, masterController.getBrands);
-router.post('/brands', protect, admin, upload.single('logo_image'), masterController.createBrand);
-router.delete('/brands/:id', protect, admin, masterController.deleteBrand);
+router.get('/brands', protect, admin, brandController.getBrands);
+router.post('/brands', protect, admin, upload.single('logo_image'), brandController.createBrand);
+router.put('/brands/:id', protect, admin, upload.single('logo_image'), brandController.updateBrand);
+router.delete('/brands/:id', protect, admin, brandController.deleteBrand);
 
 module.exports = router;

@@ -48,6 +48,9 @@ app.use('/api/homepage', require('./routes/homepageRoutes')); // Homepage Featur
 app.use('/api/admin/parties', require('./routes/partyRoutes')); // Party Master
 app.use('/api/admin/stock', require('./routes/stockRoutes')); // Stock Entry & Ledger
 app.use('/api/coupons', require('./routes/couponRoutes')); // Coupon Management
+app.use('/api/transactions', require('./routes/transactionRoutes')); // Transaction Management
+app.use('/api/brands', require('./routes/brandRoutes')); // Public Brand Routes
+app.use('/api/refunds', require('./routes/refundRoutes')); // Refund Management
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

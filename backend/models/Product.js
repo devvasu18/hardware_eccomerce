@@ -53,12 +53,19 @@ const productSchema = new mongoose.Schema({
     meta_description: { type: String },
     keywords: [{ type: String }],
 
-    // Status
+    // Status & Flags
     isActive: { type: Boolean, default: true },
+    isVisible: { type: Boolean, default: true },
+    isFeatured: { type: Boolean, default: false },
+    isNewArrival: { type: Boolean, default: false },
+    isTopSale: { type: Boolean, default: false },
+    isDailyOffer: { type: Boolean, default: false },
 
-    // Legacy fields preservation (optional, if needed to avoid breaking existing code immediately)
-    // stock: { type: Number }, => maps to opening_stock
-    // price: { type: Number }, => maps to selling_price_a
+    // Legacy / Compatibility
+    stock: { type: Number, default: 0 },
+    price: { type: Number },
+    basePrice: { type: Number }, // Alias for MRP often used
+    discountedPrice: { type: Number }, // Alias for Selling Price
 
 }, { timestamps: true });
 

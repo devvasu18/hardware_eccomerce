@@ -143,7 +143,11 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
         const formData = new FormData();
         formData.append('title', data.title);
         formData.append('description', data.description || '');
-        if (data.image) formData.append('image', data.image);
+
+        // Only append image if a new file was selected
+        if (data.image && data.image[0]) {
+            formData.append('image', data.image[0]);
+        }
 
         if (linkType === 'offer') {
             // If switching to offer, we send offer_id
@@ -169,9 +173,9 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
             });
             alert('Banner updated!');
             router.push('/admin/banners');
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert('Failed to update banner');
+            alert(error.response?.data?.message || 'Failed to update banner');
         }
     };
 

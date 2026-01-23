@@ -6,6 +6,7 @@ import CategorySection from '@/app/components/CategorySection';
 import WhyChooseUs from '@/app/components/WhyChooseUs';
 import SpecialOffers from '@/app/components/SpecialOffers';
 import NewArrivals from '@/app/components/NewArrivals';
+import BrandsSection from '@/app/components/BrandsSection';
 
 interface Product {
     _id: string;
@@ -13,7 +14,7 @@ interface Product {
     basePrice: number;
     discountedPrice: number;
     stock: number;
-    category: string;
+    category: string | { _id: string; name: string };
     imageUrl?: string;
     images: string[];
     isOnDemand: boolean;
@@ -41,6 +42,10 @@ export default async function Home() {
 
             <HeroSlider />
 
+            <BrandsSection />
+
+            <CategorySection />
+
             <section className="container" style={{ padding: '4rem 0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h2>Featured Products</h2>
@@ -57,8 +62,6 @@ export default async function Home() {
             </section>
 
             <NewArrivals />
-
-            <CategorySection />
 
             <SpecialOffers />
 

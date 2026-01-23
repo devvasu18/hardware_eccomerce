@@ -67,13 +67,21 @@ exports.createProduct = async (req, res) => {
             opening_stock, max_unit_buy, product_quantity, low_stock_threshold,
             color_name, color_hex, size,
             meta_title, meta_description, keywords,
-            isActive
+            isActive, isVisible, isFeatured, isNewArrival, isTopSale, isDailyOffer
         } = req.body;
 
-        // Extract file paths
-        const featured_image = req.files['featured_image'] ? req.files['featured_image'][0].path.replace(/\\/g, '/') : null;
-        const featured_image_2 = req.files['featured_image_2'] ? req.files['featured_image_2'][0].path.replace(/\\/g, '/') : null;
-        const size_chart = req.files['size_chart'] ? req.files['size_chart'][0].path.replace(/\\/g, '/') : null;
+        // Extract file paths or use URLs from body
+        const featured_image = req.files['featured_image']
+            ? req.files['featured_image'][0].path.replace(/\\/g, '/')
+            : req.body.featured_image;
+
+        const featured_image_2 = req.files['featured_image_2']
+            ? req.files['featured_image_2'][0].path.replace(/\\/g, '/')
+            : req.body.featured_image_2;
+
+        const size_chart = req.files['size_chart']
+            ? req.files['size_chart'][0].path.replace(/\\/g, '/')
+            : req.body.size_chart;
 
         let gallery_images = [];
         if (req.files['gallery_images']) {
@@ -114,7 +122,7 @@ exports.createProduct = async (req, res) => {
             color_name, color_hex, size,
             featured_image, featured_image_2, size_chart, gallery_images,
             meta_title, meta_description, keywords: parsedKeywords,
-            isActive
+            isActive, isVisible, isFeatured, isNewArrival, isTopSale, isDailyOffer
         });
 
         const createdProduct = await product.save();
@@ -135,6 +143,9 @@ exports.createProduct = async (req, res) => {
 // @access  Admin
 exports.updateProduct = async (req, res) => {
     try {
+        console.log('Update Body:', req.body);
+        console.log('Update Files:', req.files);
+
         const product = await Product.findById(req.params.id);
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
@@ -148,25 +159,71 @@ exports.updateProduct = async (req, res) => {
         // Quick update implementation for core fields:
         const updates = { ...req.body };
 
-        // Handle Files
-        if (req.files['featured_image']) {
-            deleteFile(product.featured_image);
+        // Handle featured_image - check for URL first, then file upload
+        if (req.body.featured_image && typeof req.body.featured_image === 'string') {
+            // URL provided in body
+            const isUrl = req.body.featured_image.startsWith('http');
+            if (isUrl) {
+                // Delete old file only if it's a local file path (not a URL)
+                if (product.featured_image && !product.featured_image.startsWith('http')) {
+                    deleteFile(product.featured_image);
+                }
+                updates.featured_image = req.body.featured_image;
+            }
+        } else if (req.files && req.files['featured_image']) {
+            // File uploaded
+            if (product.featured_image && !product.featured_image.startsWith('http')) {
+                deleteFile(product.featured_image);
+            }
             updates.featured_image = req.files['featured_image'][0].path.replace(/\\/g, '/');
         }
-        if (req.files['featured_image_2']) {
-            deleteFile(product.featured_image_2);
+
+        // Handle featured_image_2 - check for URL first, then file upload
+        if (req.body.featured_image_2 && typeof req.body.featured_image_2 === 'string') {
+            // URL provided in body
+            const isUrl = req.body.featured_image_2.startsWith('http');
+            if (isUrl) {
+                // Delete old file only if it's a local file path (not a URL)
+                if (product.featured_image_2 && !product.featured_image_2.startsWith('http')) {
+                    deleteFile(product.featured_image_2);
+                }
+                updates.featured_image_2 = req.body.featured_image_2;
+            }
+        } else if (req.files && req.files['featured_image_2']) {
+            // File uploaded
+            if (product.featured_image_2 && !product.featured_image_2.startsWith('http')) {
+                deleteFile(product.featured_image_2);
+            }
             updates.featured_image_2 = req.files['featured_image_2'][0].path.replace(/\\/g, '/');
         }
 
-        // Handle Specs parsing
-        if (typeof updates.specifications === 'string') {
+        // Helper to parse if string
+        if (updates.specifications && typeof updates.specifications === 'string') {
             try { updates.specifications = JSON.parse(updates.specifications); } catch (e) { }
         }
+
+        if (updates.keywords && typeof updates.keywords === 'string') {
+            updates.keywords = updates.keywords.split(',').map(k => k.trim());
+        }
+
+        if (updates.sub_category && typeof updates.sub_category === 'string') {
+            // Handle comma separated or single value
+            updates.sub_category = updates.sub_category.split(',').map(id => id.trim()).filter(id => id);
+        }
+
+        // Handle boolean fields from form-data (strings "true"/"false")
+        if (updates.isActive !== undefined) updates.isActive = updates.isActive === 'true' || updates.isActive === true;
+        if (updates.isVisible !== undefined) updates.isVisible = updates.isVisible === 'true' || updates.isVisible === true;
+        if (updates.isFeatured !== undefined) updates.isFeatured = updates.isFeatured === 'true' || updates.isFeatured === true;
+        if (updates.isNewArrival !== undefined) updates.isNewArrival = updates.isNewArrival === 'true' || updates.isNewArrival === true;
+        if (updates.isTopSale !== undefined) updates.isTopSale = updates.isTopSale === 'true' || updates.isTopSale === true;
+        if (updates.isDailyOffer !== undefined) updates.isDailyOffer = updates.isDailyOffer === 'true' || updates.isDailyOffer === true;
 
         const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
         res.json(updatedProduct);
 
     } catch (error) {
+        console.error('Error updating product:', error);
         res.status(400).json({ message: 'Product update failed', error: error.message });
     }
 };

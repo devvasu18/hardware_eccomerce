@@ -16,7 +16,7 @@ const statusLogSchema = new mongoose.Schema({
     updatedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false  // Changed to false to allow system-generated logs
     },
 
     updatedByName: {
