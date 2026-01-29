@@ -52,8 +52,8 @@ router.delete('/:id', protect, admin, deleteProduct);
 // Quick Stock Update
 router.patch('/:id/stock', protect, admin, async (req, res) => {
     try {
-        const { stock } = req.body; // Map to opening_stock
-        const product = await Product.findByIdAndUpdate(req.params.id, { opening_stock: stock }, { new: true });
+        const { stock } = req.body;
+        const product = await Product.findByIdAndUpdate(req.params.id, { stock: stock }, { new: true });
         res.json(product);
     } catch (error) {
         res.status(400).json({ error: error.message });

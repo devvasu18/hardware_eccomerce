@@ -12,12 +12,12 @@ interface Product {
     basePrice: number;
     discountedPrice: number;
     stock: number;
-    category: string;
+    category: string | { _id: string; name: string };
     featured_image?: string;
     gallery_images?: string[];
     images?: string[];
     isOnDemand: boolean;
-    brand?: string;
+    brand?: string | { _id: string; name: string };
     warranty?: string;
     material?: string;
     countryOfOrigin?: string;
@@ -59,7 +59,10 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         )
     }
 
-    const relatedProducts = await getRelatedProducts(product.category, product._id);
+    const categoryName = typeof product.category === 'object' && product.category !== null ? product.category.name : String(product.category);
+    const brandName = typeof product.brand === 'object' && product.brand !== null ? product.brand.name : String(product.brand || '');
+
+    const relatedProducts = await getRelatedProducts(categoryName, product._id);
     const discountPercentage = product.discountedPrice && product.discountedPrice < product.basePrice
         ? Math.round(((product.basePrice - product.discountedPrice) / product.basePrice) * 100)
         : 0;
@@ -82,7 +85,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                     <span>/</span>
                     <Link href="/products">PRODUCTS</Link>
                     <span>/</span>
-                    <span className="current">{product.category.toUpperCase()}</span>
+                    <span className="current">{categoryName.toUpperCase()}</span>
                 </div>
 
                 <div className="product-detail-grid">
@@ -130,11 +133,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                         <div className="product-meta">
                             <span className="product-code">PRODUCT CODE: IND-{product._id.slice(-6).toUpperCase()}</span>
                             <span className="separator">|</span>
-                            <span className="product-category-tag">{product.category}</span>
-                            {product.brand && (
+                            <span className="product-category-tag">{categoryName}</span>
+                            {brandName && (
                                 <>
                                     <span className="separator">|</span>
-                                    <span className="product-brand">{product.brand}</span>
+                                    <span className="product-brand">{brandName}</span>
                                 </>
                             )}
                         </div>
@@ -189,7 +192,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                             {product.brand && (
                                 <div className="detail-item">
                                     <span className="detail-label">Brand</span>
-                                    <span className="detail-value">{product.brand}</span>
+                                    <span className="detail-value">{brandName}</span>
                                 </div>
                             )}
                             <div className="detail-item">
@@ -223,39 +226,42 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                     <div className="related-products">
                         <h2>RELATED PRODUCTS</h2>
                         <div className="related-grid">
-                            {relatedProducts.map((relatedProduct) => (
-                                <Link
-                                    key={relatedProduct._id}
-                                    href={`/products/${relatedProduct._id}`}
-                                    className="related-product-card"
-                                >
-                                    <div className="related-product-image">
-                                        {(relatedProduct.featured_image || (relatedProduct.gallery_images && relatedProduct.gallery_images.length > 0)) ? (
-                                            <ProductImage
-                                                src={relatedProduct.featured_image || relatedProduct.gallery_images![0]}
-                                                alt={relatedProduct.title || relatedProduct.name || 'Product'}
-                                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                                            />
-                                        ) : (
-                                            <div className="no-image">No Image</div>
-                                        )}
-                                    </div>
-                                    <div className="related-product-info">
-                                        <p className="related-category">{relatedProduct.category}</p>
-                                        <h3 className="related-name">{relatedProduct.title || relatedProduct.name}</h3>
-                                        <div className="related-price">
-                                            {relatedProduct.discountedPrice && relatedProduct.discountedPrice < relatedProduct.basePrice ? (
-                                                <>
-                                                    <span className="price-original">₹{relatedProduct.basePrice}</span>
-                                                    <span className="price-current">₹{relatedProduct.discountedPrice}</span>
-                                                </>
+                            {relatedProducts.map((relatedProduct) => {
+                                const relatedCategoryName = typeof relatedProduct.category === 'object' && relatedProduct.category !== null ? relatedProduct.category.name : String(relatedProduct.category);
+                                return (
+                                    <Link
+                                        key={relatedProduct._id}
+                                        href={`/products/${relatedProduct._id}`}
+                                        className="related-product-card"
+                                    >
+                                        <div className="related-product-image">
+                                            {(relatedProduct.featured_image || (relatedProduct.gallery_images && relatedProduct.gallery_images.length > 0)) ? (
+                                                <ProductImage
+                                                    src={relatedProduct.featured_image || relatedProduct.gallery_images![0]}
+                                                    alt={relatedProduct.title || relatedProduct.name || 'Product'}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                                />
                                             ) : (
-                                                <span className="price-current">₹{relatedProduct.basePrice}</span>
+                                                <div className="no-image">No Image</div>
                                             )}
                                         </div>
-                                    </div>
-                                </Link>
-                            ))}
+                                        <div className="related-product-info">
+                                            <p className="related-category">{relatedCategoryName}</p>
+                                            <h3 className="related-name">{relatedProduct.title || relatedProduct.name}</h3>
+                                            <div className="related-price">
+                                                {relatedProduct.discountedPrice && relatedProduct.discountedPrice < relatedProduct.basePrice ? (
+                                                    <>
+                                                        <span className="price-original">₹{relatedProduct.basePrice}</span>
+                                                        <span className="price-current">₹{relatedProduct.discountedPrice}</span>
+                                                    </>
+                                                ) : (
+                                                    <span className="price-current">₹{relatedProduct.basePrice}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </Link>
+                                )
+                            })}
                         </div>
                     </div>
                 )}

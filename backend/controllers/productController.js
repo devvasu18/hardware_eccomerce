@@ -1,15 +1,5 @@
 const Product = require('../models/Product');
-const fs = require('fs');
-const path = require('path');
-
-// Helper to delete file
-const deleteFile = (filePath) => {
-    if (!filePath) return;
-    const fullPath = path.join(__dirname, '..', filePath);
-    fs.unlink(fullPath, (err) => {
-        if (err) console.error(`Failed to delete file: ${fullPath}`, err);
-    });
-};
+const { deleteFile } = require('../utils/fileHandler');
 
 // @desc    Get all products (Admin)
 // @route   GET /api/admin/products
@@ -72,20 +62,20 @@ exports.createProduct = async (req, res) => {
 
         // Extract file paths or use URLs from body
         const featured_image = req.files['featured_image']
-            ? req.files['featured_image'][0].path.replace(/\\/g, '/')
+            ? req.files['featured_image'][0].path
             : req.body.featured_image;
 
         const featured_image_2 = req.files['featured_image_2']
-            ? req.files['featured_image_2'][0].path.replace(/\\/g, '/')
+            ? req.files['featured_image_2'][0].path
             : req.body.featured_image_2;
 
         const size_chart = req.files['size_chart']
-            ? req.files['size_chart'][0].path.replace(/\\/g, '/')
+            ? req.files['size_chart'][0].path
             : req.body.size_chart;
 
         let gallery_images = [];
         if (req.files['gallery_images']) {
-            gallery_images = req.files['gallery_images'].map(file => file.path.replace(/\\/g, '/'));
+            gallery_images = req.files['gallery_images'].map(file => file.path);
         }
 
         // Parse JSON fields if they come as strings
@@ -164,18 +154,16 @@ exports.updateProduct = async (req, res) => {
             // URL provided in body
             const isUrl = req.body.featured_image.startsWith('http');
             if (isUrl) {
-                // Delete old file only if it's a local file path (not a URL)
-                if (product.featured_image && !product.featured_image.startsWith('http')) {
+                // Delete old file only if it's different
+                if (product.featured_image && product.featured_image !== req.body.featured_image) {
                     deleteFile(product.featured_image);
                 }
                 updates.featured_image = req.body.featured_image;
             }
         } else if (req.files && req.files['featured_image']) {
             // File uploaded
-            if (product.featured_image && !product.featured_image.startsWith('http')) {
-                deleteFile(product.featured_image);
-            }
-            updates.featured_image = req.files['featured_image'][0].path.replace(/\\/g, '/');
+            if (product.featured_image) deleteFile(product.featured_image);
+            updates.featured_image = req.files['featured_image'][0].path;
         }
 
         // Handle featured_image_2 - check for URL first, then file upload
@@ -192,9 +180,13 @@ exports.updateProduct = async (req, res) => {
         } else if (req.files && req.files['featured_image_2']) {
             // File uploaded
             if (product.featured_image_2 && !product.featured_image_2.startsWith('http')) {
-                deleteFile(product.featured_image_2);
+                deleteFile(product.featured_image_2); // Local or Cloudinary handled by utility
             }
-            updates.featured_image_2 = req.files['featured_image_2'][0].path.replace(/\\/g, '/');
+            // For Cloudinary, we might want to delete the old Cloudinary image too.
+            // My deleteFile utility handles Cloudinary URLs now!
+            if (product.featured_image_2) deleteFile(product.featured_image_2);
+
+            updates.featured_image_2 = req.files['featured_image_2'][0].path;
         }
 
         // Helper to parse if string

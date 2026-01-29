@@ -61,10 +61,8 @@ exports.createStockEntry = async (req, res) => {
             });
 
             // Update Product Cache (Increment Stock)
-            // Note: Schema uses 'opening_stock' as the primary stock counter in this system based on previous files.
-            // Ideally we should have a 'current_stock' field, but let's update 'opening_stock' or treat it as current available.
             await Product.findByIdAndUpdate(item.product_id, {
-                $inc: { opening_stock: item.qty }
+                $inc: { stock: item.qty }
             });
         });
 

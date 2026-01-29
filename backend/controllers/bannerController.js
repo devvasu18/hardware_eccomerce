@@ -2,15 +2,7 @@ const Banner = require('../models/Banner');
 const Product = require('../models/Product');
 const fs = require('fs');
 const path = require('path');
-
-// Helper to delete file
-const deleteFile = (filePath) => {
-    if (!filePath) return;
-    const fullPath = path.join(__dirname, '..', filePath);
-    fs.unlink(fullPath, (err) => {
-        if (err) console.error(`Failed to delete file: ${fullPath}`, err);
-    });
-};
+const { deleteFile } = require('../utils/fileHandler');
 
 // @desc    Get all banners
 // @route   GET /api/banners
@@ -32,13 +24,13 @@ exports.getBanners = async (req, res) => {
 // @access  Admin
 exports.createBanner = async (req, res) => {
     try {
-        const { title, description, offer_id, manual_product_ids } = req.body;
+        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'Image is required' });
         }
 
-        const image = req.file.path.replace(/\\/g, '/');
+        const image = req.file.path; // Cloudinary URL
 
         // Logic: Calculate product_ids
         let product_ids = [];
@@ -62,7 +54,12 @@ exports.createBanner = async (req, res) => {
             description,
             image,
             offer_id: offer_id || undefined,
-            product_ids
+            product_ids,
+            position,
+            textColor,
+            buttonColor,
+            buttonText,
+            buttonLink
         });
 
         res.status(201).json(banner);
@@ -89,16 +86,21 @@ exports.updateBanner = async (req, res) => {
         const banner = await Banner.findById(req.params.id);
         if (!banner) return res.status(404).json({ message: 'Banner not found' });
 
-        const { title, description, offer_id, manual_product_ids } = req.body;
+        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink } = req.body;
 
         // Update basic fields
         if (title) banner.title = title;
         if (description !== undefined) banner.description = description;
+        if (position) banner.position = position;
+        if (textColor) banner.textColor = textColor;
+        if (buttonColor) banner.buttonColor = buttonColor;
+        if (buttonText) banner.buttonText = buttonText;
+        if (buttonLink) banner.buttonLink = buttonLink;
 
         // Update image if provided
         if (req.file) {
             deleteFile(banner.image);
-            banner.image = req.file.path.replace(/\\/g, '/');
+            banner.image = req.file.path;
         }
 
         // Logic: Re-calculate product_ids if linking changes

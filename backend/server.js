@@ -6,9 +6,14 @@ const path = require('path');
 
 dotenv.config();
 
+const helmet = require('helmet');
+
 const app = express();
 
 // Middleware
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" } // Allow serving images from /uploads
+}));
 app.use(cors());
 app.use(express.json());
 
@@ -51,6 +56,7 @@ app.use('/api/coupons', require('./routes/couponRoutes')); // Coupon Management
 app.use('/api/transactions', require('./routes/transactionRoutes')); // Transaction Management
 app.use('/api/brands', require('./routes/brandRoutes')); // Public Brand Routes
 app.use('/api/refunds', require('./routes/refundRoutes')); // Refund Management
+app.use('/api/payment', require('./routes/paymentRoutes')); // Payment Gateway
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

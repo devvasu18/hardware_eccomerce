@@ -9,6 +9,7 @@ interface User {
     customerType: string;
     wholesaleDiscount?: number;
     mobile?: string;
+    email?: string;
     savedAddresses?: Array<{
         _id?: string;
         street: string;

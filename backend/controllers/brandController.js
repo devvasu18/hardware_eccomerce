@@ -1,15 +1,5 @@
 const Brand = require('../models/Brand');
-const fs = require('fs');
-const path = require('path');
-
-// Helper to delete file
-const deleteFile = (filePath) => {
-    if (!filePath) return;
-    const fullPath = path.join(__dirname, '..', filePath);
-    fs.unlink(fullPath, (err) => {
-        if (err) console.error(`Failed to delete file: ${fullPath}`, err);
-    });
-};
+const { deleteFile } = require('../utils/fileHandler');
 
 // @desc    Get all brands
 // @route   GET /api/brands
@@ -29,7 +19,7 @@ exports.getBrands = async (req, res) => {
 exports.createBrand = async (req, res) => {
     try {
         const { name, slug } = req.body;
-        const logo_image = req.file ? req.file.path.replace(/\\/g, '/') : undefined;
+        const logo_image = req.file ? req.file.path : undefined;
 
         const brand = await Brand.create({
             name,
@@ -58,11 +48,9 @@ exports.updateBrand = async (req, res) => {
         if (slug) brand.slug = slug;
 
         if (req.file) {
-            // Delete old logo if it exists and isn't a remote URL
-            if (brand.logo_image && !brand.logo_image.startsWith('http')) {
-                deleteFile(brand.logo_image);
-            }
-            brand.logo_image = req.file.path.replace(/\\/g, '/');
+            // Delete old logo if it exists
+            if (brand.logo_image) deleteFile(brand.logo_image);
+            brand.logo_image = req.file.path;
         }
 
         const updatedBrand = await brand.save();
@@ -81,9 +69,7 @@ exports.deleteBrand = async (req, res) => {
         const brand = await Brand.findById(req.params.id);
         if (!brand) return res.status(404).json({ message: 'Brand not found' });
 
-        if (brand.logo_image && !brand.logo_image.startsWith('http')) {
-            deleteFile(brand.logo_image);
-        }
+        if (brand.logo_image) deleteFile(brand.logo_image);
 
         await brand.deleteOne();
         res.json({ message: 'Brand deleted' });

@@ -104,7 +104,7 @@ exports.updateRefundStatus = async (req, res) => {
 
             // -- Stock Adjustment --
             if (stockAdjustment && refund.product) {
-                await Product.findByIdAndUpdate(refund.product, { $inc: { countInStock: 1 } });
+                await Product.findByIdAndUpdate(refund.product, { $inc: { stock: 1 } });
             }
         }
 

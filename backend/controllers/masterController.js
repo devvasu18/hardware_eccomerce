@@ -4,16 +4,7 @@ const Category = require('../models/Category');
 const SubCategory = require('../models/SubCategory');
 const Brand = require('../models/Brand');
 const Product = require('../models/Product');
-const fs = require('fs');
-const path = require('path');
-
-const deleteFile = (filePath) => {
-    if (!filePath) return;
-    const fullPath = path.join(__dirname, '..', filePath);
-    fs.unlink(fullPath, (err) => {
-        if (err) console.error(`Failed to delete file: ${fullPath}`, err);
-    });
-};
+const { deleteFile } = require('../utils/fileHandler');
 
 // --- HSN Codes ---
 exports.getHSNs = async (req, res) => {
@@ -183,15 +174,20 @@ exports.deleteBrand = async (req, res) => {
 
 // --- Stats ---
 exports.getStats = async (req, res) => {
+    // Lazy load models if not at top, or just use mongoose.model
+    const Order = require('../models/Order');
+    const ProcurementRequest = require('../models/ProcurementRequest');
+
     try {
-        const [products, categories, users, orders] = await Promise.all([
-            Product.countDocuments(),
-            Category.countDocuments(),
-            // Assuming User and Order models exist
-            // mongoose.model('User').countDocuments(),
-            // mongoose.model('Order').countDocuments()
-            Promise.resolve(0), Promise.resolve(0) // Placeholders
+        const [pendingOrders, onDemandRequests] = await Promise.all([
+            Order.countDocuments({ status: 'Order Placed' }),
+            ProcurementRequest.countDocuments({ status: 'Pending' })
         ]);
-        res.json({ products, categories, users, orders });
+
+        res.json({
+            pendingOrders,
+            onDemandRequests,
+            tallyFailures: 0 // Placeholder logic for now
+        });
     } catch (error) { res.status(500).json({ error: error.message }); }
 }

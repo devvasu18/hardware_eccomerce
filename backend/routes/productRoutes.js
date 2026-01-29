@@ -86,24 +86,104 @@ router.get('/new-arrivals', async (req, res) => {
 });
 
 // Get Products
+// Get Products with advanced filtering
 router.get('/', async (req, res) => {
     try {
+        const { category, keyword, minPrice, maxPrice, brand, sort, page = 1, limit = 20 } = req.query;
+
         const query = { isVisible: true };
 
-        // Handle category query param
-        if (req.query.category) {
-            console.log(`[API] Filtering by category: "${req.query.category}"`);
-            // Case-insensitive regex match for better UX
-            query.category = { $regex: new RegExp(`^${req.query.category}$`, 'i') };
-        } else {
-            console.log('[API] No category filter provided. Fetching all visible products.');
+        // 1. Category Filter (Name -> ID lookup)
+        if (category) {
+            // Check if it's an ID or Name. IDs are 24 hex chars. 
+            // Simple check: if it matches ObjectId format, use it directly. Else look up name.
+            if (/^[0-9a-fA-F]{24}$/.test(category)) {
+                query.category = category;
+            } else {
+                const Category = require('../models/Category'); // Lazy load
+                const catDoc = await Category.findOne({ name: { $regex: new RegExp(`^${category}$`, 'i') } });
+                if (catDoc) {
+                    query.category = catDoc._id;
+                } else {
+                    // Category name not found, so no products should match
+                    // Return empty immediately or ensure query returns nothing
+                    return res.json({ products: [], page: Number(page), pages: 0, count: 0 });
+                }
+            }
         }
 
+        // 2. Keyword Search (Title, Description, Keywords, Part Number)
+        if (keyword) {
+            const searchRegex = { $regex: keyword, $options: 'i' };
+            query.$or = [
+                { title: searchRegex },
+                { description: searchRegex },
+                { keywords: searchRegex },
+                { part_number: searchRegex }
+            ];
+        }
+
+        // 3. Price Filter (Using selling_price_a as the main price)
+        if (minPrice || maxPrice) {
+            query.selling_price_a = {};
+            if (minPrice) query.selling_price_a.$gte = Number(minPrice);
+            if (maxPrice) query.selling_price_a.$lte = Number(maxPrice);
+        }
+
+        // 4. Brand Filter
+        if (brand) {
+            query.brand = brand;
+        }
+
+        // 5. Batch ID Fetch (for Wishlist/Cart)
+        if (req.query.ids) {
+            const idList = req.query.ids.split(',').filter(id => /^[0-9a-fA-F]{24}$/.test(id));
+            if (idList.length > 0) {
+                query._id = { $in: idList };
+            }
+        }
+
+        // Pagination
+        const pageSize = Number(limit);
+        const pageNum = Number(page);
+
+        // Sorting
+        let sortOption = { createdAt: -1 }; // Default: Newest
+        if (sort === 'price_asc') sortOption = { selling_price_a: 1 };
+        if (sort === 'price_desc') sortOption = { selling_price_a: -1 };
+        if (sort === 'name_asc') sortOption = { title: 1 };
+
+        const count = await Product.countDocuments(query);
         const products = await Product.find(query)
-            .populate('category', 'name');
-        res.json(products);
+            .populate('category', 'name')
+            .populate('brand', 'name')
+            .sort(sortOption)
+            .limit(pageSize)
+            .skip(pageSize * (pageNum - 1));
+
+        // Return standardized paginated response (or just array if frontend expects array, 
+        // but for "real production" pagination is key.
+        // Based on previous code, frontend might expect just an array. 
+        // Let's check if we should break that contract. 
+        // Existing frontend code: `const res = await fetch... return res.json()` -> expects array?
+        // Let's return ARRAY by default to maintain compatibility, unless ?paginated=true is passed?
+        // OR better: Just return Array if no explicit pagination requested?
+        // Actually, robustness means I should try to keep API contract.
+        // Previous Code: `res.json(products);` -> Array.
+
+        // If the user requested specific page, they can handle object response?
+        // To be safe and fix the "fetched properly" requirement without breaking frontend:
+        // formatting:
+
+        if (req.query.page) {
+            res.json({ products, page: pageNum, pages: Math.ceil(count / pageSize), count });
+        } else {
+            res.json(products);
+        }
+
     } catch (err) {
-        res.status(500).json(err);
+        console.error("Product Fetch Error:", err);
+        res.status(500).json({ message: "Failed to fetch products", error: err.message });
     }
 });
 

@@ -52,9 +52,11 @@ async function seedBanners() {
         await Banner.deleteMany({});
         console.log('✓ Cleared existing banners');
 
-        // Insert new banners
-        const insertedBanners = await Banner.insertMany(banners);
-        console.log(`✓ Inserted ${insertedBanners.length} new autoparts banners`);
+        // Insert new banners (use loop to trigger pre-save hooks for slugs)
+        for (const bannerData of banners) {
+            await new Banner(bannerData).save();
+        }
+        console.log(`✓ Inserted ${banners.length} new autoparts banners`);
 
         console.log('\n✅ Banners seeded successfully!');
         process.exit(0);

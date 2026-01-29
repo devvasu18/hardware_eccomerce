@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import api from "../../../../../utils/api";
+import api from "../../../../utils/api";
 import { useRouter } from "next/navigation";
 import { FiSave } from "react-icons/fi";
 import { useState, useEffect } from "react";
@@ -57,9 +57,25 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
     };
 
     const onSubmit = async (data: any) => {
+        const formData = new FormData();
+        formData.append('code', data.code);
+        formData.append('description', data.description);
+        formData.append('discount_type', data.discount_type);
+        formData.append('discount_value', data.discount_value.toString());
+        formData.append('max_discount_amount', data.max_discount_amount?.toString() || '0');
+        formData.append('min_cart_value', data.min_cart_value?.toString() || '0');
+        formData.append('usage_limit', data.usage_limit?.toString() || '0');
+        formData.append('status', data.statusBool); // Backend handles string 'true'/'false'
+
+        // Add image if selected (assuming input type="file" is added later or handled)
+        if (data.image && data.image[0]) {
+            formData.append('image', data.image[0]);
+        }
+
         try {
-            const payload = { ...data, status: data.statusBool === "true" };
-            await api.put(`/coupons/${couponId}`, payload);
+            await api.put(`/coupons/${couponId}`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
             alert('Coupon updated!');
             router.push('/admin/coupons');
         } catch (error: any) {

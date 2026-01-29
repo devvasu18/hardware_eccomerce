@@ -23,10 +23,10 @@ const WishlistSidebar = () => {
             // Add to cart
             await addToCart({
                 productId: item.product._id,
-                name: item.product.name,
+                name: item.product.title,
                 price: item.product.discountedPrice || item.product.basePrice,
                 quantity: 1,
-                image: item.product.images?.[0] || '',
+                image: item.product.featured_image || item.product.gallery_images?.[0] || '',
             });
 
             // Remove from wishlist
@@ -74,15 +74,15 @@ const WishlistSidebar = () => {
                         wishlistItems.map((item) => (
                             <div key={item._id} className="sidebar-wishlist-item">
                                 <div className="wishlist-item-image">
-                                    {item.product.images?.[0] ? (
-                                        <img src={item.product.images[0]} alt={item.product.name} />
+                                    {(item.product.featured_image || item.product.gallery_images?.[0]) ? (
+                                        <img src={item.product.featured_image || item.product.gallery_images[0]} alt={item.product.title} />
                                     ) : (
                                         <div className="no-image-placeholder">No Image</div>
                                     )}
                                 </div>
                                 <div className="wishlist-item-details">
                                     <div>
-                                        <h4 className="wishlist-item-name">{item.product.name}</h4>
+                                        <h4 className="wishlist-item-name">{item.product.title}</h4>
                                         <div className="wishlist-item-meta">
                                             <span className="wishlist-item-category">{item.product.category}</span>
                                         </div>

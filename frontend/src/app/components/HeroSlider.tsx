@@ -6,10 +6,14 @@ import Link from 'next/link';
 interface Banner {
     _id: string;
     title: string;
-    subtitle: string;
+    description: string; // Backend sends description
     image: string;
     position: string;
     isActive: boolean;
+    textColor?: string;
+    buttonColor?: string;
+    buttonText?: string;
+    buttonLink?: string;
 }
 
 const POSITION_STYLES: Record<string, React.CSSProperties> = {
@@ -24,30 +28,8 @@ const POSITION_STYLES: Record<string, React.CSSProperties> = {
     'bottom-right': { justifyContent: 'flex-end', alignItems: 'flex-end', textAlign: 'right' },
 };
 
-// Default fallbacks while loading or if no active banners
-const DEFAULT_SLIDES = [
-    {
-        image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=1600&auto=format&fit=crop',
-        title: 'Industrial Grade. Precision Delivered.',
-        subtitle: 'The single-vendor marketplace for mechanical parts, hardware, and heavy-duty components.',
-        position: 'center'
-    },
-    {
-        image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1600&auto=format&fit=crop',
-        title: 'Modern Office Furniture',
-        subtitle: 'Elevate your workspace with our premium collection of desks, chairs, and storage solutions.',
-        position: 'center-left'
-    },
-    {
-        image: 'https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?q=80&w=1600&auto=format&fit=crop',
-        title: 'Home Renovation Essentials',
-        subtitle: 'From cabinet handles to door fittings, find the perfect hardware for your home.',
-        position: 'center-right'
-    }
-];
-
 export default function HeroSlider() {
-    const [slides, setSlides] = useState<any[]>(DEFAULT_SLIDES);
+    const [slides, setSlides] = useState<Banner[]>([]);
     const [current, setCurrent] = useState(0);
     const [loading, setLoading] = useState(true);
 
@@ -71,74 +53,76 @@ export default function HeroSlider() {
         if (slides.length <= 1) return;
         const timer = setInterval(() => {
             setCurrent((prev) => (prev + 1) % slides.length);
-        }, 5000); // 5s is better for reading
+        }, 5000);
         return () => clearInterval(timer);
     }, [slides]);
 
     return (
-        <section style={{ position: 'relative', height: '600px', overflow: 'hidden', background: '#0F172A' }}>
-            {slides.map((slide, index) => {
-                // Get alignment styles based on position
-                const posStyle = POSITION_STYLES[slide.position || 'center'];
+        slides.length === 0 ? null :
+            <section style={{ position: 'relative', height: '600px', overflow: 'hidden', background: '#0F172A' }}>
+                {slides.map((slide, index) => {
+                    // Get alignment styles based on position
+                    const posStyle = POSITION_STYLES[slide.position || 'center-left'] || POSITION_STYLES['center-left'];
+                    const textColor = slide.textColor || '#ffffff';
+                    const buttonColor = slide.buttonColor || '#0F172A';
 
-                return (
-                    <div
-                        key={index}
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            opacity: index === current ? 1 : 0,
-                            transition: 'opacity 1s ease-in-out',
-                            backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)), url(${slide.image})`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
-                            display: 'flex',
-                            ...posStyle, // Apply alignment
-                            color: 'white',
-                            padding: '4rem' // Inner padding for edges
-                        }}
-                    >
-                        <div className="container" style={{ maxWidth: '800px' }}>
-                            <h1 style={{ fontSize: '3.5rem', marginBottom: '1rem', fontWeight: 800, color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                                {slide.title}
-                            </h1>
-                            <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: '#e2e8f0', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
-                                {slide.subtitle}
-                            </p>
-                            <div style={{ display: 'flex', gap: '1rem', justifyContent: posStyle.justifyContent === 'flex-start' ? 'flex-start' : posStyle.justifyContent === 'flex-end' ? 'flex-end' : 'center' }}>
-                                <Link href="/products" className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '1.1rem' }}>
-                                    Browse Catalog
-                                </Link>
-
+                    return (
+                        <div
+                            key={index}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                opacity: index === current ? 1 : 0,
+                                transition: 'opacity 1s ease-in-out',
+                                backgroundImage: `linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url(${slide.image.startsWith('http') ? slide.image : `http://localhost:5000/${slide.image}`})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                display: 'flex',
+                                ...posStyle, // Apply alignment
+                                color: textColor,
+                                padding: '4rem' // Inner padding for edges
+                            }}
+                        >
+                            <div className="container" style={{ maxWidth: '800px' }}>
+                                <h1 style={{ fontSize: '3.5rem', marginBottom: '1rem', fontWeight: 800, color: textColor, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
+                                    {slide.title}
+                                </h1>
+                                <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', opacity: 0.9 }}>
+                                    {slide.description}
+                                </p>
+                                <div style={{ display: 'flex', gap: '1rem', justifyContent: posStyle.justifyContent === 'flex-start' ? 'flex-start' : posStyle.justifyContent === 'flex-end' ? 'flex-end' : 'center' }}>
+                                    <Link href={slide.buttonLink || '/products'} className="btn" style={{ padding: '1rem 2rem', fontSize: '1.1rem', background: buttonColor, color: 'white', border: 'none' }}>
+                                        {slide.buttonText || 'Shop Now'}
+                                    </Link>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                );
-            })}
+                    );
+                })}
 
-            {/* Dots */}
-            {slides.length > 1 && (
-                <div style={{ position: 'absolute', bottom: '2rem', left: '0', right: '0', display: 'flex', justifyContent: 'center', gap: '0.5rem', zIndex: 10 }}>
-                    {slides.map((_, idx) => (
-                        <button
-                            key={idx}
-                            onClick={() => setCurrent(idx)}
-                            style={{
-                                width: '12px',
-                                height: '12px',
-                                borderRadius: '50%',
-                                border: 'none',
-                                background: idx === current ? 'white' : 'rgba(255,255,255,0.4)',
-                                cursor: 'pointer',
-                                transition: 'background 0.3s'
-                            }}
-                        />
-                    ))}
-                </div>
-            )}
-        </section>
+                {/* Dots */}
+                {slides.length > 1 && (
+                    <div style={{ position: 'absolute', bottom: '2rem', left: '0', right: '0', display: 'flex', justifyContent: 'center', gap: '0.5rem', zIndex: 10 }}>
+                        {slides.map((_, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => setCurrent(idx)}
+                                style={{
+                                    width: '12px',
+                                    height: '12px',
+                                    borderRadius: '50%',
+                                    border: 'none',
+                                    background: idx === current ? 'white' : 'rgba(255,255,255,0.4)',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.3s'
+                                }}
+                            />
+                        ))}
+                    </div>
+                )}
+            </section>
     );
 }

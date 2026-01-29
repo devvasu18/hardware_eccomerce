@@ -25,6 +25,8 @@ export default function AddBannerPage() {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [linkType, setLinkType] = useState<'offer' | 'products'>('offer');
 
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     // Data
     const [offers, setOffers] = useState<Offer[]>([]);
     const [allProducts, setAllProducts] = useState<Product[]>([]);
@@ -86,10 +88,20 @@ export default function AddBannerPage() {
     };
 
     const onSubmit = async (data: any) => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+
         const formData = new FormData();
         formData.append('title', data.title);
         formData.append('description', data.description || '');
         if (data.image) formData.append('image', data.image);
+
+        // Styles
+        formData.append('position', data.position);
+        formData.append('textColor', data.textColor);
+        formData.append('buttonColor', data.buttonColor);
+        formData.append('buttonText', data.buttonText);
+        formData.append('buttonLink', data.buttonLink);
 
         if (linkType === 'offer') {
             formData.append('offer_id', data.offer_id);
@@ -107,6 +119,7 @@ export default function AddBannerPage() {
         } catch (error) {
             console.error(error);
             alert('Failed to create banner');
+            setIsSubmitting(false);
         }
     };
 
@@ -127,6 +140,51 @@ export default function AddBannerPage() {
                         <div className="form-group">
                             <label className="form-label">Description (Optional)</label>
                             <textarea {...register("description")} className="form-input" rows={3} placeholder="Short text for the banner..."></textarea>
+                        </div>
+                    </div>
+
+                    {/* Appearance */}
+                    <div className="card">
+                        <div className="card-header">Appearance</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                            <div className="form-group">
+                                <label className="form-label">Text Position</label>
+                                <select {...register("position")} className="form-select" defaultValue="center-left">
+                                    <option value="top-left">Top Left</option>
+                                    <option value="top-center">Top Center</option>
+                                    <option value="top-right">Top Right</option>
+                                    <option value="center-left">Center Left</option>
+                                    <option value="center">Center</option>
+                                    <option value="center-right">Center Right</option>
+                                    <option value="bottom-left">Bottom Left</option>
+                                    <option value="bottom-center">Bottom Center</option>
+                                    <option value="bottom-right">Bottom Right</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Text Color</label>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <input type="color" {...register("textColor")} defaultValue="#ffffff" style={{ height: '38px', width: '50px', padding: 0, border: 'none', background: 'none' }} />
+                                    <input {...register("textColor")} className="form-input" defaultValue="#ffffff" />
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Button Color</label>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <input type="color" {...register("buttonColor")} defaultValue="#0F172A" style={{ height: '38px', width: '50px', padding: 0, border: 'none', background: 'none' }} />
+                                    <input {...register("buttonColor")} className="form-input" defaultValue="#0F172A" />
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="form-group">
+                                <label className="form-label">Button Text</label>
+                                <input {...register("buttonText")} className="form-input" placeholder="Shop Now" defaultValue="Shop Now" />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Button Link</label>
+                                <input {...register("buttonLink")} className="form-input" placeholder="/products" defaultValue="/products" />
+                            </div>
                         </div>
                     </div>
 
@@ -236,8 +294,13 @@ export default function AddBannerPage() {
 
                     <div className="card">
                         <div className="card-header">Publish</div>
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-                            <FiSave /> Save Banner
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            style={{ width: '100%' }}
+                            disabled={isSubmitting}
+                        >
+                            <FiSave /> {isSubmitting ? 'Saving...' : 'Save Banner'}
                         </button>
                     </div>
                 </div>

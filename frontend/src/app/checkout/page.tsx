@@ -8,7 +8,7 @@ import Modal from '@/app/components/Modal';
 import { useModal } from '@/app/hooks/useModal';
 
 export default function CheckoutPage() {
-    const { items, clearCart } = useCart();
+    const { items, clearCart, loading: cartLoading } = useCart();
     const { user, login } = useAuth();
     const router = useRouter();
 
@@ -36,6 +36,19 @@ export default function CheckoutPage() {
 
     // Derived state for existing addresses
     const savedAddresses = (user as any)?.savedAddresses || [];
+
+    // Auto-select first address if available
+    useEffect(() => {
+        if (savedAddresses.length > 0 && selectedAddressId === 'new') {
+            // Find default or use first
+            const defaultAddr = savedAddresses.find((a: any) => a.isDefault);
+            if (defaultAddr) {
+                setSelectedAddressId(defaultAddr._id);
+            } else {
+                setSelectedAddressId(savedAddresses[0]._id);
+            }
+        }
+    }, [savedAddresses.length]); // Only run when addresses length changess
 
     const isNewAddress = selectedAddressId === 'new';
 
@@ -66,10 +79,10 @@ export default function CheckoutPage() {
     }, [loading, availableItems.length, requestItems.length, paymentMethod]);
 
     useEffect(() => {
-        if (items.length === 0 && !orderPlaced) {
+        if (!cartLoading && items.length === 0 && !orderPlaced) {
             router.push('/cart');
         }
-    }, [items, router, orderPlaced]);
+    }, [items, router, orderPlaced, cartLoading]);
 
     if (items.length === 0) {
         return null;
@@ -230,70 +243,109 @@ export default function CheckoutPage() {
 
             // 2. Process Requests (if on-demand items exist)
             if (requestItems.length > 0) {
-                // Submit requests in parallel or sequentially. Using Promise.all for speed.
                 const requestPromises = requestItems.map(item =>
                     fetch('http://localhost:5000/api/requests', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' }, // Requests might not need auth if guest? Verify endpoint.
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             productId: item.productId,
                             quantity: item.quantity,
-                            customerContact: user ? { name: user.username, mobile: user.mobile } : { name: guestName, mobile: guestPhone } // Fallback logic
+                            customerContact: user ? { name: user.username, mobile: user.mobile } : { name: guestName, mobile: guestPhone }
                         })
                     })
                 );
 
                 const requestResponses = await Promise.all(requestPromises);
                 const allRequestsOk = requestResponses.every(r => r.ok);
-
-                if (allRequestsOk) {
-                    results.requestSuccess = true;
-                } else {
-                    console.error('Some requests failed');
-                    // We continue if at least order succeeded? Or fail all? 
-                    // Let's assume partial success is better than nothing, but user needs to know.
-                }
+                if (allRequestsOk) results.requestSuccess = true;
             } else {
                 results.requestSuccess = true;
             }
 
-            // Final Outcome
-            if ((availableItems.length === 0 || results.orderSuccess) && (requestItems.length === 0 || results.requestSuccess)) {
-                setOrderPlaced(true);
-                clearCart();
+            // PayU Integration
+            if (results.orderSuccess && paymentMethod === 'Online' && results.orderId) {
+                // Get PayU payment parameters from backend
+                const payuResponse = await fetch('http://localhost:5000/api/payment/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: grandTotal,
+                        orderId: results.orderId,
+                        customerName: user?.username || guestName,
+                        customerEmail: user?.email || guestEmail,
+                        customerPhone: user?.mobile || guestPhone
+                    })
+                }).then((t) => t.json());
 
-                let successMessage = '';
-                if (availableItems.length > 0 && requestItems.length > 0) {
-                    successMessage = `Order placed successfully! We have also received your quote request for ${requestItems.length} on-demand items. We will contact you shortly.`;
-                } else if (availableItems.length > 0) {
-                    successMessage = `Order placed successfully!`;
-                } else {
-                    successMessage = `Your quote request has been submitted successfully! We will contact you at ${user?.mobile || guestPhone} shortly.`;
+                if (!payuResponse.success) {
+                    showError('Failed to initiate payment. Please try again.');
+                    setLoading(false);
+                    return;
                 }
 
-                showSuccess(
-                    successMessage,
-                    'Success',
-                    {
-                        onConfirm: () => {
-                            if (results.orderId) {
-                                router.push(`/orders/${results.orderId}`);
-                            } else {
-                                router.push('/'); // Or a "Request Success" page
-                            }
-                        }
-                    }
-                );
+                // Create a form and submit to PayU
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = payuResponse.paymentUrl;
+
+                // Add all PayU parameters as hidden fields
+                Object.keys(payuResponse.params).forEach(key => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = payuResponse.params[key];
+                    form.appendChild(input);
+                });
+
+                document.body.appendChild(form);
+                form.submit();
+
+                // Don't set loading to false as we're redirecting
+                return;
+            }
+
+            // Normal Success Flow (COD or Request Only)
+            if ((availableItems.length === 0 || results.orderSuccess) && (requestItems.length === 0 || results.requestSuccess)) {
+                finalizeSuccess(results);
             } else {
                 showError('Something went wrong. Please try again.');
+                setLoading(false);
             }
 
         } catch (err: any) {
             console.error('Checkout error:', err);
             showError(err.message || 'Network error. Please check your connection and try again.');
-        } finally {
             setLoading(false);
         }
+    };
+
+    const finalizeSuccess = (results: any) => {
+        setOrderPlaced(true);
+        clearCart();
+
+        let successMessage = '';
+        if (availableItems.length > 0 && requestItems.length > 0) {
+            successMessage = `Order placed successfully! We have also received your quote request for ${requestItems.length} on-demand items.`;
+        } else if (availableItems.length > 0) {
+            successMessage = `Order placed successfully!`;
+        } else {
+            successMessage = `Your quote request has been submitted successfully!`;
+        }
+
+        showSuccess(
+            successMessage,
+            'Success',
+            {
+                onConfirm: () => {
+                    if (results.orderId) {
+                        router.push(`/orders/${results.orderId}`);
+                    } else {
+                        router.push('/');
+                    }
+                }
+            }
+        );
+        setLoading(false);
     };
 
 

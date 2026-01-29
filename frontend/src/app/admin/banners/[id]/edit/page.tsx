@@ -14,6 +14,11 @@ interface Banner {
     image: string;
     offer_id?: string;
     product_ids: { _id: string; title: string, opening_stock: number }[];
+    position?: string;
+    textColor?: string;
+    buttonColor?: string;
+    buttonText?: string;
+    buttonLink?: string;
 }
 
 interface Offer {
@@ -81,6 +86,13 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
                 setValue('description', foundBanner.description);
                 setValue('offer_id', foundBanner.offer_id?._id || foundBanner.offer_id); // Handle populated vs string
 
+                // Styles
+                setValue('position', foundBanner.position || 'center-left');
+                setValue('textColor', foundBanner.textColor || '#ffffff');
+                setValue('buttonColor', foundBanner.buttonColor || '#0F172A');
+                setValue('buttonText', foundBanner.buttonText || 'Shop Now');
+                setValue('buttonLink', foundBanner.buttonLink || '/products');
+
                 setImagePreview(foundBanner.image.startsWith('http') ? foundBanner.image : `http://localhost:5000/${foundBanner.image}`);
 
                 if (foundBanner.offer_id) {
@@ -144,6 +156,13 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
         formData.append('title', data.title);
         formData.append('description', data.description || '');
 
+        // Styles
+        formData.append('position', data.position);
+        formData.append('textColor', data.textColor);
+        formData.append('buttonColor', data.buttonColor);
+        formData.append('buttonText', data.buttonText);
+        formData.append('buttonLink', data.buttonLink);
+
         // Only append image if a new file was selected
         if (data.image && data.image[0]) {
             formData.append('image', data.image[0]);
@@ -198,6 +217,51 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
                         <div className="form-group">
                             <label className="form-label">Description (Optional)</label>
                             <textarea {...register("description")} className="form-input" rows={3}></textarea>
+                        </div>
+                    </div>
+
+                    {/* Appearance */}
+                    <div className="card">
+                        <div className="card-header">Appearance</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                            <div className="form-group">
+                                <label className="form-label">Text Position</label>
+                                <select {...register("position")} className="form-select">
+                                    <option value="top-left">Top Left</option>
+                                    <option value="top-center">Top Center</option>
+                                    <option value="top-right">Top Right</option>
+                                    <option value="center-left">Center Left</option>
+                                    <option value="center">Center</option>
+                                    <option value="center-right">Center Right</option>
+                                    <option value="bottom-left">Bottom Left</option>
+                                    <option value="bottom-center">Bottom Center</option>
+                                    <option value="bottom-right">Bottom Right</option>
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Text Color</label>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <input type="color" {...register("textColor")} style={{ height: '38px', width: '50px', padding: 0, border: 'none', background: 'none' }} />
+                                    <input {...register("textColor")} className="form-input" />
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Button Color</label>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <input type="color" {...register("buttonColor")} style={{ height: '38px', width: '50px', padding: 0, border: 'none', background: 'none' }} />
+                                    <input {...register("buttonColor")} className="form-input" />
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="form-group">
+                                <label className="form-label">Button Text</label>
+                                <input {...register("buttonText")} className="form-input" placeholder="Shop Now" />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Button Link</label>
+                                <input {...register("buttonLink")} className="form-input" placeholder="/products" />
+                            </div>
                         </div>
                     </div>
 

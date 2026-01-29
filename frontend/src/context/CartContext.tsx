@@ -85,9 +85,52 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     try {
                         const parsed = JSON.parse(saved);
                         if (Array.isArray(parsed)) {
-                            // Filter out invalid items (e.g. missing productId)
+                            // Filter out invalid items
                             const validItems = parsed.filter(i => i.productId && typeof i.productId === 'string');
-                            setItems(validItems);
+
+                            if (validItems.length > 0) {
+                                // Fetch fresh details for these items
+                                const ids = [...new Set(validItems.map(i => i.productId))];
+                                const res = await fetch(`${API_URL}/products?ids=${ids.join(',')}&limit=100`);
+
+                                if (res.ok) {
+                                    const data = await res.json();
+
+                                    // Define interface for the data we expect
+                                    interface ProductData {
+                                        _id: string;
+                                        title: string;
+                                        basePrice: number;
+                                        mrp?: number;
+                                        discountedPrice?: number;
+                                        selling_price_a?: number;
+                                        featured_image?: string;
+                                        gallery_images?: string[];
+                                        isOnDemand?: boolean;
+                                    }
+
+                                    const productsMap = new Map((Array.isArray(data) ? data : data.products || []).map((p: ProductData) => [p._id, p]));
+
+                                    // Merge fresh details with local quantity/size
+                                    const enrichedItems = validItems.map(item => {
+                                        const product = productsMap.get(item.productId);
+                                        if (!product) return item; // Keep as is if fetch fails
+
+                                        return {
+                                            ...item,
+                                            name: product.title,
+                                            price: product.discountedPrice || product.basePrice || product.mrp || 0,
+                                            image: product.featured_image || product.gallery_images?.[0] || '',
+                                            isOnDemand: product.isOnDemand
+                                        };
+                                    });
+                                    setItems(enrichedItems);
+                                } else {
+                                    setItems(validItems);
+                                }
+                            } else {
+                                setItems([]);
+                            }
                         } else {
                             setItems([]);
                         }
@@ -123,10 +166,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     .filter((item: any) => item.product) // Safety check: skip deleted products
                     .map((item: any) => ({
                         productId: typeof item.product === 'object' ? item.product._id : item.product,
-                        name: item.product?.name || 'Unknown Product',
+                        name: item.product?.title || 'Unknown Product',
                         price: item.price,
                         quantity: item.quantity,
-                        image: item.product?.imageUrl || item.product?.images?.[0] || '',
+                        image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
                         isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
                     }));
@@ -170,10 +213,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     .filter((item: any) => item.product)
                     .map((item: any) => ({
                         productId: typeof item.product === 'object' ? item.product._id : item.product,
-                        name: item.product?.name || 'Unknown Product',
+                        name: item.product?.title || 'Unknown Product',
                         price: item.price,
                         quantity: item.quantity,
-                        image: item.product?.imageUrl || item.product?.images?.[0] || '',
+                        image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
                         isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
                     }));
@@ -219,10 +262,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         .filter((item: any) => item.product)
                         .map((item: any) => ({
                             productId: typeof item.product === 'object' ? item.product._id : item.product,
-                            name: item.product?.name || 'Unknown Product',
+                            name: item.product?.title || 'Unknown Product',
                             price: item.price,
                             quantity: item.quantity,
-                            image: item.product?.imageUrl || item.product?.images?.[0] || '',
+                            image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                             size: item.size,
                             isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
                         }));

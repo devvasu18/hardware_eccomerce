@@ -7,18 +7,24 @@ const { authenticateToken } = require('../middleware/auth');
 // Get user's cart
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const cart = await Cart.findOne({ user: req.user.id }).populate('items.product');
+        const cart = await Cart.findOne({ user: req.user.id }).populate({
+            path: 'items.product',
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive'
+        });
 
         if (!cart) {
             return res.json({ items: [], total: 0, itemCount: 0 });
         }
 
-        // Calculate totals
-        const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+        // Filter out items where product was deleted (null)
+        const validItems = cart.items.filter(item => item.product);
+
+        // Calculate totals based on valid items
+        const total = validItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const itemCount = validItems.reduce((sum, item) => sum + item.quantity, 0);
 
         res.json({
-            items: cart.items,
+            items: validItems,
             total,
             itemCount,
             lastModified: cart.lastModified
@@ -82,15 +88,19 @@ router.post('/add', authenticateToken, async (req, res) => {
         console.log('Saving cart...');
         await cart.save();
         console.log('Cart saved. Populating...');
-        await cart.populate('items.product');
+        await cart.populate({
+            path: 'items.product',
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive'
+        });
         console.log('Cart populated.');
 
-        const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+        const validItems = cart.items.filter(item => item.product); // Filter nulls
+        const total = validItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const itemCount = validItems.reduce((sum, item) => sum + item.quantity, 0);
 
         res.json({
             message: 'Item added to cart',
-            items: cart.items,
+            items: validItems,
             total,
             itemCount
         });
@@ -132,14 +142,18 @@ router.patch('/update', authenticateToken, async (req, res) => {
 
         cart.items[itemIndex].quantity = quantity;
         await cart.save();
-        await cart.populate('items.product');
+        await cart.populate({
+            path: 'items.product',
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive'
+        });
 
-        const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+        const validItems = cart.items.filter(item => item.product);
+        const total = validItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const itemCount = validItems.reduce((sum, item) => sum + item.quantity, 0);
 
         res.json({
             message: 'Cart updated',
-            items: cart.items,
+            items: validItems,
             total,
             itemCount
         });
@@ -165,14 +179,18 @@ router.delete('/remove', authenticateToken, async (req, res) => {
         );
 
         await cart.save();
-        await cart.populate('items.product');
+        await cart.populate({
+            path: 'items.product',
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive'
+        });
 
-        const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+        const validItems = cart.items.filter(item => item.product);
+        const total = validItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const itemCount = validItems.reduce((sum, item) => sum + item.quantity, 0);
 
         res.json({
             message: 'Item removed from cart',
-            items: cart.items,
+            items: validItems,
             total,
             itemCount
         });
@@ -240,14 +258,18 @@ router.post('/sync', authenticateToken, async (req, res) => {
         }
 
         await cart.save();
-        await cart.populate('items.product');
+        await cart.populate({
+            path: 'items.product',
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive'
+        });
 
-        const total = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const itemCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+        const validItems = cart.items.filter(item => item.product);
+        const total = validItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const itemCount = validItems.reduce((sum, item) => sum + item.quantity, 0);
 
         res.json({
             message: 'Cart synced successfully',
-            items: cart.items,
+            items: validItems,
             total,
             itemCount
         });

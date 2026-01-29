@@ -29,13 +29,25 @@ exports.createOrder = async (req, res) => {
                 return res.status(404).json({ success: false, message: `Product ${item.productId} not found` });
             }
 
+            // Check stock availability
+            if (product.stock < item.quantity) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Insufficient stock for ${product.title}. Available: ${product.stock}`
+                });
+            }
+
+            // Decrement stock
+            product.stock -= item.quantity;
+            await product.save();
+
             const itemTotal = item.price * item.quantity;
             orderTotal += itemTotal;
 
             orderItems.push({
                 product: item.productId,
                 quantity: item.quantity,
-                priceAtBooking: item.price,  // Changed from 'price' to 'priceAtBooking'
+                priceAtBooking: item.price,
                 size: item.size || null
             });
         }
@@ -94,6 +106,27 @@ exports.createOrder = async (req, res) => {
         }
 
         await StatusLog.create(statusLogData);
+
+        // --- Send Email Notifications ---
+        // 1. To Customer
+        const customerEmail = req.user ? req.user.email : (guestCustomer ? guestCustomer.email : null);
+        if (customerEmail) {
+            const sendEmail = require('../utils/sendEmail'); // Lazy load
+            await sendEmail({
+                email: customerEmail,
+                subject: `Order Confirmation - #${order.orderNumber || order._id}`,
+                message: `Thank you for your order! Your order #${order.orderNumber || order._id} has been placed successfully. Total: ₹${grandTotal}. We will notify you when it ships.`,
+                html: `<h1>Order Confirmation</h1><p>Thank you for shopping with us.</p><p>Order ID: <strong>${order.orderNumber || order._id}</strong></p><p>Total Amount: <strong>₹${grandTotal}</strong></p>`
+            });
+        }
+
+        // 2. To Admin (Notify Logic)
+        const sendEmail = require('../utils/sendEmail');
+        await sendEmail({
+            email: process.env.ADMIN_EMAIL || 'admin@hardwarestore.com',
+            subject: `New Order Received - #${order.orderNumber || order._id}`,
+            message: `New order received from ${req.user ? req.user.username : (guestCustomer ? guestCustomer.name : 'Guest')}. Total: ₹${grandTotal}.`,
+        });
 
         res.status(201).json({
             success: true,

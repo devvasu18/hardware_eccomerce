@@ -3,6 +3,9 @@
 import { useEffect, useState, use } from 'react';
 import Header from '@/app/components/Header';
 import Link from 'next/link';
+import RefundModal from '@/app/components/RefundModal';
+import { useModal } from '@/app/hooks/useModal';
+import Modal from '@/app/components/Modal';
 
 interface StatusLog {
     _id: string;
@@ -46,6 +49,13 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
     const [shipment, setShipment] = useState<Shipment | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // Refund Modal State
+    const [showRefundModal, setShowRefundModal] = useState(false);
+    const [refundItem, setRefundItem] = useState<{ id: string, name: string, price: number } | null>(null);
+    const [refundLoading, setRefundLoading] = useState(false);
+
+    const { modalState, showSuccess, showError, hideModal } = useModal();
+
     useEffect(() => {
         fetchOrderDetails();
     }, [id]);
@@ -87,6 +97,52 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
             console.error('Failed to fetch order details:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRefundClick = (item: any) => {
+        setRefundItem({
+            id: item.product._id,
+            name: item.product.name,
+            price: item.totalWithTax || (item.price * item.quantity)
+        });
+        setShowRefundModal(true);
+    };
+
+    const submitRefundRequest = async (data: any) => {
+        if (!order || !refundItem) return;
+
+        setRefundLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/refunds/request', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    orderId: order._id,
+                    productId: refundItem.id,
+                    amount: refundItem.price,
+                    reason: data.reason,
+                    description: data.description,
+                    bankDetails: data.bankDetails
+                })
+            });
+
+            const result = await res.json();
+
+            if (res.ok) {
+                setShowRefundModal(false);
+                showSuccess('Your return request has been submitted successfully. We will review it shortly.', 'Request Submitted');
+            } else {
+                showError(result.message || 'Failed to submit request');
+            }
+        } catch (error) {
+            showError('Network error. Please try again.');
+        } finally {
+            setRefundLoading(false);
         }
     };
 
@@ -405,8 +461,35 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                 </div>
                                             </div>
                                         </div>
-                                        <div style={{ fontWeight: 600, fontSize: '1rem' }}>
-                                            ₹{item.totalWithTax?.toLocaleString('en-IN')}
+
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '0.25rem' }}>
+                                                ₹{item.totalWithTax?.toLocaleString('en-IN')}
+                                            </div>
+
+                                            {/* Return Button Condition */}
+                                            {order.status === 'Delivered' && (
+                                                <button
+                                                    onClick={() => handleRefundClick(item)}
+                                                    style={{
+                                                        fontSize: '0.8rem',
+                                                        color: '#ef4444',
+                                                        background: 'transparent',
+                                                        border: '1px solid #ef4444',
+                                                        borderRadius: '4px',
+                                                        padding: '2px 8px',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                    onMouseEnter={(e) => {
+                                                        e.currentTarget.style.background = '#fef2f2';
+                                                    }}
+                                                    onMouseLeave={(e) => {
+                                                        e.currentTarget.style.background = 'transparent';
+                                                    }}
+                                                >
+                                                    Return Item
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -642,6 +725,31 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                         </div>
                     </div>
                 </div>
+
+                {/* Return/Refund Modal */}
+                {refundItem && (
+                    <RefundModal
+                        isOpen={showRefundModal}
+                        onClose={() => setShowRefundModal(false)}
+                        onSubmit={submitRefundRequest}
+                        itemName={refundItem.name}
+                        orderPaymentMethod={order.paymentMethod}
+                        loading={refundLoading}
+                    />
+                )}
+
+                {/* Status/Alert Modal */}
+                <Modal
+                    isOpen={modalState.isOpen}
+                    onClose={hideModal}
+                    title={modalState.title}
+                    message={modalState.message}
+                    type={modalState.type}
+                    confirmText={modalState.confirmText}
+                    cancelText={modalState.cancelText}
+                    onConfirm={modalState.onConfirm}
+                    showCancel={modalState.showCancel}
+                />
             </div>
         </main>
     );

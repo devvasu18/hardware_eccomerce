@@ -28,6 +28,27 @@ const bannerSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+    position: {
+        type: String,
+        enum: ['top-left', 'top-center', 'top-right', 'center-left', 'center', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right'],
+        default: 'center-left'
+    },
+    textColor: {
+        type: String,
+        default: '#FFFFFF'
+    },
+    buttonColor: {
+        type: String,
+        default: '#0F172A'
+    },
+    buttonText: {
+        type: String,
+        default: 'Shop Now'
+    },
+    buttonLink: {
+        type: String,
+        default: '/products'
     }
 }, {
     timestamps: true // created_at logic

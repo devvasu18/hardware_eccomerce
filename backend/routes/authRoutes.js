@@ -5,6 +5,8 @@ const User = require('../models/User');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'chamunda_secret_key_123';
 
+const bcrypt = require('bcryptjs');
+
 // Register
 router.post('/register', async (req, res) => {
     try {
@@ -14,13 +16,14 @@ router.post('/register', async (req, res) => {
         const existing = await User.findOne({ mobile });
         if (existing) return res.status(400).json({ message: 'User already exists with this mobile number' });
 
-        // In production, HASH PASSWORD HERE using bcrypt
-        // const hashedPassword = await bcrypt.hash(password, 10);
+        // Hash Password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
         const newUser = new User({
             username,
             mobile,
-            password: password,
+            password: hashedPassword,
             address,
             email,
             role: role || 'customer'
@@ -38,7 +41,8 @@ router.post('/register', async (req, res) => {
                 username: savedUser.username,
                 role: savedUser.role,
                 customerType: savedUser.customerType,
-                wholesaleDiscount: savedUser.wholesaleDiscount
+                wholesaleDiscount: savedUser.wholesaleDiscount,
+                savedAddresses: savedUser.savedAddresses
             }
         });
 
@@ -55,8 +59,31 @@ router.post('/login', async (req, res) => {
         const user = await User.findOne({ mobile });
         if (!user) return res.status(400).json({ message: 'User not found' });
 
-        // Check password (Plaintext comparison for now as per Seed data)
-        if (user.password !== password) return res.status(400).json({ message: 'Invalid credentials' });
+        // Check password (Supports both Legacy Plain & New Bcrypt)
+        // If password starts with $2a$ or $2b$, it's likely a hash. 
+        // But for safety and legacy support, we can try compare first. 
+        // Actually, if we just migrated, legacy users have plain text. 
+        // We should check if it matches plain text FIRST (for legacy compatibility), 
+        // if so, re-hash and save? Or just support bcrypt?
+
+        // Strategy: Try bcrypt compare. If false, check strict equality (legacy).
+        // If strict equality is true, re-save as hash (Auto-Migration).
+
+        let isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            if (user.password === password) {
+                // It was a legacy plain text password
+                isMatch = true;
+
+                // Auto-migrate to hash for next time
+                const salt = await bcrypt.genSalt(10);
+                user.password = await bcrypt.hash(password, salt);
+                await user.save();
+            }
+        }
+
+        if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
 
         const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
@@ -67,7 +94,8 @@ router.post('/login', async (req, res) => {
                 username: user.username,
                 role: user.role,
                 customerType: user.customerType,
-                wholesaleDiscount: user.wholesaleDiscount
+                wholesaleDiscount: user.wholesaleDiscount,
+                savedAddresses: user.savedAddresses
             }
         });
 

@@ -7,10 +7,11 @@ interface WishlistItem {
     _id: string;
     product: {
         _id: string;
-        name: string;
+        title: string;
         basePrice: number;
         discountedPrice: number;
-        images: string[];
+        featured_image?: string;
+        gallery_images?: string[];
         stock: number;
         category: string;
         isActive: boolean;
@@ -78,18 +79,49 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     };
 
     // Load guest wishlist from localStorage
-    const loadGuestWishlist = () => {
+    const loadGuestWishlist = async () => {
         try {
             const guestWishlist = localStorage.getItem('guestWishlist');
             if (guestWishlist) {
                 const productIds = JSON.parse(guestWishlist);
-                // For guest users, we store only product IDs
-                // We'll need to fetch product details when displaying
-                setWishlistItems(productIds.map((id: string) => ({
-                    _id: id,
-                    product: { _id: id },
-                    addedAt: new Date().toISOString()
-                })));
+                if (productIds.length === 0) {
+                    setWishlistItems([]);
+                    return;
+                }
+
+                // Fetch details for these IDs
+                try {
+                    const res = await fetch(`http://localhost:5000/api/products?ids=${productIds.join(',')}&limit=100`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        const products = Array.isArray(data) ? data : data.products;
+
+                        setWishlistItems(products.map((p: any) => ({
+                            _id: p._id,
+                            product: {
+                                _id: p._id,
+                                title: p.title,
+                                basePrice: p.basePrice || p.mrp || 0,
+                                discountedPrice: p.discountedPrice || p.selling_price_a || 0,
+                                featured_image: p.featured_image,
+                                gallery_images: p.gallery_images,
+                                stock: p.stock || 0,
+                                category: p.category?.name || 'Uncategorized',
+                                isActive: p.isActive
+                            },
+                            addedAt: new Date().toISOString()
+                        })));
+                    }
+                } catch (fetchErr) {
+                    console.error("Failed to fetch guest wishlist details", fetchErr);
+                    // Fallback to just IDs if fetch fails, though rendering will be poor
+                    setWishlistItems(productIds.map((id: string) => ({
+                        _id: id,
+                        product: { _id: id, title: 'Loading...', category: '', basePrice: 0, discountedPrice: 0, stock: 0, isActive: true },
+                        addedAt: new Date().toISOString()
+                    })));
+                }
+
             } else {
                 setWishlistItems([]);
             }
