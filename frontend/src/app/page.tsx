@@ -1,12 +1,12 @@
 import Link from 'next/link';
 import Header from '@/app/components/Header';
-import ProductCard from '@/app/components/ProductCard';
 import HeroSlider from '@/app/components/HeroSlider';
 import CategorySection from '@/app/components/CategorySection';
 import WhyChooseUs from '@/app/components/WhyChooseUs';
 import SpecialOffers from '@/app/components/SpecialOffers';
 import NewArrivals from '@/app/components/NewArrivals';
 import BrandsSection from '@/app/components/BrandsSection';
+import FeaturedProducts from '@/app/components/FeaturedProducts';
 
 interface Product {
     _id: string;
@@ -46,20 +46,7 @@ export default async function Home() {
 
             <CategorySection />
 
-            <section className="container" style={{ padding: '4rem 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h2>Featured Products</h2>
-                    <Link href="/products" style={{ color: 'var(--primary)', fontWeight: 600 }}>View All &rarr;</Link>
-                </div>
-
-                <div className="grid">
-                    {featured.length === 0 ? (
-                        <p>No products available at the moment. Please check backend connection.</p>
-                    ) : featured.map((item) => (
-                        <ProductCard key={item._id} product={item} />
-                    ))}
-                </div>
-            </section>
+            <FeaturedProducts products={featured} />
 
             <NewArrivals />
 

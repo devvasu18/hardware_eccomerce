@@ -102,6 +102,8 @@ export default function AddBannerPage() {
         formData.append('buttonColor', data.buttonColor);
         formData.append('buttonText', data.buttonText);
         formData.append('buttonLink', data.buttonLink);
+        formData.append('showSecondaryButton', data.showSecondaryButton);
+        formData.append('badgeText', data.badgeText);
 
         if (linkType === 'offer') {
             formData.append('offer_id', data.offer_id);
@@ -184,6 +186,14 @@ export default function AddBannerPage() {
                             <div className="form-group">
                                 <label className="form-label">Button Link</label>
                                 <input {...register("buttonLink")} className="form-input" placeholder="/products" defaultValue="/products" />
+                            </div>
+                            <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+                                <input type="checkbox" {...register("showSecondaryButton")} defaultChecked={true} style={{ width: '20px', height: '20px' }} />
+                                <label className="form-label" style={{ marginBottom: 0 }}>Show "Explore Products" Button</label>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Badge Text</label>
+                                <input {...register("badgeText")} className="form-input" placeholder="Premium Quality" defaultValue="Premium Quality" />
                             </div>
                         </div>
                     </div>

@@ -12,6 +12,7 @@ interface Category {
     imageUrl: string;
     displayOrder: number;
     isActive: boolean;
+    showInNav: boolean;
     gradient: string;
     productCount: number;
 }
@@ -26,7 +27,8 @@ export default function CategoryManager() {
         imageUrl: '',
         displayOrder: 0,
         gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        isActive: true
+        isActive: true,
+        showInNav: false
     });
     const [editId, setEditId] = useState<string | null>(null);
 
@@ -59,7 +61,8 @@ export default function CategoryManager() {
             imageUrl: category.imageUrl,
             displayOrder: category.displayOrder,
             gradient: category.gradient,
-            isActive: category.isActive
+            isActive: category.isActive,
+            showInNav: category.showInNav
         });
         setEditId(category._id);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -73,7 +76,8 @@ export default function CategoryManager() {
             imageUrl: '',
             displayOrder: 0,
             gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            isActive: true
+            isActive: true,
+            showInNav: false
         });
         setEditId(null);
     };
@@ -194,16 +198,6 @@ export default function CategoryManager() {
                         />
                     </div>
                     <div className="form-group">
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Gradient CSS</label>
-                        <input
-                            className="input"
-                            value={formData.gradient}
-                            onChange={e => setFormData({ ...formData, gradient: e.target.value })}
-                            placeholder="linear-gradient(...)"
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
-                        />
-                    </div>
-                    <div className="form-group">
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Display Order</label>
                         <input
                             type="number"
@@ -212,6 +206,18 @@ export default function CategoryManager() {
                             onChange={e => setFormData({ ...formData, displayOrder: parseInt(e.target.value) })}
                             style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
                         />
+                    </div>
+
+                    <div className="form-group" style={{ display: 'flex', alignItems: 'center' }}>
+                        <input
+                            type="checkbox"
+                            checked={formData.showInNav}
+                            onChange={e => setFormData({ ...formData, showInNav: e.target.checked })}
+                            style={{ width: '20px', height: '20px', marginRight: '10px', cursor: 'pointer' }}
+                        />
+                        <label style={{ cursor: 'pointer', userSelect: 'none', fontWeight: 600, color: '#475569' }}>
+                            Show in Header Navigation (Max 10)
+                        </label>
                     </div>
 
                     <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
@@ -315,6 +321,6 @@ export default function CategoryManager() {
                 onConfirm={modalState.onConfirm}
                 showCancel={modalState.showCancel}
             />
-        </div>
+        </div >
     );
 }

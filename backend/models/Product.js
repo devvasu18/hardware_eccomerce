@@ -60,6 +60,7 @@ const productSchema = new mongoose.Schema({
     isNewArrival: { type: Boolean, default: false },
     isTopSale: { type: Boolean, default: false },
     isDailyOffer: { type: Boolean, default: false },
+    isOnDemand: { type: Boolean, default: false }, // Made-to-order products that never show as out of stock
 
     // Legacy / Compatibility
     stock: { type: Number, default: 0 },

@@ -49,6 +49,14 @@ const bannerSchema = new mongoose.Schema({
     buttonLink: {
         type: String,
         default: '/products'
+    },
+    showSecondaryButton: {
+        type: Boolean,
+        default: true
+    },
+    badgeText: {
+        type: String,
+        default: 'Premium Quality'
     }
 }, {
     timestamps: true // created_at logic

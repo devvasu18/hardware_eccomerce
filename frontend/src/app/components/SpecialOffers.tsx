@@ -7,10 +7,13 @@ import './SpecialOffers.css';
 
 interface Product {
     _id: string;
-    name: string;
+    name?: string;
+    title?: string;
     category: string;
-    images: string[];
-    imageUrl: string;
+    images?: string[];
+    imageUrl?: string;
+    featured_image?: string;
+    gallery_images?: string[];
 }
 
 interface SpecialOffer {
@@ -37,6 +40,8 @@ export default function SpecialOffers() {
                 const res = await fetch('http://localhost:5000/api/special-offers');
                 if (res.ok) {
                     const data = await res.json();
+                    console.log('Special Offers Data:', data);
+                    console.log('First offer product:', data[0]?.productId);
                     setOffers(data);
                 }
             } catch (error) {
@@ -112,30 +117,50 @@ export default function SpecialOffers() {
                                     <div className="discount-percent">{offer.discountPercent}%</div>
                                     <div className="discount-text">OFF</div>
                                 </div>
-                                {offer.productId?.imageUrl || offer.productId?.images?.[0] ? (
-                                    <Image
-                                        src={(offer.productId.imageUrl || offer.productId.images?.[0])?.startsWith('http')
-                                            ? (offer.productId.imageUrl || offer.productId.images?.[0])
-                                            : `http://localhost:5000/${(offer.productId.imageUrl || offer.productId.images?.[0])?.startsWith('/')
-                                                ? (offer.productId.imageUrl || offer.productId.images?.[0]).slice(1)
-                                                : (offer.productId.imageUrl || offer.productId.images?.[0])}`
-                                        }
-                                        alt={offer.title}
-                                        width={240}
-                                        height={130}
-                                        className="deal-product-image"
-                                        unoptimized={true}
-                                    />
-                                ) : (
-                                    <div className="deal-image-placeholder">
-                                        <span className="image-icon">📦</span>
-                                    </div>
-                                )}
+                                {(() => {
+                                    const product = offer.productId;
+                                    if (!product) {
+                                        return (
+                                            <div className="deal-image-placeholder">
+                                                <span className="image-icon">📦</span>
+                                            </div>
+                                        );
+                                    }
+
+                                    // Check for image in order of preference
+                                    const imageUrl = product.featured_image
+                                        || product.gallery_images?.[0]
+                                        || product.imageUrl
+                                        || product.images?.[0];
+
+                                    if (!imageUrl) {
+                                        return (
+                                            <div className="deal-image-placeholder">
+                                                <span className="image-icon">📦</span>
+                                            </div>
+                                        );
+                                    }
+
+                                    const fullImageUrl = imageUrl.startsWith('http')
+                                        ? imageUrl
+                                        : `http://localhost:5000/${imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl}`;
+
+                                    return (
+                                        <Image
+                                            src={fullImageUrl}
+                                            alt={offer.title}
+                                            width={240}
+                                            height={130}
+                                            className="deal-product-image"
+                                            unoptimized={true}
+                                        />
+                                    );
+                                })()}
                             </div>
 
                             <div className="deal-content">
-                                <div className="deal-category">{offer.productId?.category || 'Auto Parts'}</div>
-                                <h3 className="deal-product-name">{offer.title}</h3>
+                                <div className="deal-category ">{offer.productId?.title || 'Auto Parts'}</div>
+
 
                                 <div className="deal-pricing">
                                     <div className="price-row">

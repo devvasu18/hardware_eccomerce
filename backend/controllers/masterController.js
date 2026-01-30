@@ -73,9 +73,17 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
     try {
-        const { name, slug, description, displayOrder } = req.body;
+        const { name, slug, description, displayOrder, showInNav } = req.body;
         const image = req.file ? req.file.path.replace(/\\/g, '/') : null;
-        const category = await Category.create({ name, slug, description, displayOrder, image });
+
+        if (showInNav) {
+            const count = await Category.countDocuments({ showInNav: true });
+            if (count >= 10) {
+                return res.status(400).json({ message: 'Navigation limit reached (max 10). Uncheck "Show in Navigation".' });
+            }
+        }
+
+        const category = await Category.create({ name, slug, description, displayOrder, image, showInNav });
         res.status(201).json(category);
     } catch (error) { res.status(400).json({ error: error.message }); }
 };
@@ -138,6 +146,29 @@ exports.deleteSubCategory = async (req, res) => {
         }
         res.json({ message: 'SubCategory deleted' });
     } catch (error) { res.status(500).json({ error: error.message }); }
+};
+
+exports.updateSubCategory = async (req, res) => {
+    try {
+        const { category_id, name, slug } = req.body;
+        const updateData = { category_id, name, slug };
+
+        if (req.file) {
+            updateData.image = req.file.path.replace(/\\/g, '/');
+            // Delete old image
+            const oldSubCat = await SubCategory.findById(req.params.id);
+            if (oldSubCat && oldSubCat.image) {
+                deleteFile(oldSubCat.image);
+            }
+        }
+
+        const subCategory = await SubCategory.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        );
+        res.json(subCategory);
+    } catch (error) { res.status(400).json({ error: error.message }); }
 };
 
 // --- Brands ---

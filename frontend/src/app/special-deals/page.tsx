@@ -202,8 +202,7 @@ export default function SpecialDealsPage() {
                                 </div>
 
                                 <div className="deal-content">
-                                    <div className="deal-category">{offer.productId?.category || 'Auto Parts'}</div>
-                                    <h3 className="deal-product-name">{offer.title}</h3>
+
 
                                     <div className="deal-pricing">
                                         <div className="price-row">

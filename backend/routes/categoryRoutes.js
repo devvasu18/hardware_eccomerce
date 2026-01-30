@@ -44,6 +44,22 @@ router.get('/:slug', async (req, res) => {
     }
 });
 
+// Get subcategories by category slug
+router.get('/:slug/subcategories', async (req, res) => {
+    try {
+        const category = await Category.findOne({ slug: req.params.slug });
+        if (!category) {
+            return res.status(404).json({ message: 'Category not found' });
+        }
+
+        const SubCategory = require('../models/SubCategory');
+        const subcategories = await SubCategory.find({ category_id: category._id });
+        res.json(subcategories);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // Admin: Create category
 router.post('/', async (req, res) => {
     try {
@@ -58,6 +74,13 @@ router.post('/', async (req, res) => {
 // Admin: Update category
 router.put('/:id', async (req, res) => {
     try {
+        if (req.body.showInNav === true) {
+            const count = await Category.countDocuments({ showInNav: true, _id: { $ne: req.params.id } });
+            if (count >= 10) {
+                return res.status(400).json({ message: 'Navigation limit reached (max 10). Uncheck "Show in Navigation".' });
+            }
+        }
+
         const category = await Category.findByIdAndUpdate(
             req.params.id,
             req.body,

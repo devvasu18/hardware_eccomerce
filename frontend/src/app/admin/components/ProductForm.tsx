@@ -48,6 +48,7 @@ const productSchema = z.object({
     isTopSale: z.boolean().default(false),
     isDailyOffer: z.boolean().default(false),
     isVisible: z.boolean().default(true),
+    isOnDemand: z.boolean().default(false),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -163,7 +164,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         isNewArrival: product.isNewArrival,
                         isTopSale: product.isTopSale,
                         isDailyOffer: product.isDailyOffer,
-                        isVisible: product.isVisible
+                        isVisible: product.isVisible,
+                        isOnDemand: product.isOnDemand
                     });
 
                     // Set Previews & Methods
@@ -386,6 +388,13 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             <label className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                                 <input type="checkbox" {...register("isDailyOffer")} className="form-checkbox" />
                                 <span>Daily Offer</span>
+                            </label>
+                            <label className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                <input type="checkbox" {...register("isOnDemand")} className="form-checkbox" />
+                                <span style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                    <span>On-Demand / Made-to-Order</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>Never shows as out of stock</span>
+                                </span>
                             </label>
                         </div>
                     </div>

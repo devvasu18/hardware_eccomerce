@@ -90,9 +90,10 @@ export default function ProductList() {
                                         <div className="img-preview">
                                             {product.featured_image ? (
                                                 <Image
-                                                    src={product.featured_image.startsWith('http') ? product.featured_image : `http://localhost:5000/${product.featured_image}`}
+                                                    src={product.featured_image.startsWith('http') ? product.featured_image : `/${product.featured_image}`}
                                                     alt={product.title}
                                                     fill
+                                                    unoptimized
                                                     style={{ objectFit: 'contain' }}
                                                 />
                                             ) : (

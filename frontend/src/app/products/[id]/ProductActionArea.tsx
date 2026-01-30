@@ -146,10 +146,18 @@ export default function ProductActionArea({ product }: { product: Product }) {
                         </button>
                     </div>
 
+                    {/* Stock Info - Real-time data from Stock Inward Register */}
+                    {/* The product.stock value is automatically updated when stock entries are created via Stock Inward Register */}
                     {!isStrictlyOnDemand && (
                         <div className="stock-info">
                             <span className={`stock-badge ${!isOutOfStock ? 'in-stock' : 'out-stock'}`}>
-                                {!isOutOfStock ? `${product.stock} in stock` : 'Out of Stock'}
+                                {!isOutOfStock ? (
+                                    <>
+
+                                        {product.stock} in stock
+
+                                    </>
+                                ) : 'Out of Stock'}
                             </span>
                         </div>
                     )}

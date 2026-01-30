@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
             startDate: { $lte: now },
             endDate: { $gte: now }
         })
-            .populate('productId', 'name category images imageUrl')
+            .populate('productId')
             .sort({ displayOrder: 1 })
             .select('-__v');
 

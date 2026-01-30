@@ -150,7 +150,11 @@ export default function OfferMaster() {
                                 <td>
                                     <div className="img-preview" style={{ width: '80px', height: '45px' }}>
                                         {off.banner_image ? (
-                                            <Image src={`/api/${off.banner_image}`} alt={off.title} fill />
+                                            <Image
+                                                src={off.banner_image.startsWith('http') ? off.banner_image : `/api/${off.banner_image}`}
+                                                alt={off.title}
+                                                fill
+                                            />
                                         ) : (
                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ccc', fontSize: '0.75rem' }}>N/A</div>
                                         )}

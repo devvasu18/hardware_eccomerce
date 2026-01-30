@@ -27,6 +27,7 @@ router.delete('/categories/:id', protect, admin, masterController.deleteCategory
 // Sub-Categories
 router.get('/sub-categories', protect, admin, masterController.getSubCategories);
 router.post('/sub-categories', protect, admin, upload.single('image'), masterController.createSubCategory);
+router.put('/sub-categories/:id', protect, admin, upload.single('image'), masterController.updateSubCategory);
 router.delete('/sub-categories/:id', protect, admin, masterController.deleteSubCategory);
 
 // Brands

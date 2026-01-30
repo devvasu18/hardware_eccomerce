@@ -6,7 +6,8 @@ import { useModal } from '../../hooks/useModal';
 
 interface Product {
     _id: string;
-    name: string;
+    name?: string;
+    title?: string;
     basePrice: number;
     discountedPrice?: number;
 }
@@ -57,20 +58,35 @@ export default function SpecialDealsManager() {
                 fetch('http://localhost:5000/api/products')
             ]);
 
+            if (!offerRes.ok) {
+                console.error('Failed to fetch offers:', offerRes.status);
+            }
+            if (!productRes.ok) {
+                console.error('Failed to fetch products:', productRes.status);
+            }
+
             const offersData = await offerRes.json();
             const productsData = await productRes.json();
 
-            setOffers(offersData);
-            setProducts(productsData);
+            console.log('Fetched offers:', offersData);
+            console.log('Fetched products:', productsData);
+
+            setOffers(Array.isArray(offersData) ? offersData : []);
+            setProducts(Array.isArray(productsData) ? productsData : []);
             setLoading(false);
         } catch (error) {
-            console.error(error);
+            console.error('Error fetching data:', error);
+            setOffers([]);
+            setProducts([]);
             setLoading(false);
         }
     };
 
     const handleEdit = (offer: SpecialOffer) => {
-        const pId = typeof offer.productId === 'object' ? (offer.productId as Product)._id : offer.productId as string;
+        // Handle null productId (deleted product)
+        const pId = offer.productId && typeof offer.productId === 'object'
+            ? (offer.productId as Product)._id
+            : (offer.productId as string) || '';
 
         let startDateStr = '';
         let endDateStr = '';
@@ -121,7 +137,7 @@ export default function SpecialDealsManager() {
                 ...prev,
                 productId: pId,
                 originalPrice: price,
-                title: product.name, // meaningful default
+                title: product.name || product.title || '', // meaningful default
                 offerPrice: prev.discountPercent ? price - (price * prev.discountPercent / 100) : price
             }));
         } else {
@@ -139,6 +155,24 @@ export default function SpecialDealsManager() {
             ...prev,
             discountPercent: disc,
             offerPrice: calculateOfferPrice(prev.originalPrice, disc)
+        }));
+    };
+
+    const handleOfferPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newOfferPrice = parseFloat(e.target.value) || 0;
+        const original = formData.originalPrice;
+
+        let newDiscount = 0;
+        if (original > 0) {
+            newDiscount = ((original - newOfferPrice) / original) * 100;
+            // Round to 1 decimal place to avoid long decimals
+            newDiscount = Math.round(newDiscount * 10) / 10;
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            offerPrice: newOfferPrice,
+            discountPercent: newDiscount
         }));
     };
 
@@ -210,17 +244,22 @@ export default function SpecialDealsManager() {
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
 
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Select Product</label>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>
+                            Select Product {products.length > 0 && `(${products.length} products)`}
+                        </label>
                         <select
                             className="input"
                             required
                             value={formData.productId}
                             onChange={handleProductChange}
+                            disabled={loading}
                             style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', background: 'white' }}
                         >
-                            <option value="">-- Select Product --</option>
+                            <option value="">
+                                {loading ? '⏳ Loading products...' : products.length === 0 ? '⚠️ No products found' : '-- Select Product --'}
+                            </option>
                             {products.map(p => (
-                                <option key={p._id} value={p._id}>{p.name} (₹{p.basePrice})</option>
+                                <option key={p._id} value={p._id}>{p.name || p.title || 'Unnamed Product'}</option>
                             ))}
                         </select>
                     </div>
@@ -276,7 +315,7 @@ export default function SpecialDealsManager() {
                             type="number"
                             className="input"
                             value={formData.offerPrice}
-                            onChange={e => setFormData({ ...formData, offerPrice: parseFloat(e.target.value) })}
+                            onChange={handleOfferPriceChange}
                             style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', fontWeight: 'bold', color: '#16a34a' }}
                         />
                     </div>
@@ -359,7 +398,13 @@ export default function SpecialDealsManager() {
                             </span>
                             <h4>{offer.title}</h4>
                             <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>
-                                Product: {typeof offer.productId === 'object' ? (offer.productId as Product).name : 'Unknown Product'}
+                                Product: {
+                                    offer.productId && typeof offer.productId === 'object'
+                                        ? ((offer.productId as Product).name || (offer.productId as Product).title || 'Unnamed Product')
+                                        : offer.productId
+                                            ? 'Product ID: ' + offer.productId
+                                            : '⚠️ Product Deleted'
+                                }
                             </p>
                             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
                                 <span style={{ textDecoration: 'line-through', color: '#94a3b8' }}>₹{offer.originalPrice}</span>

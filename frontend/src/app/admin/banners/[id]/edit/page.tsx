@@ -19,6 +19,8 @@ interface Banner {
     buttonColor?: string;
     buttonText?: string;
     buttonLink?: string;
+    showSecondaryButton?: boolean;
+    badgeText?: string;
 }
 
 interface Offer {
@@ -92,6 +94,8 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
                 setValue('buttonColor', foundBanner.buttonColor || '#0F172A');
                 setValue('buttonText', foundBanner.buttonText || 'Shop Now');
                 setValue('buttonLink', foundBanner.buttonLink || '/products');
+                setValue('showSecondaryButton', foundBanner.showSecondaryButton !== false); // Default true if undefined
+                setValue('badgeText', foundBanner.badgeText || 'Premium Quality');
 
                 setImagePreview(foundBanner.image.startsWith('http') ? foundBanner.image : `http://localhost:5000/${foundBanner.image}`);
 
@@ -162,6 +166,8 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
         formData.append('buttonColor', data.buttonColor);
         formData.append('buttonText', data.buttonText);
         formData.append('buttonLink', data.buttonLink);
+        formData.append('showSecondaryButton', data.showSecondaryButton);
+        formData.append('badgeText', data.badgeText);
 
         // Only append image if a new file was selected
         if (data.image && data.image[0]) {
@@ -262,6 +268,14 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
                                 <label className="form-label">Button Link</label>
                                 <input {...register("buttonLink")} className="form-input" placeholder="/products" />
                             </div>
+                        </div>
+                        <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0rem' }}>
+                            <input type="checkbox" {...register("showSecondaryButton")} style={{ width: '20px', height: '20px' }} />
+                            <label className="form-label" style={{ marginBottom: 0 }}>Show "Explore Products" Button</label>
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Badge Text</label>
+                            <input {...register("badgeText")} className="form-input" placeholder="Premium Quality" />
                         </div>
                     </div>
 

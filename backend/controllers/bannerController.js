@@ -24,7 +24,7 @@ exports.getBanners = async (req, res) => {
 // @access  Admin
 exports.createBanner = async (req, res) => {
     try {
-        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink } = req.body;
+        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink, showSecondaryButton, badgeText } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'Image is required' });
@@ -59,7 +59,9 @@ exports.createBanner = async (req, res) => {
             textColor,
             buttonColor,
             buttonText,
-            buttonLink
+            buttonLink,
+            showSecondaryButton: showSecondaryButton === 'true' || showSecondaryButton === true,
+            badgeText
         });
 
         res.status(201).json(banner);
@@ -86,7 +88,7 @@ exports.updateBanner = async (req, res) => {
         const banner = await Banner.findById(req.params.id);
         if (!banner) return res.status(404).json({ message: 'Banner not found' });
 
-        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink } = req.body;
+        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink, showSecondaryButton, badgeText } = req.body;
 
         // Update basic fields
         if (title) banner.title = title;
@@ -96,6 +98,8 @@ exports.updateBanner = async (req, res) => {
         if (buttonColor) banner.buttonColor = buttonColor;
         if (buttonText) banner.buttonText = buttonText;
         if (buttonLink) banner.buttonLink = buttonLink;
+        if (showSecondaryButton !== undefined) banner.showSecondaryButton = showSecondaryButton === 'true' || showSecondaryButton === true;
+        if (badgeText !== undefined) banner.badgeText = badgeText;
 
         // Update image if provided
         if (req.file) {

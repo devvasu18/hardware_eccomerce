@@ -101,7 +101,12 @@ router.get('/', async (req, res) => {
                 query.category = category;
             } else {
                 const Category = require('../models/Category'); // Lazy load
-                const catDoc = await Category.findOne({ name: { $regex: new RegExp(`^${category}$`, 'i') } });
+                const catDoc = await Category.findOne({
+                    $or: [
+                        { slug: category },
+                        { name: { $regex: new RegExp(`^${category}$`, 'i') } }
+                    ]
+                });
                 if (catDoc) {
                     query.category = catDoc._id;
                 } else {
@@ -109,6 +114,23 @@ router.get('/', async (req, res) => {
                     // Return empty immediately or ensure query returns nothing
                     return res.json({ products: [], page: Number(page), pages: 0, count: 0 });
                 }
+            }
+        }
+
+        // Subcategory Filter
+        if (req.query.subcategory) {
+            const SubCategory = require('../models/SubCategory');
+            const subCatDoc = await SubCategory.findOne({
+                $or: [
+                    { slug: req.query.subcategory },
+                    { name: { $regex: new RegExp(`^${req.query.subcategory}$`, 'i') } }
+                ]
+            });
+
+            if (subCatDoc) {
+                query.sub_category = subCatDoc._id;
+            } else {
+                return res.json({ products: [], page: Number(page), pages: 0, count: 0 });
             }
         }
 
@@ -132,7 +154,25 @@ router.get('/', async (req, res) => {
 
         // 4. Brand Filter
         if (brand) {
-            query.brand = brand;
+            // Check if it's an ID or Name/Slug. IDs are 24 hex chars.
+            if (/^[0-9a-fA-F]{24}$/.test(brand)) {
+                query.brand = brand;
+            } else {
+                const Brand = require('../models/Brand'); // Lazy load
+                // Try to find by slug first (exact match), then name (regex)
+                const brandDoc = await Brand.findOne({
+                    $or: [
+                        { slug: brand },
+                        { name: { $regex: new RegExp(`^${brand}$`, 'i') } }
+                    ]
+                });
+                if (brandDoc) {
+                    query.brand = brandDoc._id;
+                } else {
+                    // Brand not found, force empty result
+                    return res.json(req.query.page ? { products: [], page: Number(page), pages: 0, count: 0 } : []);
+                }
+            }
         }
 
         // 5. Batch ID Fetch (for Wishlist/Cart)

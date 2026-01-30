@@ -1,0 +1,215 @@
+/* ProductFilters.css */
+
+.filters-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: #fff;
+    border-right: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    height: fit-content;
+    border-radius: 8px;
+    /* Optional, if detached */
+}
+
+/* Header */
+.filters-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.filters-header h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+}
+
+.close-filters {
+    display: none;
+    /* Mobile only */
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+
+/* Filter Groups */
+.filter-group {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 1.5rem;
+}
+
+.filter-group:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.filter-group h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Refine Search Input */
+.search-group {
+    padding-bottom: 2rem;
+}
+
+.refine-search-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.refine-input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: #f8fafc;
+    transition: all 0.2s;
+}
+
+.refine-input:focus {
+    background: #fff;
+    border-color: #6366f1;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.refine-btn {
+    padding: 0.5rem 0.75rem;
+    background: #0f172a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.refine-btn:hover {
+    background: #1e293b;
+}
+
+/* Filter List */
+.filter-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+/* Custom Scrollbar */
+.filter-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.filter-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+
+.filter-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #64748b;
+    padding: 0.25rem 0;
+    transition: color 0.2s;
+}
+
+.filter-item:hover {
+    color: #0f172a;
+}
+
+.filter-item.active {
+    color: #6366f1;
+    font-weight: 600;
+}
+
+.filter-item input {
+    accent-color: #6366f1;
+    cursor: pointer;
+}
+
+.sub-category-list {
+    margin-left: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+    border-left: 2px solid #f1f5f9;
+    padding-left: 0.5rem;
+}
+
+.sub-item {
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+.sub-item.active {
+    color: #6366f1;
+    font-weight: 600;
+}
+
+/* Mobile Toggle */
+.mobile-filter-toggle {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .filters-sidebar {
+        position: fixed;
+        top: 0;
+        left: -100%;
+        /* Hidden */
+        width: 280px;
+        height: 100vh;
+        z-index: 2000;
+        border-radius: 0;
+        transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .filters-sidebar.open {
+        left: 0;
+    }
+
+    .mobile-filter-toggle {
+        display: inline-flex;
+    }
+
+    .close-filters {
+        display: block;
+    }
+
+    .filters-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1999;
+        backdrop-filter: blur(2px);
+    }
+}

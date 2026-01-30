@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { FiArrowRight, FiPlay, FiZap } from 'react-icons/fi';
+import './HeroSlider.css';
 
 interface Banner {
     _id: string;
     title: string;
-    description: string; // Backend sends description
+    description: string;
     image: string;
     position: string;
     isActive: boolean;
@@ -14,19 +16,9 @@ interface Banner {
     buttonColor?: string;
     buttonText?: string;
     buttonLink?: string;
+    showSecondaryButton?: boolean;
+    badgeText?: string;
 }
-
-const POSITION_STYLES: Record<string, React.CSSProperties> = {
-    'top-left': { justifyContent: 'flex-start', alignItems: 'flex-start', textAlign: 'left' },
-    'top-center': { justifyContent: 'center', alignItems: 'flex-start', textAlign: 'center' },
-    'top-right': { justifyContent: 'flex-end', alignItems: 'flex-start', textAlign: 'right' },
-    'center-left': { justifyContent: 'flex-start', alignItems: 'center', textAlign: 'left' },
-    'center': { justifyContent: 'center', alignItems: 'center', textAlign: 'center' },
-    'center-right': { justifyContent: 'flex-end', alignItems: 'center', textAlign: 'right' },
-    'bottom-left': { justifyContent: 'flex-start', alignItems: 'flex-end', textAlign: 'left' },
-    'bottom-center': { justifyContent: 'center', alignItems: 'flex-end', textAlign: 'center' },
-    'bottom-right': { justifyContent: 'flex-end', alignItems: 'flex-end', textAlign: 'right' },
-};
 
 export default function HeroSlider() {
     const [slides, setSlides] = useState<Banner[]>([]);
@@ -34,7 +26,6 @@ export default function HeroSlider() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Fetch Banners
         fetch('http://localhost:5000/api/banners')
             .then(res => res.json())
             .then(data => {
@@ -53,76 +44,92 @@ export default function HeroSlider() {
         if (slides.length <= 1) return;
         const timer = setInterval(() => {
             setCurrent((prev) => (prev + 1) % slides.length);
-        }, 5000);
+        }, 6000);
         return () => clearInterval(timer);
     }, [slides]);
 
-    return (
-        slides.length === 0 ? null :
-            <section style={{ position: 'relative', height: '600px', overflow: 'hidden', background: '#0F172A' }}>
-                {slides.map((slide, index) => {
-                    // Get alignment styles based on position
-                    const posStyle = POSITION_STYLES[slide.position || 'center-left'] || POSITION_STYLES['center-left'];
-                    const textColor = slide.textColor || '#ffffff';
-                    const buttonColor = slide.buttonColor || '#0F172A';
+    if (slides.length === 0) return null;
 
-                    return (
-                        <div
-                            key={index}
-                            style={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                width: '100%',
-                                height: '100%',
-                                opacity: index === current ? 1 : 0,
-                                transition: 'opacity 1s ease-in-out',
-                                backgroundImage: `linear-gradient(rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url(${slide.image.startsWith('http') ? slide.image : `http://localhost:5000/${slide.image}`})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                display: 'flex',
-                                ...posStyle, // Apply alignment
-                                color: textColor,
-                                padding: '4rem' // Inner padding for edges
-                            }}
-                        >
-                            <div className="container" style={{ maxWidth: '800px' }}>
-                                <h1 style={{ fontSize: '3.5rem', marginBottom: '1rem', fontWeight: 800, color: textColor, textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                                    {slide.title}
+    return (
+        <section className="hero-slider">
+            {/* Floating Elements */}
+            <div className="hero-float-element hero-float-1"></div>
+            <div className="hero-float-element hero-float-2"></div>
+            <div className="hero-float-element hero-float-3"></div>
+
+            {slides.map((slide, index) => (
+                <div
+                    key={index}
+                    className={`hero-slide ${index === current ? 'active' : ''}`}
+                >
+                    <div
+                        className="hero-background"
+                        style={{
+                            backgroundImage: `url(${slide.image.startsWith('http') ? slide.image : `http://localhost:5000/${slide.image}`})`
+                        }}
+                    ></div>
+                    <div className="hero-overlay"></div>
+
+                    <div className="hero-content-wrapper">
+                        <div className="container">
+                            <div className="hero-content" style={{ textAlign: slide.position?.includes('right') ? 'right' : slide.position?.includes('center') ? 'center' : 'left', marginLeft: slide.position?.includes('right') ? 'auto' : slide.position?.includes('center') ? 'auto' : '0', marginRight: slide.position?.includes('center') ? 'auto' : '0' }}>
+                                {(slide.badgeText && slide.badgeText !== '') && (
+                                    <div className="hero-badge">
+                                        <FiZap />
+                                        <span>{slide.badgeText}</span>
+                                    </div>
+                                )}
+
+                                <h1 className="hero-title" style={{ color: slide.textColor }}>
+                                    {slide.title.split(' ').slice(0, -1).join(' ')}{' '}
+                                    <span className="hero-title-gradient">
+                                        {slide.title.split(' ').slice(-1)}
+                                    </span>
                                 </h1>
-                                <p style={{ fontSize: '1.25rem', marginBottom: '2rem', color: textColor, textShadow: '0 1px 2px rgba(0,0,0,0.5)', opacity: 0.9 }}>
+
+                                <p className="hero-description" style={{ color: slide.textColor }}>
                                     {slide.description}
                                 </p>
-                                <div style={{ display: 'flex', gap: '1rem', justifyContent: posStyle.justifyContent === 'flex-start' ? 'flex-start' : posStyle.justifyContent === 'flex-end' ? 'flex-end' : 'center' }}>
-                                    <Link href={slide.buttonLink || '/products'} className="btn" style={{ padding: '1rem 2rem', fontSize: '1.1rem', background: buttonColor, color: 'white', border: 'none' }}>
-                                        {slide.buttonText || 'Shop Now'}
+
+                                <div className="hero-buttons" style={{ justifyContent: slide.position?.includes('right') ? 'flex-end' : slide.position?.includes('center') ? 'center' : 'flex-start' }}>
+                                    <Link
+                                        href={slide.buttonLink || '/products'}
+                                        className="hero-btn-primary"
+                                        style={{ background: slide.buttonColor }}
+                                    >
+                                        <span>{slide.buttonText || 'Shop Now'}</span>
+                                        <FiArrowRight />
                                     </Link>
+                                    {(slide.showSecondaryButton !== false) && (
+                                        <Link
+                                            href="/products"
+                                            className="hero-btn-secondary"
+                                            style={{ borderColor: slide.textColor, color: slide.textColor }}
+                                        >
+                                            <FiPlay />
+                                            <span>Explore Products</span>
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
                         </div>
-                    );
-                })}
-
-                {/* Dots */}
-                {slides.length > 1 && (
-                    <div style={{ position: 'absolute', bottom: '2rem', left: '0', right: '0', display: 'flex', justifyContent: 'center', gap: '0.5rem', zIndex: 10 }}>
-                        {slides.map((_, idx) => (
-                            <button
-                                key={idx}
-                                onClick={() => setCurrent(idx)}
-                                style={{
-                                    width: '12px',
-                                    height: '12px',
-                                    borderRadius: '50%',
-                                    border: 'none',
-                                    background: idx === current ? 'white' : 'rgba(255,255,255,0.4)',
-                                    cursor: 'pointer',
-                                    transition: 'background 0.3s'
-                                }}
-                            />
-                        ))}
                     </div>
-                )}
-            </section>
+                </div>
+            ))}
+
+            {/* Dots */}
+            {slides.length > 1 && (
+                <div className="hero-dots">
+                    {slides.map((_, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => setCurrent(idx)}
+                            className={`hero-dot ${idx === current ? 'active' : ''}`}
+                            aria-label={`Go to slide ${idx + 1}`}
+                        />
+                    ))}
+                </div>
+            )}
+        </section>
     );
 }

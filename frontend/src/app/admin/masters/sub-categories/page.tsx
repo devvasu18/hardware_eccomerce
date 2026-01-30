@@ -25,6 +25,7 @@ export default function SubCategoryMaster() {
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [image, setImage] = useState<File | null>(null);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
 
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<{ name: string; slug: string; category_id: string }>();
     const name = watch('name');
@@ -68,16 +69,48 @@ export default function SubCategoryMaster() {
             formData.append('category_id', data.category_id);
             if (image) formData.append('image', image);
 
-            await api.post('/admin/sub-categories', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            if (editingId) {
+                await api.put(`/admin/sub-categories/${editingId}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                alert('Updated successfully');
+            } else {
+                await api.post('/admin/sub-categories', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                alert('Created successfully');
+            }
 
             reset();
+            reset();
             setImage(null);
+            setPreviewImage(null);
+            setEditingId(null);
             fetchSubCategories();
         } catch (error) {
+            console.error(error);
             alert('Operation failed');
         }
+    };
+
+    const handleEdit = (sc: SubCategory) => {
+        setEditingId(sc._id);
+        setValue('name', sc.name);
+        setValue('slug', sc.slug);
+        // sc.category_id might be populated (object) or string depending on backend response.
+        // check fetchSubCategories response structure. 
+        // Based on page.tsx, it uses populated 'name' later, so sc.category_id is an object.
+        setValue('category_id', sc.category_id ? sc.category_id._id : '');
+        setImage(null);
+        setPreviewImage(sc.image ? (sc.image.startsWith('http') ? sc.image : `/api/${sc.image}`) : null);
+    };
+
+    const handleCancelEdit = () => {
+        setEditingId(null);
+        setEditingId(null);
+        reset();
+        setImage(null);
+        setPreviewImage(null);
     };
 
     const handleDelete = async (id: string) => {
@@ -95,8 +128,13 @@ export default function SubCategoryMaster() {
             <h1 className="page-title">Sub-Category Manager</h1>
 
             <div className="card">
-                <div className="card-header">
-                    Add New Sub-Category
+                <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{editingId ? 'Edit Sub-Category' : 'Add New Sub-Category'}</span>
+                    {editingId && (
+                        <button onClick={handleCancelEdit} className="btn btn-sm" style={{ background: '#eee' }}>
+                            <FiX /> Cancel
+                        </button>
+                    )}
                 </div>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="form-grid">
@@ -129,23 +167,42 @@ export default function SubCategoryMaster() {
                         </div>
                         <div className="form-group">
                             <label className="form-label">Cover Image</label>
-                            <div className="upload-box" style={{ padding: '1rem', flexDirection: 'row', gap: '1rem', justifyContent: 'flex-start' }}>
-                                <input
-                                    type="file"
-                                    onChange={(e) => e.target.files && setImage(e.target.files[0])}
-                                />
-                                <div style={{ color: 'var(--primary)' }}>
-                                    <FiUploadCloud size={24} />
+                            <div className="upload-box" style={{ padding: '1rem', flexDirection: 'column', gap: '1rem', alignItems: 'flex-start' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            if (e.target.files && e.target.files[0]) {
+                                                const file = e.target.files[0];
+                                                setImage(file);
+                                                setPreviewImage(URL.createObjectURL(file));
+                                            }
+                                        }}
+                                    />
+                                    <div style={{ color: 'var(--primary)' }}>
+                                        <FiUploadCloud size={24} />
+                                    </div>
+                                    <span style={{ color: 'var(--text-muted)' }}>
+                                        {image ? image.name : "Choose file..."}
+                                    </span>
                                 </div>
-                                <span style={{ color: 'var(--text-muted)' }}>
-                                    {image ? image.name : "Choose file..."}
-                                </span>
+                                {previewImage && (
+                                    <div style={{ marginTop: '0.5rem', width: '100%', maxWidth: '200px', height: '120px', position: 'relative', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+                                        <Image
+                                            src={previewImage}
+                                            alt="Preview"
+                                            fill
+                                            style={{ objectFit: 'cover' }}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>
                     <div style={{ marginTop: '1.5rem' }}>
                         <button type="submit" className="btn btn-primary">
-                            <FiPlus /> Create Sub-Category
+                            {editingId ? <><FiEdit2 /> Update Sub-Category</> : <><FiPlus /> Create Sub-Category</>}
                         </button>
                     </div>
                 </form>
@@ -168,7 +225,11 @@ export default function SubCategoryMaster() {
                                 <td>
                                     <div className="img-preview">
                                         {sc.image ? (
-                                            <Image src={`/api/${sc.image}`} alt={sc.name} fill />
+                                            <Image
+                                                src={sc.image.startsWith('http') ? sc.image : `/api/${sc.image}`}
+                                                alt={sc.name}
+                                                fill
+                                            />
                                         ) : (
                                             <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ccc' }}>N/A</span>
                                         )}
@@ -184,6 +245,9 @@ export default function SubCategoryMaster() {
                                     </span>
                                 </td>
                                 <td style={{ textAlign: 'right' }}>
+                                    <button onClick={() => handleEdit(sc)} className="btn-icon" style={{ color: 'var(--primary)', marginRight: '0.5rem' }}>
+                                        <FiEdit2 />
+                                    </button>
                                     <button onClick={() => handleDelete(sc._id)} className="btn-icon" style={{ color: 'var(--danger)' }}>
                                         <FiTrash2 />
                                     </button>

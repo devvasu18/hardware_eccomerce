@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext'; // Import AuthContext
 import { useCart } from '../../context/CartContext'; // Import CartContext
 import { useWishlist } from '../../context/WishlistContext'; // Import WishlistContext
@@ -10,10 +12,42 @@ import './Header.css';
 const Header = () => {
     const { user, logout } = useAuth();
     const { cartCount, openCart } = useCart();
+    const router = useRouter();
     const { wishlistCount, openWishlist } = useWishlist();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-    const [categories, setCategories] = useState<{ _id: string, name: string, slug: string }[]>([]);
+    const [categories, setCategories] = useState<{ _id: string, name: string, slug: string, showInNav: boolean }[]>([]);
+
+    const handleSearch = () => {
+        if (searchTerm.trim()) {
+            router.push(`/products?keyword=${encodeURIComponent(searchTerm.trim())}`);
+            setIsSearchFocused(false);
+        }
+    };
+
+    // Debounced search for suggestions
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            if (searchTerm.length >= 2) {
+                try {
+                    // We reuse the products API with keyword and limit 5
+                    const res = await fetch(`http://localhost:5000/api/products?keyword=${encodeURIComponent(searchTerm)}&limit=5`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setSuggestions(Array.isArray(data) ? data : data.products || []);
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            } else {
+                setSuggestions([]);
+            }
+        }, 300); // 300ms debounce
+
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -21,7 +55,9 @@ const Header = () => {
                 const res = await fetch('http://localhost:5000/api/categories');
                 if (res.ok) {
                     const data = await res.json();
-                    setCategories(data);
+                    // Filter by showInNav and take max 10
+                    const navCategories = data.filter((cat: any) => cat.showInNav).slice(0, 10);
+                    setCategories(navCategories);
                 }
             } catch (error) {
                 console.error('Failed to load menu categories', error);
@@ -49,10 +85,13 @@ const Header = () => {
                             type="text"
                             className="search-input"
                             placeholder="Search for furniture, decor and more..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                             onFocus={() => setIsSearchFocused(true)}
                             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)} // Delay to allow click
                         />
-                        <button className="search-icon-btn">
+                        <button className="search-icon-btn" onClick={handleSearch}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="11" cy="11" r="8"></circle>
                                 <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -63,21 +102,61 @@ const Header = () => {
                     {/* Search Dropdown */}
                     {isSearchFocused && (
                         <div className="search-dropdown">
-                            <div className="popular-searches-section">
-                                <h4 className="dropdown-title">Popular Searches</h4>
-                                <div className="tags-grid">
-                                    {categories.slice(0, 10).map((category) => (
-                                        <Link
-                                            key={category._id}
-                                            href={`/products?category=${category.slug}`}
-                                            className="search-tag"
-                                            onClick={() => setIsSearchFocused(false)}
-                                        >
-                                            <span className="trend-icon">↗</span> {category.name}
-                                        </Link>
-                                    ))}
+                            {searchTerm.length >= 2 ? (
+                                <div className="suggestions-section">
+                                    <h4 className="dropdown-title">Suggestions</h4>
+                                    {suggestions.length > 0 ? (
+                                        <div className="suggestions-list">
+                                            {suggestions.map((product) => (
+                                                <Link
+                                                    key={product._id}
+                                                    href={`/products/${product._id}`}
+                                                    className="suggestion-item"
+                                                    onClick={() => setIsSearchFocused(false)}
+                                                >
+                                                    <div className="suggestion-image-wrapper">
+                                                        <Image
+                                                            src={
+                                                                (product.featured_image || (product.gallery_images && product.gallery_images[0]))?.startsWith('http')
+                                                                    ? (product.featured_image || (product.gallery_images && product.gallery_images[0]))
+                                                                    : (product.featured_image || (product.gallery_images && product.gallery_images[0]))
+                                                                        ? `http://localhost:5000/${product.featured_image || (product.gallery_images && product.gallery_images[0])}`
+                                                                        : '/placeholder.png'
+                                                            }
+                                                            alt={product.title}
+                                                            width={40}
+                                                            height={40}
+                                                            className="suggestion-image"
+                                                            style={{ objectFit: 'cover', borderRadius: '4px' }}
+                                                        />
+                                                    </div>
+                                                    <span className="suggestion-text">{product.title}</span>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="no-suggestions">
+                                            No products found matching "{searchTerm}"
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="popular-searches-section">
+                                    <h4 className="dropdown-title">Popular Categories</h4>
+                                    <div className="tags-grid">
+                                        {categories.slice(0, 5).map((category) => (
+                                            <Link
+                                                key={category._id}
+                                                href={`/products?category=${category.slug}`}
+                                                className="search-tag"
+                                                onClick={() => setIsSearchFocused(false)}
+                                            >
+                                                <span className="trend-icon">↗</span> {category.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
