@@ -651,17 +651,76 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                         ₹{(order.totalAmount - order.taxTotal).toLocaleString('en-IN')}
                                     </span>
                                 </div>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    marginBottom: '0.75rem',
-                                    fontSize: '0.95rem'
-                                }}>
-                                    <span style={{ color: '#64748b' }}>Tax (GST)</span>
-                                    <span style={{ fontWeight: 600 }}>
-                                        ₹{order.taxTotal?.toLocaleString('en-IN')}
-                                    </span>
-                                </div>
+
+
+                                {/* Tax Breakdown */}
+                                {(() => {
+                                    // Calculate tax split from items (assumes consistent tax type across order)
+                                    let totalIGST = 0;
+                                    let totalCGST = 0;
+                                    let totalSGST = 0;
+
+                                    order.items.forEach((item: any) => {
+                                        totalIGST += item.igst || 0;
+                                        totalCGST += item.cgst || 0;
+                                        totalSGST += item.sgst || 0;
+                                    });
+
+                                    // If no specific split found (legacy orders), fallback to flat tax
+                                    if (totalIGST === 0 && totalCGST === 0 && totalSGST === 0) {
+                                        return (
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                marginBottom: '0.75rem',
+                                                fontSize: '0.95rem'
+                                            }}>
+                                                <span style={{ color: '#64748b' }}>Tax (GST)</span>
+                                                <span style={{ fontWeight: 600 }}>
+                                                    ₹{order.taxTotal?.toLocaleString('en-IN')}
+                                                </span>
+                                            </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <>
+                                            {totalIGST > 0 && (
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    marginBottom: '0.5rem',
+                                                    fontSize: '0.9rem'
+                                                }}>
+                                                    <span style={{ color: '#64748b' }}>IGST</span>
+                                                    <span style={{ fontWeight: 600 }}>₹{totalIGST.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            )}
+                                            {totalCGST > 0 && (
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    marginBottom: '0.5rem',
+                                                    fontSize: '0.9rem'
+                                                }}>
+                                                    <span style={{ color: '#64748b' }}>CGST</span>
+                                                    <span style={{ fontWeight: 600 }}>₹{totalCGST.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            )}
+                                            {totalSGST > 0 && (
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    marginBottom: '0.75rem', // Extra margin for last item
+                                                    fontSize: '0.9rem'
+                                                }}>
+                                                    <span style={{ color: '#64748b' }}>SGST</span>
+                                                    <span style={{ fontWeight: 600 }}>₹{totalSGST.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            )}
+                                        </>
+                                    );
+                                })()}
                                 <div style={{
                                     borderTop: '2px solid #e2e8f0',
                                     paddingTop: '0.75rem',

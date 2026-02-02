@@ -2,9 +2,14 @@ const crypto = require('crypto');
 const Order = require('../models/Order');
 
 // PayU Configuration
-const PAYU_MERCHANT_KEY = process.env.PAYU_MERCHANT_KEY || 'j2VXgX';
-const PAYU_MERCHANT_SALT = process.env.PAYU_MERCHANT_SALT || 'ulVg2SyeQvzmMK9VhinC5u3fkqBJfAT8';
+// PayU Configuration
+const PAYU_MERCHANT_KEY = process.env.PAYU_MERCHANT_KEY;
+const PAYU_MERCHANT_SALT = process.env.PAYU_MERCHANT_SALT;
 const PAYU_ENV = process.env.PAYU_ENV || 'test';
+
+if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
+    console.error("CRITICAL: PayU Creds missing");
+}
 
 // PayU URLs
 const PAYU_BASE_URL = PAYU_ENV === 'production'
@@ -17,8 +22,6 @@ const generatePayUHash = (data) => {
     // PayU hash formula: sha512(key|txnid|amount|productinfo|firstname|email|udf1|udf2|udf3|udf4|udf5||||||SALT)
     const hashString = `${key}|${txnid}|${amount}|${productinfo}|${firstname}|${email}|${udf1 || ''}|${udf2 || ''}|${udf3 || ''}|${udf4 || ''}|${udf5 || ''}||||||${salt}`;
     const hash = crypto.createHash('sha512').update(hashString).digest('hex');
-    console.log('PayU Hash String:', hashString);
-    console.log('Generated Hash:', hash);
     return hash;
 };
 
@@ -35,7 +38,26 @@ const verifyPayUHash = (data) => {
 // @access  Public (can be used by guests)
 exports.createPaymentOrder = async (req, res) => {
     try {
-        const { amount, orderId, customerName, customerEmail, customerPhone } = req.body;
+        if (!process.env.FRONTEND_URL) {
+            return res.status(500).json({ success: false, message: 'Server Configuration Error: FRONTEND_URL missing' });
+        }
+
+        const { orderId } = req.body; // Ignore client amount
+
+        // 1. Fetch Order to get secure Amount
+        const order = await Order.findById(orderId);
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+        // Security Check: If order belongs to a user, requester MUST be that user
+        if (order.user) {
+            if (!req.user || req.user._id.toString() !== order.user.toString()) {
+                return res.status(403).json({ success: false, message: 'Unauthorized to pay for this order' });
+            }
+        }
+
+        const amount = order.totalAmount; // Trust source of truth
 
         // Generate unique transaction ID
         const txnid = `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`;
@@ -44,14 +66,14 @@ exports.createPaymentOrder = async (req, res) => {
         const paymentData = {
             key: PAYU_MERCHANT_KEY,
             txnid: txnid,
-            amount: amount.toString(),
+            amount: amount.toString(), // Validated amount
             productinfo: `Order #${orderId}`,
-            firstname: customerName || 'Customer',
-            email: customerEmail || 'customer@example.com',
-            phone: customerPhone || '',
+            firstname: order.guestCustomer?.name || (req.user ? req.user.username : 'Customer'),
+            email: order.guestCustomer?.email || (req.user ? req.user.email : 'customer@example.com'),
+            phone: order.guestCustomer?.phone || (req.user ? req.user.mobile : ''),
             salt: PAYU_MERCHANT_SALT,
-            surl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/success`,
-            furl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/payment/failure`,
+            surl: `${process.env.FRONTEND_URL}/payment/success`,
+            furl: `${process.env.FRONTEND_URL}/payment/failure`,
             udf1: orderId, // Store orderId for reference
             udf2: '',
             udf3: '',
@@ -138,6 +160,16 @@ exports.verifyPayment = async (req, res) => {
                 if (udf1) {
                     const order = await Order.findById(udf1);
                     if (order) {
+                        // CRITICAL: Verify Amount matches
+                        // Allow small floating point epsilon if needed, but Order.totalAmount should match payu amount
+                        const paidAmount = parseFloat(amount);
+                        const orderAmount = parseFloat(order.totalAmount);
+
+                        if (Math.abs(paidAmount - orderAmount) > 1.0) {
+                            console.error(`Fraud Alert: Paid ${paidAmount} but order was ${orderAmount}`);
+                            return res.status(400).json({ success: false, message: 'Payment Amount Mismatch' });
+                        }
+
                         order.paymentStatus = 'Completed';
                         order.paymentDetails = {
                             provider: 'PayU',

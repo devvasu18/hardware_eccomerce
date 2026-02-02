@@ -88,4 +88,11 @@ const orderSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+// Indexes for high-performance order lookups
+orderSchema.index({ user: 1 }); // Searching orders by user
+orderSchema.index({ status: 1 }); // Filtering by status
+orderSchema.index({ paymentStatus: 1 }); // Filtering by payment
+orderSchema.index({ createdAt: -1 }); // Sorting by date (Newest first)
+orderSchema.index({ invoiceNumber: 1 }); // Quick lookup by invoice
+
 module.exports = mongoose.model('Order', orderSchema);

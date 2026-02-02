@@ -92,10 +92,10 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
                 setValue('position', foundBanner.position || 'center-left');
                 setValue('textColor', foundBanner.textColor || '#ffffff');
                 setValue('buttonColor', foundBanner.buttonColor || '#0F172A');
-                setValue('buttonText', foundBanner.buttonText || 'Shop Now');
-                setValue('buttonLink', foundBanner.buttonLink || '/products');
+                setValue('buttonText', foundBanner.buttonText);
+                setValue('buttonLink', foundBanner.buttonLink);
                 setValue('showSecondaryButton', foundBanner.showSecondaryButton !== false); // Default true if undefined
-                setValue('badgeText', foundBanner.badgeText || 'Premium Quality');
+                setValue('badgeText', foundBanner.badgeText);
 
                 setImagePreview(foundBanner.image.startsWith('http') ? foundBanner.image : `http://localhost:5000/${foundBanner.image}`);
 
@@ -131,7 +131,7 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
         const file = e.target.files?.[0];
         if (file) {
             setImagePreview(URL.createObjectURL(file));
-            setValue('image', file);
+            setValue('image', e.target.files);
         }
     };
 
@@ -218,7 +218,7 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
                         <div className="card-header">Basic Details</div>
                         <div className="form-group" style={{ marginBottom: '1rem' }}>
                             <label className="form-label">Banner Title</label>
-                            <input {...register("title", { required: true })} className="form-input" />
+                            <input {...register("title")} className="form-input" />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Description (Optional)</label>

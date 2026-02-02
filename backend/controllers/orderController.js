@@ -6,58 +6,149 @@ const User = require('../models/User');
 // @desc    Create a new order
 // @route   POST /api/orders/create
 // @access  Public (supports both authenticated and guest users)
+// @access  Public (supports both authenticated and guest users)
 exports.createOrder = async (req, res) => {
     try {
         const { items, shippingAddress, billingAddress, paymentMethod, guestCustomer } = req.body;
 
+
         // Validation
-        if (!items || items.length === 0) {
+        if (!items || !Array.isArray(items) || items.length === 0) {
             return res.status(400).json({ success: false, message: 'No items in order' });
+        }
+
+        // H2: Strict Input Validation for Items (Prevent Negative Quantity Exploit)
+        for (const item of items) {
+            if (!item.productId) {
+                return res.status(400).json({ success: false, message: 'Product ID is required for all items' });
+            }
+            if (!item.quantity || !Number.isInteger(item.quantity) || item.quantity <= 0) {
+                return res.status(400).json({ success: false, message: `Invalid quantity for product ${item.productId}` });
+            }
         }
 
         if (!shippingAddress || !billingAddress) {
             return res.status(400).json({ success: false, message: 'Shipping and billing addresses are required' });
         }
 
-        // Calculate order total
+        // Determine Tax Type based on Address
+        const isIntraState = shippingAddress.toLowerCase().includes('gujarat'); // Shop is in Gujarat
+
+        // Calculate order total securely
         let orderTotal = 0;
+        let totalTax = 0;
         const orderItems = [];
 
-        for (const item of items) {
-            const product = await Product.findById(item.productId);
-            if (!product) {
-                return res.status(404).json({ success: false, message: `Product ${item.productId} not found` });
+        // Parallel processing or sequential? Sequential is safer for stock check race conditions logic conceptually, though db logic needs transactions ideally.
+        // Helper to rollback stock changes if any item fails
+        const rollbackStock = async (processedItems) => {
+            for (const item of processedItems) {
+                await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
             }
+        };
 
-            // Check stock availability
+        // Optimize: Fetch all products in one query to avoid N+1 reads
+        const productIds = items.map(item => item.productId);
+        const products = await Product.find({ _id: { $in: productIds } });
+        const productMap = new Map(products.map(p => [p._id.toString(), p]));
+
+        // Validate all products exist
+        for (const id of productIds) {
+            if (!productMap.has(id.toString())) {
+                return res.status(404).json({ success: false, message: `Product ${id} not found` });
+            }
+        }
+
+        const processedItems = [];
+
+        for (const item of items) {
+            const product = productMap.get(item.productId.toString());
+
+            // 2. ATOMIC DECREMENT: Check local stock first to fail fast, then db atomic
             if (product.stock < item.quantity) {
+                await rollbackStock(processedItems);
                 return res.status(400).json({
                     success: false,
                     message: `Insufficient stock for ${product.title}. Available: ${product.stock}`
                 });
             }
 
-            // Decrement stock
-            product.stock -= item.quantity;
-            await product.save();
+            const updatedProduct = await Product.findOneAndUpdate(
+                { _id: item.productId, stock: { $gte: item.quantity } },
+                { $inc: { stock: -item.quantity } },
+                { new: true }
+            );
 
-            const itemTotal = item.price * item.quantity;
+            if (!updatedProduct) {
+                await rollbackStock(processedItems);
+                return res.status(400).json({
+                    success: false,
+                    message: `Insufficient stock for ${product.title}. Stock update failed.`
+                });
+            }
+
+            // Track for potential rollback
+            processedItems.push({ productId: item.productId, quantity: item.quantity });
+
+            // 3. Use Database Price & GST
+            // STRICT PRICING: selling_price_a -> MRP. Ignore 'price' (legacy)
+            let price = product.selling_price_a;
+            if (price === undefined || price === null) {
+                price = product.mrp;
+            }
+            const gstRate = product.gst_rate || 18; // Default to 18% if not set
+
+            const itemTotal = price * item.quantity;
+            const itemTax = itemTotal * (gstRate / 100);
+
             orderTotal += itemTotal;
+            totalTax += itemTax;
 
-            orderItems.push({
+            const orderItem = {
                 product: item.productId,
                 quantity: item.quantity,
-                priceAtBooking: item.price,
-                size: item.size || null
-            });
+                priceAtBooking: price,
+                size: item.size || null,
+                gstRate: gstRate,
+                totalWithTax: itemTotal + itemTax
+            };
+
+            // Split Tax
+            if (isIntraState) {
+                orderItem.cgst = itemTax / 2;
+                orderItem.sgst = itemTax / 2;
+                orderItem.igst = 0;
+            } else {
+                orderItem.cgst = 0;
+                orderItem.sgst = 0;
+                orderItem.igst = itemTax;
+            }
+
+            orderItems.push(orderItem);
         }
 
-        // Calculate tax (18% GST)
-        const taxAmount = Math.round(orderTotal * 0.18);
-        const grandTotal = orderTotal + taxAmount;
+        const grandTotal = Math.round(orderTotal + totalTax);
+
+        // Generate Invoice Number
+        // Format: INV-YYYYMMDD-SEQUENCE (Using timestamp for uniqueness + sequence fallback if needed, or just random/timestamp for MVP)
+        // High-scale robust sequence requires a counter collection. For now, we use Timestamp + Random suffix to ensure uniqueness without race condition lock.
+        // OR better: Year-Month-Random
+        const dateNow = new Date();
+        const year = dateNow.getFullYear();
+        const month = String(dateNow.getMonth() + 1).padStart(2, '0');
+        const day = String(dateNow.getDate()).padStart(2, '0');
+
+        // Find last order to try for sequence (best effort)
+        // const lastOrder = await Order.findOne().sort('-createdAt'); // Optimization: Skip for speed, use entropy
+
+        const entropy = Math.floor(1000 + Math.random() * 9000); // 4 digit random
+        const invoiceNumber = `INV-${year}${month}${day}-${entropy}`;
+
 
         // Create order object
         const orderData = {
+            invoiceNumber,
+            invoiceDate: dateNow,
             items: orderItems,
             shippingAddress,
             billingAddress,
@@ -65,7 +156,7 @@ exports.createOrder = async (req, res) => {
             paymentStatus: paymentMethod === 'COD' ? 'COD' : 'Pending',
             status: 'Order Placed',  // Changed from 'Pending' to 'Order Placed' to match enum
             totalAmount: grandTotal,  // Changed from 'total' to 'totalAmount'
-            taxTotal: taxAmount,      // Changed from 'tax' to 'taxTotal'
+            taxTotal: Math.round(totalTax),      // Changed from 'tax' to 'taxTotal'
             isGuestOrder: false       // Will be set to true for guest orders
         };
 
@@ -247,6 +338,49 @@ exports.updateOrderStatus = async (req, res) => {
             notes: description || `Status changed from ${oldStatus} to ${status}`
         });
 
+        // 📧 SEND EMAIL NOTIFICATION
+        if (notifyUser !== false) { // Allow frontend to optionally suppress
+            try {
+                // Determine Recipient
+                let recipientEmail = null;
+                let recipientName = 'Customer';
+
+                if (order.user) {
+                    // We need to fetch user details if not populated
+                    // Optimisation: check if order.user has email property (is object) or is ID
+                    if (order.user.email) {
+                        recipientEmail = order.user.email;
+                        recipientName = order.user.username;
+                    } else {
+                        const User = require('../models/User'); // Lazy load
+                        const fullUser = await User.findById(order.user);
+                        if (fullUser) {
+                            recipientEmail = fullUser.email;
+                            recipientName = fullUser.username;
+                        }
+                    }
+                } else if (order.guestCustomer && order.guestCustomer.email) {
+                    recipientEmail = order.guestCustomer.email;
+                    recipientName = order.guestCustomer.name;
+                }
+
+                if (recipientEmail) {
+                    const sendEmail = require('../utils/sendEmail');
+                    const emailSubject = `Order Status Update - #${order.orderNumber || order._id} is ${status}`;
+                    const emailMessage = `Hello ${recipientName},\n\nYour order status has been updated to: ${status}.\n\n${description ? `Note: ${description}\n\n` : ''}Track your order on our website.\n\nThank you!`;
+
+                    await sendEmail({
+                        email: recipientEmail,
+                        subject: emailSubject,
+                        message: emailMessage
+                    });
+                }
+            } catch (emailErr) {
+                console.error('Failed to send status update email:', emailErr.message);
+                // Don't fail the request just because email failed
+            }
+        }
+
         res.json({ message: 'Status updated', order });
     } catch (error) {
         res.status(500).json({ message: 'Update failed', error: error.message });
@@ -267,6 +401,13 @@ exports.cancelOrder = async (req, res) => {
 
         order.status = 'Cancelled';
         await order.save();
+
+        // Restore Stock Logic
+        for (const item of order.items) {
+            await Product.findByIdAndUpdate(item.product, {
+                $inc: { stock: item.quantity }
+            });
+        }
 
         await StatusLog.create({
             order: order._id,

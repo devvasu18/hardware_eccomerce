@@ -70,4 +70,14 @@ const productSchema = new mongoose.Schema({
 
 }, { timestamps: true });
 
+// Indexes for Filtering & Search
+productSchema.index({ category: 1 });
+productSchema.index({ brand: 1 });
+productSchema.index({ isActive: 1 });
+productSchema.index({ isFeatured: 1 });
+productSchema.index({ isNewArrival: 1 });
+productSchema.index({ isOnDemand: 1 });
+// Text index for search (title & description)
+productSchema.index({ title: 'text', description: 'text', part_number: 'text' });
+
 module.exports = mongoose.model('Product', productSchema);

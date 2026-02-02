@@ -3,7 +3,24 @@ const router = express.Router();
 const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
+const { body, validationResult } = require('express-validator'); // Import validator
 const { createProduct, updateProduct, deleteProduct, getAdminProducts, getAdminProductById } = require('../controllers/productController');
+
+// Validation Middleware for Product
+const validateProduct = [
+    body('title').notEmpty().withMessage('Product title is required').trim(),
+    body('category').notEmpty().withMessage('Category is required'),
+    body('mrp').isNumeric().withMessage('MRP must be a number'),
+    body('selling_price_a').optional().isNumeric().withMessage('Selling Price A must be a number'),
+    // Middleware to check for errors
+    (req, res, next) => {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ message: 'Validation Error', errors: errors.array() });
+        }
+        next();
+    }
+];
 
 // Upload configuration for product images
 const productUploads = upload.fields([
@@ -45,8 +62,8 @@ router.patch('/:id/new-arrival', protect, admin, async (req, res) => {
 // CRUD Routes
 router.get('/', protect, admin, getAdminProducts);
 router.get('/:id', protect, admin, getAdminProductById);
-router.post('/', protect, admin, productUploads, createProduct);
-router.put('/:id', protect, admin, productUploads, updateProduct);
+router.post('/', protect, admin, productUploads, validateProduct, createProduct); // Added validateProduct
+router.put('/:id', protect, admin, productUploads, validateProduct, updateProduct); // Added validateProduct
 router.delete('/:id', protect, admin, deleteProduct);
 
 // Quick Stock Update

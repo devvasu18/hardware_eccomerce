@@ -1,231 +1,183 @@
 /* ========================================
-   🏢 BRANDS SECTION - MODERN REDESIGN
+   🏢 BRANDS SECTION - HEXAGONAL REDESIGN
    ======================================== */
 
 .brands-section {
-    padding: var(--space-lg) 0;
-    background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
+    padding: var(--space-4xl) 0;
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
     position: relative;
     overflow: hidden;
-    margin-bottom: 0;
+    color: white;
 }
 
+/* Starry background effect */
 .brands-section::before {
     content: '';
     position: absolute;
+    width: 100%;
+    height: 100%;
     top: 0;
     left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--primary), transparent);
+    background-image:
+        radial-gradient(white, rgba(255, 255, 255, .2) 2px, transparent 3px),
+        radial-gradient(white, rgba(255, 255, 255, .15) 1px, transparent 2px),
+        radial-gradient(white, rgba(255, 255, 255, .1) 2px, transparent 3px);
+    background-size: 550px 550px, 350px 350px, 250px 250px;
+    background-position: 0 0, 40px 60px, 130px 270px;
+    opacity: 0.1;
+    z-index: 0;
 }
 
-.brands-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: var(--space-3xl);
-    flex-wrap: wrap;
-    gap: var(--space-lg);
-}
-
-.brands-title-group {
-    flex: 1;
-}
-
-.brands-title {
-    font-size: clamp(1.75rem, 4vw, 2.5rem);
-    font-weight: 800;
-    color: var(--secondary);
-    margin-bottom: var(--space-xs);
+.brands-container {
     position: relative;
-    display: inline-block;
-}
-
-.brands-title::after {
-    content: '';
-    position: absolute;
-    bottom: -6px;
-    left: 0;
-    width: 50px;
-    height: 4px;
-    background: var(--gradient-primary);
-    border-radius: var(--radius-full);
-}
-
-.brands-subtitle {
-    color: var(--text-muted);
-    font-size: 1rem;
-    margin-top: var(--space-md);
-}
-
-.brands-controls {
-    display: flex;
-    align-items: center;
-    gap: var(--space-lg);
-}
-
-.brands-nav-buttons {
-    display: flex;
-    gap: var(--space-sm);
-}
-
-.brand-nav-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-md);
-    border: 2px solid var(--border);
-    background: white;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: var(--transition-base);
-    font-size: 1.25rem;
-}
-
-.brand-nav-btn:hover {
-    border-color: var(--primary);
-    background: var(--primary);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-orange);
-}
-
-.brand-nav-btn:active {
-    transform: translateY(0);
-}
-
-.brands-view-all {
-    padding: 0.75rem 1.75rem;
-    background: var(--gradient-primary);
-    color: white;
-    border-radius: var(--radius-md);
-    font-weight: 600;
-    font-size: 0.95rem;
-    text-decoration: none;
-    transition: var(--transition-base);
-    box-shadow: var(--shadow-md);
-}
-
-.brands-view-all:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-orange);
-}
-
-.brands-carousel {
-    overflow: hidden;
-    position: relative;
-}
-
-.brands-track {
-    display: flex;
-    gap: var(--space-xl);
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.brand-card {
-    min-width: calc(16.666% - 1.33rem);
-    /* 6 items */
-    background: white;
-    border: 2px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: var(--space-xl);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    z-index: 1;
     text-align: center;
-    cursor: pointer;
-    aspect-ratio: 1/1;
-    transition: var(--transition-base);
+}
+
+.brands-grid-wrapper {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: var(--space-3xl);
+    padding: var(--space-xl) 0;
+}
+
+/* Hexagon Shape */
+/* Hexagon Shape - Outer (Acts as Border) */
+.brand-hexagon {
+    width: 160px;
+    height: 185px;
     position: relative;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s ease;
+    /* The "Border" Color - defined by background */
+    background: linear-gradient(180deg, #0ea5e9, #2563eb);
+    /* Clip rigid shape */
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    /* Padding creates the border thickness because inner is 100% minus padding area (via flex/sizing) 
+       BUT standard padding doesn't work well with clip-path scaling. 
+       Better approach: We use this outer container as the border color, 
+       and the inner one covers it up leaving an edge. */
+    padding: 3px;
+    /* Initial Glow */
+    filter: drop-shadow(0 0 5px rgba(14, 165, 233, 0.5));
+    margin: 0 var(--space-sm);
 }
 
-.brand-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--gradient-primary);
-    opacity: 0;
+/* Inner - Content Background */
+.brand-hexagon-inner {
+    width: 100%;
+    height: 100%;
+    background: #0f172a;
+    /* Dark background matching theme */
+    /* Same clip path matches the outer shape */
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
     transition: var(--transition-base);
 }
 
-.brand-card:hover {
-    border-color: var(--primary);
-    transform: translateY(-8px);
-    box-shadow: var(--shadow-lg);
+/* Remove old pseudo-element borders since we use the padding trick */
+.brand-hexagon-inner::before {
+    display: none;
 }
 
-.brand-card:hover::before {
-    opacity: 0.05;
+.brand-hexagon:hover {
+    transform: translateY(-10px) scale(1.05);
+    /* Intensify Glow */
+    filter: drop-shadow(0 0 15px rgba(14, 165, 233, 0.8));
+    z-index: 10;
+    /* Brighten border on hover */
+    background: linear-gradient(180deg, #38bdf8, #3b82f6);
+}
+
+.brand-hexagon:hover .brand-hexagon-inner {
+    background: #1e293b;
+    /* Slightly lighter inner on hover */
+}
+
+.brand-hexagon:nth-child(even) {
+    margin-top: 40px;
 }
 
 .brand-logo-wrapper {
     position: relative;
-    width: 80%;
-    height: 60%;
-    margin-bottom: var(--space-md);
-    z-index: 1;
+    width: 70%;
+    /* Constrain logo size inside the hex */
+    height: 70%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
 }
 
 .brand-logo-wrapper img {
     object-fit: contain;
+    max-width: 100%;
+    max-height: 100%;
+    /* Remove the invert filter so vendor logos show their real colors. 
+       Or keep it if you strictly want white logos, but user said 'editable by vendor' 
+       so likely they want the real logo to show. 
+       Let's assume we want full color since we are framing it. */
+    filter: none;
     transition: var(--transition-base);
 }
 
-.brand-card:hover .brand-logo-wrapper img {
+.brand-hexagon:hover .brand-logo-wrapper img {
     transform: scale(1.1);
 }
 
-.brand-name {
-    font-weight: 700;
-    font-size: 0.95rem;
-    color: var(--text-primary);
-    z-index: 1;
-    transition: var(--transition-base);
+.view-all-btn-wrapper {
+    margin-top: var(--space-2xl);
+    text-align: center;
 }
 
-.brand-card:hover .brand-name {
-    color: var(--primary);
+.brands-view-all-btn {
+    display: inline-block;
+    padding: 1rem 2.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: var(--transition-base);
+    backdrop-filter: blur(5px);
+}
+
+.brands-view-all-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 20px rgba(243, 112, 33, 0.4);
+    transform: translateY(-2px);
 }
 
 /* Responsive */
-@media (max-width: 1200px) {
-    .brand-card {
-        min-width: calc(20% - 1.6rem);
-        /* 5 items */
-    }
-}
-
 @media (max-width: 900px) {
-    .brand-card {
-        min-width: calc(33.333% - 1.33rem);
-        /* 3 items */
+    .brands-grid-wrapper {
+        gap: var(--space-md);
     }
 
-    .brands-view-all {
-        display: none;
+    .brand-hexagon:nth-child(even) {
+        margin-top: 0;
+    }
+
+    .brand-hexagon {
+        width: 140px;
+        height: 160px;
     }
 }
 
-@media (max-width: 640px) {
-    .brand-card {
-        min-width: calc(50% - 1rem);
-        /* 2 items */
-    }
-
-    .brands-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .brands-section {
-        padding: var(--space-2xl) 0;
+@media (max-width: 600px) {
+    .brand-hexagon {
+        width: 120px;
+        height: 140px;
     }
 }

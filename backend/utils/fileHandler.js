@@ -12,16 +12,19 @@ const deleteFile = async (filePath) => {
     // Check if it's a Cloudinary URL
     if (filePath.includes('cloudinary.com')) {
         try {
-            // Extract Public ID (folder/filename without extension)
-            // URL format: https://res.cloudinary.com/cloud_name/image/upload/v12345/hardware-store/filename.jpg
-            const splitUrl = filePath.split('/');
-            const filename = splitUrl[splitUrl.length - 1]; // filename.jpg
-            const folder = splitUrl[splitUrl.length - 2];   // hardware-store (or other folder)
-            const publicIdWithExt = `${folder}/${filename}`;
-            const publicId = publicIdWithExt.split('.')[0]; // Remove extension
+            // Robust extraction of public_id using Regex
+            // Matches /upload/ optionally followed by v<version>/ then captures the rest until the extension
+            // Example: .../upload/v12345/folder/image.jpg -> folder/image
+            const regex = /\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/;
+            const match = filePath.match(regex);
 
-            await cloudinary.uploader.destroy(publicId);
-            console.log(`Cloudinary image deleted: ${publicId}`);
+            if (match && match[1]) {
+                const publicId = match[1];
+                await cloudinary.uploader.destroy(publicId);
+                console.log(`Cloudinary image deleted: ${publicId}`);
+            } else {
+                console.warn(`Could not extract publicId from Cloudinary URL: ${filePath}`);
+            }
         } catch (err) {
             console.error(`Failed to delete Cloudinary image: ${filePath}`, err);
         }

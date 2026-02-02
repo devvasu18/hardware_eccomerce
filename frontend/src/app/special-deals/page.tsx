@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import './SpecialDealsPage.css';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 interface Product {
     _id: string;
@@ -11,6 +13,8 @@ interface Product {
     category: string;
     images: string[];
     imageUrl: string;
+    featured_image?: string;
+    gallery_images?: string[];
 }
 
 interface SpecialOffer {
@@ -99,139 +103,162 @@ export default function SpecialDealsPage() {
 
     if (loading) {
         return (
-            <div className="special-deals-page">
-                <div className="container">
-                    <div className="loading-state">
-                        <div className="spinner"></div>
-                        <p>Loading special deals...</p>
+            <>
+                <Header />
+                <div className="special-deals-page">
+                    <div className="container">
+                        <div className="loading-state">
+                            <div className="spinner"></div>
+                            <p>Loading special deals...</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+                <Footer />
+            </>
         );
     }
 
     return (
-        <div className="special-deals-page">
-            <div className="container">
-                {/* Page Header */}
-                <div className="page-header">
-                    <div className="breadcrumb">
-                        <Link href="/">Home</Link>
-                        <span className="separator">›</span>
-                        <span className="current">Special Deals</span>
+        <>
+            <Header />
+            <div className="special-deals-page">
+                <div className="container">
+                    {/* Page Header */}
+                    <div className="page-header">
+                        <div className="breadcrumb">
+                            <Link href="/">Home</Link>
+                            <span className="separator">›</span>
+                            <span className="current">Special Deals</span>
+                        </div>
+
+                        <h1 className="page-title">
+                            <span className="title-icon">🔥</span>
+                            Special Deals This Week
+                        </h1>
+                        <p className="page-subtitle">
+                            Grab these exclusive deals before they're gone. Wholesale prices slashed even further!
+                        </p>
+
+                        {/* Filter Buttons */}
+                        <div className="filter-buttons">
+                            <button
+                                className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+                                onClick={() => setFilter('all')}
+                            >
+                                All Deals ({offers.length})
+                            </button>
+
+                            <button
+                                className={`filter-btn ${filter === 'ending-soon' ? 'active' : ''}`}
+                                onClick={() => setFilter('ending-soon')}
+                            >
+                                Ending Soon ⏰
+                            </button>
+                        </div>
                     </div>
 
-                    <h1 className="page-title">
-                        <span className="title-icon">🔥</span>
-                        Special Deals This Week
-                    </h1>
-                    <p className="page-subtitle">
-                        Grab these exclusive deals before they're gone. Wholesale prices slashed even further!
-                    </p>
-
-                    {/* Filter Buttons */}
-                    <div className="filter-buttons">
-                        <button
-                            className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
-                            onClick={() => setFilter('all')}
-                        >
-                            All Deals ({offers.length})
-                        </button>
-                        <button
-                            className={`filter-btn ${filter === 'active' ? 'active' : ''}`}
-                            onClick={() => setFilter('active')}
-                        >
-                            Active Deals
-                        </button>
-                        <button
-                            className={`filter-btn ${filter === 'ending-soon' ? 'active' : ''}`}
-                            onClick={() => setFilter('ending-soon')}
-                        >
-                            Ending Soon ⏰
-                        </button>
-                    </div>
-                </div>
-
-                {/* Deals Grid */}
-                {filteredOffers.length === 0 ? (
-                    <div className="no-deals">
-                        <div className="no-deals-icon">📦</div>
-                        <h3>No deals found</h3>
-                        <p>Check back later for amazing offers!</p>
-                        <Link href="/" className="back-home-btn">
-                            Back to Home
-                        </Link>
-                    </div>
-                ) : (
-                    <div className="deals-grid">
-                        {filteredOffers.map((offer) => (
-                            <div key={offer._id} className="deal-card">
-                                <div className="deal-badge-container">
-                                    {offer.isLimitedStock && (
-                                        <div className="limited-badge">
-                                            <span className="pulse-dot"></span>
-                                            Limited Stock
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="deal-image-container">
-                                    <div className="discount-circle">
-                                        <div className="discount-percent">{offer.discountPercent}%</div>
-                                        <div className="discount-text">OFF</div>
+                    {/* Deals Grid */}
+                    {filteredOffers.length === 0 ? (
+                        <div className="no-deals">
+                            <div className="no-deals-icon">📦</div>
+                            <h3>No deals found</h3>
+                            <p>Check back later for amazing offers!</p>
+                            <Link href="/" className="back-home-btn">
+                                Back to Home
+                            </Link>
+                        </div>
+                    ) : (
+                        <div className="deals-grid">
+                            {filteredOffers.map((offer) => (
+                                <div key={offer._id} className="deal-card">
+                                    <div className="deal-badge-container">
+                                        {offer.isLimitedStock && (
+                                            <div className="limited-badge">
+                                                <span className="pulse-dot"></span>
+                                                Limited Stock
+                                            </div>
+                                        )}
                                     </div>
-                                    {offer.productId?.imageUrl || offer.productId?.images?.[0] ? (
-                                        <Image
-                                            src={(offer.productId.imageUrl || offer.productId.images?.[0])?.startsWith('http')
-                                                ? (offer.productId.imageUrl || offer.productId.images?.[0])
-                                                : `http://localhost:5000/${(offer.productId.imageUrl || offer.productId.images?.[0])?.startsWith('/')
-                                                    ? (offer.productId.imageUrl || offer.productId.images?.[0]).slice(1)
-                                                    : (offer.productId.imageUrl || offer.productId.images?.[0])}`
+
+                                    <div className="deal-image-container">
+                                        <div className="discount-circle">
+                                            <div className="discount-percent">{offer.discountPercent}%</div>
+                                            <div className="discount-text">OFF</div>
+                                        </div>
+                                        {(() => {
+                                            const product = offer.productId;
+                                            if (!product) {
+                                                return (
+                                                    <div className="deal-image-placeholder">
+                                                        <span className="image-icon">📦</span>
+                                                    </div>
+                                                );
                                             }
-                                            alt={offer.title}
-                                            width={240}
-                                            height={130}
-                                            className="deal-product-image"
-                                            unoptimized={true}
-                                        />
-                                    ) : (
-                                        <div className="deal-image-placeholder">
-                                            <span className="image-icon">📦</span>
-                                        </div>
-                                    )}
-                                </div>
 
-                                <div className="deal-content">
+                                            // Check for image in order of preference
+                                            const imageUrl = product.featured_image
+                                                || product.gallery_images?.[0]
+                                                || product.imageUrl
+                                                || product.images?.[0];
 
+                                            if (!imageUrl) {
+                                                return (
+                                                    <div className="deal-image-placeholder">
+                                                        <span className="image-icon">📦</span>
+                                                    </div>
+                                                );
+                                            }
 
-                                    <div className="deal-pricing">
-                                        <div className="price-row">
-                                            <span className="original-price">₹{offer.originalPrice.toLocaleString()}</span>
-                                            <span className="savings-badge">
-                                                Save ₹{(offer.originalPrice - offer.offerPrice).toLocaleString()}
-                                            </span>
-                                        </div>
-                                        <div className="discounted-price">₹{offer.offerPrice.toLocaleString()}</div>
+                                            const fullImageUrl = imageUrl.startsWith('http')
+                                                ? imageUrl
+                                                : `http://localhost:5000/${imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl}`;
+
+                                            return (
+                                                <Image
+                                                    src={fullImageUrl}
+                                                    alt={offer.title}
+                                                    width={240}
+                                                    height={130}
+                                                    className="deal-product-image"
+                                                    unoptimized={true}
+                                                />
+                                            );
+                                        })()}
                                     </div>
 
-                                    <div className="deal-timer">
-                                        <div className="timer-icon">⏰</div>
-                                        <div className="timer-content">
-                                            <div className="timer-label">Ends in:</div>
-                                            <div className="timer-value">{timeLeft[offer._id] || 'Loading...'}</div>
-                                        </div>
-                                    </div>
+                                    <div className="deal-content">
 
-                                    <Link href={`/products/${offer.productId?._id}`} className="deal-cta">
-                                        Grab This Deal
-                                        <span className="cta-arrow">→</span>
-                                    </Link>
+
+                                        <div className="deal-pricing">
+                                            <div className="price-row">
+                                                <span className="original-price">₹{offer.originalPrice.toLocaleString()}</span>
+                                                <span className="savings-badge">
+                                                    Save ₹{(offer.originalPrice - offer.offerPrice).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            <div className="discounted-price">₹{offer.offerPrice.toLocaleString()}</div>
+                                        </div>
+
+                                        <div className="deal-timer">
+                                            <div className="timer-icon">⏰</div>
+                                            <div className="timer-content">
+                                                <div className="timer-label">Ends in:</div>
+                                                <div className="timer-value">{timeLeft[offer._id] || 'Loading...'}</div>
+                                            </div>
+                                        </div>
+
+                                        <Link href={`/products/${offer.productId?._id}`} className="deal-cta">
+                                            Grab This Deal
+                                            <span className="cta-arrow">→</span>
+                                        </Link>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+            <Footer />
+        </>
     );
 }

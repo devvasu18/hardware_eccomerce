@@ -171,17 +171,11 @@ exports.deleteUser = async (req, res) => {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        // 1. Nullify Orders
-        await Order.updateMany({ user: user._id }, { user: null });
+        // Soft Delete
+        user.isActive = false;
+        await user.save();
 
-        // 2. Delete Cart/Wishlist (if separate models exist)
-        // await Cart.deleteOne({ user: user._id });
-        // await Wishlist.deleteOne({ user: user._id });
-
-        // 3. Delete User
-        await user.deleteOne();
-
-        res.json({ message: 'User removed, orders preserved (anonymized)' });
+        res.json({ message: 'User deactivated successfully (Soft Delete)' });
     } catch (error) {
         res.status(500).json({ message: 'Delete failed', error: error.message });
     }

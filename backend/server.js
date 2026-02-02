@@ -7,6 +7,10 @@ const path = require('path');
 dotenv.config();
 
 const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const xss = require('xss-clean');
+const hpp = require('hpp');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 
@@ -14,16 +18,38 @@ const app = express();
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" } // Allow serving images from /uploads
 }));
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    credentials: true
+}));
+app.use(express.json({ limit: '10kb' })); // Body limit
+
+// Data Sanitization against NoSQL Query Injection
+app.use(mongoSanitize());
+
+// Data Sanitization against XSS
+app.use(xss());
+
+// Prevent Parameter Pollution
+app.use(hpp());
+
+// Global Rate Limiting
+const globalLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 500, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again in an hour!'
+});
+app.use('/api', globalLimiter);
 
 // Serve static files for uploaded images
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+const logger = require('./utils/logger');
+
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/hardware_system')
-    .then(() => console.log('MongoDB Connected'))
-    .catch(err => console.error('MongoDB Connection Check Error:', err));
+    .then(() => logger.info('MongoDB Connected'))
+    .catch(err => logger.error('MongoDB Connection Check Error:', err));
 
 // Routes
 app.use('/api/products', require('./routes/productRoutes'));
@@ -34,7 +60,7 @@ app.use('/api/cart', require('./routes/cartRoutes')); // Cart Management
 
 // Test endpoint to verify backend is working
 app.get('/api/test', (req, res) => {
-    console.log('🧪 TEST endpoint hit!');
+    logger.info('🧪 TEST endpoint hit!');
     res.json({ message: 'Backend is working!', timestamp: new Date().toISOString() });
 });
 
@@ -58,7 +84,13 @@ app.use('/api/brands', require('./routes/brandRoutes')); // Public Brand Routes
 app.use('/api/refunds', require('./routes/refundRoutes')); // Refund Management
 app.use('/api/payment', require('./routes/paymentRoutes')); // Payment Gateway
 
+// Status Tracking
+const runStockCleanup = require('./jobs/stockCleanup');
+
+// Initialize Cron Jobs
+runStockCleanup();
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    logger.info(`Server running on port ${PORT}`);
 });

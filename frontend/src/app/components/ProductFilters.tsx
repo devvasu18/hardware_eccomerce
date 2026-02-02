@@ -149,7 +149,8 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                                         type="radio"
                                         name="category"
                                         checked={currentCategory === cat.slug}
-                                        onChange={() => updateFilter('category', cat.slug)}
+                                        onChange={() => { }}
+                                        onClick={() => updateFilter('category', currentCategory === cat.slug ? null : cat.slug)}
                                     />
                                     <span>{cat.name}</span>
                                 </label>
@@ -163,7 +164,8 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                                                     type="radio"
                                                     name="subcategory"
                                                     checked={currentSubCategory === sub.slug}
-                                                    onChange={() => updateFilter('subcategory', sub.slug)}
+                                                    onChange={() => { }}
+                                                    onClick={() => updateFilter('subcategory', currentSubCategory === sub.slug ? null : sub.slug)}
                                                 />
                                                 <span>{sub.name}</span>
                                             </label>
@@ -193,8 +195,12 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                                 <input
                                     type="radio"
                                     name="brand"
-                                    checked={currentBrand === (brand.slug || brand.name) || currentBrand === brand._id} // Handle robust checking
-                                    onChange={() => updateFilter('brand', brand.slug || brand.name)}
+                                    checked={currentBrand === (brand.slug || brand.name) || currentBrand === brand._id}
+                                    onChange={() => { }}
+                                    onClick={() => {
+                                        const isSelected = currentBrand === (brand.slug || brand.name) || currentBrand === brand._id;
+                                        updateFilter('brand', isSelected ? null : (brand.slug || brand.name));
+                                    }}
                                 />
                                 <span>{brand.name}</span>
                             </label>

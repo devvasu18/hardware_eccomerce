@@ -6,6 +6,15 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Modal from '@/app/components/Modal';
 import { useModal } from '@/app/hooks/useModal';
+import './checkout.css';
+
+const INDIAN_STATES = [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat",
+    "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala", "Madhya Pradesh",
+    "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Punjab",
+    "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh",
+    "Uttarakhand", "West Bengal", "Delhi"
+];
 
 export default function CheckoutPage() {
     const { items, clearCart, loading: cartLoading } = useCart();
@@ -30,7 +39,7 @@ export default function CheckoutPage() {
         street: '',
         landmark: '',
         city: '',
-        state: 'Rajasthan',
+        state: 'Rajasthan', // Default, but selectable
         pincode: ''
     });
 
@@ -40,7 +49,6 @@ export default function CheckoutPage() {
     // Auto-select first address if available
     useEffect(() => {
         if (savedAddresses.length > 0 && selectedAddressId === 'new') {
-            // Find default or use first
             const defaultAddr = savedAddresses.find((a: any) => a.isDefault);
             if (defaultAddr) {
                 setSelectedAddressId(defaultAddr._id);
@@ -48,7 +56,7 @@ export default function CheckoutPage() {
                 setSelectedAddressId(savedAddresses[0]._id);
             }
         }
-    }, [savedAddresses.length]); // Only run when addresses length changess
+    }, [savedAddresses.length]);
 
     const isNewAddress = selectedAddressId === 'new';
 
@@ -56,6 +64,15 @@ export default function CheckoutPage() {
     const formatAddress = (addr: any) => {
         return `${addr.street}, ${addr.landmark}, ${addr.city}, ${addr.state} - ${addr.pincode}`;
     };
+
+    // Determine the effective state for Tax Calculation
+    const effectiveState = useMemo(() => {
+        if (!isNewAddress) {
+            const addr = savedAddresses.find((a: any) => a._id === selectedAddressId);
+            return addr ? addr.state : '';
+        }
+        return newAddress.state;
+    }, [selectedAddressId, savedAddresses, newAddress.state, isNewAddress]);
 
     const finalShippingAddress = useMemo(() => {
         if (!isNewAddress) {
@@ -70,7 +87,6 @@ export default function CheckoutPage() {
 
     const { modalState, hideModal, showError, showWarning, showSuccess } = useModal();
 
-    // Move duplicate Logic up to respect Hook Rules
     const submitButtonText = useMemo(() => {
         if (loading) return 'Processing...';
         if (availableItems.length > 0 && requestItems.length > 0) return `Place Order & Submit Request`;
@@ -91,6 +107,10 @@ export default function CheckoutPage() {
     const taxAmount = Math.round(cartTotal * 0.18);
     const grandTotal = cartTotal + taxAmount;
 
+    // SHOP LOCATION ASSUMPTION: GUJARAT (Based on previous logic where 'Gujarat' triggered SGST)
+    const SHOP_STATE = 'Gujarat';
+    const isIntraState = effectiveState?.toLowerCase() === SHOP_STATE.toLowerCase();
+
     const handleSaveAddress = async () => {
         if (!newAddress.street || !newAddress.city || !newAddress.state || !newAddress.pincode) {
             showWarning('Please fill in all required address fields.', 'Address Incomplete');
@@ -101,12 +121,7 @@ export default function CheckoutPage() {
             const token = localStorage.getItem('token');
             if (!token) return;
 
-            // We use a separate loading state or just reuse loading? 
-            // Better to avoid blocking the whole form, but reuse loading for simplicity or local
-            // Let's use a local lock effectively by checking loading
             if (loading) return;
-
-            // Or just allow it.
 
             const res = await fetch('http://localhost:5000/api/auth/address', {
                 method: 'POST',
@@ -120,18 +135,15 @@ export default function CheckoutPage() {
 
             if (res.ok && data.success) {
                 if (user) {
-                    // Update user context with new addresses
                     const updatedUser = { ...user, savedAddresses: data.savedAddresses };
                     login(token, updatedUser);
                 }
 
-                // Select the new address
                 const newAddr = data.savedAddresses[data.savedAddresses.length - 1];
                 if (newAddr && newAddr._id) {
                     setSelectedAddressId(newAddr._id);
                 }
 
-                // Reset form
                 setNewAddress({
                     street: '',
                     landmark: '',
@@ -151,7 +163,6 @@ export default function CheckoutPage() {
     };
 
     const handlePlaceOrder = async () => {
-        // Validation helpers
         let finalAddressString = '';
 
         if (isNewAddress) {
@@ -161,7 +172,6 @@ export default function CheckoutPage() {
             }
             finalAddressString = formatAddress(newAddress);
 
-            // If user is logged in, save this address
             if (user) {
                 try {
                     const token = localStorage.getItem('token');
@@ -187,7 +197,6 @@ export default function CheckoutPage() {
         }
 
         if (!user) {
-            // Guest checkout validation
             if (!guestName.trim() || !guestPhone.trim()) {
                 showWarning('Please provide your name and phone number for order confirmation.', 'Contact Details Required');
                 return;
@@ -209,13 +218,12 @@ export default function CheckoutPage() {
                 address: finalAddressString
             };
 
-            // 1. Process Order (if available items exist)
+            // 1. Process Order
             if (availableItems.length > 0) {
                 const orderData: any = {
                     items: availableItems.map(i => ({
                         productId: i.productId,
                         quantity: i.quantity,
-                        price: i.price,
                         size: i.size
                     })),
                     shippingAddress: finalAddressString,
@@ -238,10 +246,10 @@ export default function CheckoutPage() {
                     throw new Error(dataOrder.message || 'Failed to place order.');
                 }
             } else {
-                results.orderSuccess = true; // No order to place, so technically "success" for flow
+                results.orderSuccess = true;
             }
 
-            // 2. Process Requests (if on-demand items exist)
+            // 2. Process Requests
             if (requestItems.length > 0) {
                 const requestPromises = requestItems.map(item =>
                     fetch('http://localhost:5000/api/requests', {
@@ -256,24 +264,19 @@ export default function CheckoutPage() {
                 );
 
                 const requestResponses = await Promise.all(requestPromises);
-                const allRequestsOk = requestResponses.every(r => r.ok);
-                if (allRequestsOk) results.requestSuccess = true;
+                if (requestResponses.every(r => r.ok)) results.requestSuccess = true;
             } else {
                 results.requestSuccess = true;
             }
 
             // PayU Integration
             if (results.orderSuccess && paymentMethod === 'Online' && results.orderId) {
-                // Get PayU payment parameters from backend
                 const payuResponse = await fetch('http://localhost:5000/api/payment/create-order', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' }, // Pass token for opt auth
                     body: JSON.stringify({
                         amount: grandTotal,
-                        orderId: results.orderId,
-                        customerName: user?.username || guestName,
-                        customerEmail: user?.email || guestEmail,
-                        customerPhone: user?.mobile || guestPhone
+                        orderId: results.orderId
                     })
                 }).then((t) => t.json());
 
@@ -283,12 +286,10 @@ export default function CheckoutPage() {
                     return;
                 }
 
-                // Create a form and submit to PayU
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = payuResponse.paymentUrl;
 
-                // Add all PayU parameters as hidden fields
                 Object.keys(payuResponse.params).forEach(key => {
                     const input = document.createElement('input');
                     input.type = 'hidden';
@@ -299,12 +300,9 @@ export default function CheckoutPage() {
 
                 document.body.appendChild(form);
                 form.submit();
-
-                // Don't set loading to false as we're redirecting
                 return;
             }
 
-            // Normal Success Flow (COD or Request Only)
             if ((availableItems.length === 0 || results.orderSuccess) && (requestItems.length === 0 || results.requestSuccess)) {
                 finalizeSuccess(results);
             } else {
@@ -348,48 +346,46 @@ export default function CheckoutPage() {
         setLoading(false);
     };
 
-
-
     return (
-        <div className="container" style={{ padding: '4rem 0' }}>
-            <h1 style={{ marginBottom: '2rem' }}>
+        <div className="container checkout-container">
+            <h1 className="checkout-title">
                 {availableItems.length > 0 ? 'Secure Checkout' : 'Submit Procurement Request'}
             </h1>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '3rem' }}>
+            <div className="checkout-grid">
 
                 {/* Left: Details */}
                 <div>
                     {/* Guest Customer Details */}
                     {!user && (
-                        <div className="card" style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ marginBottom: '1rem' }}>Contact Information</h3>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>
-                                    Full Name <span style={{ color: '#ef4444' }}>*</span>
+                        <div className="card checkout-section">
+                            <h3 className="section-title">Contact Information</h3>
+                            <div className="form-group">
+                                <label className="form-label">
+                                    Full Name <span className="form-asterisk">*</span>
                                 </label>
                                 <input
                                     type="text"
                                     value={guestName}
                                     onChange={(e) => setGuestName(e.target.value)}
                                     placeholder="Enter your full name"
-                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                    className="form-input"
                                 />
                             </div>
-                            <div style={{ marginBottom: '1rem' }}>
-                                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>
-                                    Phone Number <span style={{ color: '#ef4444' }}>*</span>
+                            <div className="form-group">
+                                <label className="form-label">
+                                    Phone Number <span className="form-asterisk">*</span>
                                 </label>
                                 <input
                                     type="tel"
                                     value={guestPhone}
                                     onChange={(e) => setGuestPhone(e.target.value)}
                                     placeholder="Enter your phone number"
-                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                    className="form-input"
                                 />
                             </div>
                             <div>
-                                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>
+                                <label className="form-label">
                                     Email (Optional)
                                 </label>
                                 <input
@@ -397,25 +393,21 @@ export default function CheckoutPage() {
                                     value={guestEmail}
                                     onChange={(e) => setGuestEmail(e.target.value)}
                                     placeholder="Enter your email"
-                                    style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                    className="form-input"
                                 />
                             </div>
                         </div>
                     )}
 
                     {/* Address Selection Section */}
-                    <div className="card" style={{ marginBottom: '2rem' }}>
-                        <h3 style={{ marginBottom: '1rem' }}>{availableItems.length > 0 ? 'Shipping Address' : 'Contact Address'}</h3>
+                    <div className="card checkout-section">
+                        <h3 className="section-title">{availableItems.length > 0 ? 'Shipping Address' : 'Contact Address'}</h3>
 
                         {/* Saved Addresses List */}
                         {savedAddresses.length > 0 && (
-                            <div style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div className="address-list">
                                 {savedAddresses.map((addr: any) => (
-                                    <label key={addr._id} style={{
-                                        display: 'flex', alignItems: 'flex-start', gap: '1rem',
-                                        padding: '1rem', border: `2px solid ${selectedAddressId === addr._id ? '#F37021' : '#e2e8f0'}`,
-                                        borderRadius: '8px', cursor: 'pointer', background: selectedAddressId === addr._id ? '#fff7ed' : 'white'
-                                    }}>
+                                    <label key={addr._id} className={`address-card ${selectedAddressId === addr._id ? 'selected' : ''}`}>
                                         <input
                                             type="radio"
                                             name="address"
@@ -425,18 +417,15 @@ export default function CheckoutPage() {
                                             style={{ marginTop: '0.25rem' }}
                                         />
                                         <div>
-                                            <div style={{ fontWeight: 600 }}>{addr.street}, {addr.city}</div>
-                                            <div style={{ fontSize: '0.9rem', color: '#64748B' }}>
+                                            <div className="address-street">{addr.street}, {addr.city}</div>
+                                            <div className="address-meta">
                                                 {addr.landmark ? `${addr.landmark}, ` : ''} {addr.state} - {addr.pincode}
                                             </div>
                                         </div>
                                     </label>
                                 ))}
 
-                                <label style={{
-                                    display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer',
-                                    color: '#F37021', fontWeight: 600, padding: '0.5rem 0'
-                                }}>
+                                <label className="add-new-address-label">
                                     <input
                                         type="radio"
                                         name="address"
@@ -451,79 +440,73 @@ export default function CheckoutPage() {
 
                         {/* New Address Form */}
                         {isNewAddress && (
-                            <div style={{ display: 'grid', gap: '1rem' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                            <div className="grid-gap-1">
+                                <div className="address-grid">
                                     <div>
-                                        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Pincode *</label>
+                                        <label className="form-label">Pincode <span className="form-asterisk">*</span></label>
                                         <input
                                             type="text"
                                             value={newAddress.pincode}
                                             onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
                                             placeholder="123456"
-                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                            className="form-input"
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Town / City *</label>
+                                        <label className="form-label">Town / City <span className="form-asterisk">*</span></label>
                                         <input
                                             type="text"
                                             value={newAddress.city}
                                             onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
                                             placeholder="Ahmedabad"
-                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                            className="form-input"
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Flat, House no., Building, Company, Apartment *</label>
+                                    <label className="form-label">Street Address <span className="form-asterisk">*</span></label>
                                     <input
                                         type="text"
                                         value={newAddress.street}
                                         onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
                                         placeholder="123, Vasu House"
-                                        style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                        className="form-input"
                                     />
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="address-grid">
                                     <div>
-                                        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Landmark (Optional)</label>
+                                        <label className="form-label">Landmark (Optional)</label>
                                         <input
                                             type="text"
                                             value={newAddress.landmark}
                                             onChange={(e) => setNewAddress({ ...newAddress, landmark: e.target.value })}
                                             placeholder="Near City Mall"
-                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                            className="form-input"
                                         />
                                     </div>
                                     <div>
-                                        <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>State *</label>
-                                        <input
-                                            type="text"
-                                            value="Rajasthan"
-                                            readOnly
-                                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px', background: '#f1f5f9', cursor: 'not-allowed' }}
-                                        />
+                                        <label className="form-label">State <span className="form-asterisk">*</span></label>
+                                        <select
+                                            value={newAddress.state}
+                                            onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
+                                            className="form-input"
+                                            style={{ backgroundColor: 'white' }}
+                                        >
+                                            {INDIAN_STATES.map(st => (
+                                                <option key={st} value={st}>{st}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
 
                                 {user && (
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                                    <div className="save-btn-container">
                                         <button
                                             type="button"
                                             onClick={handleSaveAddress}
-                                            style={{
-                                                background: '#3b82f6',
-                                                color: 'white',
-                                                border: 'none',
-                                                padding: '0.6rem 1.2rem',
-                                                borderRadius: '6px',
-                                                cursor: 'pointer',
-                                                fontWeight: 600,
-                                                fontSize: '0.9rem',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                            }}
+                                            className="save-address-btn"
                                         >
                                             Save Address
                                         </button>
@@ -535,7 +518,7 @@ export default function CheckoutPage() {
 
                     {/* Payment Method - Hidden (Default: Online) */}
                     {availableItems.length > 0 && (
-                        <div style={{ display: 'none' }}>
+                        <div className="hidden">
                             <input type="hidden" value={paymentMethod} />
                         </div>
                     )}
@@ -543,71 +526,71 @@ export default function CheckoutPage() {
 
                 {/* Right: Summary */}
                 <div>
-                    <div className="card" style={{ position: 'sticky', top: '2rem' }}>
-                        <h3 style={{ marginBottom: '1rem' }}>Summary</h3>
+                    <div className="card summary-sticky">
+                        <h3 className="section-title">Summary</h3>
 
                         {/* Available Items */}
                         {availableItems.length > 0 && (
                             <>
-                                <h4 style={{ fontSize: '0.9rem', color: '#64748B', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Items for Purchase</h4>
+                                <h4 className="summary-header">Items for Purchase</h4>
                                 {availableItems.map(item => (
-                                    <div key={`${item.productId}-${item.size || 'default'}`} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#334155' }}>
+                                    <div key={`${item.productId}-${item.size || 'default'}`} className="summary-item">
                                         <span>{item.name} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
                                         <span style={{ fontWeight: 600 }}>₹{item.price * item.quantity}</span>
                                     </div>
                                 ))}
-                                <div style={{ borderTop: '1px solid #e2e8f0', margin: '1rem 0' }}></div>
+                                <div className="summary-divider"></div>
                             </>
                         )}
 
                         {/* On-Demand Items */}
                         {requestItems.length > 0 && (
                             <>
-                                <h4 style={{ fontSize: '0.9rem', color: '#F37021', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: availableItems.length > 0 ? '1.5rem' : '0' }}>Procurement Request Items</h4>
+                                <h4 className={`summary-header ${availableItems.length > 0 ? 'mt-1-5' : 'mt-0'}`}>Procurement Request Items</h4>
                                 {requestItems.map(item => (
-                                    <div key={`${item.productId}-${item.size || 'default'}`} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#64748B' }}>
+                                    <div key={`${item.productId}-${item.size || 'default'}`} className="summary-item text-request">
                                         <span>{item.name} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
-                                        <span style={{ fontSize: '0.75rem', background: '#fff7ed', padding: '2px 6px', borderRadius: '4px', color: '#c2410c', border: '1px solid #fdba74' }}>REQUEST ONLY</span>
+                                        <span className="request-tag">REQUEST ONLY</span>
                                     </div>
                                 ))}
-                                <div style={{ borderTop: '1px solid #e2e8f0', margin: '1rem 0' }}></div>
+                                <div className="summary-divider"></div>
                             </>
                         )}
 
                         {/* Totals - Only show if there are available items */}
                         {availableItems.length > 0 ? (
                             <>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                <div className="summary-row">
                                     <span>Subtotal</span>
                                     <span>₹{cartTotal}</span>
                                 </div>
 
                                 {/* Dynamic Tax Display */}
-                                {finalShippingAddress.toLowerCase().includes('gujarat') ? (
+                                {isIntraState ? (
                                     <>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem', color: '#64748B', fontSize: '0.9rem' }}>
+                                        <div className="tax-row">
                                             <span>CGST (9%)</span>
                                             <span>₹{Math.round(cartTotal * 0.09)}</span>
                                         </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: '#64748B', fontSize: '0.9rem' }}>
+                                        <div className="tax-row mb-1">
                                             <span>SGST (9%)</span>
                                             <span>₹{Math.round(cartTotal * 0.09)}</span>
                                         </div>
                                     </>
                                 ) : (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: '#64748B', fontSize: '0.9rem' }}>
+                                    <div className="tax-row mb-1">
                                         <span>IGST (18%)</span>
                                         <span>₹{Math.round(cartTotal * 0.18)}</span>
                                     </div>
                                 )}
 
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', fontWeight: 700, fontSize: '1.25rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+                                <div className="grand-total">
                                     <span>Grand Total</span>
                                     <span>₹{grandTotal}</span>
                                 </div>
                             </>
                         ) : (
-                            <div style={{ marginBottom: '1.5rem', fontSize: '0.9rem', color: '#64748B', fontStyle: 'italic' }}>
+                            <div className="text-muted-italic">
                                 No payment required for procurement requests. We will provide a quote.
                             </div>
                         )}
@@ -615,13 +598,12 @@ export default function CheckoutPage() {
                         <button
                             onClick={handlePlaceOrder}
                             disabled={loading}
-                            className="btn btn-primary"
-                            style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+                            className="btn btn-primary submit-btn"
                         >
                             {submitButtonText}
                         </button>
 
-                        <p style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#64748B', textAlign: 'center' }}>
+                        <p className="terms-text">
                             {availableItems.length > 0
                                 ? 'By placing this order, you agree to our terms and conditions'
                                 : 'We will contact you within 24 hours with a quote.'}
@@ -642,6 +624,18 @@ export default function CheckoutPage() {
                 onConfirm={modalState.onConfirm}
                 showCancel={modalState.showCancel}
             />
+
+            {/* Loading Overlay */}
+            {loading && (
+                <div className="loading-overlay">
+                    <div className="spinner"></div>
+                    <p style={{ color: 'white', marginTop: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>
+                        {paymentMethod === 'Online' && availableItems.length > 0
+                            ? 'Redirecting to Secure Payment Gateway...'
+                            : 'Processing your Request...'}
+                    </p>
+                </div>
+            )}
         </div>
     );
 }

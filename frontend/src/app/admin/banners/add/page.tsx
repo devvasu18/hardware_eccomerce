@@ -137,7 +137,7 @@ export default function AddBannerPage() {
                         <div className="card-header">Basic Details</div>
                         <div className="form-group" style={{ marginBottom: '1rem' }}>
                             <label className="form-label">Banner Title</label>
-                            <input {...register("title", { required: true })} className="form-input" placeholder="e.g. Summer Sale 2026" />
+                            <input {...register("title")} className="form-input" placeholder="e.g. Summer Sale 2026" />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Description (Optional)</label>
@@ -181,11 +181,11 @@ export default function AddBannerPage() {
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                             <div className="form-group">
                                 <label className="form-label">Button Text</label>
-                                <input {...register("buttonText")} className="form-input" placeholder="Shop Now" defaultValue="Shop Now" />
+                                <input {...register("buttonText")} className="form-input" placeholder="Shop Now" />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Button Link</label>
-                                <input {...register("buttonLink")} className="form-input" placeholder="/products" defaultValue="/products" />
+                                <input {...register("buttonLink")} className="form-input" placeholder="/products" />
                             </div>
                             <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
                                 <input type="checkbox" {...register("showSecondaryButton")} defaultChecked={true} style={{ width: '20px', height: '20px' }} />

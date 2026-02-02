@@ -91,19 +91,19 @@ exports.updateBanner = async (req, res) => {
         const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink, showSecondaryButton, badgeText } = req.body;
 
         // Update basic fields
-        if (title) banner.title = title;
+        if (title !== undefined) banner.title = title;
         if (description !== undefined) banner.description = description;
         if (position) banner.position = position;
         if (textColor) banner.textColor = textColor;
         if (buttonColor) banner.buttonColor = buttonColor;
-        if (buttonText) banner.buttonText = buttonText;
+        if (buttonText !== undefined) banner.buttonText = buttonText;
         if (buttonLink) banner.buttonLink = buttonLink;
         if (showSecondaryButton !== undefined) banner.showSecondaryButton = showSecondaryButton === 'true' || showSecondaryButton === true;
         if (badgeText !== undefined) banner.badgeText = badgeText;
 
         // Update image if provided
         if (req.file) {
-            deleteFile(banner.image);
+            await deleteFile(banner.image);
             banner.image = req.file.path;
         }
 
@@ -170,7 +170,7 @@ exports.deleteBanner = async (req, res) => {
         const banner = await Banner.findById(req.params.id);
         if (!banner) return res.status(404).json({ message: 'Banner not found' });
 
-        deleteFile(banner.image);
+        await deleteFile(banner.image);
         await banner.deleteOne();
 
         res.json({ message: 'Banner deleted' });

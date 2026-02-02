@@ -45,8 +45,10 @@ exports.getAdminProductById = async (req, res) => {
 // @access  Admin
 exports.createProduct = async (req, res) => {
     try {
-        console.log('Body:', req.body);
-        console.log('Files:', req.files);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('Create Product Request Recieved');
+            // console.log('Body:', req.body); // Too verbose/sensitive
+        }
 
         const {
             title, slug, subtitle, part_number,
@@ -133,8 +135,9 @@ exports.createProduct = async (req, res) => {
 // @access  Admin
 exports.updateProduct = async (req, res) => {
     try {
-        console.log('Update Body:', req.body);
-        console.log('Update Files:', req.files);
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`Update Product Request: ${req.params.id}`);
+        }
 
         const product = await Product.findById(req.params.id);
         if (!product) {
@@ -230,16 +233,16 @@ exports.deleteProduct = async (req, res) => {
             return res.status(404).json({ message: 'Product not found' });
         }
 
-        // Delete images
-        deleteFile(product.featured_image);
-        deleteFile(product.featured_image_2);
-        deleteFile(product.size_chart);
-        if (product.gallery_images && product.gallery_images.length > 0) {
-            product.gallery_images.forEach(img => deleteFile(img));
-        }
+        // SOFT DELETE: Mark as inactive instead of removing document
+        // This preserves historical order data integrity
+        product.isActive = false;
+        product.isVisible = false;
 
-        await product.deleteOne();
-        res.json({ message: 'Product removed' });
+        // Note: We DO NOT delete images here so that historical orders can still show them
+        // if we ever implement a "Archive View".
+
+        await product.save();
+        res.json({ message: 'Product deactivated (Soft Delete)' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting product', error: error.message });
     }

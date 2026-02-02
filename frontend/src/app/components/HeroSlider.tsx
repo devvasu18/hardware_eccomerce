@@ -92,14 +92,16 @@ export default function HeroSlider() {
                                 </p>
 
                                 <div className="hero-buttons" style={{ justifyContent: slide.position?.includes('right') ? 'flex-end' : slide.position?.includes('center') ? 'center' : 'flex-start' }}>
-                                    <Link
-                                        href={slide.buttonLink || '/products'}
-                                        className="hero-btn-primary"
-                                        style={{ background: slide.buttonColor }}
-                                    >
-                                        <span>{slide.buttonText || 'Shop Now'}</span>
-                                        <FiArrowRight />
-                                    </Link>
+                                    {slide.buttonText && (
+                                        <Link
+                                            href={slide.buttonLink || '/products'}
+                                            className="hero-btn-primary"
+                                            style={{ background: slide.buttonColor }}
+                                        >
+                                            <span>{slide.buttonText}</span>
+                                            <FiArrowRight />
+                                        </Link>
+                                    )}
                                     {(slide.showSecondaryButton !== false) && (
                                         <Link
                                             href="/products"

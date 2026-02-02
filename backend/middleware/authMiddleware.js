@@ -10,8 +10,17 @@ const protect = async (req, res, next) => {
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
         try {
             token = req.headers.authorization.split(' ')[1];
+
+            // Check if token is blacklisted (logged out)
+            const BlacklistedToken = require('../models/BlacklistedToken'); // Lazy load
+            const isBlacklisted = await BlacklistedToken.findOne({ token });
+            if (isBlacklisted) {
+                return res.status(401).json({ message: 'Session expired/logged out. Please login again.' });
+            }
+
             // FALLBACK SECRET to match authRoutes.js
-            const secret = process.env.JWT_SECRET || 'chamunda_secret_key_123';
+            const secret = process.env.JWT_SECRET;
+            if (!secret) throw new Error('JWT_SECRET not configured');
             const decoded = jwt.verify(token, secret);
             req.user = await User.findById(decoded.id).select('-password');
 
@@ -23,12 +32,9 @@ const protect = async (req, res, next) => {
                 return res.status(401).json({ message: 'User not found. Please login again.' });
             }
 
-            const logInfo = `🔐 Auth - User authenticated: ${JSON.stringify({
-                id: req.user._id,
-                username: req.user.username,
-                role: req.user.role
-            })}`;
-            console.log(logInfo);
+            if (process.env.NODE_ENV !== 'production') {
+                console.log(`🔐 Auth - User authenticated: ${req.user._id}`);
+            }
 
 
             next();
@@ -70,4 +76,22 @@ const admin = (req, res, next) => {
     }
 };
 
-module.exports = { protect, admin };
+const optionalProtect = async (req, res, next) => {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+        try {
+            token = req.headers.authorization.split(' ')[1];
+            const secret = process.env.JWT_SECRET;
+            if (secret) {
+                const decoded = jwt.verify(token, secret);
+                req.user = await User.findById(decoded.id).select('-password');
+            }
+        } catch (error) {
+            // Token failed, but it's optional, so we just proceed as guest
+            if (process.env.NODE_ENV !== 'production') console.log("Optional Auth Token Failed:", error.message);
+        }
+    }
+    next();
+};
+
+module.exports = { protect, admin, optionalProtect };

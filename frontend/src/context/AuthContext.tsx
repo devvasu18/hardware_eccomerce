@@ -70,12 +70,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     };
 
-    const logout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('cart'); // Clear cart on logout
-        setUser(null);
-        window.location.href = '/login';
+    const logout = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                // Determine API URL (using env or defaultlocalhost)
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+                await fetch(`${API_URL}/auth/logout`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+            }
+        } catch (error) {
+            console.error('Logout API failed:', error);
+        } finally {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('cart'); // Clear cart on logout
+            setUser(null);
+            window.location.href = '/login';
+        }
     };
 
     return (

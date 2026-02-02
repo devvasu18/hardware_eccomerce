@@ -7,6 +7,7 @@ import SpecialOffers from '@/app/components/SpecialOffers';
 import NewArrivals from '@/app/components/NewArrivals';
 import BrandsSection from '@/app/components/BrandsSection';
 import FeaturedProducts from '@/app/components/FeaturedProducts';
+import Footer from '@/app/components/Footer';
 
 interface Product {
     _id: string;
@@ -42,9 +43,9 @@ export default async function Home() {
 
             <HeroSlider />
 
-            <BrandsSection />
-
             <CategorySection />
+
+            <BrandsSection />
 
             <FeaturedProducts products={featured} />
 
@@ -54,12 +55,7 @@ export default async function Home() {
 
             <WhyChooseUs />
 
-            <footer>
-                <div className="container" style={{ textAlign: 'center', opacity: 0.8 }}>
-                    <p>&copy; 2026 Selfmade Industrial Systems. All rights reserved.</p>
-                    <p style={{ fontSize: '0.875rem', marginTop: '1rem' }}>Tally Connected | Local Bus Logistics Integrated</p>
-                </div>
-            </footer>
+            <Footer />
         </main>
     );
 }
