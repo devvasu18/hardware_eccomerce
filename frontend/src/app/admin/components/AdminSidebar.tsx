@@ -103,8 +103,8 @@ export default function AdminSidebar() {
             icon: <FiSettings />,
             roles: ['super_admin'],
             children: [
-                { label: 'System Logs', path: '/admin/logs', roles: ['super_admin'] },
-                { label: 'Banner Config', path: '/admin/banners', roles: ['super_admin', 'ops_admin'] },
+                { label: 'System Logs', path: '/admin/logs', roles: ['super_admin'] }
+
             ]
         },
 

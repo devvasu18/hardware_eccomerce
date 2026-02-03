@@ -134,14 +134,25 @@ export default function ProductForm({ productId }: ProductFormProps) {
                     const prodRes = await api.get(`/admin/products/${productId}`);
                     const product = prodRes.data;
 
+                    // Pre-fetch subcategories for the product's category to ensure dropdown is populated
+                    const categoryId = product.category?._id || product.category;
+                    if (categoryId) {
+                        try {
+                            const subCatRes = await api.get(`/admin/sub-categories?category_id=${categoryId}`);
+                            setSubCategories(subCatRes.data);
+                        } catch (subErr) {
+                            console.error("Failed to pre-fetch subcategories", subErr);
+                        }
+                    }
+
                     // Populate Form
                     reset({
                         title: product.title,
                         slug: product.slug,
                         subtitle: product.subtitle,
                         part_number: product.part_number,
-                        category: product.category?._id || product.category,
-                        sub_category: product.sub_category?.[0],
+                        category: categoryId,
+                        sub_category: Array.isArray(product.sub_category) ? (product.sub_category[0]?._id || product.sub_category[0]) : (product.sub_category?._id || product.sub_category),
                         brand: product.brand?._id || product.brand,
                         offer: product.offer?._id || product.offer,
                         hsn_code: product.hsn_code?._id || product.hsn_code,
@@ -160,12 +171,12 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         size: product.size,
                         meta_title: product.meta_title,
                         meta_description: product.meta_description,
-                        isFeatured: product.isFeatured,
-                        isNewArrival: product.isNewArrival,
-                        isTopSale: product.isTopSale,
-                        isDailyOffer: product.isDailyOffer,
-                        isVisible: product.isVisible,
-                        isOnDemand: product.isOnDemand
+                        isFeatured: product.isFeatured || false,
+                        isNewArrival: product.isNewArrival || false,
+                        isTopSale: product.isTopSale || false,
+                        isDailyOffer: product.isDailyOffer || false,
+                        isVisible: product.isVisible !== false, // Default true if undefined
+                        isOnDemand: product.isOnDemand || false
                     });
 
                     // Set Previews & Methods
