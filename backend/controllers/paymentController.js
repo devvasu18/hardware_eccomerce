@@ -60,50 +60,31 @@ exports.createPaymentOrder = async (req, res) => {
         const amount = order.totalAmount; // Trust source of truth
 
         // Generate unique transaction ID
-        const txnid = `TXN${Date.now()}${Math.floor(Math.random() * 1000)}`;
+        const txnid = `TXN${Date.now()}`;
 
-        // Prepare payment data
-        const paymentData = {
-            key: PAYU_MERCHANT_KEY,
-            txnid: txnid,
-            amount: amount.toString(), // Validated amount
-            productinfo: `Order #${orderId}`,
-            firstname: order.guestCustomer?.name || (req.user ? req.user.username : 'Customer'),
-            email: order.guestCustomer?.email || (req.user ? req.user.email : 'customer@example.com'),
-            phone: order.guestCustomer?.phone || (req.user ? req.user.mobile : ''),
-            salt: PAYU_MERCHANT_SALT,
-            surl: `${process.env.FRONTEND_URL}/payment/success`,
-            furl: `${process.env.FRONTEND_URL}/payment/failure`,
-            udf1: orderId, // Store orderId for reference
-            udf2: '',
-            udf3: '',
-            udf4: '',
-            udf5: ''
-        };
+        // BYPASS: Direct Success Simulation for Manual Testing
+        // Instead of returning PayU params, we will tell frontend to "verify" immediately
+        // Note: Frontend must be ready to assume success if it sees this specific flag or handling
+        // OR we just return dummy data that points to success URL directly?
 
-        // Generate hash
-        const hash = generatePayUHash(paymentData);
+        // Actually, user asked to "just payment directly done". 
+        // Best way: Update order STATUS here directly and return "mock_success" to frontend so it redirects.
 
-        // Return payment parameters to frontend
+        order.paymentStatus = 'Paid'; // Changed for immediate effect
+        order.paymentDetails = { provider: 'Manual_Bypass', transactionId: txnid };
+        await order.save();
+
+        // Return dummy param that frontend might use, or just success
+        // If frontend expects PayU form, this might break UI. 
+        // Assuming strict "remove it and show directly payment done" implies backend action is key.
+
         res.json({
             success: true,
-            paymentUrl: PAYU_BASE_URL,
+            bypass: true, // Frontend clue
+            paymentUrl: `${process.env.FRONTEND_URL}/payment/success`, // Redirect direct
             params: {
-                key: paymentData.key,
-                txnid: paymentData.txnid,
-                amount: paymentData.amount,
-                productinfo: paymentData.productinfo,
-                firstname: paymentData.firstname,
-                email: paymentData.email,
-                phone: paymentData.phone,
-                surl: paymentData.surl,
-                furl: paymentData.furl,
-                hash: hash,
-                udf1: paymentData.udf1,
-                udf2: paymentData.udf2,
-                udf3: paymentData.udf3,
-                udf4: paymentData.udf4,
-                udf5: paymentData.udf5
+                // Dummy params to prevent frontend crash if it tries to destructure
+                key: 'dummy', hash: 'dummy'
             }
         });
 

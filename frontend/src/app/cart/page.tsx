@@ -64,12 +64,12 @@ export default function CartPage() {
                         <span>₹{cartTotal}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: '#64748B', fontSize: '0.9rem' }}>
-                        <span>Tax (18% GST Estimated)</span>
-                        <span>₹{Math.round(cartTotal * 0.18)}</span>
+                        <span>Tax (GST)</span>
+                        <span>₹{Math.round(items.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0))}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontWeight: 700, fontSize: '1.2rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
                         <span>Total</span>
-                        <span>₹{Math.round(cartTotal * 1.18)}</span>
+                        <span>₹{Math.round(cartTotal + items.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0))}</span>
                     </div>
                     <Link href="/checkout" className="btn btn-primary" style={{ width: '100%', textAlign: 'center' }}>Proceed to Checkout</Link>
                 </div>

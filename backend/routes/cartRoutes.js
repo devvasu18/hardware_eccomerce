@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
+const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
 
 // Get user's cart
@@ -9,7 +10,7 @@ router.get('/', authenticateToken, async (req, res) => {
     try {
         const cart = await Cart.findOne({ user: req.user.id }).populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate'
         });
 
         if (!cart) {
@@ -51,10 +52,19 @@ router.post('/add', authenticateToken, async (req, res) => {
             return res.status(400).json({ message: `Insufficient stock. Only ${product.stock} left.` });
         }
 
+        // Fetch User to check for Wholesale Discount
+        const user = await User.findById(req.user.id);
+
         let cart = await Cart.findOne({ user: req.user.id });
 
         // Calculate Price Securely
         let securePrice = product.selling_price_a || product.mrp;
+
+        // Apply Wholesale Discount
+        if (user && user.customerType === 'wholesale' && user.wholesaleDiscount > 0) {
+            const discountAmount = (securePrice * user.wholesaleDiscount) / 100;
+            securePrice = Math.round((securePrice - discountAmount) * 100) / 100;
+        }
 
         if (!cart) {
             // Create new cart
@@ -98,7 +108,7 @@ router.post('/add', authenticateToken, async (req, res) => {
         console.log('Cart saved. Populating...');
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate'
         });
         console.log('Cart populated.');
 
@@ -146,20 +156,29 @@ router.patch('/update', authenticateToken, async (req, res) => {
         // Validate stock
         // STRICT CHECK RESTORED
         const product = await Product.findById(productId);
+        // Fetch User for Discount Logic
+        const user = await User.findById(req.user.id);
+
         if (product && !product.isOnDemand && product.stock < quantity) {
             return res.status(400).json({ message: `Insufficient stock. Only ${product.stock} available.` });
         }
 
         // Also update price to be secure
         if (product) {
-            cart.items[itemIndex].price = product.selling_price_a || product.mrp;
+            let securePrice = product.selling_price_a || product.mrp;
+            // Apply Wholesale Discount
+            if (user && user.customerType === 'wholesale' && user.wholesaleDiscount > 0) {
+                const discountAmount = (securePrice * user.wholesaleDiscount) / 100;
+                securePrice = Math.round((securePrice - discountAmount) * 100) / 100;
+            }
+            cart.items[itemIndex].price = securePrice;
         }
 
         cart.items[itemIndex].quantity = quantity;
         await cart.save();
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate'
         });
 
         const validItems = cart.items.filter(item => item.product);
@@ -196,7 +215,7 @@ router.delete('/remove', authenticateToken, async (req, res) => {
         await cart.save();
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate'
         });
 
         const validItems = cart.items.filter(item => item.product);
@@ -275,7 +294,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
         await cart.save();
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate'
         });
 
         const validItems = cart.items.filter(item => item.product);

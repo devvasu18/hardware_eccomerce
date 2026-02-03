@@ -7,6 +7,24 @@
     margin-bottom: 2rem;
 }
 
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #64748B;
+    margin-bottom: 1rem;
+    transition: color 0.2s;
+    padding: 0;
+}
+
+.back-btn:hover {
+    color: #F37021;
+}
+
 .checkout-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;

@@ -11,6 +11,7 @@ export interface CartItem {
     image?: string;
     size?: string;
     isOnDemand?: boolean;
+    gst_rate?: number;
 }
 
 interface CartContextType {
@@ -107,9 +108,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
                                         featured_image?: string;
                                         gallery_images?: string[];
                                         isOnDemand?: boolean;
+                                        gst_rate?: number;
                                     }
 
-                                    const productsMap = new Map((Array.isArray(data) ? data : data.products || []).map((p: ProductData) => [p._id, p]));
+                                    const productsMap = new Map<string, ProductData>((Array.isArray(data) ? data : data.products || []).map((p: ProductData) => [p._id, p]));
 
                                     // Merge fresh details with local quantity/size
                                     const enrichedItems = validItems.map(item => {
@@ -121,7 +123,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                                             name: product.title,
                                             price: product.discountedPrice || product.basePrice || product.mrp || 0,
                                             image: product.featured_image || product.gallery_images?.[0] || '',
-                                            isOnDemand: product.isOnDemand
+                                            isOnDemand: product.isOnDemand,
+                                            gst_rate: product.gst_rate
                                         };
                                     });
                                     setItems(enrichedItems);
@@ -171,7 +174,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         quantity: item.quantity,
                         image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
-                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
+                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
+                        gst_rate: item.product?.gst_rate
                     }));
                 setItems(dbItems);
             }
@@ -218,7 +222,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         quantity: item.quantity,
                         image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
-                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
+                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
+                        gst_rate: item.product?.gst_rate
                     }));
                 setItems(syncedItems);
                 localStorage.removeItem('cart'); // Clear localStorage after successful sync
@@ -267,7 +272,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                             quantity: item.quantity,
                             image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                             size: item.size,
-                            isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
+                            isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
+                            gst_rate: item.product?.gst_rate
                         }));
                     setItems(updatedItems);
                     openCart(); // Open sidebar on add
@@ -321,13 +327,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 if (response.ok) {
                     const data = await response.json();
                     const updatedItems = data.items.map((item: any) => ({
-                        productId: item.product._id,
-                        name: item.product.name,
+                        productId: typeof item.product === 'object' ? item.product._id : item.product,
+                        name: item.product?.title || 'Unknown Product',
                         price: item.price,
                         quantity: item.quantity,
-                        image: item.product.imageUrl || item.product.images?.[0],
+                        image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
-                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
+                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
+                        gst_rate: item.product?.gst_rate
                     }));
                     setItems(updatedItems);
                 } else {
@@ -370,13 +377,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 if (response.ok) {
                     const data = await response.json();
                     const updatedItems = data.items.map((item: any) => ({
-                        productId: item.product._id,
-                        name: item.product.name,
+                        productId: typeof item.product === 'object' ? item.product._id : item.product,
+                        name: item.product?.title || 'Unknown Product',
                         price: item.price,
                         quantity: item.quantity,
-                        image: item.product.imageUrl || item.product.images?.[0],
+                        image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
-                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock)
+                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
+                        gst_rate: item.product?.gst_rate
                     }));
                     setItems(updatedItems);
                 }

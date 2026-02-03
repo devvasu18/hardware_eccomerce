@@ -197,6 +197,30 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
         return `${formatDate(dateString)}, ${formatTime(dateString)}`;
     };
 
+    const getFriendlyArrivalText = (dispatchDateStr: string, arrivalDateStr: string) => {
+        if (!arrivalDateStr || !dispatchDateStr) return '--';
+
+        const arrivalDate = new Date(arrivalDateStr);
+        const dispatchDate = new Date(dispatchDateStr);
+
+        // Strip time for date comparison
+        const aDate = new Date(arrivalDate.getFullYear(), arrivalDate.getMonth(), arrivalDate.getDate());
+        const dDate = new Date(dispatchDate.getFullYear(), dispatchDate.getMonth(), dispatchDate.getDate());
+
+        const diffTime = aDate.getTime() - dDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        const timePart = arrivalDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+        if (diffDays === 0) {
+            return `Same Day, ${timePart}`;
+        } else if (diffDays === 1) {
+            return `Next Day, ${timePart}`;
+        } else {
+            return `${arrivalDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}, ${timePart}`;
+        }
+    };
+
     if (loading) {
         return (
             <main>
@@ -575,7 +599,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                             Departure Time
                                         </div>
                                         <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b' }}>
-                                            {formatDateTime(shipment.departureTime)}
+                                            {/* Combined dispatch date and raw time string */}
+                                            {formatDate(shipment.dispatchDate)}, {shipment.departureTime}
                                         </div>
                                     </div>
                                     <div>
@@ -583,7 +608,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                             Expected Arrival
                                         </div>
                                         <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b' }}>
-                                            {formatDateTime(shipment.expectedArrival)}
+                                            {getFriendlyArrivalText(shipment.dispatchDate, shipment.expectedArrival)}
                                         </div>
                                     </div>
                                 </div>

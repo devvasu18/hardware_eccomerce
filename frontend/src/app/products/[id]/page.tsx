@@ -27,7 +27,15 @@ async function getProduct(id: string): Promise<Product | null> {
     try {
         const res = await fetch(`http://localhost:5000/api/products/${id}`, { cache: 'no-store' });
         if (!res.ok) return null;
-        return await res.json();
+        const data = await res.json();
+        // Map backend fields to frontend interface
+        return {
+            ...data,
+            basePrice: data.mrp || data.basePrice,
+            discountedPrice: data.selling_price_a || data.discountedPrice,
+            title: data.title || data.name,
+            name: data.title || data.name
+        };
     } catch (e) {
         return null;
     }
@@ -37,9 +45,18 @@ async function getRelatedProducts(category: string, currentId: string): Promise<
     try {
         const res = await fetch(`http://localhost:5000/api/products?category=${encodeURIComponent(category)}`, { cache: 'no-store' });
         if (!res.ok) return [];
-        const products: Product[] = await res.json();
-        return products
-            .filter(p => p._id !== currentId)
+        const productsRaw = await res.json();
+        const productsArray = Array.isArray(productsRaw) ? productsRaw : (productsRaw.products || []);
+
+        return productsArray
+            .filter((p: any) => p._id !== currentId)
+            .map((p: any) => ({
+                ...p,
+                basePrice: p.mrp || p.basePrice,
+                discountedPrice: p.selling_price_a || p.discountedPrice,
+                title: p.title || p.name,
+                name: p.title || p.name
+            }))
             .slice(0, 3);
     } catch (e) {
         return [];

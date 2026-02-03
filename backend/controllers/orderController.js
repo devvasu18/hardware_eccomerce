@@ -103,6 +103,12 @@ exports.createOrder = async (req, res) => {
             if (price === undefined || price === null) {
                 price = product.mrp;
             }
+
+            // Apply Wholesale Discount
+            if (req.user && req.user.customerType === 'wholesale' && req.user.wholesaleDiscount > 0) {
+                const discountAmount = (price * req.user.wholesaleDiscount) / 100;
+                price = Math.round((price - discountAmount) * 100) / 100; // Ensure 2 decimal places max or rounding
+            }
             const gstRate = product.gst_rate || 18; // Default to 18% if not set
 
             const itemTotal = price * item.quantity;
@@ -322,6 +328,15 @@ exports.updateOrderStatus = async (req, res) => {
         if (!order) return res.status(404).json({ message: 'Order not found' });
 
         const oldStatus = order.status;
+
+        // Strict Workflow Validation: Prevent skipping steps
+        if (status === 'Delivered' && oldStatus !== 'Assigned to Bus') {
+            return res.status(400).json({ message: 'Order must be Assigned to Bus (Logistics) before it can be marked Delivered.' });
+        }
+        if (status === 'Assigned to Bus' && oldStatus !== 'Packed' && oldStatus !== 'Assigned to Bus') {
+            return res.status(400).json({ message: 'Order must be Packed before Logistics Assignment.' });
+        }
+
         order.status = status;
 
         // Handling Logic for "Assigned to Bus"

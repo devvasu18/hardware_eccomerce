@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Modal from '@/app/components/Modal';
 import { useModal } from '@/app/hooks/useModal';
+import { FaArrowLeft } from 'react-icons/fa';
 import './checkout.css';
 
 const INDIAN_STATES = [
@@ -104,8 +105,8 @@ export default function CheckoutPage() {
         return null;
     }
 
-    const taxAmount = Math.round(cartTotal * 0.18);
-    const grandTotal = cartTotal + taxAmount;
+    const taxAmount = useMemo(() => availableItems.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0), [availableItems]);
+    const grandTotal = Math.round(cartTotal + taxAmount);
 
     // SHOP LOCATION ASSUMPTION: GUJARAT (Based on previous logic where 'Gujarat' triggered SGST)
     const SHOP_STATE = 'Gujarat';
@@ -286,6 +287,12 @@ export default function CheckoutPage() {
                     return;
                 }
 
+                if (payuResponse.bypass) {
+                    // Manual Bypass for Testing
+                    router.push(`/payment/success?status=success&udf1=${results.orderId}&bypass=true`);
+                    return;
+                }
+
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = payuResponse.paymentUrl;
@@ -348,6 +355,9 @@ export default function CheckoutPage() {
 
     return (
         <div className="container checkout-container">
+            <button onClick={() => router.back()} className="back-btn">
+                <FaArrowLeft /> Back
+            </button>
             <h1 className="checkout-title">
                 {availableItems.length > 0 ? 'Secure Checkout' : 'Submit Procurement Request'}
             </h1>
@@ -569,18 +579,18 @@ export default function CheckoutPage() {
                                 {isIntraState ? (
                                     <>
                                         <div className="tax-row">
-                                            <span>CGST (9%)</span>
-                                            <span>₹{Math.round(cartTotal * 0.09)}</span>
+                                            <span>CGST (Total)</span>
+                                            <span>₹{Math.round(taxAmount / 2)}</span>
                                         </div>
                                         <div className="tax-row mb-1">
-                                            <span>SGST (9%)</span>
-                                            <span>₹{Math.round(cartTotal * 0.09)}</span>
+                                            <span>SGST (Total)</span>
+                                            <span>₹{Math.round(taxAmount / 2)}</span>
                                         </div>
                                     </>
                                 ) : (
                                     <div className="tax-row mb-1">
-                                        <span>IGST (18%)</span>
-                                        <span>₹{Math.round(cartTotal * 0.18)}</span>
+                                        <span>IGST (Total)</span>
+                                        <span>₹{Math.round(taxAmount)}</span>
                                     </div>
                                 )}
 
