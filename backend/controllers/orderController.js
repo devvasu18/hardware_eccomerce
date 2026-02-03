@@ -32,7 +32,13 @@ exports.createOrder = async (req, res) => {
         }
 
         // Determine Tax Type based on Address
-        const isIntraState = shippingAddress.toLowerCase().includes('gujarat'); // Shop is in Gujarat
+        let addressToCheck = '';
+        if (typeof shippingAddress === 'string') {
+            addressToCheck = shippingAddress;
+        } else if (typeof shippingAddress === 'object') {
+            addressToCheck = `${shippingAddress.street || ''} ${shippingAddress.city || ''} ${shippingAddress.state || ''}`;
+        }
+        const isIntraState = addressToCheck.toLowerCase().includes('gujarat'); // Shop is in Gujarat
 
         // Calculate order total securely
         let orderTotal = 0;
@@ -179,60 +185,74 @@ exports.createOrder = async (req, res) => {
         }
 
         // Create the order
-        const order = await Order.create(orderData);
+        try {
+            // Create the order
+            const order = await Order.create(orderData);
 
-        // Create initial status log (system-generated, no user reference needed)
-        const statusLogData = {
-            order: order._id,
-            status: 'Order Placed',
-            updatedByName: 'System',
-            updatedByRole: 'system',
-            notes: 'Order created successfully',
-            isSystemGenerated: true
-        };
+            // Create initial status log
+            const statusLogData = {
+                order: order._id,
+                status: 'Order Placed',
+                updatedByName: 'System',
+                updatedByRole: 'system',
+                notes: 'Order created successfully',
+                isSystemGenerated: true
+            };
 
-        // Only add updatedBy if we have a user
-        if (req.user) {
-            statusLogData.updatedBy = req.user._id;
-        }
-
-        await StatusLog.create(statusLogData);
-
-        // --- Send Email Notifications ---
-        // 1. To Customer
-        const customerEmail = req.user ? req.user.email : (guestCustomer ? guestCustomer.email : null);
-        if (customerEmail) {
-            const sendEmail = require('../utils/sendEmail'); // Lazy load
-            await sendEmail({
-                email: customerEmail,
-                subject: `Order Confirmation - #${order.orderNumber || order._id}`,
-                message: `Thank you for your order! Your order #${order.orderNumber || order._id} has been placed successfully. Total: ₹${grandTotal}. We will notify you when it ships.`,
-                html: `<h1>Order Confirmation</h1><p>Thank you for shopping with us.</p><p>Order ID: <strong>${order.orderNumber || order._id}</strong></p><p>Total Amount: <strong>₹${grandTotal}</strong></p>`
-            });
-        }
-
-        // 2. To Admin (Notify Logic)
-        const sendEmail = require('../utils/sendEmail');
-        await sendEmail({
-            email: process.env.ADMIN_EMAIL || 'admin@hardwarestore.com',
-            subject: `New Order Received - #${order.orderNumber || order._id}`,
-            message: `New order received from ${req.user ? req.user.username : (guestCustomer ? guestCustomer.name : 'Guest')}. Total: ₹${grandTotal}.`,
-        });
-
-        res.status(201).json({
-            success: true,
-            message: 'Order created successfully',
-            orderId: order._id,
-            order: {
-                _id: order._id,
-                orderNumber: order.orderNumber,
-                total: order.totalAmount,  // Map back to 'total' for frontend
-                status: order.status
+            if (req.user) {
+                statusLogData.updatedBy = req.user._id;
+                // AUTOMATICALLY CLEAR CART
+                const Cart = require('../models/Cart');
+                await Cart.findOneAndDelete({ user: req.user._id });
             }
-        });
+
+            await StatusLog.create(statusLogData);
+
+            // --- Send Email Notifications (Async, don't fail order if email fails) ---
+            try {
+                // 1. To Customer
+                const customerEmail = req.user ? req.user.email : (guestCustomer ? guestCustomer.email : null);
+                if (customerEmail) {
+                    const sendEmail = require('../utils/sendEmail');
+                    await sendEmail({
+                        email: customerEmail,
+                        subject: `Order Confirmation - #${order.orderNumber || order._id}`,
+                        message: `Thank you for your order! Your order #${order.orderNumber || order._id} has been placed successfully. Total: ₹${grandTotal}. We will notify you when it ships.`,
+                        html: `<h1>Order Confirmation</h1><p>Thank you for shopping with us.</p><p>Order ID: <strong>${order.orderNumber || order._id}</strong></p><p>Total Amount: <strong>₹${grandTotal}</strong></p>`
+                    });
+                }
+                // 2. To Admin
+                const sendEmail = require('../utils/sendEmail');
+                await sendEmail({
+                    email: process.env.ADMIN_EMAIL || 'admin@hardwarestore.com',
+                    subject: `New Order Received - #${order.orderNumber || order._id}`,
+                    message: `New order received from ${req.user ? req.user.username : (guestCustomer ? guestCustomer.name : 'Guest')}. Total: ₹${grandTotal}.`,
+                });
+            } catch (emailErr) {
+                console.error('Email sending failed:', emailErr.message);
+                // Proceed, order is created
+            }
+
+            res.status(201).json({
+                success: true,
+                message: 'Order created successfully',
+                orderId: order._id,
+                order: {
+                    _id: order._id,
+                    orderNumber: order.orderNumber,
+                    total: order.totalAmount,
+                    status: order.status
+                }
+            });
+
+        } catch (createErr) {
+            console.error('Order creation failed, rolling back stock:', createErr.message);
+            await rollbackStock(processedItems);
+            return res.status(500).json({ success: false, message: 'Failed to create order', error: createErr.message });
+        }
 
     } catch (error) {
-        console.error('Create order error:', error);
+        console.error('Create order error (Outer):', error);
         res.status(500).json({ success: false, message: 'Failed to create order', error: error.message });
     }
 };

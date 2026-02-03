@@ -78,7 +78,7 @@ router.post('/register', authLimiter, [
 // Login
 // Login
 router.post('/login', authLimiter, [
-    body('mobile').notEmpty().withMessage('Mobile number is required'),
+    // body('mobile').notEmpty().withMessage('Mobile number is required'), // Relaxed for Email login
     body('password').notEmpty().withMessage('Password is required')
 ], async (req, res) => {
     const errors = validationResult(req);
@@ -86,9 +86,14 @@ router.post('/login', authLimiter, [
         return res.status(400).json({ message: errors.array()[0].msg });
     }
     try {
-        const { mobile, password } = req.body;
+        const { mobile, password, email } = req.body;
 
-        const user = await User.findOne({ mobile }).select('+password');
+        let query = {};
+        if (mobile) query.mobile = mobile;
+        else if (email) query.email = email;
+        else return res.status(400).json({ message: 'Mobile or Email is required' });
+
+        const user = await User.findOne(query).select('+password');
         if (!user) return res.status(400).json({ message: 'User not found' });
 
         if (user.isActive === false) return res.status(403).json({ message: 'Account has been deactivated. Please contact support.' });

@@ -7,8 +7,8 @@ const path = require('path');
 dotenv.config();
 
 const helmet = require('helmet');
-const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
+// const mongoSanitize = require('express-mongo-sanitize'); // Replaced
+// const xss = require('xss-clean'); // Replaced
 const hpp = require('hpp');
 const rateLimit = require('express-rate-limit');
 
@@ -24,11 +24,13 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10kb' })); // Body limit
 
+const { mongoSanitize, xssSanitize } = require('./middleware/security');
+
 // Data Sanitization against NoSQL Query Injection
-app.use(mongoSanitize());
+app.use(mongoSanitize);
 
 // Data Sanitization against XSS
-app.use(xss());
+app.use(xssSanitize);
 
 // Prevent Parameter Pollution
 app.use(hpp());

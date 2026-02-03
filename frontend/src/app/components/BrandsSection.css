@@ -3,7 +3,7 @@
    ======================================== */
 
 .brands-section {
-    padding: var(--space-4xl) 0;
+    padding: var(--space-xl) 0;
     background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
     position: relative;
     overflow: hidden;
@@ -39,8 +39,8 @@
     justify-content: center;
     flex-wrap: wrap;
     gap: 1rem;
-    margin-bottom: var(--space-3xl);
-    padding: var(--space-xl) 0;
+    margin-bottom: var(--space-xl);
+    padding: var(--space-md) 0;
 }
 
 /* Hexagon Shape */
@@ -134,7 +134,7 @@
 }
 
 .view-all-btn-wrapper {
-    margin-top: var(--space-2xl);
+    margin-top: var(--space-lg);
     text-align: center;
 }
 

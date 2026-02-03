@@ -46,11 +46,15 @@ router.post('/add', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: 'Product not found' });
         }
 
-        // Validate stock (if not on-demand)
-        // STRICT CHECK REMOVED to allow Backorders/Hybrid Shift
-        // if (!product.isOnDemand && product.stock < quantity) { ... }
+        // Validate stock (Strict Check Restored)
+        if (!product.isOnDemand && product.stock < quantity) {
+            return res.status(400).json({ message: `Insufficient stock. Only ${product.stock} left.` });
+        }
 
         let cart = await Cart.findOne({ user: req.user.id });
+
+        // Calculate Price Securely
+        let securePrice = product.selling_price_a || product.mrp;
 
         if (!cart) {
             // Create new cart
@@ -59,7 +63,7 @@ router.post('/add', authenticateToken, async (req, res) => {
                 items: [{
                     product: productId,
                     quantity,
-                    price,
+                    price: securePrice,
                     size
                 }]
             });
@@ -73,13 +77,17 @@ router.post('/add', authenticateToken, async (req, res) => {
             if (existingItemIndex > -1) {
                 // Update quantity
                 cart.items[existingItemIndex].quantity += quantity;
-                cart.items[existingItemIndex].price = price; // Update price in case it changed
+                // Validate new total quantity against stock
+                if (!product.isOnDemand && product.stock < cart.items[existingItemIndex].quantity) {
+                    return res.status(400).json({ message: `Insufficient stock for total quantity. Only ${product.stock} available.` });
+                }
+                cart.items[existingItemIndex].price = securePrice; // Update price secure
             } else {
                 // Add new item
                 cart.items.push({
                     product: productId,
                     quantity,
-                    price,
+                    price: securePrice,
                     size
                 });
             }
@@ -136,9 +144,16 @@ router.patch('/update', authenticateToken, async (req, res) => {
         }
 
         // Validate stock
-        // STRICT CHECK REMOVED to allow Backorders
-        // const product = await Product.findById(productId);
-        // if (product && !product.isOnDemand && product.stock < quantity) { ... }
+        // STRICT CHECK RESTORED
+        const product = await Product.findById(productId);
+        if (product && !product.isOnDemand && product.stock < quantity) {
+            return res.status(400).json({ message: `Insufficient stock. Only ${product.stock} available.` });
+        }
+
+        // Also update price to be secure
+        if (product) {
+            cart.items[itemIndex].price = product.selling_price_a || product.mrp;
+        }
 
         cart.items[itemIndex].quantity = quantity;
         await cart.save();

@@ -168,6 +168,7 @@ const Header = () => {
                         className="action-item relative-wrapper"
                         onMouseEnter={() => setIsUserDropdownOpen(true)}
                         onMouseLeave={() => setIsUserDropdownOpen(false)}
+                        onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
                     >
                         {user ? (
                             <>

@@ -371,6 +371,16 @@
     animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.user-dropdown::after {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 0;
+    width: 100%;
+    height: 12px;
+    background: transparent;
+}
+
 .user-dropdown::before {
     content: '';
     position: absolute;
