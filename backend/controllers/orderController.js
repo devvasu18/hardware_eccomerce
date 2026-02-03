@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const StatusLog = require('../models/StatusLog');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const tallyService = require('../services/tallyService');
 
 // @desc    Create a new order
 // @route   POST /api/orders/create
@@ -401,6 +402,15 @@ exports.updateOrderStatus = async (req, res) => {
             }
         }
 
+        // Tally Sync Trigger
+        if (status === 'Delivered') {
+            // We don't await this to keep the API response fast. 
+            // Tally sync happens in background/async.
+            tallyService.syncOrderToTally(order._id)
+                .then(result => console.log(`Auto-Sync Tally [${order._id}]:`, result.success ? 'Success' : result.error))
+                .catch(err => console.error('Auto-Sync Tally Failed:', err));
+        }
+
         res.json({ message: 'Status updated', order });
     } catch (error) {
         res.status(500).json({ message: 'Update failed', error: error.message });
@@ -437,6 +447,13 @@ exports.cancelOrder = async (req, res) => {
             updatedByRole: req.user.role,
             notes: req.body.reason || 'Order cancelled by admin'
         });
+
+        // Tally Sync: Push Cancellation
+        if (order.tallyStatus === 'saved') {
+            tallyService.syncOrderToTally(order._id)
+                .then(result => console.log(`Auto-Sync Cancel Tally [${order._id}]:`, result.success ? 'Success' : result.error))
+                .catch(err => console.error('Auto-Sync Cancel Tally Failed:', err));
+        }
 
         res.json({ message: 'Order cancelled successfully' });
     } catch (error) {

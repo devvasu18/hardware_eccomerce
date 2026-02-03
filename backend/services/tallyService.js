@@ -1,6 +1,11 @@
 const axios = require('axios');
 const TallySyncQueue = require('../models/TallySyncQueue');
 const Order = require('../models/Order');
+const User = require('../models/User');
+const { generateSalesVoucherXML } = require('../utils/tallyXmlGenerator');
+const { generateLedgerXML, generateSalesLedgerXML } = require('../utils/tallyLedgerGenerator');
+const { generateStockItemXML } = require('../utils/tallyStockItemGenerator');
+const { generateUnitXML } = require('../utils/tallyUnitGenerator');
 
 // Use env var or default to localhost:9000
 const TALLY_URL = process.env.TALLY_URL || 'http://localhost:9000/';
@@ -211,10 +216,81 @@ async function syncWithHealthCheck({ xmlData, type, relatedId, relatedModel }) {
     }
 }
 
+/**
+ * Orchestra the full Order Sync (Units > Ledgers > Stock > Voucher)
+ */
+async function syncOrderToTally(orderId) {
+    try {
+        const order = await Order.findById(orderId).populate('items.product');
+        if (!order) return { success: false, error: 'Order not found' };
+
+        // Prevent duplicate sync if already saved, UNLESS it is a Cancellation update
+        if (order.tallyStatus === 'saved' && order.status !== 'Cancelled') {
+            return { success: true, message: 'Already synced' };
+        }
+
+        const user = await User.findById(order.user);
+        if (!user) return { success: false, error: 'User not found' };
+
+        // 1. Sync Unit [pcs]
+        await syncWithHealthCheck({
+            xmlData: generateUnitXML(),
+            type: 'Unit',
+            relatedId: 'UNIT-PCS', // Static ID for now
+            relatedModel: 'Unit'
+        });
+
+        // 2. Sync Sales Ledger
+        await syncWithHealthCheck({
+            xmlData: generateSalesLedgerXML(),
+            type: 'Ledger',
+            relatedId: 'LEDGER-SALES',
+            relatedModel: 'Ledger'
+        });
+
+        // 3. Sync Customer Ledger
+        await syncWithHealthCheck({
+            xmlData: generateLedgerXML(user),
+            type: 'Ledger',
+            relatedId: user._id,
+            relatedModel: 'User'
+        });
+
+        // 4. Sync Stock Items
+        for (const item of order.items) {
+            if (item.product) {
+                await syncWithHealthCheck({
+                    xmlData: generateStockItemXML(item.product),
+                    type: 'StockItem',
+                    relatedId: item.product._id,
+                    relatedModel: 'Product'
+                });
+            }
+        }
+
+        // 5. Sync Voucher (Check for Validity or Cancellation)
+        // If order is Cancelled, we send an Alter request with ISCANCELLED=Yes
+        const isCancelled = order.status === 'Cancelled';
+        const voucherXML = generateSalesVoucherXML(order, user, isCancelled);
+
+        return await syncWithHealthCheck({
+            xmlData: voucherXML,
+            type: 'SalesVoucher',
+            relatedId: order._id,
+            relatedModel: 'Order'
+        });
+
+    } catch (error) {
+        console.error('Auto-Sync Error:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 module.exports = {
     checkTallyHealth,
     sendToTally,
     processQueue,
     syncWithHealthCheck,
-    addToQueue
+    addToQueue,
+    syncOrderToTally
 };
