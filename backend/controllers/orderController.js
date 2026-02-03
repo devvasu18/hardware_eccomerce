@@ -264,6 +264,22 @@ exports.createOrder = async (req, res) => {
     }
 };
 
+// @desc    Get logged in user orders
+// @route   GET /api/orders/my-orders
+// @access  Private
+exports.getMyOrders = async (req, res) => {
+    try {
+        const orders = await Order.find({ user: req.user._id })
+            .sort({ createdAt: -1 })
+            .populate('items.product', 'title featured_image'); // Populate product name & image for display
+
+        res.json({ success: true, orders });
+    } catch (error) {
+        console.error('Get my orders error:', error);
+        res.status(500).json({ success: false, message: 'Failed to fetch orders' });
+    }
+};
+
 // @desc    Get all orders with optional filtering
 // @route   GET /api/orders
 // @access  Admin
@@ -299,21 +315,36 @@ exports.getOrders = async (req, res) => {
 
 // @desc    Get single order details
 // @route   GET /api/orders/:id
-// @access  Admin
+// @access  Private (Admin or Owner)
 exports.getOrderById = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id)
             .populate('user', 'username email mobile image')
-            .populate('items.product', 'title image');
+            .populate('items.product', 'title featured_image');
 
         if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        // Check if user is admin or the order owner
+        const adminRoles = ['super_admin', 'ops_admin', 'logistics_admin', 'accounts_admin', 'support_staff', 'admin'];
+        const isOwner = order.user && order.user._id.toString() === req.user._id.toString();
+
+        if (!adminRoles.includes(req.user.role) && !isOwner) {
+            return res.status(401).json({ message: 'Not authorized to view this order' });
+        }
 
         // Fetch Status Timeline
         const timeline = await StatusLog.find({ order: req.params.id }).sort({ timestamp: -1 });
 
-        res.json({ order, timeline });
+        // Response format needed by frontend: { success: true, order, timeline } (based on ViewDetails page)
+        // Previous response was just { order, timeline } but frontend checks `if (orderData.success)`
+        // Wait, looking at Step 36 line 74: `if (orderData.success)`. 
+        // The previous controller code (Step 20 line 314) was `res.json({ order, timeline });` which would implicitly have no success field (undefined).
+        // This suggests the frontend (Step 36) expects `success: true`. 
+        // I will align the response to match the frontend expectation.
+
+        res.json({ success: true, order, timeline });
     } catch (error) {
-        res.status(500).json({ message: 'Server Error', error: error.message });
+        res.status(500).json({ success: false, message: 'Server Error', error: error.message });
     }
 };
 
@@ -323,6 +354,16 @@ exports.getOrderById = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
     try {
         const { status, description, notifyUser, busDetails } = req.body;
+
+        // Parse busDetails if it's a string (common with multipart/form-data)
+        let parsedBusDetails = busDetails;
+        if (typeof busDetails === 'string') {
+            try {
+                parsedBusDetails = JSON.parse(busDetails);
+            } catch (e) {
+                console.error('Failed to parse busDetails:', e);
+            }
+        }
         const order = await Order.findById(req.params.id);
 
         if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -340,16 +381,23 @@ exports.updateOrderStatus = async (req, res) => {
         order.status = status;
 
         // Handling Logic for "Assigned to Bus"
-        if (status === 'Assigned to Bus' && busDetails) {
+        if (status === 'Assigned to Bus' && parsedBusDetails) {
+
+            // Fix: Construct proper Date object for departureTime if it's just a time string
+            let finalDepartureTime = parsedBusDetails.departureTime;
+            if (parsedBusDetails.dispatchDate && parsedBusDetails.departureTime && typeof parsedBusDetails.departureTime === 'string' && !parsedBusDetails.departureTime.includes('T')) {
+                finalDepartureTime = new Date(`${parsedBusDetails.dispatchDate}T${parsedBusDetails.departureTime}`);
+            }
+
             order.busDetails = {
-                busNumber: busDetails.busNumber,
-                driverContact: busDetails.driverContact,
-                departureTime: busDetails.departureTime,
-                expectedArrival: busDetails.expectedArrival,
-                dispatchDate: busDetails.dispatchDate,
+                busNumber: parsedBusDetails.busNumber,
+                driverContact: parsedBusDetails.driverContact,
+                departureTime: finalDepartureTime,
+                expectedArrival: parsedBusDetails.expectedArrival,
+                dispatchDate: parsedBusDetails.dispatchDate,
                 // Handle image if uploaded? Usually file upload middleware handles it
                 // If busPhoto comes as string (url), save it.
-                busPhoto: busDetails.busPhoto || order.busDetails?.busPhoto
+                busPhoto: parsedBusDetails.busPhoto || order.busDetails?.busPhoto
             };
         }
 

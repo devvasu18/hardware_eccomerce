@@ -97,7 +97,7 @@ const CartSidebar = () => {
                         </div>
                         <div className="cart-total-row">
                             <span>Total</span>
-                            <span>₹{Math.round(cartTotal * 1.18)}</span>
+                            <span>₹{Math.round(cartTotal + items.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0))}</span>
                         </div>
                         <Link href="/checkout" className="checkout-btn" onClick={closeCart}>
                             Proceed to Checkout

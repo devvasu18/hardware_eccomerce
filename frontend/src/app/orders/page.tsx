@@ -14,7 +14,7 @@ interface Order {
     items: Array<{
         product: {
             name: string;
-            imageUrl?: string;
+            featured_image?: string;
         };
         quantity: number;
     }>;
@@ -159,8 +159,14 @@ export default function MyOrdersPage() {
                                     <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
                                         {order.items.slice(0, 4).map((item, idx) => (
                                             <div key={idx} style={{ position: 'relative', width: '80px', height: '80px', flexShrink: 0, border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-                                                {item.product?.imageUrl ? (
-                                                    <img src={item.product.imageUrl} alt={item.product.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                {item.product?.featured_image ? (
+                                                    <img
+                                                        src={item.product.featured_image.startsWith('http')
+                                                            ? item.product.featured_image
+                                                            : `http://localhost:5000/${item.product.featured_image.replace(/\\/g, '/')}`}
+                                                        alt={item.product.name}
+                                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                    />
                                                 ) : (
                                                     <div style={{ width: '100%', height: '100%', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>📦</div>
                                                 )}

@@ -140,7 +140,8 @@ router.get('/order/:orderId', async (req, res) => {
             .populate('lastUpdatedBy', 'username email role');
 
         if (!shipment) {
-            return res.status(404).json({ message: 'Shipment not found for this order' });
+            // Return 200 with null shipment to avoid 404 errors in frontend console
+            return res.json({ success: true, shipment: null });
         }
 
         res.json({

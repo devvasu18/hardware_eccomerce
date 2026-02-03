@@ -50,9 +50,11 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
     const [loading, setLoading] = useState(true);
 
     // Refund Modal State
+    // Refund Modal State
     const [showRefundModal, setShowRefundModal] = useState(false);
     const [refundItem, setRefundItem] = useState<{ id: string, name: string, price: number } | null>(null);
     const [refundLoading, setRefundLoading] = useState(false);
+    const [viewImage, setViewImage] = useState<string | null>(null);
 
     const { modalState, showSuccess, showError, hideModal } = useModal();
 
@@ -85,12 +87,41 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                 try {
                     const shipmentRes = await fetch(`http://localhost:5000/api/shipments/order/${id}`, { headers });
                     const shipmentData = await shipmentRes.json();
-                    if (shipmentData.success) {
+
+                    if (shipmentData.success && shipmentData.shipment) {
                         setShipment(shipmentData.shipment);
+                    } else if (orderData.order.busDetails && orderData.order.busDetails.busNumber) {
+                        // Fallback: Use busDetails from Order if Shipment document is missing
+                        const bd = orderData.order.busDetails;
+                        setShipment({
+                            busNumber: bd.busNumber,
+                            busPhotoUrl: bd.busPhoto ? (bd.busPhoto.startsWith('http') || bd.busPhoto.startsWith('/') ? bd.busPhoto : `/${bd.busPhoto}`) : '',
+                            driverContact: bd.driverContact,
+                            departureTime: bd.departureTime,
+                            expectedArrival: bd.expectedArrival,
+                            dispatchDate: bd.dispatchDate,
+                            liveStatus: 'On the way', // Default assumption if only order details exist
+                            currentLocation: '',
+                            notes: ''
+                        });
                     }
                 } catch (err) {
-                    // Shipment not assigned yet
-                    console.log('No shipment assigned yet');
+                    console.log('Error fetching shipment:', err);
+                    // Same fallback if fetch fails completely
+                    if (orderData.order.busDetails && orderData.order.busDetails.busNumber) {
+                        const bd = orderData.order.busDetails;
+                        setShipment({
+                            busNumber: bd.busNumber,
+                            busPhotoUrl: bd.busPhoto ? (bd.busPhoto.startsWith('http') || bd.busPhoto.startsWith('/') ? bd.busPhoto : `/${bd.busPhoto}`) : '',
+                            driverContact: bd.driverContact,
+                            departureTime: bd.departureTime,
+                            expectedArrival: bd.expectedArrival,
+                            dispatchDate: bd.dispatchDate,
+                            liveStatus: 'On the way',
+                            currentLocation: '',
+                            notes: ''
+                        });
+                    }
                 }
             }
         } catch (err) {
@@ -212,12 +243,14 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
 
         const timePart = arrivalDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
+        const datePart = arrivalDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+
         if (diffDays === 0) {
-            return `Same Day, ${timePart}`;
+            return `Same Day (${datePart}), ${timePart}`;
         } else if (diffDays === 1) {
-            return `Next Day, ${timePart}`;
+            return `Next Day (${datePart}), ${timePart}`;
         } else {
-            return `${arrivalDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}, ${timePart}`;
+            return `${datePart}, ${timePart}`;
         }
     };
 
@@ -468,9 +501,11 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                 borderRadius: '6px',
                                                 overflow: 'hidden'
                                             }}>
-                                                {item.product?.imageUrl && (
+                                                {item.product?.featured_image && (
                                                     <img
-                                                        src={item.product.imageUrl}
+                                                        src={item.product.featured_image.startsWith('http')
+                                                            ? item.product.featured_image
+                                                            : `http://localhost:5000/${item.product.featured_image.replace(/\\/g, '/')}`}
                                                         alt={item.product.name}
                                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                     />
@@ -534,15 +569,21 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                 {shipment.busPhotoUrl && (
                                     <div style={{ marginBottom: '1.5rem' }}>
                                         <img
-                                            src={`http://localhost:5000${shipment.busPhotoUrl}`}
+                                            src={shipment.busPhotoUrl.startsWith('http')
+                                                ? shipment.busPhotoUrl
+                                                : `http://localhost:5000${shipment.busPhotoUrl}`}
                                             alt="Bus"
                                             style={{
                                                 width: '100%',
                                                 height: '200px',
                                                 objectFit: 'cover',
                                                 borderRadius: '8px',
-                                                border: '2px solid #e2e8f0'
+                                                border: '2px solid #e2e8f0',
+                                                cursor: 'pointer'
                                             }}
+                                            onClick={() => setViewImage(shipment.busPhotoUrl.startsWith('http')
+                                                ? shipment.busPhotoUrl
+                                                : `http://localhost:5000${shipment.busPhotoUrl}`)}
                                         />
                                     </div>
                                 )}
@@ -599,8 +640,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                             Departure Time
                                         </div>
                                         <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#1e293b' }}>
-                                            {/* Combined dispatch date and raw time string */}
-                                            {formatDate(shipment.dispatchDate)}, {shipment.departureTime}
+                                            {formatDateTime(shipment.departureTime)}
                                         </div>
                                     </div>
                                     <div>
@@ -835,6 +875,52 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                     showCancel={modalState.showCancel}
                 />
             </div>
+            {/* Image View Modal */}
+            {viewImage && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.85)',
+                    zIndex: 9999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '2rem',
+                    cursor: 'zoom-out'
+                }} onClick={() => setViewImage(null)}>
+                    <div style={{ position: 'relative', maxWidth: '90%', maxHeight: '90%' }}>
+                        <button
+                            onClick={() => setViewImage(null)}
+                            style={{
+                                position: 'absolute',
+                                top: '-40px',
+                                right: '-40px',
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'white',
+                                fontSize: '2rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            ×
+                        </button>
+                        <img
+                            src={viewImage}
+                            alt="Full view"
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '90vh',
+                                borderRadius: '4px',
+                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    </div>
+                </div>
+            )}
         </main>
     );
 }
