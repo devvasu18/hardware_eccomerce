@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const { generateSalesVoucherXML } = require('../utils/tallyXmlGenerator');
 const { generateLedgerXML } = require('../utils/tallyLedgerGenerator');
+const { syncWithHealthCheck } = require('../services/tallyService');
 
-const TALLY_URL = 'http://localhost:9000';
+const TALLY_URL = 'http://localhost:9000'; // Kept for reference, but service handles this
 
 // Sync Sales Invoice
 router.post('/sales/:id', async (req, res) => {
@@ -23,50 +23,66 @@ router.post('/sales/:id', async (req, res) => {
         const user = await User.findById(order.user);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        // Step 1: Sync Ledger
+        // Step 1: Sync Ledger (using new service)
+        const { generateLedgerXML, generateSalesLedgerXML } = require('../utils/tallyLedgerGenerator');
+
+        // 1a. Sync Sales Account (Common Ledger)
+        await syncWithHealthCheck({
+            xmlData: generateSalesLedgerXML(),
+            type: 'Ledger',
+            relatedId: user._id, // Use user ID conceptually or a static ID if available, but for now user ID keeps it simple
+            relatedModel: 'User' // Tracking as user update technically
+        });
+
+        // 1b. Sync Customer Ledger
         const ledgerXML = generateLedgerXML(user);
-        try {
-            await axios.post(TALLY_URL, ledgerXML, { headers: { 'Content-Type': 'text/xml' } });
-            console.log('Ledger synced successfully');
-        } catch (ledgerError) {
-            console.error('Tally Ledger Sync Error:', ledgerError.message);
-            // We continue even if ledger sync fails, Tally might reject if exists (which is fine), or fail connection
-            // If connection fail, next step will also fail
+
+        // We sync ledger first - but we don't block order sync if ledger fails 
+        // (Tally might already have it, or it might be a connectivity issue which syncWithHealthCheck will handle)
+        await syncWithHealthCheck({
+            xmlData: ledgerXML,
+            type: 'Ledger',
+            relatedId: user._id, // User ID for ledger sync tracking
+            relatedModel: 'User'
+        });
+
+        // Import Generator
+        const { generateStockItemXML } = require('../utils/tallyStockItemGenerator');
+
+        // Step 1.5: Sync Stock Items
+        for (const item of order.items) {
+            if (item.product) {
+                const stockItemXML = generateStockItemXML(item.product);
+                await syncWithHealthCheck({
+                    xmlData: stockItemXML,
+                    type: 'StockItem',
+                    relatedId: item.product._id,
+                    relatedModel: 'Product'
+                });
+            }
         }
 
-        // Step 2: Sync Voucher
+        // Step 2: Sync Voucher (using new service)
         const voucherXML = generateSalesVoucherXML(order, user);
-        const response = await axios.post(TALLY_URL, voucherXML, { headers: { 'Content-Type': 'text/xml' } });
 
-        const responseData = response.data;
+        const result = await syncWithHealthCheck({
+            xmlData: voucherXML,
+            type: 'SalesVoucher',
+            relatedId: order._id,
+            relatedModel: 'Order'
+        });
 
-        // Check Tally Response (Parsing XML response ideally, simple check here)
-        if (responseData.includes('<CREATED>1</CREATED>') || responseData.includes('<ALTERED>1</ALTERED>')) {
-            order.tallyStatus = 'saved';
-            order.tallyErrorLog = '';
-            await order.save();
+        if (result.success) {
             return res.json({ success: true, message: 'Synced to Tally' });
+        } else if (result.queued) {
+            return res.json({ success: true, message: 'Tally offline/busy - Queued for background sync', queued: true });
         } else {
-            // Extract error if possible
-            order.tallyStatus = 'failed';
-            order.tallyErrorLog = responseData; // Save raw response for debug
-            await order.save();
-            return res.status(500).json({ success: false, message: 'Tally rejected data', data: responseData });
+            // Hard failure (rejected by Tally logic, not network)
+            return res.status(500).json({ success: false, message: result.error });
         }
 
     } catch (error) {
         console.error('Tally Sync System Error:', error);
-        // Handle Network Error as "Queued" or "Failed"
-        if (error.code === 'ECONNREFUSED' || error.code === 'ETIMEDOUT') {
-            // Here we would ideally add to a retry queue
-            // For now, mark as failed so admin sees it
-            try {
-                await Order.findByIdAndUpdate(req.params.id, {
-                    tallyStatus: 'failed',
-                    tallyErrorLog: 'Tally Unreachable: ' + error.message
-                });
-            } catch (e) { }
-        }
         return res.status(500).json({ message: 'Internal Server Error', error: error.message });
     }
 });

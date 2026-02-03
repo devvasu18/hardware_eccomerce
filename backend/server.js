@@ -47,6 +47,7 @@ app.use('/api', globalLimiter);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const logger = require('./utils/logger');
+const { startTallyHealthCheckJob } = require('./jobs/tallyHealthCheckJob');
 
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/hardware_system')
@@ -72,6 +73,7 @@ app.use('/api/shipments', require('./routes/shipmentRoutes')); // Shipment Manag
 app.use('/api/status', require('./routes/statusRoutes')); // Status Tracking
 app.use('/api/requests', require('./routes/requestRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/tally/admin', require('./routes/tallyAdminRoutes')); // Tally Admin & Queue
 app.use('/api/tally', require('./routes/tallyRoutes')); // The integration core
 app.use('/api/banners', require('./routes/bannerRoutes')); // Dynamic Hero Slider
 app.use('/api/users', require('./routes/userRoutes')); // User Management
@@ -90,7 +92,9 @@ app.use('/api/payment', require('./routes/paymentRoutes')); // Payment Gateway
 const runStockCleanup = require('./jobs/stockCleanup');
 
 // Initialize Cron Jobs
+// Initialize Cron Jobs
 runStockCleanup();
+startTallyHealthCheckJob();
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

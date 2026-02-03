@@ -36,7 +36,11 @@ export default function TallySyncPage() {
             const data = await res.json();
 
             if (res.ok) {
-                showSuccess('Order has been successfully synced to Tally!');
+                if (data.queued) {
+                    showSuccess('Tally is offline. Order added to sync queue and will process automatically.');
+                } else {
+                    showSuccess('Order has been successfully synced to Tally!');
+                }
             } else {
                 showError(`Sync failed: ${data.message || 'Unknown error occurred'}`);
             }
@@ -86,6 +90,8 @@ export default function TallySyncPage() {
                                 <td style={{ padding: '1rem' }}>
                                     {order.tallyStatus === 'saved' ? (
                                         <span className="badge" style={{ background: '#ecfdf5', color: '#065f46' }}>✓ Synced</span>
+                                    ) : order.tallyStatus === 'queued' ? (
+                                        <span className="badge" style={{ background: '#fff7ed', color: '#c2410c' }}>⏳ Queued</span>
                                     ) : order.tallyStatus === 'failed' ? (
                                         <div>
                                             <span className="badge" style={{ background: '#fef2f2', color: '#991b1b' }}>Failed</span>
