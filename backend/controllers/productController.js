@@ -62,23 +62,14 @@ exports.createProduct = async (req, res) => {
             isActive, isVisible, isFeatured, isNewArrival, isTopSale, isDailyOffer
         } = req.body;
 
-        // Extract file paths or use URLs from body
-        const featured_image = req.files['featured_image']
-            ? req.files['featured_image'][0].path
-            : req.body.featured_image;
+        // Extract file paths from req.files (array)
+        const getFile = (name) => req.files?.find(f => f.fieldname === name);
+        const getFiles = (name) => req.files?.filter(f => f.fieldname === name) || [];
 
-        const featured_image_2 = req.files['featured_image_2']
-            ? req.files['featured_image_2'][0].path
-            : req.body.featured_image_2;
-
-        const size_chart = req.files['size_chart']
-            ? req.files['size_chart'][0].path
-            : req.body.size_chart;
-
-        let gallery_images = [];
-        if (req.files['gallery_images']) {
-            gallery_images = req.files['gallery_images'].map(file => file.path);
-        }
+        const featured_image = getFile('featured_image')?.path || req.body.featured_image;
+        const featured_image_2 = getFile('featured_image_2')?.path || req.body.featured_image_2;
+        const size_chart = getFile('size_chart')?.path || req.body.size_chart;
+        const gallery_images = getFiles('gallery_images').map(f => f.path);
 
         // Parse JSON fields if they come as strings
         let parsedSpecs = specifications;
@@ -112,6 +103,16 @@ exports.createProduct = async (req, res) => {
             }
         } else if (req.body.variations) {
             parsedVariations = req.body.variations;
+        }
+
+        // Map uploaded variation images
+        if (parsedVariations.length > 0 && req.files) {
+            parsedVariations.forEach((v, index) => {
+                const vFile = req.files.find(f => f.fieldname === `variation_image_${index}`);
+                if (vFile) {
+                    v.image = vFile.path;
+                }
+            });
         }
 
         const product = new Product({
@@ -163,44 +164,36 @@ exports.updateProduct = async (req, res) => {
         // Quick update implementation for core fields:
         const updates = { ...req.body };
 
-        // Handle featured_image - check for URL first, then file upload
+        // Helper to get file from array
+        const getFile = (name) => req.files?.find(f => f.fieldname === name);
+
+        // Handle featured_image
         if (req.body.featured_image && typeof req.body.featured_image === 'string') {
-            // URL provided in body
-            const isUrl = req.body.featured_image.startsWith('http');
-            if (isUrl) {
-                // Delete old file only if it's different
-                if (product.featured_image && product.featured_image !== req.body.featured_image) {
-                    deleteFile(product.featured_image);
-                }
-                updates.featured_image = req.body.featured_image;
+            // String URL passed
+            if (product.featured_image && product.featured_image !== req.body.featured_image && req.body.featured_image.startsWith('http')) {
+                deleteFile(product.featured_image);
             }
-        } else if (req.files && req.files['featured_image']) {
-            // File uploaded
-            if (product.featured_image) deleteFile(product.featured_image);
-            updates.featured_image = req.files['featured_image'][0].path;
+            updates.featured_image = req.body.featured_image;
+        } else {
+            const file = getFile('featured_image');
+            if (file) {
+                if (product.featured_image) deleteFile(product.featured_image);
+                updates.featured_image = file.path;
+            }
         }
 
-        // Handle featured_image_2 - check for URL first, then file upload
+        // Handle featured_image_2
         if (req.body.featured_image_2 && typeof req.body.featured_image_2 === 'string') {
-            // URL provided in body
-            const isUrl = req.body.featured_image_2.startsWith('http');
-            if (isUrl) {
-                // Delete old file only if it's a local file path (not a URL)
-                if (product.featured_image_2 && !product.featured_image_2.startsWith('http')) {
-                    deleteFile(product.featured_image_2);
-                }
-                updates.featured_image_2 = req.body.featured_image_2;
+            if (product.featured_image_2 && product.featured_image_2 !== req.body.featured_image_2 && req.body.featured_image_2.startsWith('http')) {
+                deleteFile(product.featured_image_2);
             }
-        } else if (req.files && req.files['featured_image_2']) {
-            // File uploaded
-            if (product.featured_image_2 && !product.featured_image_2.startsWith('http')) {
-                deleteFile(product.featured_image_2); // Local or Cloudinary handled by utility
+            updates.featured_image_2 = req.body.featured_image_2;
+        } else {
+            const file = getFile('featured_image_2');
+            if (file) {
+                if (product.featured_image_2) deleteFile(product.featured_image_2);
+                updates.featured_image_2 = file.path;
             }
-            // For Cloudinary, we might want to delete the old Cloudinary image too.
-            // My deleteFile utility handles Cloudinary URLs now!
-            if (product.featured_image_2) deleteFile(product.featured_image_2);
-
-            updates.featured_image_2 = req.files['featured_image_2'][0].path;
         }
 
         // Helper to parse if string
@@ -226,7 +219,25 @@ exports.updateProduct = async (req, res) => {
         if (updates.isDailyOffer !== undefined) updates.isDailyOffer = updates.isDailyOffer === 'true' || updates.isDailyOffer === true;
 
         if (updates.variations && typeof updates.variations === 'string') {
-            try { updates.variations = JSON.parse(updates.variations); } catch (e) { console.error('Error parsing variations:', e); }
+            try {
+                updates.variations = JSON.parse(updates.variations);
+                // Map uploaded variation images
+                if (req.files) {
+                    updates.variations.forEach((v, index) => {
+                        const vFile = req.files.find(f => f.fieldname === `variation_image_${index}`);
+                        if (vFile) {
+                            // Delete old image if it exists and variation has an _id (existing variation)
+                            if (v._id) {
+                                const oldVar = product.variations.find(ov => ov._id.toString() === v._id);
+                                if (oldVar && oldVar.image) {
+                                    deleteFile(oldVar.image);
+                                }
+                            }
+                            v.image = vFile.path;
+                        }
+                    });
+                }
+            } catch (e) { console.error('Error parsing variations:', e); }
         }
 
         const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });

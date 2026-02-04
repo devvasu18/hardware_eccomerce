@@ -59,6 +59,8 @@ const productSchema = z.object({
         stock: z.coerce.number().default(0),
         sku: z.string().optional(),
         isActive: z.boolean().default(true),
+        image: z.string().optional(), // URL
+        imageFile: z.any().optional(), // File Object (Client only)
         _id: z.string().optional() // Preserve ID
     })).optional()
 });
@@ -252,12 +254,22 @@ export default function ProductForm({ productId }: ProductFormProps) {
             });
 
             // Handle Variations
-            if (data.variations && data.variations.length > 0) {
-                const cleanedVariations = data.variations.map(v => {
+            const cleanedVariations: any[] = [];
+            if (data.variations) {
+                data.variations.forEach((v: any, index: number) => {
                     const clone = { ...v };
-                    if (!clone._id) delete clone._id; // Remove empty/undefined _id to let Mongoose generate new one
-                    return clone;
+                    if (!clone._id) delete clone._id; // Remove empty/undefined _id
+
+                    // Handle Image File
+                    if (clone.imageFile && clone.imageFile.length > 0) {
+                        formData.append(`variation_image_${index}`, clone.imageFile[0]);
+                    }
+                    // We don't need to send imageFile inside JSON
+                    delete clone.imageFile;
+                    cleanedVariations.push(clone);
                 });
+            }
+            if (cleanedVariations.length > 0) {
                 formData.append('variations', JSON.stringify(cleanedVariations));
             }
 
@@ -371,16 +383,50 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                 <table style={{ width: '100%', fontSize: '0.9rem', borderCollapse: 'collapse' }}>
                                     <thead style={{ background: '#f8fafc', color: 'var(--text-muted)' }}>
                                         <tr>
+                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Image</th>
                                             <th style={{ padding: '0.5rem', textAlign: 'left' }}>Type</th>
-                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Value (e.g. Red, XL)</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Value</th>
                                             <th style={{ padding: '0.5rem', textAlign: 'left' }}>Price (₹)</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>MRP (₹)</th>
                                             <th style={{ padding: '0.5rem', textAlign: 'left' }}>Stock</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>SKU</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'center' }}>Active</th>
                                             <th style={{ padding: '0.5rem', textAlign: 'center' }}>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {fields.map((field, index) => (
                                             <tr key={field.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                <td style={{ padding: '0.5rem', width: '80px' }}>
+                                                    {/* Image Preview & Input */}
+                                                    <div style={{ position: 'relative', width: '50px', height: '50px', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+                                                        {watch(`variations.${index}.imageFile`)?.[0] ? (
+                                                            <Image
+                                                                src={URL.createObjectURL(watch(`variations.${index}.imageFile`)[0])}
+                                                                alt="New"
+                                                                fill
+                                                                style={{ objectFit: 'cover' }}
+                                                            />
+                                                        ) : watch(`variations.${index}.image`) ? (
+                                                            <Image
+                                                                src={watch(`variations.${index}.image`)?.startsWith('http') ? watch(`variations.${index}.image`)! : `http://localhost:5000/${watch(`variations.${index}.image`)}`}
+                                                                alt="Existing"
+                                                                fill
+                                                                style={{ objectFit: 'cover' }}
+                                                            />
+                                                        ) : (
+                                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
+                                                                <FiUploadCloud size={16} color="#ccc" />
+                                                            </div>
+                                                        )}
+                                                        <input
+                                                            type="file"
+                                                            {...register(`variations.${index}.imageFile`)}
+                                                            accept="image/*"
+                                                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                                                        />
+                                                    </div>
+                                                </td>
                                                 <td style={{ padding: '0.5rem' }}>
                                                     <select {...register(`variations.${index}.type`)} className="form-select" style={{ fontSize: '0.85rem', padding: '0.3rem' }}>
                                                         <option value="Size">Size</option>
@@ -399,7 +445,16 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                     <input type="number" {...register(`variations.${index}.price`)} className="form-input" placeholder="Price" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px' }} />
                                                 </td>
                                                 <td style={{ padding: '0.5rem' }}>
+                                                    <input type="number" {...register(`variations.${index}.mrp`)} className="form-input" placeholder="MRP" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px' }} />
+                                                </td>
+                                                <td style={{ padding: '0.5rem' }}>
                                                     <input type="number" {...register(`variations.${index}.stock`)} className="form-input" placeholder="Qty" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '60px' }} />
+                                                </td>
+                                                <td style={{ padding: '0.5rem' }}>
+                                                    <input {...register(`variations.${index}.sku`)} className="form-input" placeholder="SKU" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '100px' }} />
+                                                </td>
+                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                                                    <input type="checkbox" {...register(`variations.${index}.isActive`)} />
                                                 </td>
                                                 <td style={{ padding: '0.5rem', textAlign: 'center' }}>
                                                     <button type="button" onClick={() => remove(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
@@ -453,16 +508,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             </div>
                         </div>
 
-                        <div className="form-grid" style={{ marginTop: '1.5rem' }}>
-                            <div className="form-group">
-                                <label className="form-label">Wholesale Price B (₹)</label>
-                                <input type="number" {...register("selling_price_b")} className="form-input" />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Special Price C (₹)</label>
-                                <input type="number" {...register("selling_price_c")} className="form-input" />
-                            </div>
-                        </div>
+
                     </div>
 
                 </div>
@@ -661,6 +707,6 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

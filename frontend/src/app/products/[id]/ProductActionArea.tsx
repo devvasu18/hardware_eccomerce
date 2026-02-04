@@ -13,6 +13,7 @@ interface Variation {
     stock: number;
     sku?: string;
     mrp?: number;
+    image?: string;
     isActive: boolean;
     _id: string;
 }
@@ -32,7 +33,14 @@ interface Product {
     variations?: Variation[];
 }
 
-export default function ProductActionArea({ product }: { product: Product }) {
+// ... imports
+interface ProductActionAreaProps {
+    product: Product;
+    onVariationSelect?: (variation: Variation | null) => void;
+}
+
+
+export default function ProductActionArea({ product, onVariationSelect }: ProductActionAreaProps) {
     const { user } = useAuth();
     const { addToCart } = useCart();
     const [quantity, setQuantity] = useState(1);
@@ -65,8 +73,13 @@ export default function ProductActionArea({ product }: { product: Product }) {
         const match = product.variations?.find(v =>
             v.type === type && v.value === value
         );
-        if (match) setCurrentVariation(match);
+        if (match) {
+            setCurrentVariation(match);
+            if (onVariationSelect) onVariationSelect(match);
+        }
     };
+    // ALSO update on click logic in the map loop
+
 
     // --- Price & Stock Logic ---
     const basePrice = currentVariation ? currentVariation.price : (product.discountedPrice || product.basePrice);
@@ -115,7 +128,8 @@ export default function ProductActionArea({ product }: { product: Product }) {
             ? `${productName} (${currentVariation.value})`
             : productName;
 
-        const productImage = product.featured_image ||
+        const productImage = currentVariation?.image ||
+            product.featured_image ||
             (product.gallery_images && product.gallery_images.length > 0 ? product.gallery_images[0] : '') ||
             (product.images && product.images.length > 0 ? product.images[0] : '');
 
@@ -167,10 +181,7 @@ export default function ProductActionArea({ product }: { product: Product }) {
                                         <button
                                             key={v._id}
                                             className={`size-btn ${currentVariation?._id === v._id ? 'active' : ''}`}
-                                            onClick={() => {
-                                                setCurrentVariation(v);
-                                                setSelectedVariations({ [type]: v.value });
-                                            }}
+                                            onClick={() => handleSelect(type, v.value)}
                                             style={type === 'Color' ? {
                                                 backgroundColor: v.value.toLowerCase(), // Simple color assumption
                                                 color: ['white', 'black'].includes(v.value.toLowerCase()) ? 'gray' : 'transparent',

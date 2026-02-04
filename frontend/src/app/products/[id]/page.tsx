@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import ProductActionArea from './ProductActionArea';
+
+import ProductOverview from './ProductOverview';
 import Header from '@/app/components/Header';
 import ProductImage from '@/app/components/ProductImage';
 import './product-detail.css';
@@ -27,6 +28,7 @@ interface Product {
         price: number;
         stock: number;
         sku?: string;
+        image?: string;
         isActive: boolean;
         _id: string;
     }[];
@@ -114,86 +116,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                     <span className="current">{categoryName.toUpperCase()}</span>
                 </div>
 
-                <div className="product-detail-grid">
-                    {/* Left: Image Gallery */}
-                    <div className="product-gallery">
-                        {discountPercentage > 0 && (
-                            <div className="discount-badge">
-                                {discountPercentage}%
-                            </div>
-                        )}
-
-                        <div className="main-image">
-                            {productImages.length > 0 ? (
-                                <ProductImage
-                                    src={productImages[0]}
-                                    alt={productName}
-                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                                />
-                            ) : (
-                                <div className="no-image">No Image</div>
-                            )}
-                        </div>
-
-                        {/* Thumbnail Gallery */}
-                        {productImages.length > 1 && (
-                            <div className="thumbnail-gallery">
-                                <h4>OTHER VARIATIONS</h4>
-                                <div className="thumbnails">
-                                    {productImages.slice(0, 3).map((img, idx) => (
-                                        <div key={idx} className="thumbnail">
-                                            <ProductImage
-                                                src={img}
-                                                alt={`${productName} - view ${idx + 1}`}
-                                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Right: Product Info */}
-                    <div className="product-info">
-                        <div className="product-meta">
-                            <span className="product-code">PRODUCT CODE: IND-{product._id.slice(-6).toUpperCase()}</span>
-                            <span className="separator">|</span>
-                            <span className="product-category-tag">{categoryName}</span>
-
-                        </div>
-
-                        <h1 className="product-name">{productName}</h1>
-
-                        <div className="product-rating">
-                            <div className="stars">
-                                {[...Array(5)].map((_, i) => (
-                                    <span key={i} className={i < 4 ? 'star filled' : 'star'}>★</span>
-                                ))}
-                            </div>
-                            <span className="review-count">17 reviews</span>
-                        </div>
-
-                        <p className="product-description">
-                            {product.description || "Premium quality industrial hardware component designed for professional use. Built to last with superior materials and precision engineering."}
-                        </p>
-
-                        {/* Pricing & Action Area */}
-                        <ProductActionArea product={product} />
-
-                        {/* Size Guide */}
-                        <div className="size-guide">
-                            <Link href="#" className="size-guide-link">SIZE GUIDE</Link>
-                        </div>
-
-                        {/* Delivery Estimate */}
-                        <div className="delivery-estimate">
-                            <h4>DELIVERY ESTIMATE</h4>
-                            <p>Standard delivery: 3-5 business days</p>
-                            <p>Express delivery available at checkout</p>
-                        </div>
-                    </div>
-                </div>
+                <ProductOverview
+                    product={product}
+                    categoryName={categoryName}
+                    brandName={brandName}
+                />
 
                 {/* Product Details Tabs */}
                 <div className="product-tabs">

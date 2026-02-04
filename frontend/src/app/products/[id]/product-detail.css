@@ -114,9 +114,11 @@
     justify-content: center;
 }
 
-.thumbnail:hover {
+.thumbnail:hover,
+.thumbnail.active {
     border-color: var(--primary);
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(243, 112, 33, 0.1);
 }
 
 /* Product Info */

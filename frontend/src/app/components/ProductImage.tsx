@@ -18,14 +18,17 @@ export default function ProductImage({ src, alt, style }: ProductImageProps) {
         return `http://localhost:5000/${cleanUrl}`;
     };
 
-    const [imgSrc, setImgSrc] = useState(formatSrc(src));
+    const formattedSrc = formatSrc(src);
 
     return (
         <img
-            src={imgSrc}
+            src={formattedSrc}
             alt={alt}
             style={style}
-            onError={() => setImgSrc('https://placehold.co/600x600/e2e8f0/64748B.png?text=No+Image')}
+            onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = 'https://placehold.co/600x600/e2e8f0/64748B.png?text=No+Image';
+            }}
         />
     );
 }
