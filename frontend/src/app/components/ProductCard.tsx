@@ -17,6 +17,7 @@ interface Product {
     gallery_images?: string[];
     images?: string[];
     isOnDemand: boolean;
+    variations?: { price: number; mrp?: number; isActive: boolean }[];
 }
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -24,9 +25,14 @@ export default function ProductCard({ product }: { product: Product }) {
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
 
+    // Variation Pricing Fallback
+    const variationPrices = product.variations?.filter(v => v.isActive).map(v => v.price) || [];
+    const minVarPrice = variationPrices.length > 0 ? Math.min(...variationPrices) : null;
+    const showStartingAt = !product.discountedPrice && !product.basePrice && minVarPrice;
+
     // Pricing Logic
-    const originalPrice = product.basePrice;
-    const sellingPrice = product.discountedPrice || product.basePrice; // Fallback if no discounted price
+    const originalPrice = product.basePrice || (showStartingAt ? (product.variations?.find(v => v.price === minVarPrice)?.mrp || minVarPrice) : 0);
+    const sellingPrice = product.discountedPrice || product.basePrice || minVarPrice || 0;
 
     let finalPrice = sellingPrice;
     if (user?.customerType === 'wholesale' && user.wholesaleDiscount) {
@@ -111,6 +117,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 <div className="product-card-footer">
                     <div className="product-price">
                         <>
+                            {showStartingAt && <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', marginBottom: '2px' }}>From</span>}
                             {(product.discountedPrice > 0 && product.discountedPrice < product.basePrice) && (
                                 <span className="price-original">₹{originalPrice}</span>
                             )}

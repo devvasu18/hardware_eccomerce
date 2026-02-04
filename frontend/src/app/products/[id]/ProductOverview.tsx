@@ -54,9 +54,18 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
         }
     };
 
+    // Find Lowest Variation Price for "Starting at" display
+    const variationPrices = product.variations?.map(v => v.price) || [];
+    const minVariationPrice = variationPrices.length > 0 ? Math.min(...variationPrices) : null;
+
+    const variationMRPs = product.variations?.map(v => v.mrp).filter(m => m) || [];
+    const minVariationMRP = variationMRPs.length > 0 ? Math.min(...variationMRPs as number[]) : null;
+
     // Dynamic Discount Calculation
-    const activeMRP = selectedVariation?.mrp || product.basePrice;
-    const activePrice = selectedVariation ? selectedVariation.price : (product.discountedPrice || product.basePrice);
+    const activeMRP = selectedVariation?.mrp || product.basePrice || minVariationMRP;
+    const activePrice = selectedVariation
+        ? selectedVariation.price
+        : (product.discountedPrice || minVariationPrice || product.basePrice);
 
     const discountPercentage = activeMRP && activePrice && activePrice < activeMRP
         ? Math.round(((activeMRP - activePrice) / activeMRP) * 100)

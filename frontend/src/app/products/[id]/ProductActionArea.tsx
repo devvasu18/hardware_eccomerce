@@ -82,7 +82,10 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
 
 
     // --- Price & Stock Logic ---
-    const basePrice = currentVariation ? currentVariation.price : (product.discountedPrice || product.basePrice);
+    const variationPrices = product.variations?.map(v => v.price) || [];
+    const minVarPrice = variationPrices.length > 0 ? Math.min(...variationPrices) : null;
+
+    const basePrice = currentVariation ? currentVariation.price : (product.discountedPrice || product.basePrice || minVarPrice || 0);
     const stock = currentVariation ? currentVariation.stock : product.stock;
     const isStrictlyOnDemand = product.isOnDemand;
 
@@ -160,12 +163,16 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                             </>
                         ) : (!currentVariation && product.discountedPrice > 0 && product.discountedPrice < product.basePrice) ? (
                             <>
+                                {hasVariations && <span style={{ fontSize: '0.9rem', color: '#64748B', display: 'block', marginBottom: '4px' }}>Starting from</span>}
                                 <span className="price-original">₹{product.basePrice}</span>
                                 <span className="price-separator">/</span>
                                 <span className="price-current">₹{finalPrice}</span>
                             </>
                         ) : (
-                            <span className="price-current">₹{finalPrice}</span>
+                            <>
+                                {hasVariations && !currentVariation && <span style={{ fontSize: '0.9rem', color: '#64748B', display: 'block', marginBottom: '4px' }}>Starting from</span>}
+                                <span className="price-current">₹{finalPrice}</span>
+                            </>
                         )}
                     </div>
                 </div>

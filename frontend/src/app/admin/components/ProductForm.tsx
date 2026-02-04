@@ -24,8 +24,8 @@ const productSchema = z.object({
     hsn_code: z.string().optional(),
     gst_rate: z.number().optional(),
 
-    mrp: z.coerce.number().min(1, "MRP is required"),
-    selling_price_a: z.coerce.number().min(1, "Selling Price A is required"),
+    mrp: z.coerce.number().optional(),
+    selling_price_a: z.coerce.number().optional(),
     selling_price_b: z.coerce.number().optional(),
     selling_price_c: z.coerce.number().optional(),
     delivery_charge: z.coerce.number().default(0),
@@ -122,6 +122,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
     // Watchers for Calculations
     const mrp = useWatch({ control, name: "mrp" });
     const sellingPrice = useWatch({ control, name: "selling_price_a" });
+    const variations = useWatch({ control, name: "variations" });
     const selectedCategory = useWatch({ control, name: "category" });
     const productTitle = useWatch({ control, name: "title" });
 
@@ -310,8 +311,18 @@ export default function ProductForm({ productId }: ProductFormProps) {
         }
     };
 
-    const youSave = (mrp || 0) - (sellingPrice || 0);
-    const youSavePercent = mrp ? Math.round((youSave / mrp) * 100) : 0;
+    // Variation Calculations for Pricing Section
+    const variationPrices = variations?.filter((v: any) => v.isActive).map((v: any) => Number(v.price)).filter((p: number) => !isNaN(p) && p > 0) || [];
+    const minVarPrice = variationPrices.length > 0 ? Math.min(...variationPrices) : null;
+
+    const variationMRPs = variations?.filter((v: any) => v.isActive).map((v: any) => Number(v.mrp)).filter((m: number) => !isNaN(m) && m > 0) || [];
+    const minVarMRP = variationMRPs.length > 0 ? Math.min(...variationMRPs) : null;
+
+    const effectiveMRP = mrp || minVarMRP || 0;
+    const effectiveSellingPrice = sellingPrice || minVarPrice || 0;
+
+    const youSave = effectiveMRP - effectiveSellingPrice;
+    const youSavePercent = effectiveMRP ? Math.round((youSave / effectiveMRP) * 100) : 0;
 
     return (
         <div className="container" style={{ maxWidth: '1400px' }}>
@@ -495,11 +506,13 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             <div className="form-grid">
                                 <div className="form-group">
                                     <label className="form-label">MRP (₹)</label>
-                                    <input type="number" {...register("mrp")} className="form-input" placeholder="0.00" style={{ fontWeight: 'bold' }} />
+                                    <input type="number" {...register("mrp")} className="form-input" placeholder={minVarMRP ? `From Variation: ${minVarMRP}` : "0.00"} style={{ fontWeight: 'bold' }} />
+                                    {!mrp && minVarMRP && <span style={{ fontSize: '0.7rem', color: 'var(--primary)' }}>Auto-filled from variations</span>}
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Selling Price A (₹)</label>
-                                    <input type="number" {...register("selling_price_a")} className="form-input" placeholder="0.00" style={{ color: 'var(--success)', fontWeight: 'bold' }} />
+                                    <input type="number" {...register("selling_price_a")} className="form-input" placeholder={minVarPrice ? `From Variation: ${minVarPrice}` : "0.00"} style={{ color: 'var(--success)', fontWeight: 'bold' }} />
+                                    {!sellingPrice && minVarPrice && <span style={{ fontSize: '0.7rem', color: 'var(--success)' }}>Auto-filled from variations</span>}
                                 </div>
                             </div>
                             <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>

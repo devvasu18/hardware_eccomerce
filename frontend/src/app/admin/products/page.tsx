@@ -26,6 +26,11 @@ interface Product {
     featured_image: string;
     gst_rate: number;
     hsn_code: string;
+    variations?: {
+        price: number;
+        mrp?: number;
+        isActive: boolean;
+    }[];
 }
 
 export default function ProductList() {
@@ -83,62 +88,79 @@ export default function ProductList() {
                         </tr>
                     </thead>
                     <tbody>
-                        {products.map(product => (
-                            <tr key={product._id}>
-                                <td style={{ padding: '1rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                        <div className="img-preview">
-                                            {product.featured_image ? (
-                                                <Image
-                                                    src={product.featured_image.startsWith('http') ? product.featured_image : `/${product.featured_image}`}
-                                                    alt={product.title}
-                                                    fill
-                                                    unoptimized
-                                                    style={{ objectFit: 'contain' }}
-                                                />
-                                            ) : (
-                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#ccc' }}>N/A</div>
-                                            )}
+                        {products.map(product => {
+                            // Find lowest price from variations for display if main price is 0
+                            const variationPrices = product.variations?.filter(v => v.isActive).map(v => v.price) || [];
+                            const minVarPrice = variationPrices.length > 0 ? Math.min(...variationPrices) : null;
+                            const variationMRPs = product.variations?.filter(v => v.isActive).map(v => v.mrp).filter(m => m && m > 0) || [];
+                            const minVarMRP = variationMRPs.length > 0 ? Math.min(...variationMRPs as number[]) : null;
+
+                            const displayPrice = product.selling_price_a || minVarPrice || 0;
+                            const displayMRP = product.mrp || minVarMRP || 0;
+                            const isStartingPrice = !product.selling_price_a && minVarPrice;
+
+                            return (
+                                <tr key={product._id}>
+                                    <td style={{ padding: '1rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                            <div className="img-preview">
+                                                {product.featured_image ? (
+                                                    <Image
+                                                        src={product.featured_image.startsWith('http') ? product.featured_image : `http://localhost:5000/${product.featured_image}`}
+                                                        alt={product.title}
+                                                        fill
+                                                        unoptimized
+                                                        style={{ objectFit: 'contain' }}
+                                                    />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', color: '#ccc' }}>N/A</div>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 600, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={product.title}>{product.title}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>SKU: {product.slug}</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div style={{ fontWeight: 600, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={product.title}>{product.title}</div>
-                                            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>SKU: {product.slug}</div>
+                                    </td>
+                                    <td>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{product.category?.name || 'Uncategorized'}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{product.brand?.name}</div>
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>
+                                        <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
+                                            {isStartingPrice && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: '-4px' }}>Starting at</span>}
+                                            ₹{displayPrice}
                                         </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{product.category?.name || 'Uncategorized'}</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{product.brand?.name}</div>
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>₹{product.selling_price_a}</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                        B: {product.selling_price_b || '-'} / C: {product.selling_price_c || '-'}
-                                    </div>
-                                    <div style={{ fontSize: '0.7rem', color: '#9CA3AF', textDecoration: 'line-through' }}>MRP: ₹{product.mrp}</div>
-                                </td>
-                                <td style={{ textAlign: 'center' }}>
-                                    <span className={`badge ${product.opening_stock < 10 ? 'badge-warning' : 'badge-success'}`}
-                                        style={product.opening_stock < 10 ? { background: '#FEF2F2', color: '#DC2626' } : {}}
-                                    >
-                                        {product.opening_stock}
-                                    </span>
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                        <Link href={`/products/${product._id}`} target="_blank" className="btn-icon">
-                                            <FiEye />
-                                        </Link>
-                                        <Link href={`/admin/products/${product._id}/edit`} className="btn-icon" style={{ color: 'var(--info)' }}>
-                                            <FiEdit2 />
-                                        </Link>
-                                        <button onClick={() => handleDelete(product._id)} className="btn-icon" style={{ color: 'var(--danger)' }}>
-                                            <FiTrash2 />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                            B: {product.selling_price_b || '-'} / C: {product.selling_price_c || '-'}
+                                        </div>
+                                        {displayMRP > displayPrice && (
+                                            <div style={{ fontSize: '0.7rem', color: '#9CA3AF', textDecoration: 'line-through' }}>MRP: ₹{displayMRP}</div>
+                                        )}
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                        <span className={`badge ${product.opening_stock < 10 ? 'badge-warning' : 'badge-success'}`}
+                                            style={product.opening_stock < 10 ? { background: '#FEF2F2', color: '#DC2626' } : {}}
+                                        >
+                                            {product.opening_stock}
+                                        </span>
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                            <Link href={`/products/${product._id}`} target="_blank" className="btn-icon">
+                                                <FiEye />
+                                            </Link>
+                                            <Link href={`/admin/products/${product._id}/edit`} className="btn-icon" style={{ color: 'var(--info)' }}>
+                                                <FiEdit2 />
+                                            </Link>
+                                            <button onClick={() => handleDelete(product._id)} className="btn-icon" style={{ color: 'var(--danger)' }}>
+                                                <FiTrash2 />
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
                 {loading && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading inventory...</div>}
