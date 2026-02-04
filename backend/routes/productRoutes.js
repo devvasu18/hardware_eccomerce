@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { logAction } = require('../utils/auditLogger');
 
 // Create Product
 router.post('/', protect, admin, async (req, res) => {
@@ -15,9 +16,10 @@ router.post('/', protect, admin, async (req, res) => {
 
         const newProduct = new Product(req.body);
         const savedProduct = await newProduct.save();
+        await logAction({ action: 'CREATE_PRODUCT', req, targetResource: 'Product', targetId: savedProduct._id, details: { title: savedProduct.title } });
         res.status(201).json(savedProduct);
     } catch (err) {
-        res.status(500).json(err);
+        res.status(500).json({ message: 'Failed to create product', error: err.message });
     }
 });
 
@@ -244,9 +246,10 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', protect, admin, async (req, res) => {
     try {
         const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        await logAction({ action: 'UPDATE_PRODUCT', req, targetResource: 'Product', targetId: req.params.id, details: req.body });
         res.json(updatedProduct);
     } catch (err) {
-        res.status(500).json(err);
+        res.status(500).json({ message: 'Failed to update product', error: err.message });
     }
 });
 

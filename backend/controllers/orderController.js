@@ -3,6 +3,7 @@ const StatusLog = require('../models/StatusLog');
 const Product = require('../models/Product');
 const User = require('../models/User');
 const tallyService = require('../services/tallyService');
+const { logAction } = require('../utils/auditLogger');
 
 // @desc    Create a new order
 // @route   POST /api/orders/create
@@ -197,6 +198,8 @@ exports.createOrder = async (req, res) => {
 
             const orderItem = {
                 product: item.productId,
+                productTitle: product.title,
+                productImage: product.featured_image,
                 quantity: item.quantity,
                 priceAtBooking: price,
                 size: item.size || null,
@@ -290,9 +293,11 @@ exports.createOrder = async (req, res) => {
 
             if (req.user) {
                 statusLogData.updatedBy = req.user._id;
-                // AUTOMATICALLY CLEAR CART
-                const Cart = require('../models/Cart');
-                await Cart.findOneAndDelete({ user: req.user._id });
+                // AUTOMATICALLY CLEAR CART (Only for COD, Online is cleared in verification)
+                if (paymentMethod === 'COD') {
+                    const Cart = require('../models/Cart');
+                    await Cart.findOneAndDelete({ user: req.user._id });
+                }
             }
 
             await StatusLog.create(statusLogData);
@@ -504,6 +509,15 @@ exports.updateOrderStatus = async (req, res) => {
             notes: description || `Status changed from ${oldStatus} to ${status}`
         });
 
+        // Global Audit Log
+        await logAction({
+            action: 'UPDATE_ORDER_STATUS',
+            req,
+            targetResource: 'Order',
+            targetId: order._id,
+            details: { from: oldStatus, to: status, notes: description }
+        });
+
         // 📧 SEND EMAIL NOTIFICATION
         if (notifyUser !== false) { // Allow frontend to optionally suppress
             try {
@@ -616,6 +630,8 @@ exports.cancelOrder = async (req, res) => {
                 .then(result => console.log(`Auto-Sync Cancel Tally [${order._id}]:`, result.success ? 'Success' : result.error))
                 .catch(err => console.error('Auto-Sync Cancel Tally Failed:', err));
         }
+
+        await logAction({ action: 'CANCEL_ORDER', req, targetResource: 'Order', targetId: order._id, details: { reason: req.body.reason } });
 
         res.json({ message: 'Order cancelled successfully' });
     } catch (error) {

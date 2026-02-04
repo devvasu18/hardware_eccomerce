@@ -41,8 +41,13 @@ router.post('/register', authLimiter, [
         const { username, mobile, password, address, email } = req.body;
 
         // Check existing
-        const existing = await User.findOne({ mobile });
-        if (existing) return res.status(400).json({ message: 'User already exists with this mobile number' });
+        const existingMobile = await User.findOne({ mobile });
+        if (existingMobile) return res.status(400).json({ message: 'User already exists with this mobile number' });
+
+        if (email) {
+            const existingEmail = await User.findOne({ email });
+            if (existingEmail) return res.status(400).json({ message: 'User already exists with this email address' });
+        }
 
         const newUser = new User({
             username,

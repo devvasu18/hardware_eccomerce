@@ -24,6 +24,9 @@ interface Product {
         mrp?: number;
         variations?: { price: number; mrp?: number; isActive: boolean }[];
     }[];
+    // Add optional raw fields from API if they exist
+    selling_price_a?: number;
+    mrp?: number;
 }
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -31,29 +34,75 @@ export default function ProductCard({ product }: { product: Product }) {
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
 
-    // Variation Pricing Fallback (including Models)
-    const allVariations = [
-        ...(product.variations || []),
-        ...(product.models?.flatMap(m => m.variations || []) || [])
-    ];
+    // --- Improved Pricing Logic ---
+    const allPrices: number[] = [];
 
-    const variationPrices = allVariations.filter(v => v.isActive).map(v => v.price) || [];
+    // 1. Standalone Variations
+    if (product.variations) {
+        product.variations.forEach(v => {
+            if (v.isActive !== false && v.price > 0) allPrices.push(v.price);
+        });
+    }
 
-    // Also consider model base prices if they don't have variations
-    const modelPrices = product.models?.filter(m => m.isActive && (!m.variations || m.variations.length === 0))
-        .map(m => m.selling_price_a || m.mrp || 0) || [];
+    // 2. Models (Base & Variations)
+    if (product.models) {
+        product.models.forEach(m => {
+            if (m.isActive !== false) {
+                if (m.selling_price_a && m.selling_price_a > 0) allPrices.push(m.selling_price_a);
+                if (m.variations) {
+                    m.variations.forEach(v => {
+                        if (v.isActive !== false && v.price > 0) allPrices.push(v.price);
+                    });
+                }
+            }
+        });
+    }
 
-    const combinedPrices = [...variationPrices, ...modelPrices];
-    const minVarPrice = combinedPrices.length > 0 ? Math.min(...combinedPrices) : null;
-    const showStartingAt = !product.discountedPrice && !product.basePrice && minVarPrice;
+    const minCalculatedPrice = allPrices.length > 0 ? Math.min(...allPrices) : null;
 
-    // Pricing Logic
-    const originalPrice = product.basePrice || (showStartingAt ? (product.variations?.find(v => v.price === minVarPrice)?.mrp || minVarPrice) : 0);
-    const sellingPrice = product.discountedPrice || product.basePrice || minVarPrice || 0;
+    // Determine the effective main price from various potential fields
+    const directPrice = product.discountedPrice || product.selling_price_a || product.basePrice || 0;
 
-    let finalPrice = sellingPrice;
+    // If direct price is present, use it. Otherwise fallback to min calculated variation/model price.
+    const effectivePrice = directPrice > 0 ? directPrice : (minCalculatedPrice || 0);
+
+    const showStartingAt = directPrice === 0 && minCalculatedPrice !== null;
+
+    // MRP Display
+    let displayMRP = product.basePrice || product.mrp;
+
+    // If we are showing "Starting From" logic, try to find the MRP of the specific variation/model that has the min price
+    if (showStartingAt && minCalculatedPrice) {
+        // Try to find in variations
+        const matchingVar = product.variations?.find(v => v.price === minCalculatedPrice && v.isActive !== false);
+        if (matchingVar && matchingVar.mrp) {
+            displayMRP = matchingVar.mrp;
+        } else {
+            // Try to find in models
+            const matchingModel = product.models?.find(m => {
+                if (m.isActive === false) return false;
+                // check model base price
+                if (m.selling_price_a === minCalculatedPrice) return true;
+                // check model variations
+                return m.variations?.some(v => v.isActive !== false && v.price === minCalculatedPrice);
+            });
+
+            if (matchingModel) {
+                // If it matched a variation inside the model
+                const matchingModelVar = matchingModel.variations?.find(v => v.isActive !== false && v.price === minCalculatedPrice);
+                if (matchingModelVar && matchingModelVar.mrp) {
+                    displayMRP = matchingModelVar.mrp;
+                } else if (matchingModel.mrp) {
+                    // Fallback to model base mrp if no variation mrp or if model base price was the match
+                    displayMRP = matchingModel.mrp;
+                }
+            }
+        }
+    }
+
+    let finalPrice = effectivePrice;
     if (user?.customerType === 'wholesale' && user.wholesaleDiscount) {
-        finalPrice = Math.round(sellingPrice * (1 - user.wholesaleDiscount / 100));
+        finalPrice = Math.round(effectivePrice * (1 - user.wholesaleDiscount / 100));
     }
 
     const inWishlist = isInWishlist(product._id);
@@ -114,9 +163,9 @@ export default function ProductCard({ product }: { product: Product }) {
                 </button>
 
                 {/* Discount Badge */}
-                {originalPrice > finalPrice && (
+                {displayMRP && (displayMRP > finalPrice) && (
                     <div className="product-badge badge-sale">
-                        {Math.round(((originalPrice - finalPrice) / originalPrice) * 100)}% OFF
+                        {Math.round(((displayMRP - finalPrice) / displayMRP) * 100)}% OFF
                     </div>
                 )}
             </div>
@@ -135,8 +184,8 @@ export default function ProductCard({ product }: { product: Product }) {
                     <div className="product-price">
                         <>
                             {showStartingAt && <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', marginBottom: '2px' }}>From</span>}
-                            {(product.discountedPrice > 0 && product.discountedPrice < product.basePrice) && (
-                                <span className="price-original">₹{originalPrice}</span>
+                            {(displayMRP && displayMRP > finalPrice) && (
+                                <span className="price-original">₹{displayMRP}</span>
                             )}
                             <span className="price-current">₹{finalPrice}</span>
                         </>

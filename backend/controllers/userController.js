@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Order = require('../models/Order');
+const { logAction } = require('../utils/auditLogger');
 // Mock imports for related data models if they don't exist yet, or real ones if they do
 // Assuming Address/BankDetails logic is stored within User or separate models. 
 // User model has `savedAddresses`. 
@@ -114,6 +115,8 @@ exports.createUser = async (req, res) => {
             image
         });
 
+        await logAction({ action: 'CREATE_USER_ADMIN', req, targetResource: 'User', targetId: user._id, details: { role: user.role, mobile: user.mobile } });
+
         if (user) {
             res.status(201).json({
                 _id: user._id,
@@ -149,6 +152,7 @@ exports.updateUser = async (req, res) => {
             }
 
             const updatedUser = await user.save();
+            await logAction({ action: 'UPDATE_USER_ADMIN', req, targetResource: 'User', targetId: updatedUser._id, details: { role: updatedUser.role } });
             res.json({
                 _id: updatedUser._id,
                 username: updatedUser.username,
@@ -174,6 +178,8 @@ exports.deleteUser = async (req, res) => {
         // Soft Delete
         user.isActive = false;
         await user.save();
+
+        await logAction({ action: 'DELETE_USER_ADMIN', req, targetResource: 'User', targetId: req.params.id, details: { mobile: user.mobile, mode: 'soft-delete' } });
 
         res.json({ message: 'User deactivated successfully (Soft Delete)' });
     } catch (error) {

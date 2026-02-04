@@ -5,6 +5,7 @@ const SubCategory = require('../models/SubCategory');
 const Brand = require('../models/Brand');
 const Product = require('../models/Product');
 const { deleteFile } = require('../utils/fileHandler');
+const { logAction } = require('../utils/auditLogger');
 
 // --- HSN Codes ---
 exports.getHSNs = async (req, res) => {
@@ -17,6 +18,7 @@ exports.getHSNs = async (req, res) => {
 exports.createHSN = async (req, res) => {
     try {
         const hsn = await HSNCode.create(req.body);
+        await logAction({ action: 'CREATE_HSN', req, targetResource: 'HSNCode', targetId: hsn._id, details: req.body });
         res.status(201).json(hsn);
     } catch (error) { res.status(400).json({ error: error.message }); }
 };
@@ -24,6 +26,7 @@ exports.createHSN = async (req, res) => {
 exports.updateHSN = async (req, res) => {
     try {
         const hsn = await HSNCode.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        await logAction({ action: 'UPDATE_HSN', req, targetResource: 'HSNCode', targetId: req.params.id, details: req.body });
         res.json(hsn);
     } catch (error) { res.status(400).json({ error: error.message }); }
 };
@@ -31,6 +34,7 @@ exports.updateHSN = async (req, res) => {
 exports.deleteHSN = async (req, res) => {
     try {
         await HSNCode.findByIdAndDelete(req.params.id);
+        await logAction({ action: 'DELETE_HSN', req, targetResource: 'HSNCode', targetId: req.params.id });
         res.json({ message: 'HSN Code deleted' });
     } catch (error) { res.status(500).json({ error: error.message }); }
 };
@@ -84,6 +88,7 @@ exports.createCategory = async (req, res) => {
         }
 
         const category = await Category.create({ name, slug, description, displayOrder, image, showInNav });
+        await logAction({ action: 'CREATE_CATEGORY', req, targetResource: 'Category', targetId: category._id, details: { name, slug, displayOrder, showInNav } });
         res.status(201).json(category);
     } catch (error) { res.status(400).json({ error: error.message }); }
 };
@@ -99,19 +104,30 @@ exports.deleteCategory = async (req, res) => {
         subCats.forEach(sc => deleteFile(sc.image));
         await SubCategory.deleteMany({ category_id: category._id });
 
-        // 2. Delete/Archive Products (Here we delete)
+        // 2. Delete/Archive Products (Safety Guard)
+        const productCount = await Product.countDocuments({ category: category._id });
+        if (productCount > 50) {
+            return res.status(400).json({
+                message: `Safety Block: This category has ${productCount} products. Direct deletion is blocked to prevent accidental data loss. Please move or delete products individually first.`
+            });
+        }
+
         const products = await Product.find({ category: category._id });
-        // NOTE: This might be heavy if lots of products. Ideally using a background job or just flagging.
-        // For now, simple loop delete to ensure image cleanup
         for (const prod of products) {
             deleteFile(prod.featured_image);
             deleteFile(prod.featured_image_2);
-            // ... delete other images
+            // Delete gallery images too if they exist
+            if (prod.gallery_images && Array.isArray(prod.gallery_images)) {
+                prod.gallery_images.forEach(img => deleteFile(img));
+            }
             await prod.deleteOne();
         }
 
         deleteFile(category.image);
         await category.deleteOne();
+
+        // Audit Log
+        await logAction({ action: 'DELETE_CATEGORY', req, targetResource: 'Category', targetId: req.params.id, details: { name: category.name } });
 
         res.json({ message: 'Category and related data deleted' });
     } catch (error) { res.status(500).json({ error: error.message }); }

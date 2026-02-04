@@ -89,6 +89,7 @@ const productSchema = new mongoose.Schema({
     }],
 
     // Legacy / Compatibility
+    isFeatured: { type: Boolean, default: false },
     isNewArrival: { type: Boolean, default: false },
     isTopSale: { type: Boolean, default: false },
     isDailyOffer: { type: Boolean, default: false },
@@ -111,5 +112,9 @@ productSchema.index({ isNewArrival: 1 });
 productSchema.index({ isOnDemand: 1 });
 // Text index for search (title & description)
 productSchema.index({ title: 'text', description: 'text', part_number: 'text', 'variations.value': 'text' });
+
+// SKU uniqueness constraints (sparse to allow empty values)
+productSchema.index({ 'variations.sku': 1 }, { unique: true, sparse: true });
+productSchema.index({ 'models.variations.sku': 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Product', productSchema);

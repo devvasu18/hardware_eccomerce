@@ -24,6 +24,8 @@ const orderSchema = new mongoose.Schema({
 
     items: [{
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+        productTitle: { type: String }, // Snapshot for history
+        productImage: { type: String }, // Snapshot for history
         quantity: { type: Number, required: true },
         priceAtBooking: { type: Number, required: true },
         variationId: { type: mongoose.Schema.Types.ObjectId },

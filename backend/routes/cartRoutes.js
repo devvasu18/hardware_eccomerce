@@ -330,45 +330,73 @@ router.post('/sync', authenticateToken, async (req, res) => {
             return res.json({ message: 'No items to sync' });
         }
 
+        const User = require('../models/User');
+        const user = await User.findById(req.user.id);
+        const discount = (user?.customerType === 'wholesale' && user.wholesaleDiscount) ? user.wholesaleDiscount : 0;
+
         let cart = await Cart.findOne({ user: req.user.id });
-
         if (!cart) {
-            // Create new cart with local items
-            cart = new Cart({
-                user: req.user.id,
-                items: localCartItems.map(item => ({
-                    product: item.productId,
-                    quantity: item.quantity,
-                    price: item.price,
-                    size: item.size
-                }))
-            });
-        } else {
-            // Merge local items with existing cart
-            for (const localItem of localCartItems) {
-                const existingItemIndex = cart.items.findIndex(item =>
-                    item.product.toString() === localItem.productId &&
-                    (localItem.modelId ? (item.modelId && item.modelId.toString() === localItem.modelId) : !item.modelId) &&
-                    (localItem.variationId ? (item.variationId && item.variationId.toString() === localItem.variationId) : (localItem.size ? item.size === localItem.size : !item.size))
-                );
+            cart = new Cart({ user: req.user.id, items: [] });
+        }
 
-                if (existingItemIndex > -1) {
-                    // Add quantities together
-                    cart.items[existingItemIndex].quantity += localItem.quantity;
-                    cart.items[existingItemIndex].price = localItem.price; // Use latest price
-                } else {
-                    // Add new item
-                    cart.items.push({
-                        product: localItem.productId,
-                        quantity: localItem.quantity,
-                        price: localItem.price,
-                        size: localItem.size,
-                        variationId: localItem.variationId,
-                        variationText: localItem.variationText,
-                        modelId: localItem.modelId,
-                        modelName: localItem.modelName
-                    });
+        const Product = require('../models/Product');
+
+        for (const localItem of localCartItems) {
+            // Fetch real product to get safe price
+            const product = await Product.findById(localItem.productId);
+            if (!product || !product.isActive) continue;
+
+            let dbPrice = product.selling_price_a || product.mrp;
+            let variationText = localItem.variationText || '';
+            let modelName = localItem.modelName || '';
+
+            // Handle Models/Variations
+            if (localItem.modelId) {
+                const model = product.models?.find(m => m._id.toString() === localItem.modelId);
+                if (model) {
+                    dbPrice = model.selling_price_a || model.mrp || dbPrice;
+                    modelName = model.name;
+                    if (localItem.variationId) {
+                        const variant = model.variations?.find(v => v._id.toString() === localItem.variationId);
+                        if (variant) {
+                            dbPrice = variant.price || dbPrice;
+                            variationText = `${variant.type}: ${variant.value}`;
+                        }
+                    }
                 }
+            } else if (localItem.variationId) {
+                const variant = product.variations?.find(v => v._id.toString() === localItem.variationId);
+                if (variant) {
+                    dbPrice = variant.price || dbPrice;
+                    variationText = `${variant.type}: ${variant.value}`;
+                }
+            }
+
+            // Apply Wholesale Discount
+            if (discount > 0) {
+                dbPrice = Math.round(dbPrice * (1 - discount / 100));
+            }
+
+            const existingItemIndex = cart.items.findIndex(item =>
+                item.product.toString() === localItem.productId &&
+                (localItem.modelId ? (item.modelId && item.modelId.toString() === localItem.modelId) : !item.modelId) &&
+                (localItem.variationId ? (item.variationId && item.variationId.toString() === localItem.variationId) : (localItem.size ? item.size === localItem.size : !item.size))
+            );
+
+            if (existingItemIndex > -1) {
+                cart.items[existingItemIndex].quantity += localItem.quantity;
+                cart.items[existingItemIndex].price = dbPrice; // Trusted price from DB
+            } else {
+                cart.items.push({
+                    product: localItem.productId,
+                    quantity: localItem.quantity,
+                    price: dbPrice,
+                    size: localItem.size,
+                    variationId: localItem.variationId,
+                    variationText: variationText,
+                    modelId: localItem.modelId,
+                    modelName: modelName
+                });
             }
         }
 

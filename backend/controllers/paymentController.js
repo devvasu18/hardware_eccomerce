@@ -71,8 +71,15 @@ exports.createPaymentOrder = async (req, res) => {
         // Best way: Update order STATUS here directly and return "mock_success" to frontend so it redirects.
 
         order.paymentStatus = 'Paid'; // Changed for immediate effect
+        order.status = 'Processing'; // Consistency with verifyPayment
         order.paymentDetails = { provider: 'Manual_Bypass', transactionId: txnid };
         await order.save();
+
+        // Clear Cart in bypass mode
+        if (order.user) {
+            const Cart = require('../models/Cart');
+            await Cart.findOneAndDelete({ user: order.user });
+        }
 
         // Return dummy param that frontend might use, or just success
         // If frontend expects PayU form, this might break UI. 
@@ -159,6 +166,12 @@ exports.verifyPayment = async (req, res) => {
                         };
                         order.status = 'Processing';
                         await order.save();
+
+                        // Clear Cart after successful payment
+                        if (order.user) {
+                            const Cart = require('../models/Cart');
+                            await Cart.findOneAndDelete({ user: order.user });
+                        }
                     }
                 }
 

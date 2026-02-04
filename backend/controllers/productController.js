@@ -1,5 +1,6 @@
 const Product = require('../models/Product');
 const { deleteFile } = require('../utils/fileHandler');
+const { logAction } = require('../utils/auditLogger');
 
 // @desc    Get all products (Admin)
 // @route   GET /api/admin/products
@@ -143,6 +144,7 @@ exports.createProduct = async (req, res) => {
         });
 
         const createdProduct = await product.save();
+        await logAction({ action: 'CREATE_PRODUCT_ADMIN', req, targetResource: 'Product', targetId: createdProduct._id, details: { title: createdProduct.title } });
         res.status(201).json(createdProduct);
 
     } catch (error) {
@@ -285,6 +287,7 @@ exports.updateProduct = async (req, res) => {
         }
 
         const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
+        await logAction({ action: 'UPDATE_PRODUCT_ADMIN', req, targetResource: 'Product', targetId: req.params.id, details: { title: updatedProduct.title } });
         res.json(updatedProduct);
 
     } catch (error) {
@@ -312,6 +315,7 @@ exports.deleteProduct = async (req, res) => {
         // if we ever implement a "Archive View".
 
         await product.save();
+        await logAction({ action: 'DELETE_PRODUCT_ADMIN', req, targetResource: 'Product', targetId: req.params.id, details: { title: product.title, mode: 'soft-delete' } });
         res.json({ message: 'Product deactivated (Soft Delete)' });
     } catch (error) {
         res.status(500).json({ message: 'Error deleting product', error: error.message });

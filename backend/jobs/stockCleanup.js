@@ -38,11 +38,33 @@ const runStockCleanup = () => {
             console.log(`⚠️ Found ${abandonedOrders.length} abandoned orders. Restoring stock...`);
 
             for (const order of abandonedOrders) {
-                // Restore stock for each item
+                // Restore stock for each item using atomic increments
                 for (const item of order.items) {
-                    await Product.findByIdAndUpdate(item.product, {
-                        $inc: { stock: item.quantity }
-                    });
+                    try {
+                        if (item.modelId) {
+                            if (item.variationId) {
+                                await Product.findOneAndUpdate(
+                                    { _id: item.product, 'models._id': item.modelId },
+                                    { $inc: { 'models.$[m].variations.$[v].stock': item.quantity } },
+                                    { arrayFilters: [{ 'm._id': item.modelId }, { 'v._id': item.variationId }] }
+                                );
+                            } else {
+                                // Restore to base model stock if variation wasn't used? 
+                                // (Usually variations carry the stock in our system)
+                            }
+                        } else if (item.variationId) {
+                            await Product.findOneAndUpdate(
+                                { _id: item.product, 'variations._id': item.variationId },
+                                { $inc: { 'variations.$.stock': item.quantity } }
+                            );
+                        } else {
+                            await Product.findByIdAndUpdate(item.product, {
+                                $inc: { stock: item.quantity }
+                            });
+                        }
+                    } catch (itemErr) {
+                        console.error(`Failed to restore stock for product ${item.product}:`, itemErr.message);
+                    }
                 }
 
                 // Update Order Status

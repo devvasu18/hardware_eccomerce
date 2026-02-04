@@ -36,6 +36,11 @@ const protect = async (req, res, next) => {
                 console.log(`🔐 Auth - User authenticated: ${req.user._id}`);
             }
 
+            // High Priority: Enforcement of active account
+            if (!req.user.isActive) {
+                return res.status(403).json({ message: 'Your account is deactivated. Please contact support.' });
+            }
+
 
             next();
         } catch (error) {

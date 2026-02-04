@@ -121,9 +121,28 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
     const variationPrices = sourceVariationsForPrice?.map(v => v.price) || [];
     const minVarPrice = variationPrices.length > 0 ? Math.min(...variationPrices) : null;
 
+    // Calculate minimum price globally across all models (for default display)
+    const minModelPrice = useMemo(() => {
+        if (!product.models || product.models.length === 0) return null;
+        const allPrices: number[] = [];
+        product.models.forEach(m => {
+            if (m.isActive === false) return;
+            if (m.selling_price_a && m.selling_price_a > 0) allPrices.push(m.selling_price_a);
+            if (m.variations) {
+                m.variations.forEach(v => {
+                    if (v.isActive === false) return;
+                    if (v.price && v.price > 0) allPrices.push(v.price);
+                });
+            }
+        });
+        return allPrices.length > 0 ? Math.min(...allPrices) : null;
+    }, [product.models]);
+
     const basePrice = currentVariation
         ? currentVariation.price
-        : (selectedModel?.selling_price_a || product.discountedPrice || product.basePrice || minVarPrice || 0);
+        : (selectedModel
+            ? (selectedModel.selling_price_a || minVarPrice || 0)
+            : (product.discountedPrice || product.basePrice || minVarPrice || minModelPrice || 0));
 
     const stock = currentVariation
         ? currentVariation.stock
@@ -219,6 +238,12 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                         {currentVariation && currentVariation.mrp && currentVariation.mrp > finalPrice ? (
                             <>
                                 <span className="price-original">₹{currentVariation.mrp}</span>
+                                <span className="price-separator">/</span>
+                                <span className="price-current">₹{finalPrice}</span>
+                            </>
+                        ) : (selectedModel && selectedModel.mrp && selectedModel.mrp > finalPrice && !currentVariation) ? (
+                            <>
+                                <span className="price-original">₹{selectedModel.mrp}</span>
                                 <span className="price-separator">/</span>
                                 <span className="price-current">₹{finalPrice}</span>
                             </>

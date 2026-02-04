@@ -518,7 +518,7 @@
 .size-btn.active {
     border-color: var(--primary);
     background: var(--primary);
-    color: white;
+    color: rgb(22, 22, 22);
 }
 
 /* Quantity Selector */
