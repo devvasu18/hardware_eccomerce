@@ -28,7 +28,8 @@ const orderSchema = new mongoose.Schema({
         priceAtBooking: { type: Number, required: true },
         variationId: { type: mongoose.Schema.Types.ObjectId },
         variationText: { type: String }, // Stored snapshot: "Color: Red"
-        // size: { type: String }, // Deprecated
+        modelId: { type: mongoose.Schema.Types.ObjectId },
+        modelName: { type: String },
         gstRate: { type: Number },
         cgst: { type: Number },
         sgst: { type: Number },

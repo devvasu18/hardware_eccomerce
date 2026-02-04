@@ -21,7 +21,12 @@ const cartItemSchema = new mongoose.Schema({
     variationText: {
         type: String // e.g. "Color: Red, Size: XL" snapshot for UI
     },
-    // size: { type: String } // Deprecated
+    modelId: {
+        type: mongoose.Schema.Types.ObjectId
+    },
+    modelName: {
+        type: String
+    }
 }, { _id: false });
 
 const cartSchema = new mongoose.Schema({

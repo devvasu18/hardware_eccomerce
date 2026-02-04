@@ -18,6 +18,12 @@ interface Product {
     images?: string[];
     isOnDemand: boolean;
     variations?: { price: number; mrp?: number; isActive: boolean }[];
+    models?: {
+        isActive: boolean;
+        selling_price_a?: number;
+        mrp?: number;
+        variations?: { price: number; mrp?: number; isActive: boolean }[];
+    }[];
 }
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -25,9 +31,20 @@ export default function ProductCard({ product }: { product: Product }) {
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
 
-    // Variation Pricing Fallback
-    const variationPrices = product.variations?.filter(v => v.isActive).map(v => v.price) || [];
-    const minVarPrice = variationPrices.length > 0 ? Math.min(...variationPrices) : null;
+    // Variation Pricing Fallback (including Models)
+    const allVariations = [
+        ...(product.variations || []),
+        ...(product.models?.flatMap(m => m.variations || []) || [])
+    ];
+
+    const variationPrices = allVariations.filter(v => v.isActive).map(v => v.price) || [];
+
+    // Also consider model base prices if they don't have variations
+    const modelPrices = product.models?.filter(m => m.isActive && (!m.variations || m.variations.length === 0))
+        .map(m => m.selling_price_a || m.mrp || 0) || [];
+
+    const combinedPrices = [...variationPrices, ...modelPrices];
+    const minVarPrice = combinedPrices.length > 0 ? Math.min(...combinedPrices) : null;
     const showStartingAt = !product.discountedPrice && !product.basePrice && minVarPrice;
 
     // Pricing Logic

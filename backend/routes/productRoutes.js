@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
+const { protect, admin } = require('../middleware/authMiddleware');
 
 // Create Product
-// Create Product
-router.post('/', async (req, res) => {
+router.post('/', protect, admin, async (req, res) => {
     try {
         const { basePrice, discountedPrice } = req.body;
 
@@ -104,7 +104,7 @@ router.get('/', async (req, res) => {
                 const catDoc = await Category.findOne({
                     $or: [
                         { slug: category },
-                        { name: { $regex: new RegExp(`^${category}$`, 'i') } }
+                        { name: category } // Prefer exact match or handle case-insensitivity via collation/schema
                     ]
                 });
                 if (catDoc) {
@@ -123,7 +123,7 @@ router.get('/', async (req, res) => {
             const subCatDoc = await SubCategory.findOne({
                 $or: [
                     { slug: req.query.subcategory },
-                    { name: { $regex: new RegExp(`^${req.query.subcategory}$`, 'i') } }
+                    { name: req.query.subcategory }
                 ]
             });
 
@@ -163,7 +163,7 @@ router.get('/', async (req, res) => {
                 const brandDoc = await Brand.findOne({
                     $or: [
                         { slug: brand },
-                        { name: { $regex: new RegExp(`^${brand}$`, 'i') } }
+                        { name: brand }
                     ]
                 });
                 if (brandDoc) {
@@ -241,7 +241,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update Product
-router.put('/:id', async (req, res) => {
+router.put('/:id', protect, admin, async (req, res) => {
     try {
         const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(updatedProduct);

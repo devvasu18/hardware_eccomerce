@@ -23,6 +23,7 @@ interface Product {
     material?: string;
     countryOfOrigin?: string;
     variations?: any[];
+    models?: any[];
 }
 
 interface Props {

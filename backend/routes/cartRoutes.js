@@ -39,7 +39,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // Add item to cart
 router.post('/add', authenticateToken, async (req, res) => {
     try {
-        const { productId, quantity, price, size, variationId, variationText } = req.body;
+        const { productId, quantity, price, size, variationId, variationText, modelId, modelName } = req.body;
 
         // Validate product exists
         const product = await Product.findById(productId);
@@ -47,10 +47,21 @@ router.post('/add', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: 'Product not found' });
         }
 
-        // Validate stock (Strict Check Restored)
-        // Check Main Stock OR Variation Stock
+        // --- SECURE STOCK CALCULATION ---
         let limit = product.stock;
-        if (variationId && product.variations) {
+
+        if (modelId && product.models) {
+            const model = product.models.find(m => m._id.toString() === modelId);
+            if (model) {
+                if (variationId) {
+                    const variant = model.variations.find(v => v._id.toString() === variationId);
+                    if (variant) limit = variant.stock;
+                } else {
+                    // Total model stock
+                    limit = model.variations.reduce((acc, v) => acc + (v.stock || 0), 0);
+                }
+            }
+        } else if (variationId && product.variations) {
             const variant = product.variations.find(v => v._id.toString() === variationId);
             if (variant) limit = variant.stock;
         }
@@ -66,8 +77,17 @@ router.post('/add', authenticateToken, async (req, res) => {
 
         // Calculate Price Securely
         let securePrice = product.selling_price_a || product.mrp;
-        // Use Variation Price if applicable
-        if (variationId && product.variations) {
+
+        if (modelId && product.models) {
+            const model = product.models.find(m => m._id.toString() === modelId);
+            if (model) {
+                securePrice = model.selling_price_a || model.mrp || securePrice;
+                if (variationId) {
+                    const variant = model.variations.find(v => v._id.toString() === variationId);
+                    if (variant) securePrice = variant.price;
+                }
+            }
+        } else if (variationId && product.variations) {
             const variant = product.variations.find(v => v._id.toString() === variationId);
             if (variant) securePrice = variant.price;
         }
@@ -88,17 +108,20 @@ router.post('/add', authenticateToken, async (req, res) => {
                     price: securePrice,
                     size,
                     variationId,
-                    variationText
+                    variationText,
+                    modelId,
+                    modelName
                 }]
             });
         } else {
             // Check if item already exists (match by product AND size/variationId)
             const existingItemIndex = cart.items.findIndex(item => {
                 const sameProduct = item.product.toString() === productId;
+                const sameModel = (modelId ? (item.modelId && item.modelId.toString() === modelId) : !item.modelId);
                 const sameVariation = variationId
                     ? (item.variationId && item.variationId.toString() === variationId)
                     : (size ? item.size === size : (!item.size && !item.variationId));
-                return sameProduct && sameVariation;
+                return sameProduct && sameModel && sameVariation;
             });
 
             if (existingItemIndex > -1) {
@@ -117,7 +140,9 @@ router.post('/add', authenticateToken, async (req, res) => {
                     price: securePrice,
                     size,
                     variationId,
-                    variationText
+                    variationText,
+                    modelId,
+                    modelName
                 });
             }
         }
@@ -152,7 +177,7 @@ router.post('/add', authenticateToken, async (req, res) => {
 // Update cart item quantity
 router.patch('/update', authenticateToken, async (req, res) => {
     try {
-        const { productId, quantity, size, variationId } = req.body;
+        const { productId, quantity, size, variationId, modelId } = req.body;
 
         if (quantity < 1) {
             return res.status(400).json({ message: 'Quantity must be at least 1' });
@@ -165,10 +190,11 @@ router.patch('/update', authenticateToken, async (req, res) => {
 
         const itemIndex = cart.items.findIndex(item => {
             const sameProduct = item.product.toString() === productId;
+            const sameModel = (modelId ? (item.modelId && item.modelId.toString() === modelId) : !item.modelId);
             const sameVariation = variationId
                 ? (item.variationId && item.variationId.toString() === variationId)
                 : (size ? item.size === size : (!item.size && !item.variationId));
-            return sameProduct && sameVariation;
+            return sameProduct && sameModel && sameVariation;
         });
 
         if (itemIndex === -1) {
@@ -176,28 +202,40 @@ router.patch('/update', authenticateToken, async (req, res) => {
         }
 
         // Validate stock
-        // STRICT CHECK RESTORED
         const product = await Product.findById(productId);
-        // Fetch User for Discount Logic
         const user = await User.findById(req.user.id);
 
         let limit = 0;
+        let securePrice = 0;
+
         if (product) {
             limit = product.stock;
-            if (variationId && product.variations) {
+            securePrice = product.selling_price_a || product.mrp;
+
+            if (modelId && product.models) {
+                const model = product.models.find(m => m._id.toString() === modelId);
+                if (model) {
+                    securePrice = model.selling_price_a || model.mrp || securePrice;
+                    if (variationId) {
+                        const variant = model.variations.find(v => v._id.toString() === variationId);
+                        if (variant) {
+                            limit = variant.stock;
+                            securePrice = variant.price;
+                        }
+                    } else {
+                        limit = model.variations.reduce((acc, v) => acc + (v.stock || 0), 0);
+                    }
+                }
+            } else if (variationId && product.variations) {
                 const variant = product.variations.find(v => v._id.toString() === variationId);
-                if (variant) limit = variant.stock;
+                if (variant) {
+                    limit = variant.stock;
+                    securePrice = variant.price;
+                }
             }
 
             if (!product.isOnDemand && limit < quantity) {
                 return res.status(400).json({ message: `Insufficient stock. Only ${limit} available.` });
-            }
-
-            // Also update price to be secure
-            let securePrice = product.selling_price_a || product.mrp;
-            if (variationId && product.variations) {
-                const variant = product.variations.find(v => v._id.toString() === variationId);
-                if (variant) securePrice = variant.price;
             }
 
             // Apply Wholesale Discount
@@ -234,7 +272,7 @@ router.patch('/update', authenticateToken, async (req, res) => {
 // Remove item from cart
 router.delete('/remove', authenticateToken, async (req, res) => {
     try {
-        const { productId, size, variationId } = req.body;
+        const { productId, size, variationId, modelId } = req.body;
 
         const cart = await Cart.findOne({ user: req.user.id });
         if (!cart) {
@@ -243,10 +281,11 @@ router.delete('/remove', authenticateToken, async (req, res) => {
 
         cart.items = cart.items.filter(item => {
             const sameProduct = item.product.toString() === productId;
+            const sameModel = (modelId ? (item.modelId && item.modelId.toString() === modelId) : !item.modelId);
             const sameVariation = variationId
                 ? (item.variationId && item.variationId.toString() === variationId)
                 : (size ? item.size === size : (!item.size && !item.variationId));
-            return !(sameProduct && sameVariation);
+            return !(sameProduct && sameModel && sameVariation);
         });
 
         await cart.save();
@@ -309,7 +348,8 @@ router.post('/sync', authenticateToken, async (req, res) => {
             for (const localItem of localCartItems) {
                 const existingItemIndex = cart.items.findIndex(item =>
                     item.product.toString() === localItem.productId &&
-                    (localItem.size ? item.size === localItem.size : !item.size)
+                    (localItem.modelId ? (item.modelId && item.modelId.toString() === localItem.modelId) : !item.modelId) &&
+                    (localItem.variationId ? (item.variationId && item.variationId.toString() === localItem.variationId) : (localItem.size ? item.size === localItem.size : !item.size))
                 );
 
                 if (existingItemIndex > -1) {
@@ -322,7 +362,11 @@ router.post('/sync', authenticateToken, async (req, res) => {
                         product: localItem.productId,
                         quantity: localItem.quantity,
                         price: localItem.price,
-                        size: localItem.size
+                        size: localItem.size,
+                        variationId: localItem.variationId,
+                        variationText: localItem.variationText,
+                        modelId: localItem.modelId,
+                        modelName: localItem.modelName
                     });
                 }
             }

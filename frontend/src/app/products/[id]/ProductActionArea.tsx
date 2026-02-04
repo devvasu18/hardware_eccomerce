@@ -18,6 +18,16 @@ interface Variation {
     _id: string;
 }
 
+interface Model {
+    _id: string;
+    name: string;
+    mrp?: number;
+    selling_price_a?: number;
+    featured_image?: string;
+    isActive: boolean;
+    variations: Variation[];
+}
+
 interface Product {
     _id: string;
     title?: string;
@@ -29,8 +39,9 @@ interface Product {
     featured_image?: string;
     gallery_images?: string[];
     images?: string[];
-    availableSizes?: string[]; // Legacy
+    availableSizes?: string[];
     variations?: Variation[];
+    models?: Model[];
 }
 
 // ... imports
@@ -46,31 +57,55 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
     const [quantity, setQuantity] = useState(1);
     const { modalState, hideModal, showSuccess, showError } = useModal();
 
+    // --- Model Selection ---
+    const [selectedModel, setSelectedModel] = useState<Model | null>(null);
+
     // --- Variation State ---
     const [selectedVariations, setSelectedVariations] = useState<{ [key: string]: string }>({});
     const [currentVariation, setCurrentVariation] = useState<Variation | null>(null);
 
-    // Group variations by Type (e.g., Color: [Red, Blue], Size: [S, M])
+    // Auto-select first model if only one exists or for better UX
+    useEffect(() => {
+        if (product.models && product.models.length > 0 && !selectedModel) {
+            // Optional: don't auto-select to force user choice
+            // setSelectedModel(product.models[0]);
+        }
+    }, [product.models]);
+
+    // Group variations by Type
     const variationGroups = useMemo(() => {
-        if (!product.variations) return {};
+        const sourceVariations = selectedModel ? selectedModel.variations : product.variations;
+        if (!sourceVariations) return {};
+
         const groups: { [key: string]: Variation[] } = {};
-        product.variations.forEach(v => {
+        sourceVariations.forEach(v => {
             if (!v.isActive) return;
             if (!groups[v.type]) groups[v.type] = [];
             groups[v.type].push(v);
         });
         return groups;
-    }, [product.variations]);
+    }, [selectedModel, product.variations]);
 
-    const hasVariations = Object.keys(variationGroups).length > 0;
+    const hasModels = product.models && product.models.length > 0;
+    // Only show variation selector if:
+    // 1. A model is selected (it might have variations)
+    // 2. OR There are no models at all (show standalone variations)
+    const hasVariations = Object.keys(variationGroups).length > 0 && (selectedModel || !hasModels);
+
+    const handleModelSelect = (model: Model) => {
+        setSelectedModel(model);
+        setSelectedVariations({});
+        setCurrentVariation(null);
+        if (onVariationSelect) onVariationSelect(null);
+    };
 
     // Handle Selection
     const handleSelect = (type: string, value: string) => {
         const newSelection = { ...selectedVariations, [type]: value };
         setSelectedVariations(newSelection);
 
-        // Find exact match
-        const match = product.variations?.find(v =>
+        const sourceVariations = selectedModel ? selectedModel.variations : product.variations;
+        const match = sourceVariations?.find(v =>
             v.type === type && v.value === value
         );
         if (match) {
@@ -82,11 +117,18 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
 
 
     // --- Price & Stock Logic ---
-    const variationPrices = product.variations?.map(v => v.price) || [];
+    const sourceVariationsForPrice = selectedModel ? selectedModel.variations : product.variations;
+    const variationPrices = sourceVariationsForPrice?.map(v => v.price) || [];
     const minVarPrice = variationPrices.length > 0 ? Math.min(...variationPrices) : null;
 
-    const basePrice = currentVariation ? currentVariation.price : (product.discountedPrice || product.basePrice || minVarPrice || 0);
-    const stock = currentVariation ? currentVariation.stock : product.stock;
+    const basePrice = currentVariation
+        ? currentVariation.price
+        : (selectedModel?.selling_price_a || product.discountedPrice || product.basePrice || minVarPrice || 0);
+
+    const stock = currentVariation
+        ? currentVariation.stock
+        : (hasModels && selectedModel ? selectedModel.variations.reduce((acc, v) => acc + (v.stock || 0), 0) : product.stock);
+
     const isStrictlyOnDemand = product.isOnDemand;
 
     // Discount Logic
@@ -99,29 +141,16 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
     const isBackorder = !isStrictlyOnDemand && !isOutOfStock && (quantity > stock);
 
     const handleAddToCart = () => {
-        // Validation: Must select all variation types
-        if (hasVariations) {
-            const missingTypes = Object.keys(variationGroups).filter(type => !selectedVariations[type]);
-            // Logic: For this simplified version (since we only support single-dimensional variations properly in UI usually),
-            // We assume if multiple types exist they are independent or flat list.
-            // Our schema is flat list: [{type: Color, value: Red}, {type: Size, value: XL}]
-            // User picks ONE variation from the list effectively? 
-            // WAIT. The schema allows [Color: Red, Price: 100], [Size: XL, Price: 200].
-            // Usually variations are Combinations (Color=Red AND Size=XL).
-            // My schema is "Flat List of Variants". This means a variant is EITHER "Red" OR "XL". 
-            // It does not support "Red XL".
-            // Therefore, the user selects ONE variant from the available options.
-            // If there are multiple types (Colors AND Sizes), the user is effectively picking one specific SKU.
-            // So we should just show the list of all variants? Or group them?
-            // If I have Color variants and Size variants independently, it implies they are separate SKUs.
-            // Example: "Screw 5mm" and "Screw 10mm". -> Type: Size.
-            // Example: "Pain Red" and "Paint Blue". -> Type: Color.
+        // Validation: Must select model if models exist
+        if (hasModels && !selectedModel) {
+            showError('Please select a model first.', 'Selection Required');
+            return;
+        }
 
-            // To support "one selection", we check if specific variant is selected.
-            if (!currentVariation && hasVariations) {
-                showError('Please select an option first.', 'Selection Required');
-                return;
-            }
+        // Validation: Must select variation if variations exist for this model
+        if (hasVariations && !currentVariation) {
+            showError('Please select an option first.', 'Selection Required');
+            return;
         }
 
         const productName = product.title || product.name || 'Product';
@@ -132,6 +161,7 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             : productName;
 
         const productImage = currentVariation?.image ||
+            selectedModel?.featured_image ||
             product.featured_image ||
             (product.gallery_images && product.gallery_images.length > 0 ? product.gallery_images[0] : '') ||
             (product.images && product.images.length > 0 ? product.images[0] : '');
@@ -143,6 +173,8 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             quantity: quantity,
             image: productImage,
             variationId: currentVariation?._id,
+            modelId: selectedModel?._id,
+            modelName: selectedModel?.name,
             variationText: variationText, // For Tally
             isOnDemand: isStrictlyOnDemand || (stock < quantity)
         });
@@ -152,6 +184,35 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
     return (
         <>
             <div className="product-action-section">
+                {/* Model Selector */}
+                {hasModels && (
+                    <div className="variations-container" style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #f1f5f9' }}>
+                        <label className="section-label" style={{ display: 'block', marginBottom: '10px', color: '#1a1a1a', fontWeight: 700 }}>CHOOSE MODEL</label>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            {product.models?.map(m => (
+                                <button
+                                    key={m._id}
+                                    className={`size-btn ${selectedModel?._id === m._id ? 'active' : ''}`}
+                                    onClick={() => handleModelSelect(m)}
+                                    style={{
+                                        padding: '8px 20px',
+                                        height: 'auto',
+                                        minWidth: '100px',
+                                        fontSize: '0.9rem',
+                                        fontWeight: selectedModel?._id === m._id ? 700 : 400,
+                                        border: selectedModel?._id === m._id ? '2px solid var(--primary)' : '1px solid #e2e8f0',
+                                        background: selectedModel?._id === m._id ? '#fff' : '#f8fafc',
+                                        borderRadius: '8px',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {m.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Pricing */}
                 <div className="pricing-section">
                     <div className="price-display">

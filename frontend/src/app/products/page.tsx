@@ -18,6 +18,8 @@ interface Product {
     images?: string[];
     isOnDemand: boolean;
     gallery_images?: string[];
+    variations?: any[];
+    models?: any[];
 }
 
 async function getFilters() {

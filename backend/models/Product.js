@@ -56,15 +56,35 @@ const productSchema = new mongoose.Schema({
     // Status & Flags
     isActive: { type: Boolean, default: true },
     isVisible: { type: Boolean, default: true },
-    // Variants System (New)
+    // Models & Variants System (Enhanced)
+    models: [{
+        name: { type: String, required: true }, // e.g. "Pro Max"
+        mrp: { type: Number }, // Base MRP for this model
+        selling_price_a: { type: Number }, // Base Selling Price for this model
+        featured_image: { type: String }, // Primary image for this model
+        gallery_images: { type: [String], default: [] },
+        isActive: { type: Boolean, default: true },
+        variations: [{
+            type: { type: String, enum: ['Color', 'Size', 'Weight', 'Volume', 'Pack', 'Battery', 'Range', 'Storage', 'Other'], required: true },
+            value: { type: String, required: true },
+            price: { type: Number, required: true }, // Absolute price for this selection
+            mrp: { type: Number },
+            stock: { type: Number, default: 0 },
+            sku: { type: String },
+            image: { type: String },
+            isActive: { type: Boolean, default: true }
+        }]
+    }],
+
+    // Legacy Variations (Still kept for non-model products)
     variations: [{
-        type: { type: String, enum: ['Color', 'Size', 'Weight', 'Volume', 'Pack'], required: true }, // e.g. "Color"
-        value: { type: String, required: true }, // e.g. "Red", "XL", "1kg"
-        price: { type: Number, required: true }, // Selling Price
+        type: { type: String, enum: ['Color', 'Size', 'Weight', 'Volume', 'Pack', 'Battery', 'Range', 'Storage', 'Other'], required: true },
+        value: { type: String, required: true },
+        price: { type: Number, required: true },
         mrp: { type: Number },
         stock: { type: Number, default: 0 },
-        sku: { type: String }, // Unique ID for this variant
-        image: { type: String }, // Optional specific image
+        sku: { type: String },
+        image: { type: String },
         isActive: { type: Boolean, default: true }
     }],
 

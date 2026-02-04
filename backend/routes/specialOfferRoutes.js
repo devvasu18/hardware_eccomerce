@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const SpecialOffer = require('../models/SpecialOffer');
 const Product = require('../models/Product');
+const { protect, admin } = require('../middleware/authMiddleware');
 
 // Get all active special offers (for homepage)
 router.get('/', async (req, res) => {
@@ -37,7 +38,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Admin: Get all offers (including expired)
-router.get('/admin/all', async (req, res) => {
+router.get('/admin/all', protect, admin, async (req, res) => {
     try {
         const offers = await SpecialOffer.find()
             .populate('productId', 'name category')
@@ -49,7 +50,7 @@ router.get('/admin/all', async (req, res) => {
 });
 
 // Admin: Create special offer
-router.post('/', async (req, res) => {
+router.post('/', protect, admin, async (req, res) => {
     try {
         // Validate product exists
         const product = await Product.findById(req.body.productId);
@@ -66,7 +67,7 @@ router.post('/', async (req, res) => {
 });
 
 // Admin: Update special offer
-router.put('/:id', async (req, res) => {
+router.put('/:id', protect, admin, async (req, res) => {
     try {
         const offer = await SpecialOffer.findByIdAndUpdate(
             req.params.id,
@@ -83,7 +84,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Admin: Delete special offer
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', protect, admin, async (req, res) => {
     try {
         const offer = await SpecialOffer.findByIdAndDelete(req.params.id);
         if (!offer) {

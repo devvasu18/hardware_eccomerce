@@ -11,9 +11,12 @@ const escapeXml = (unsafe) => {
         .replace(/'/g, '&apos;');
 };
 
-const generateStockItemXML = (product, variationText = null) => {
+const generateStockItemXML = (product, variationText = null, modelName = null) => {
     // Tally uses 'title' from our standardized product schema
     let itemNameComp = product.title || 'Unknown Item';
+    if (modelName) {
+        itemNameComp += ` (${modelName})`;
+    }
     if (variationText) {
         itemNameComp += ` (${variationText})`;
     }

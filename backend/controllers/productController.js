@@ -105,14 +105,26 @@ exports.createProduct = async (req, res) => {
             parsedVariations = req.body.variations;
         }
 
-        // Map uploaded variation images
-        if (parsedVariations.length > 0 && req.files) {
-            parsedVariations.forEach((v, index) => {
-                const vFile = req.files.find(f => f.fieldname === `variation_image_${index}`);
-                if (vFile) {
-                    v.image = vFile.path;
+        // Parse and Handle Models (Enhanced System)
+        let parsedModels = [];
+        if (req.body.models && typeof req.body.models === 'string') {
+            try {
+                parsedModels = JSON.parse(req.body.models);
+                // Map model-level images and variation images
+                if (req.files) {
+                    parsedModels.forEach((m, mIdx) => {
+                        const mFile = req.files.find(f => f.fieldname === `model_image_${mIdx}`);
+                        if (mFile) m.featured_image = mFile.path;
+
+                        if (m.variations) {
+                            m.variations.forEach((v, vIdx) => {
+                                const mvFile = req.files.find(f => f.fieldname === `model_${mIdx}_variation_image_${vIdx}`);
+                                if (mvFile) v.image = mvFile.path;
+                            });
+                        }
+                    });
                 }
-            });
+            } catch (e) { console.error('Error parsing models:', e); }
         }
 
         const product = new Product({
@@ -126,7 +138,8 @@ exports.createProduct = async (req, res) => {
             featured_image, featured_image_2, size_chart, gallery_images,
             meta_title, meta_description, keywords: parsedKeywords,
             isActive, isVisible, isFeatured, isNewArrival, isTopSale, isDailyOffer,
-            variations: parsedVariations
+            variations: parsedVariations,
+            models: parsedModels
         });
 
         const createdProduct = await product.save();
@@ -226,18 +239,49 @@ exports.updateProduct = async (req, res) => {
                     updates.variations.forEach((v, index) => {
                         const vFile = req.files.find(f => f.fieldname === `variation_image_${index}`);
                         if (vFile) {
-                            // Delete old image if it exists and variation has an _id (existing variation)
                             if (v._id) {
                                 const oldVar = product.variations.find(ov => ov._id.toString() === v._id);
-                                if (oldVar && oldVar.image) {
-                                    deleteFile(oldVar.image);
-                                }
+                                if (oldVar && oldVar.image) deleteFile(oldVar.image);
                             }
                             v.image = vFile.path;
                         }
                     });
                 }
             } catch (e) { console.error('Error parsing variations:', e); }
+        }
+
+        // Handle Models Update
+        if (updates.models && typeof updates.models === 'string') {
+            try {
+                updates.models = JSON.parse(updates.models);
+                if (req.files) {
+                    updates.models.forEach((m, mIdx) => {
+                        const mFile = req.files.find(f => f.fieldname === `model_image_${mIdx}`);
+                        if (mFile) {
+                            // Find existing model to delete old image
+                            if (m._id) {
+                                const oldModel = product.models.find(om => om._id.toString() === m._id);
+                                if (oldModel && oldModel.featured_image) deleteFile(oldModel.featured_image);
+                            }
+                            m.featured_image = mFile.path;
+                        }
+
+                        if (m.variations) {
+                            m.variations.forEach((v, vIdx) => {
+                                const mvFile = req.files.find(f => f.fieldname === `model_${mIdx}_variation_image_${vIdx}`);
+                                if (mvFile) {
+                                    if (v._id && m._id) {
+                                        const oldModel = product.models.find(om => om._id.toString() === m._id);
+                                        const oldVar = oldModel?.variations.find(ov => ov._id.toString() === v._id);
+                                        if (oldVar && oldVar.image) deleteFile(oldVar.image);
+                                    }
+                                    v.image = mvFile.path;
+                                }
+                            });
+                        }
+                    });
+                }
+            } catch (e) { console.error('Error parsing models:', e); }
         }
 
         const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });

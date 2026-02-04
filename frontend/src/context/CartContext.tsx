@@ -12,6 +12,8 @@ export interface CartItem {
     size?: string; // Legacy
     variationId?: string; // New
     variationText?: string; // New
+    modelId?: string; // New for model-based variations
+    modelName?: string; // New
     isOnDemand?: boolean;
     gst_rate?: number;
 }
@@ -33,7 +35,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export function CartProvider({ children }: { children: ReactNode }) {
     const { user, registerLoginCallback } = useAuth();
@@ -178,6 +180,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         size: item.size,
                         variationId: item.variationId,
                         variationText: item.variationText,
+                        modelId: item.modelId,
+                        modelName: item.modelName,
                         isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
                         gst_rate: item.product?.gst_rate
                     }));
@@ -228,6 +232,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         size: item.size,
                         variationId: item.variationId, // Ensure syncing preserves this
                         variationText: item.variationText,
+                        modelId: item.modelId,
+                        modelName: item.modelName,
                         isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
                         gst_rate: item.product?.gst_rate
                     }));
@@ -265,7 +271,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         price: newItem.price,
                         size: newItem.size,
                         variationId: newItem.variationId,
-                        variationText: newItem.variationText
+                        variationText: newItem.variationText,
+                        modelId: newItem.modelId,
+                        modelName: newItem.modelName
                     })
                 });
 
@@ -281,11 +289,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
         } else {
             // Guest: Add to localStorage
             setItems((prev) => {
-                const newItemKey = newItem.variationId || newItem.size || '';
+                const newItemKey = `${newItem.modelId || ""}-${newItem.variationId || newItem.size || ""}`;
 
-                const existingIndex = prev.findIndex(i =>
-                    i.productId === newItem.productId &&
-                    (i.variationId || i.size || '') === newItemKey
+                const existingIndex = prev.findIndex(
+                    (i) =>
+                        i.productId === newItem.productId &&
+                        `${i.modelId || ""}-${i.variationId || i.size || ""}` === newItemKey
                 );
 
                 if (existingIndex > -1) {
@@ -340,7 +349,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             setItems(prev => prev.filter(i => {
                 const idMatch = i.productId === productId;
                 // Normalize identifier comparison
-                const currentKey = i.variationId || i.size || '';
+                const currentKey = `${i.modelId || ''}-${i.variationId || i.size || ''}`;
                 const targetKey = size || '';
 
                 return !(idMatch && currentKey === targetKey);
@@ -381,7 +390,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         } else {
             // Guest: Update in localStorage
             setItems(prev => prev.map(i => {
-                const currentKey = i.variationId || i.size || '';
+                const currentKey = `${i.modelId || ''}-${i.variationId || i.size || ''}`;
                 const targetKey = size || '';
 
                 if (i.productId === productId && currentKey === targetKey) {

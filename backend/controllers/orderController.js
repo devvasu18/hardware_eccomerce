@@ -50,7 +50,18 @@ exports.createOrder = async (req, res) => {
         // Helper to rollback stock changes if any item fails
         const rollbackStock = async (processedItems) => {
             for (const item of processedItems) {
-                if (item.variationId) {
+                if (item.modelId) {
+                    if (item.variationId) {
+                        await Product.findOneAndUpdate(
+                            { _id: item.productId, 'models._id': item.modelId },
+                            { $inc: { 'models.$[m].variations.$[v].stock': item.quantity } },
+                            { arrayFilters: [{ 'm._id': item.modelId }, { 'v._id': item.variationId }] }
+                        );
+                    } else {
+                        // Restore to model base? (Usually variants carry stock in this system)
+                        // If model has variations but none selected (unlikely in this logic), we might need logic here.
+                    }
+                } else if (item.variationId) {
                     await Product.findOneAndUpdate(
                         { _id: item.productId, 'variations._id': item.variationId },
                         { $inc: { 'variations.$.stock': item.quantity } }
@@ -80,7 +91,17 @@ exports.createOrder = async (req, res) => {
 
             // Determine available stock for check
             let availableStock = product.stock;
-            if (item.variationId && product.variations) {
+            if (item.modelId && product.models) {
+                const model = product.models.find(m => m._id.toString() === item.modelId);
+                if (model) {
+                    if (item.variationId) {
+                        const variant = model.variations.find(v => v._id.toString() === item.variationId);
+                        if (variant) availableStock = variant.stock;
+                    } else {
+                        availableStock = model.variations.reduce((acc, v) => acc + (v.stock || 0), 0);
+                    }
+                }
+            } else if (item.variationId && product.variations) {
                 const variant = product.variations.find(v => v._id.toString() === item.variationId);
                 if (variant) availableStock = variant.stock;
             }
@@ -95,7 +116,21 @@ exports.createOrder = async (req, res) => {
             }
 
             let updatedProduct;
-            if (item.variationId) {
+            if (item.modelId) {
+                if (item.variationId) {
+                    updatedProduct = await Product.findOneAndUpdate(
+                        { _id: item.productId },
+                        { $inc: { 'models.$[m].variations.$[v].stock': -item.quantity } },
+                        {
+                            arrayFilters: [{ 'm._id': item.modelId }, { 'v._id': item.variationId, 'v.stock': { $gte: item.quantity } }],
+                            new: true
+                        }
+                    );
+                } else {
+                    // Logic for model without specific variation? (Maybe deduct from first variant or error)
+                    // In our current UI, user MUST select variation if model has them.
+                }
+            } else if (item.variationId) {
                 updatedProduct = await Product.findOneAndUpdate(
                     { _id: item.productId, 'variations._id': item.variationId, 'variations.stock': { $gte: item.quantity } },
                     { $inc: { 'variations.$.stock': -item.quantity } },
@@ -118,25 +153,33 @@ exports.createOrder = async (req, res) => {
             }
 
             // Track for potential rollback
-            processedItems.push({ productId: item.productId, quantity: item.quantity, variationId: item.variationId });
+            processedItems.push({
+                productId: item.productId,
+                quantity: item.quantity,
+                variationId: item.variationId,
+                modelId: item.modelId
+            });
 
             // 3. Use Database Price & GST
-            // STRICT PRICING: selling_price_a -> MRP. Ignore 'price' (legacy) NO - Use Variation Price if applicable
             let price;
 
-            if (item.variationId && product.variations) {
-                const variant = product.variations.find(v => v._id.toString() === item.variationId);
-                if (variant) {
-                    price = variant.price; // Variation has specific price
+            if (item.modelId && product.models) {
+                const model = product.models.find(m => m._id.toString() === item.modelId);
+                if (model) {
+                    price = model.selling_price_a || model.mrp;
+                    if (item.variationId) {
+                        const variant = model.variations.find(v => v._id.toString() === item.variationId);
+                        if (variant) price = variant.price;
+                    }
                 }
+            } else if (item.variationId && product.variations) {
+                const variant = product.variations.find(v => v._id.toString() === item.variationId);
+                if (variant) price = variant.price;
             }
 
-            if (price === undefined) {
+            if (price === undefined || price === null) {
                 // Fallback to Base Product Price
-                price = product.selling_price_a;
-                if (price === undefined || price === null) {
-                    price = product.mrp;
-                }
+                price = product.selling_price_a || product.mrp;
             }
 
             // Apply Wholesale Discount
@@ -157,8 +200,10 @@ exports.createOrder = async (req, res) => {
                 quantity: item.quantity,
                 priceAtBooking: price,
                 size: item.size || null,
-                variationId: item.variationId, // Store variation ID in order item
-                variationText: item.variationText, // Store variation text
+                variationId: item.variationId,
+                variationText: item.variationText,
+                modelId: item.modelId,
+                modelName: item.modelName,
                 gstRate: gstRate,
                 totalWithTax: itemTotal + itemTax
             };
@@ -534,9 +579,26 @@ exports.cancelOrder = async (req, res) => {
 
         // Restore Stock Logic
         for (const item of order.items) {
-            await Product.findByIdAndUpdate(item.product, {
-                $inc: { stock: item.quantity }
-            });
+            if (item.modelId) {
+                if (item.variationId) {
+                    await Product.findOneAndUpdate(
+                        { _id: item.product, 'models._id': item.modelId },
+                        { $inc: { 'models.$[m].variations.$[v].stock': item.quantity } },
+                        { arrayFilters: [{ 'm._id': item.modelId }, { 'v._id': item.variationId }] }
+                    );
+                } else {
+                    // Restore to model base?
+                }
+            } else if (item.variationId) {
+                await Product.findOneAndUpdate(
+                    { _id: item.product, 'variations._id': item.variationId },
+                    { $inc: { 'variations.$.stock': item.quantity } }
+                );
+            } else {
+                await Product.findByIdAndUpdate(item.product, {
+                    $inc: { stock: item.quantity }
+                });
+            }
         }
 
         await StatusLog.create({

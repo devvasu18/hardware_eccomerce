@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Category = require('../models/Category');
 const Product = require('../models/Product');
+const { protect, admin } = require('../middleware/authMiddleware');
 
 // Get all active categories (for homepage)
 router.get('/', async (req, res) => {
@@ -61,7 +62,7 @@ router.get('/:slug/subcategories', async (req, res) => {
 });
 
 // Admin: Create category
-router.post('/', async (req, res) => {
+router.post('/', protect, admin, async (req, res) => {
     try {
         const category = new Category(req.body);
         const newCategory = await category.save();
@@ -72,7 +73,7 @@ router.post('/', async (req, res) => {
 });
 
 // Admin: Update category
-router.put('/:id', async (req, res) => {
+router.put('/:id', protect, admin, async (req, res) => {
     try {
         if (req.body.showInNav === true) {
             const count = await Category.countDocuments({ showInNav: true, _id: { $ne: req.params.id } });
@@ -96,7 +97,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Admin: Delete category
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', protect, admin, async (req, res) => {
     try {
         const category = await Category.findByIdAndDelete(req.params.id);
         if (!category) {

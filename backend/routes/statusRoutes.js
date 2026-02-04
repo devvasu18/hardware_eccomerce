@@ -93,7 +93,7 @@ router.post('/update', authenticateToken, isAdmin, async (req, res) => {
 });
 
 // Get status history for an order
-router.get('/history/:orderId', optionalAuth, async (req, res) => {
+router.get('/history/:orderId', authenticateToken, async (req, res) => {
     try {
         const orderId = req.params.orderId;
 
@@ -103,15 +103,15 @@ router.get('/history/:orderId', optionalAuth, async (req, res) => {
             return res.status(404).json({ message: 'Order not found' });
         }
 
-        // Authorization check for non-admin users
-        if (req.user) {
-            const adminRoles = ['super_admin', 'ops_admin', 'logistics_admin', 'accounts_admin', 'support_staff'];
-            const isAdmin = adminRoles.includes(req.user.role);
-            const isOwner = order.user && order.user.toString() === req.user.id;
+        // Authorization check
+        const adminRoles = ['super_admin', 'ops_admin', 'logistics_admin', 'accounts_admin', 'support_staff', 'admin'];
+        const isAdmin = adminRoles.includes(req.user.role);
+        const isOwner = order.user && order.user.toString() === req.user.id;
 
-            if (!isAdmin && !isOwner && !order.isGuestOrder) {
-                return res.status(403).json({ message: 'Access denied' });
-            }
+        if (!isAdmin && !isOwner) {
+            // If it's a guest order, we might need phone/email verification, 
+            // but for now we block unauthorized access.
+            return res.status(403).json({ message: 'Access denied. You are not authorized to view this order history.' });
         }
 
         // Fetch status logs

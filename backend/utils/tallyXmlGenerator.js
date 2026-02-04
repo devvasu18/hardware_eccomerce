@@ -53,6 +53,9 @@ const generateSalesVoucherXML = (order, user, isCancellation = false) => {
 
     // Construct Variation-Aware Item Name for Tally
     let itemNameComp = item.product ? item.product.title : 'Deleted-Product-' + item._id;
+    if (item.modelName) {
+      itemNameComp += ` (${item.modelName})`;
+    }
     if (item.variationText) {
       itemNameComp += ` (${item.variationText})`;
     }

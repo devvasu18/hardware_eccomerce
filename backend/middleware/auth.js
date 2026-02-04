@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'chamunda_secret_key_123';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    console.error("FATAL ERROR: JWT_SECRET is not defined in environment.");
+    process.exit(1);
+}
 
 // Authenticate token from Authorization header
 const authenticateToken = (req, res, next) => {

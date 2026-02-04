@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const ProcurementRequest = require('../models/ProcurementRequest');
 const Product = require('../models/Product');
+const { protect, admin } = require('../middleware/authMiddleware');
 
 // Submit a Request (Hybrid Logic)
 router.post('/', async (req, res) => {
@@ -33,7 +34,7 @@ router.post('/', async (req, res) => {
 });
 
 // Get Requests (Admin)
-router.get('/', async (req, res) => {
+router.get('/', protect, admin, async (req, res) => {
     try {
         const requests = await ProcurementRequest.find().populate('product');
         res.json(requests);
@@ -43,7 +44,7 @@ router.get('/', async (req, res) => {
 });
 
 // Admin Respond to Request
-router.patch('/:id/respond', async (req, res) => {
+router.patch('/:id/respond', protect, admin, async (req, res) => {
     try {
         const { status, priceQuote, estimatedDelivery, adminNotes } = req.body;
 
