@@ -97,11 +97,21 @@ exports.createProduct = async (req, res) => {
             parsedKeywords = keywords.split(',').map(k => k.trim());
         }
 
-        // Parse Sub Categories (if array of IDs passed)
         let parsedSubCats = sub_category;
         if (typeof sub_category === 'string') {
             // If comma separated or single value
             parsedSubCats = [sub_category];
+        }
+
+        let parsedVariations = [];
+        if (req.body.variations && typeof req.body.variations === 'string') {
+            try {
+                parsedVariations = JSON.parse(req.body.variations);
+            } catch (e) {
+                console.error('Error parsing variations:', e);
+            }
+        } else if (req.body.variations) {
+            parsedVariations = req.body.variations;
         }
 
         const product = new Product({
@@ -114,7 +124,8 @@ exports.createProduct = async (req, res) => {
             color_name, color_hex, size,
             featured_image, featured_image_2, size_chart, gallery_images,
             meta_title, meta_description, keywords: parsedKeywords,
-            isActive, isVisible, isFeatured, isNewArrival, isTopSale, isDailyOffer
+            isActive, isVisible, isFeatured, isNewArrival, isTopSale, isDailyOffer,
+            variations: parsedVariations
         });
 
         const createdProduct = await product.save();
@@ -213,6 +224,10 @@ exports.updateProduct = async (req, res) => {
         if (updates.isNewArrival !== undefined) updates.isNewArrival = updates.isNewArrival === 'true' || updates.isNewArrival === true;
         if (updates.isTopSale !== undefined) updates.isTopSale = updates.isTopSale === 'true' || updates.isTopSale === true;
         if (updates.isDailyOffer !== undefined) updates.isDailyOffer = updates.isDailyOffer === 'true' || updates.isDailyOffer === true;
+
+        if (updates.variations && typeof updates.variations === 'string') {
+            try { updates.variations = JSON.parse(updates.variations); } catch (e) { console.error('Error parsing variations:', e); }
+        }
 
         const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
         res.json(updatedProduct);

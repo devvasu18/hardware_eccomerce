@@ -277,11 +277,16 @@ async function syncOrderToTally(orderId) {
         // 4. Sync Stock Items
         for (const item of order.items) {
             if (item.product) {
+                // Ensure unique ID for Tally Sync Queue if variation exists
+                const uniqueRelatedId = item.variationText
+                    ? `${item.product._id}-${item.variationText.replace(/\s+/g, '-')}`
+                    : item.product._id;
+
                 await syncWithHealthCheck({
-                    xmlData: generateStockItemXML(item.product),
+                    xmlData: generateStockItemXML(item.product, item.variationText),
                     type: 'StockItem',
-                    relatedId: item.product._id,
-                    relatedModel: 'Product'
+                    relatedId: uniqueRelatedId,
+                    relatedModel: 'Product' // We keep model as Product, but ID is composite
                 });
             }
         }

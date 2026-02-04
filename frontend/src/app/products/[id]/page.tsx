@@ -21,6 +21,15 @@ interface Product {
     warranty?: string;
     material?: string;
     countryOfOrigin?: string;
+    variations?: {
+        type: string;
+        value: string;
+        price: number;
+        stock: number;
+        sku?: string;
+        isActive: boolean;
+        _id: string;
+    }[];
 }
 
 async function getProduct(id: string): Promise<Product | null> {

@@ -1,10 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import Modal from '@/app/components/Modal';
 import { useModal } from '@/app/hooks/useModal';
+
+interface Variation {
+    type: string;
+    value: string;
+    price: number;
+    stock: number;
+    sku?: string;
+    mrp?: number;
+    isActive: boolean;
+    _id: string;
+}
 
 interface Product {
     _id: string;
@@ -17,65 +28,108 @@ interface Product {
     featured_image?: string;
     gallery_images?: string[];
     images?: string[];
-    availableSizes?: string[]; // Optional size variants
+    availableSizes?: string[]; // Legacy
+    variations?: Variation[];
 }
 
 export default function ProductActionArea({ product }: { product: Product }) {
     const { user } = useAuth();
     const { addToCart } = useCart();
     const [quantity, setQuantity] = useState(1);
-    const [selectedSize, setSelectedSize] = useState('M');
-    const [submitting, setSubmitting] = useState(false);
-    const [requestSent, setRequestSent] = useState(false);
     const { modalState, hideModal, showSuccess, showError } = useModal();
 
-    // Customer Contact for Request (Guest)
-    const [contact, setContact] = useState({ name: user?.username || '', mobile: (user as any)?.mobile || '' });
+    // --- Variation State ---
+    const [selectedVariations, setSelectedVariations] = useState<{ [key: string]: string }>({});
+    const [currentVariation, setCurrentVariation] = useState<Variation | null>(null);
 
-    // Available sizes (from product data or default)
-    const sizes = product.availableSizes && product.availableSizes.length > 0
-        ? product.availableSizes
-        : ['SM', 'M', 'L', 'XL'];
+    // Group variations by Type (e.g., Color: [Red, Blue], Size: [S, M])
+    const variationGroups = useMemo(() => {
+        if (!product.variations) return {};
+        const groups: { [key: string]: Variation[] } = {};
+        product.variations.forEach(v => {
+            if (!v.isActive) return;
+            if (!groups[v.type]) groups[v.type] = [];
+            groups[v.type].push(v);
+        });
+        return groups;
+    }, [product.variations]);
 
-    // Logic: 
+    const hasVariations = Object.keys(variationGroups).length > 0;
+
+    // Handle Selection
+    const handleSelect = (type: string, value: string) => {
+        const newSelection = { ...selectedVariations, [type]: value };
+        setSelectedVariations(newSelection);
+
+        // Find exact match
+        const match = product.variations?.find(v =>
+            v.type === type && v.value === value
+        );
+        if (match) setCurrentVariation(match);
+    };
+
+    // --- Price & Stock Logic ---
+    const basePrice = currentVariation ? currentVariation.price : (product.discountedPrice || product.basePrice);
+    const stock = currentVariation ? currentVariation.stock : product.stock;
     const isStrictlyOnDemand = product.isOnDemand;
-    // Out of Stock if NOT on-demand AND stock < 1
-    const isOutOfStock = !isStrictlyOnDemand && product.stock < 1;
-    // Backorder if NOT on-demand, NOT out of stock, but quantity > stock
-    const isBackorder = !isStrictlyOnDemand && !isOutOfStock && (quantity > product.stock);
 
-    // Pricing Logic
-    const originalPrice = product.basePrice;
-    const sellingPrice = product.discountedPrice || product.basePrice;
-
-    let finalPrice = sellingPrice;
+    // Discount Logic
+    let finalPrice = basePrice;
     if (user?.wholesaleDiscount && user.wholesaleDiscount > 0) {
-        finalPrice = Math.round(sellingPrice * (1 - user.wholesaleDiscount / 100));
+        finalPrice = Math.round(basePrice * (1 - user.wholesaleDiscount / 100));
     }
 
+    const isOutOfStock = !isStrictlyOnDemand && stock < 1;
+    const isBackorder = !isStrictlyOnDemand && !isOutOfStock && (quantity > stock);
+
     const handleAddToCart = () => {
+        // Validation: Must select all variation types
+        if (hasVariations) {
+            const missingTypes = Object.keys(variationGroups).filter(type => !selectedVariations[type]);
+            // Logic: For this simplified version (since we only support single-dimensional variations properly in UI usually),
+            // We assume if multiple types exist they are independent or flat list.
+            // Our schema is flat list: [{type: Color, value: Red}, {type: Size, value: XL}]
+            // User picks ONE variation from the list effectively? 
+            // WAIT. The schema allows [Color: Red, Price: 100], [Size: XL, Price: 200].
+            // Usually variations are Combinations (Color=Red AND Size=XL).
+            // My schema is "Flat List of Variants". This means a variant is EITHER "Red" OR "XL". 
+            // It does not support "Red XL".
+            // Therefore, the user selects ONE variant from the available options.
+            // If there are multiple types (Colors AND Sizes), the user is effectively picking one specific SKU.
+            // So we should just show the list of all variants? Or group them?
+            // If I have Color variants and Size variants independently, it implies they are separate SKUs.
+            // Example: "Screw 5mm" and "Screw 10mm". -> Type: Size.
+            // Example: "Pain Red" and "Paint Blue". -> Type: Color.
+
+            // To support "one selection", we check if specific variant is selected.
+            if (!currentVariation && hasVariations) {
+                showError('Please select an option first.', 'Selection Required');
+                return;
+            }
+        }
+
         const productName = product.title || product.name || 'Product';
+        const variationText = currentVariation ? `${currentVariation.type}: ${currentVariation.value}` : undefined;
+
+        const cartItemName = currentVariation
+            ? `${productName} (${currentVariation.value})`
+            : productName;
+
         const productImage = product.featured_image ||
             (product.gallery_images && product.gallery_images.length > 0 ? product.gallery_images[0] : '') ||
             (product.images && product.images.length > 0 ? product.images[0] : '');
 
         addToCart({
             productId: product._id,
-            name: productName,
+            name: cartItemName,
             price: finalPrice,
             quantity: quantity,
             image: productImage,
-            size: product.availableSizes && product.availableSizes.length > 0 ? selectedSize : undefined,
-            isOnDemand: product.isOnDemand || (product.stock < quantity) // Consider it on-demand for cart purposes if checking strictly or backorder? Actually simpler: just pass product.isOnDemand. The backend/cart logic handles overrides if needed.
-            // Wait, the user requirement for checkout implies we need to distinguishing.
-            // "if a customer adds two available items and one on-demand item..."
-            // The backorder case (ordering 5 when stock is 2) was called "Special Procurement Request" in text, so it should probably be treated as onDemand too? 
-            // The prompt says "Items that are checked as On-Demand ... should not show Out of Stock".
-            // Let's stick to product.isOnDemand for now, unless the user specific request for 'quantity > stock' to be split. 
-            // "Requesting more than available stock... processed as Special Procurement Request". 
-            // So yes, if backorder, treat as onDemand for checkout separation.
+            variationId: currentVariation?._id,
+            variationText: variationText, // For Tally
+            isOnDemand: isStrictlyOnDemand || (stock < quantity)
         });
-        showSuccess(`Successfully added ${quantity} ${quantity === 1 ? 'item' : 'items'} to your cart!`, 'Added to Cart');
+        showSuccess(`Added ${quantity} x ${cartItemName} to cart!`, 'Added to Cart');
     };
 
     return (
@@ -84,40 +138,64 @@ export default function ProductActionArea({ product }: { product: Product }) {
                 {/* Pricing */}
                 <div className="pricing-section">
                     <div className="price-display">
-                        {(product.discountedPrice > 0 && product.discountedPrice < product.basePrice) ? (
+                        {currentVariation && currentVariation.mrp && currentVariation.mrp > finalPrice ? (
                             <>
-                                <span className="price-original">₹{originalPrice}</span>
+                                <span className="price-original">₹{currentVariation.mrp}</span>
+                                <span className="price-separator">/</span>
+                                <span className="price-current">₹{finalPrice}</span>
+                            </>
+                        ) : (!currentVariation && product.discountedPrice > 0 && product.discountedPrice < product.basePrice) ? (
+                            <>
+                                <span className="price-original">₹{product.basePrice}</span>
                                 <span className="price-separator">/</span>
                                 <span className="price-current">₹{finalPrice}</span>
                             </>
                         ) : (
-                            <span className="price-current">₹{originalPrice}</span>
+                            <span className="price-current">₹{finalPrice}</span>
                         )}
                     </div>
-                    {(user?.wholesaleDiscount || 0) > 0 && (
-                        <span className="wholesale-badge">
-                            WHOLESALE DISCOUNT: -{user.wholesaleDiscount}%
-                        </span>
-                    )}
                 </div>
 
-                {/* Size Selector - Only show if product has available sizes */}
-                {product.availableSizes && product.availableSizes.length > 0 ? (
-                    <div className="size-selector-section">
-                        <label className="section-label">SIZE</label>
-                        <div className="size-options">
-                            {sizes.map((size) => (
-                                <button
-                                    key={size}
-                                    className={`size-btn ${selectedSize === size ? 'active' : ''}`}
-                                    onClick={() => setSelectedSize(size)}
-                                >
-                                    {size}
-                                </button>
-                            ))}
-                        </div>
+                {/* Variation Selector (Flat List Logic) */}
+                {hasVariations && (
+                    <div className="variations-container">
+                        {Object.entries(variationGroups).map(([type, variants]) => (
+                            <div key={type} className="size-selector-section">
+                                <label className="section-label">{type.toUpperCase()}</label>
+                                <div className="size-options" style={{ flexWrap: 'wrap' }}>
+                                    {variants.map(v => (
+                                        <button
+                                            key={v._id}
+                                            className={`size-btn ${currentVariation?._id === v._id ? 'active' : ''}`}
+                                            onClick={() => {
+                                                setCurrentVariation(v);
+                                                setSelectedVariations({ [type]: v.value });
+                                            }}
+                                            style={type === 'Color' ? {
+                                                backgroundColor: v.value.toLowerCase(), // Simple color assumption
+                                                color: ['white', 'black'].includes(v.value.toLowerCase()) ? 'gray' : 'transparent',
+                                                border: currentVariation?._id === v._id ? '2px solid black' : '1px solid #ddd',
+                                                width: '30px', height: '30px', borderRadius: '50%',
+                                                textIndent: '-9999px', overflow: 'hidden'
+                                            } : {}}
+                                            title={`${v.value} - ₹${v.price}`}
+                                        >
+                                            {v.value}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                ) : null}
+                )}
+
+                {/* Legacy Size Selector (Backward Compat) */}
+                {!hasVariations && product.availableSizes && product.availableSizes.length > 0 && (
+                    <div className="size-selector-section">
+                        <p style={{ fontSize: '0.8rem', color: 'orange' }}>Legacy Options (Update Product to use Variations)</p>
+                    </div>
+                )}
+
 
                 {/* Quantity Selector */}
                 <div className="quantity-selector-section">
@@ -146,32 +224,12 @@ export default function ProductActionArea({ product }: { product: Product }) {
                         </button>
                     </div>
 
-                    {/* Stock Info - Real-time data from Stock Inward Register */}
-                    {/* The product.stock value is automatically updated when stock entries are created via Stock Inward Register */}
                     {!isStrictlyOnDemand && (
                         <div className="stock-info">
                             <span className={`stock-badge ${!isOutOfStock ? 'in-stock' : 'out-stock'}`}>
-                                {!isOutOfStock ? (
-                                    <>
-
-                                        {product.stock} in stock
-
-                                    </>
-                                ) : 'Out of Stock'}
+                                {!isOutOfStock ? `${stock} in stock` : 'Out of Stock'}
                             </span>
                         </div>
-                    )}
-
-                    {isBackorder && !isStrictlyOnDemand && (
-                        <p className="warning-text">
-                            ⚠️ Ordering more than available stock ({product.stock}). The excess ({quantity - product.stock}) will be backordered.
-                        </p>
-                    )}
-
-                    {isStrictlyOnDemand && (
-                        <p className="info-text" style={{ color: '#F37021', fontWeight: 600, marginTop: '0.5rem' }}>
-                            ℹ️ This is an On-Demand item. It will be added to your procurement request list.
-                        </p>
                     )}
                 </div>
 

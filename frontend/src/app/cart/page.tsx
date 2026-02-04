@@ -44,12 +44,12 @@ export default function CartPage() {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <button onClick={() => updateQuantity(item.productId, item.quantity - 1, item.size)} style={{ padding: '0 0.5rem', cursor: 'pointer' }}>-</button>
+                                    <button onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variationId || item.size)} style={{ padding: '0 0.5rem', cursor: 'pointer' }}>-</button>
                                     <span>{item.quantity}</span>
-                                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1, item.size)} style={{ padding: '0 0.5rem', cursor: 'pointer' }}>+</button>
+                                    <button onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variationId || item.size)} style={{ padding: '0 0.5rem', cursor: 'pointer' }}>+</button>
                                 </div>
                                 <span style={{ fontWeight: 700 }}>₹{item.price * item.quantity}</span>
-                                <button onClick={() => removeFromCart(item.productId, item.size)} style={{ color: '#ef4444', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
+                                <button onClick={() => removeFromCart(item.productId, item.variationId || item.size)} style={{ color: '#ef4444', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
                             </div>
                         </div>
                     ))}

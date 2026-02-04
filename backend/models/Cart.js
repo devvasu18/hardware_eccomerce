@@ -15,9 +15,13 @@ const cartItemSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    size: {
-        type: String
-    } // Optional size variant
+    variationId: {
+        type: mongoose.Schema.Types.ObjectId
+    },
+    variationText: {
+        type: String // e.g. "Color: Red, Size: XL" snapshot for UI
+    },
+    // size: { type: String } // Deprecated
 }, { _id: false });
 
 const cartSchema = new mongoose.Schema({

@@ -9,7 +9,9 @@ export interface CartItem {
     price: number;
     quantity: number;
     image?: string;
-    size?: string;
+    size?: string; // Legacy
+    variationId?: string; // New
+    variationText?: string; // New
     isOnDemand?: boolean;
     gst_rate?: number;
 }
@@ -169,11 +171,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     .filter((item: any) => item.product) // Safety check: skip deleted products
                     .map((item: any) => ({
                         productId: typeof item.product === 'object' ? item.product._id : item.product,
-                        name: item.product?.title || 'Unknown Product',
+                        name: item.variationText ? `${item.product?.title} (${item.variationText})` : (item.product?.title || 'Unknown Product'),
                         price: item.price,
                         quantity: item.quantity,
                         image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
+                        variationId: item.variationId,
+                        variationText: item.variationText,
                         isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
                         gst_rate: item.product?.gst_rate
                     }));
@@ -222,6 +226,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         quantity: item.quantity,
                         image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
+                        variationId: item.variationId, // Ensure syncing preserves this
+                        variationText: item.variationText,
                         isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
                         gst_rate: item.product?.gst_rate
                     }));
@@ -257,25 +263,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         productId: newItem.productId,
                         quantity: newItem.quantity,
                         price: newItem.price,
-                        size: newItem.size
+                        size: newItem.size,
+                        variationId: newItem.variationId,
+                        variationText: newItem.variationText
                     })
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
-                    const updatedItems = data.items
-                        .filter((item: any) => item.product)
-                        .map((item: any) => ({
-                            productId: typeof item.product === 'object' ? item.product._id : item.product,
-                            name: item.product?.title || 'Unknown Product',
-                            price: item.price,
-                            quantity: item.quantity,
-                            image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
-                            size: item.size,
-                            isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
-                            gst_rate: item.product?.gst_rate
-                        }));
-                    setItems(updatedItems);
+                    await fetchCartFromDB(); // Safest to re-fetch
                     openCart(); // Open sidebar on add
                 } else {
                     console.error('Failed to add to cart DB', await response.text());
@@ -286,12 +281,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         } else {
             // Guest: Add to localStorage
             setItems((prev) => {
-                // Normalize size comparison (undefined == null == '')
-                const newItemSize = newItem.size || '';
+                const newItemKey = newItem.variationId || newItem.size || '';
 
                 const existingIndex = prev.findIndex(i =>
                     i.productId === newItem.productId &&
-                    (i.size || '') === newItemSize
+                    (i.variationId || i.size || '') === newItemKey
                 );
 
                 if (existingIndex > -1) {
@@ -310,7 +304,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     // Remove from cart
     const removeFromCart = async (productId: string, size?: string) => {
-        console.log('Removing from cart:', { productId, size });
+        // NOTE: The 'size' parameter here is often used as a generic 'variant identifier' in legacy code.
+        // We should check if it looks like a MongoID (24 hex chars) - if so treat as variationId.
+        const isVariationId = size && size.length === 24 && /^[0-9a-fA-F]+$/.test(size);
+
+        console.log('Removing from cart:', { productId, size, isVariationId });
+
         if (user) {
             // Logged-in: Remove from database
             try {
@@ -321,22 +320,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ productId, size })
+                    body: JSON.stringify({
+                        productId,
+                        size: !isVariationId ? size : undefined,
+                        variationId: isVariationId ? size : undefined
+                    })
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
-                    const updatedItems = data.items.map((item: any) => ({
-                        productId: typeof item.product === 'object' ? item.product._id : item.product,
-                        name: item.product?.title || 'Unknown Product',
-                        price: item.price,
-                        quantity: item.quantity,
-                        image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
-                        size: item.size,
-                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
-                        gst_rate: item.product?.gst_rate
-                    }));
-                    setItems(updatedItems);
+                    await fetchCartFromDB();
                 } else {
                     console.error('Failed to remove from cart DB');
                 }
@@ -347,12 +339,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
             // Guest: Remove from localStorage
             setItems(prev => prev.filter(i => {
                 const idMatch = i.productId === productId;
-                // Normalize size comparison
-                const currentSize = i.size || '';
-                const targetSize = size || '';
-                const sizeMatch = currentSize === targetSize;
+                // Normalize identifier comparison
+                const currentKey = i.variationId || i.size || '';
+                const targetKey = size || '';
 
-                return !(idMatch && sizeMatch);
+                return !(idMatch && currentKey === targetKey);
             }));
         }
     };
@@ -360,6 +351,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     // Update quantity
     const updateQuantity = async (productId: string, quantity: number, size?: string) => {
         if (quantity < 1) return;
+
+        const isVariationId = size && size.length === 24 && /^[0-9a-fA-F]+$/.test(size);
 
         if (user) {
             // Logged-in: Update in database
@@ -371,34 +364,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ productId, quantity, size })
+                    body: JSON.stringify({
+                        productId,
+                        quantity,
+                        size: !isVariationId ? size : undefined,
+                        variationId: isVariationId ? size : undefined
+                    })
                 });
 
                 if (response.ok) {
-                    const data = await response.json();
-                    const updatedItems = data.items.map((item: any) => ({
-                        productId: typeof item.product === 'object' ? item.product._id : item.product,
-                        name: item.product?.title || 'Unknown Product',
-                        price: item.price,
-                        quantity: item.quantity,
-                        image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
-                        size: item.size,
-                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
-                        gst_rate: item.product?.gst_rate
-                    }));
-                    setItems(updatedItems);
+                    await fetchCartFromDB();
                 }
             } catch (error) {
                 console.error('Error updating cart:', error);
             }
         } else {
             // Guest: Update in localStorage
-            setItems(prev => prev.map(i =>
-                (i.productId === productId &&
-                    (size ? i.size === size : !i.size))
-                    ? { ...i, quantity }
-                    : i
-            ));
+            setItems(prev => prev.map(i => {
+                const currentKey = i.variationId || i.size || '';
+                const targetKey = size || '';
+
+                if (i.productId === productId && currentKey === targetKey) {
+                    return { ...i, quantity };
+                }
+                return i;
+            }));
         }
     };
 

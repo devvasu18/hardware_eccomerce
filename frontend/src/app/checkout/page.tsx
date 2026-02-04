@@ -225,7 +225,9 @@ export default function CheckoutPage() {
                     items: availableItems.map(i => ({
                         productId: i.productId,
                         quantity: i.quantity,
-                        size: i.size
+                        size: i.size,
+                        variationId: i.variationId,
+                        variationText: i.variationText
                     })),
                     shippingAddress: finalAddressString,
                     billingAddress: finalAddressString,

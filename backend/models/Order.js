@@ -26,7 +26,9 @@ const orderSchema = new mongoose.Schema({
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
         quantity: { type: Number, required: true },
         priceAtBooking: { type: Number, required: true },
-        size: { type: String }, // Product size variant if applicable
+        variationId: { type: mongoose.Schema.Types.ObjectId },
+        variationText: { type: String }, // Stored snapshot: "Color: Red"
+        // size: { type: String }, // Deprecated
         gstRate: { type: Number },
         cgst: { type: Number },
         sgst: { type: Number },

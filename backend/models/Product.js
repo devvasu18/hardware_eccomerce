@@ -56,7 +56,19 @@ const productSchema = new mongoose.Schema({
     // Status & Flags
     isActive: { type: Boolean, default: true },
     isVisible: { type: Boolean, default: true },
-    isFeatured: { type: Boolean, default: false },
+    // Variants System (New)
+    variations: [{
+        type: { type: String, enum: ['Color', 'Size', 'Weight', 'Volume', 'Pack'], required: true }, // e.g. "Color"
+        value: { type: String, required: true }, // e.g. "Red", "XL", "1kg"
+        price: { type: Number, required: true }, // Selling Price
+        mrp: { type: Number },
+        stock: { type: Number, default: 0 },
+        sku: { type: String }, // Unique ID for this variant
+        image: { type: String }, // Optional specific image
+        isActive: { type: Boolean, default: true }
+    }],
+
+    // Legacy / Compatibility
     isNewArrival: { type: Boolean, default: false },
     isTopSale: { type: Boolean, default: false },
     isDailyOffer: { type: Boolean, default: false },
@@ -78,6 +90,6 @@ productSchema.index({ isFeatured: 1 });
 productSchema.index({ isNewArrival: 1 });
 productSchema.index({ isOnDemand: 1 });
 // Text index for search (title & description)
-productSchema.index({ title: 'text', description: 'text', part_number: 'text' });
+productSchema.index({ title: 'text', description: 'text', part_number: 'text', 'variations.value': 'text' });
 
 module.exports = mongoose.model('Product', productSchema);

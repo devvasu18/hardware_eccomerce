@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState, useEffect } from "react";
@@ -49,6 +49,18 @@ const productSchema = z.object({
     isDailyOffer: z.boolean().default(false),
     isVisible: z.boolean().default(true),
     isOnDemand: z.boolean().default(false),
+
+    // Variations
+    variations: z.array(z.object({
+        type: z.enum(['Color', 'Size', 'Weight', 'Volume', 'Pack']),
+        value: z.string().min(1, "Value is required"),
+        price: z.coerce.number().min(1, "Price is required"),
+        mrp: z.coerce.number().optional(),
+        stock: z.coerce.number().default(0),
+        sku: z.string().optional(),
+        isActive: z.boolean().default(true),
+        _id: z.string().optional() // Preserve ID
+    })).optional()
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -98,6 +110,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
             opening_stock: 0,
             low_stock_threshold: 5
         }
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "variations"
     });
 
     // Watchers for Calculations
@@ -176,7 +193,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         isTopSale: product.isTopSale || false,
                         isDailyOffer: product.isDailyOffer || false,
                         isVisible: product.isVisible !== false, // Default true if undefined
-                        isOnDemand: product.isOnDemand || false
+                        isOnDemand: product.isOnDemand || false,
+                        variations: product.variations || []
                     });
 
                     // Set Previews & Methods
@@ -227,10 +245,21 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
             // Only append non-empty values to avoid validation errors
             Object.entries(data).forEach(([key, value]) => {
+                if (key === 'variations') return; // Handle manually
                 if (value !== undefined && value !== null && value !== '') {
                     formData.append(key, value.toString());
                 }
             });
+
+            // Handle Variations
+            if (data.variations && data.variations.length > 0) {
+                const cleanedVariations = data.variations.map(v => {
+                    const clone = { ...v };
+                    if (!clone._id) delete clone._id; // Remove empty/undefined _id to let Mongoose generate new one
+                    return clone;
+                });
+                formData.append('variations', JSON.stringify(cleanedVariations));
+            }
 
             // Handle featured image
             if (featuredMethod === 'upload' && featuredImage) {
@@ -318,6 +347,71 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                 <textarea {...register("description")} className="form-textarea" style={{ minHeight: '150px' }} placeholder="Detailed product description..."></textarea>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Variations Manager (New) */}
+                    <div className="card">
+                        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>Product Variations</span>
+                            <button
+                                type="button"
+                                className="btn btn-sm btn-secondary"
+                                onClick={() => append({ type: 'Size', value: '', price: sellingPrice || 0, mrp: mrp || 0, stock: 0, isActive: true })}
+                            >
+                                + Add Variant
+                            </button>
+                        </div>
+
+                        {fields.length === 0 ? (
+                            <div style={{ padding: '1rem', color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.9rem' }}>
+                                No variations added. This product uses the standard single price/stock.
+                            </div>
+                        ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', fontSize: '0.9rem', borderCollapse: 'collapse' }}>
+                                    <thead style={{ background: '#f8fafc', color: 'var(--text-muted)' }}>
+                                        <tr>
+                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Type</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Value (e.g. Red, XL)</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Price (₹)</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Stock</th>
+                                            <th style={{ padding: '0.5rem', textAlign: 'center' }}>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {fields.map((field, index) => (
+                                            <tr key={field.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                <td style={{ padding: '0.5rem' }}>
+                                                    <select {...register(`variations.${index}.type`)} className="form-select" style={{ fontSize: '0.85rem', padding: '0.3rem' }}>
+                                                        <option value="Size">Size</option>
+                                                        <option value="Color">Color</option>
+                                                        <option value="Weight">Weight (kg/gm)</option>
+                                                        <option value="Volume">Volume (L/ml)</option>
+                                                        <option value="Pack">Pack (Qty)</option>
+                                                    </select>
+                                                    <input type="hidden" {...register(`variations.${index}._id`)} />
+                                                </td>
+                                                <td style={{ padding: '0.5rem' }}>
+                                                    <input {...register(`variations.${index}.value`)} className="form-input" placeholder="Value" style={{ fontSize: '0.85rem', padding: '0.3rem' }} />
+                                                    {errors.variations?.[index]?.value && <span style={{ color: 'red', fontSize: '0.7rem' }}>Required</span>}
+                                                </td>
+                                                <td style={{ padding: '0.5rem' }}>
+                                                    <input type="number" {...register(`variations.${index}.price`)} className="form-input" placeholder="Price" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px' }} />
+                                                </td>
+                                                <td style={{ padding: '0.5rem' }}>
+                                                    <input type="number" {...register(`variations.${index}.stock`)} className="form-input" placeholder="Qty" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '60px' }} />
+                                                </td>
+                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                                                    <button type="button" onClick={() => remove(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                                        <FiX />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
 
                     {/* Pricing Card */}

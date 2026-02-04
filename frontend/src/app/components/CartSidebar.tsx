@@ -66,19 +66,19 @@ const CartSidebar = () => {
                                         <div className="quantity-controls">
                                             <button
                                                 className="qty-btn"
-                                                onClick={() => updateQuantity(item.productId, item.quantity - 1, item.size)}
+                                                onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variationId || item.size)}
                                             >−</button>
                                             <span className="qty-val">{item.quantity}</span>
                                             <button
                                                 className="qty-btn"
-                                                onClick={() => updateQuantity(item.productId, item.quantity + 1, item.size)}
+                                                onClick={() => updateQuantity(item.productId, item.quantity + 1, item.variationId || item.size)}
                                             >+</button>
                                         </div>
                                         <span className="item-price">₹{item.price * item.quantity}</span>
                                     </div>
                                     <button
                                         className="remove-item-btn"
-                                        onClick={() => removeFromCart(item.productId, item.size)}
+                                        onClick={() => removeFromCart(item.productId, item.variationId || item.size)}
                                     >
                                         Remove
                                     </button>

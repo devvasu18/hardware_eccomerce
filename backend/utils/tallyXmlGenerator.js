@@ -51,10 +51,17 @@ const generateSalesVoucherXML = (order, user, isCancellation = false) => {
 
     const unit = item.product ? (item.product.unit || 'pcs') : 'pcs';
 
+    // Construct Variation-Aware Item Name for Tally
+    let itemNameComp = item.product ? item.product.title : 'Deleted-Product-' + item._id;
+    if (item.variationText) {
+      itemNameComp += ` (${item.variationText})`;
+    }
+    const escapedItemName = escapeXml(itemNameComp);
+
     // Item XML
     inventoryEntries += `
           <ALLINVENTORYENTRIES.LIST>
-            <STOCKITEMNAME>${escapeXml(item.product ? item.product.title : 'Deleted-Product-' + item._id)}</STOCKITEMNAME>
+            <STOCKITEMNAME>${escapedItemName}</STOCKITEMNAME>
             <ISDEEMEDPOSITIVE>${isCancellation ? "Yes" : "No"}</ISDEEMEDPOSITIVE>
             <RATE>${item.priceAtBooking}/${unit}</RATE>
             <AMOUNT>${isCancellation ? "" : "-"}${itemValue}</AMOUNT>

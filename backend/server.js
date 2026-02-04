@@ -87,6 +87,7 @@ app.use('/api/transactions', require('./routes/transactionRoutes')); // Transact
 app.use('/api/brands', require('./routes/brandRoutes')); // Public Brand Routes
 app.use('/api/refunds', require('./routes/refundRoutes')); // Refund Management
 app.use('/api/payment', require('./routes/paymentRoutes')); // Payment Gateway
+app.use('/api/admin/analytics', require('./routes/analyticsRoutes')); // Admin Analytics Dashboard
 
 // Status Tracking
 const runStockCleanup = require('./jobs/stockCleanup');

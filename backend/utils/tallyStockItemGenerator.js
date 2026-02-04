@@ -11,9 +11,14 @@ const escapeXml = (unsafe) => {
         .replace(/'/g, '&apos;');
 };
 
-const generateStockItemXML = (product) => {
+const generateStockItemXML = (product, variationText = null) => {
     // Tally uses 'title' from our standardized product schema
-    const itemName = escapeXml(product.title || 'Unknown Item');
+    let itemNameComp = product.title || 'Unknown Item';
+    if (variationText) {
+        itemNameComp += ` (${variationText})`;
+    }
+    const itemName = escapeXml(itemNameComp);
+
     const sellingPrice = parseFloat(product.price || product.mrp || 0);
     // Use HSN code if populated, else default or simple string
     const hsnCode = (product.hsn_code && product.hsn_code.code) ? product.hsn_code.code : '8703';

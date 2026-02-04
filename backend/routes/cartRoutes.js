@@ -39,7 +39,7 @@ router.get('/', authenticateToken, async (req, res) => {
 // Add item to cart
 router.post('/add', authenticateToken, async (req, res) => {
     try {
-        const { productId, quantity, price, size } = req.body;
+        const { productId, quantity, price, size, variationId, variationText } = req.body;
 
         // Validate product exists
         const product = await Product.findById(productId);
@@ -48,8 +48,15 @@ router.post('/add', authenticateToken, async (req, res) => {
         }
 
         // Validate stock (Strict Check Restored)
-        if (!product.isOnDemand && product.stock < quantity) {
-            return res.status(400).json({ message: `Insufficient stock. Only ${product.stock} left.` });
+        // Check Main Stock OR Variation Stock
+        let limit = product.stock;
+        if (variationId && product.variations) {
+            const variant = product.variations.find(v => v._id.toString() === variationId);
+            if (variant) limit = variant.stock;
+        }
+
+        if (!product.isOnDemand && limit < quantity) {
+            return res.status(400).json({ message: `Insufficient stock. Only ${limit} left.` });
         }
 
         // Fetch User to check for Wholesale Discount
@@ -59,6 +66,11 @@ router.post('/add', authenticateToken, async (req, res) => {
 
         // Calculate Price Securely
         let securePrice = product.selling_price_a || product.mrp;
+        // Use Variation Price if applicable
+        if (variationId && product.variations) {
+            const variant = product.variations.find(v => v._id.toString() === variationId);
+            if (variant) securePrice = variant.price;
+        }
 
         // Apply Wholesale Discount
         if (user && user.customerType === 'wholesale' && user.wholesaleDiscount > 0) {
@@ -74,22 +86,27 @@ router.post('/add', authenticateToken, async (req, res) => {
                     product: productId,
                     quantity,
                     price: securePrice,
-                    size
+                    size,
+                    variationId,
+                    variationText
                 }]
             });
         } else {
-            // Check if item already exists (match by product AND size)
-            const existingItemIndex = cart.items.findIndex(item =>
-                item.product.toString() === productId &&
-                (size ? item.size === size : !item.size)
-            );
+            // Check if item already exists (match by product AND size/variationId)
+            const existingItemIndex = cart.items.findIndex(item => {
+                const sameProduct = item.product.toString() === productId;
+                const sameVariation = variationId
+                    ? (item.variationId && item.variationId.toString() === variationId)
+                    : (size ? item.size === size : (!item.size && !item.variationId));
+                return sameProduct && sameVariation;
+            });
 
             if (existingItemIndex > -1) {
                 // Update quantity
                 cart.items[existingItemIndex].quantity += quantity;
                 // Validate new total quantity against stock
-                if (!product.isOnDemand && product.stock < cart.items[existingItemIndex].quantity) {
-                    return res.status(400).json({ message: `Insufficient stock for total quantity. Only ${product.stock} available.` });
+                if (!product.isOnDemand && limit < cart.items[existingItemIndex].quantity) {
+                    return res.status(400).json({ message: `Insufficient stock for total quantity. Only ${limit} available.` });
                 }
                 cart.items[existingItemIndex].price = securePrice; // Update price secure
             } else {
@@ -98,7 +115,9 @@ router.post('/add', authenticateToken, async (req, res) => {
                     product: productId,
                     quantity,
                     price: securePrice,
-                    size
+                    size,
+                    variationId,
+                    variationText
                 });
             }
         }
@@ -133,7 +152,7 @@ router.post('/add', authenticateToken, async (req, res) => {
 // Update cart item quantity
 router.patch('/update', authenticateToken, async (req, res) => {
     try {
-        const { productId, quantity, size } = req.body;
+        const { productId, quantity, size, variationId } = req.body;
 
         if (quantity < 1) {
             return res.status(400).json({ message: 'Quantity must be at least 1' });
@@ -144,10 +163,13 @@ router.patch('/update', authenticateToken, async (req, res) => {
             return res.status(404).json({ message: 'Cart not found' });
         }
 
-        const itemIndex = cart.items.findIndex(item =>
-            item.product.toString() === productId &&
-            (size ? item.size === size : !item.size)
-        );
+        const itemIndex = cart.items.findIndex(item => {
+            const sameProduct = item.product.toString() === productId;
+            const sameVariation = variationId
+                ? (item.variationId && item.variationId.toString() === variationId)
+                : (size ? item.size === size : (!item.size && !item.variationId));
+            return sameProduct && sameVariation;
+        });
 
         if (itemIndex === -1) {
             return res.status(404).json({ message: 'Item not found in cart' });
@@ -159,13 +181,25 @@ router.patch('/update', authenticateToken, async (req, res) => {
         // Fetch User for Discount Logic
         const user = await User.findById(req.user.id);
 
-        if (product && !product.isOnDemand && product.stock < quantity) {
-            return res.status(400).json({ message: `Insufficient stock. Only ${product.stock} available.` });
-        }
-
-        // Also update price to be secure
+        let limit = 0;
         if (product) {
+            limit = product.stock;
+            if (variationId && product.variations) {
+                const variant = product.variations.find(v => v._id.toString() === variationId);
+                if (variant) limit = variant.stock;
+            }
+
+            if (!product.isOnDemand && limit < quantity) {
+                return res.status(400).json({ message: `Insufficient stock. Only ${limit} available.` });
+            }
+
+            // Also update price to be secure
             let securePrice = product.selling_price_a || product.mrp;
+            if (variationId && product.variations) {
+                const variant = product.variations.find(v => v._id.toString() === variationId);
+                if (variant) securePrice = variant.price;
+            }
+
             // Apply Wholesale Discount
             if (user && user.customerType === 'wholesale' && user.wholesaleDiscount > 0) {
                 const discountAmount = (securePrice * user.wholesaleDiscount) / 100;
@@ -200,17 +234,20 @@ router.patch('/update', authenticateToken, async (req, res) => {
 // Remove item from cart
 router.delete('/remove', authenticateToken, async (req, res) => {
     try {
-        const { productId, size } = req.body;
+        const { productId, size, variationId } = req.body;
 
         const cart = await Cart.findOne({ user: req.user.id });
         if (!cart) {
             return res.status(404).json({ message: 'Cart not found' });
         }
 
-        cart.items = cart.items.filter(item =>
-            !(item.product.toString() === productId &&
-                (size ? item.size === size : !item.size))
-        );
+        cart.items = cart.items.filter(item => {
+            const sameProduct = item.product.toString() === productId;
+            const sameVariation = variationId
+                ? (item.variationId && item.variationId.toString() === variationId)
+                : (size ? item.size === size : (!item.size && !item.variationId));
+            return !(sameProduct && sameVariation);
+        });
 
         await cart.save();
         await cart.populate({

@@ -50,7 +50,14 @@ exports.createOrder = async (req, res) => {
         // Helper to rollback stock changes if any item fails
         const rollbackStock = async (processedItems) => {
             for (const item of processedItems) {
-                await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
+                if (item.variationId) {
+                    await Product.findOneAndUpdate(
+                        { _id: item.productId, 'variations._id': item.variationId },
+                        { $inc: { 'variations.$.stock': item.quantity } }
+                    );
+                } else {
+                    await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.quantity } });
+                }
             }
         };
 
@@ -71,20 +78,36 @@ exports.createOrder = async (req, res) => {
         for (const item of items) {
             const product = productMap.get(item.productId.toString());
 
+            // Determine available stock for check
+            let availableStock = product.stock;
+            if (item.variationId && product.variations) {
+                const variant = product.variations.find(v => v._id.toString() === item.variationId);
+                if (variant) availableStock = variant.stock;
+            }
+
             // 2. ATOMIC DECREMENT: Check local stock first to fail fast, then db atomic
-            if (product.stock < item.quantity) {
+            if (availableStock < item.quantity) {
                 await rollbackStock(processedItems);
                 return res.status(400).json({
                     success: false,
-                    message: `Insufficient stock for ${product.title}. Available: ${product.stock}`
+                    message: `Insufficient stock for ${product.title}. Available: ${availableStock}`
                 });
             }
 
-            const updatedProduct = await Product.findOneAndUpdate(
-                { _id: item.productId, stock: { $gte: item.quantity } },
-                { $inc: { stock: -item.quantity } },
-                { new: true }
-            );
+            let updatedProduct;
+            if (item.variationId) {
+                updatedProduct = await Product.findOneAndUpdate(
+                    { _id: item.productId, 'variations._id': item.variationId, 'variations.stock': { $gte: item.quantity } },
+                    { $inc: { 'variations.$.stock': -item.quantity } },
+                    { new: true }
+                );
+            } else {
+                updatedProduct = await Product.findOneAndUpdate(
+                    { _id: item.productId, stock: { $gte: item.quantity } },
+                    { $inc: { stock: -item.quantity } },
+                    { new: true }
+                );
+            }
 
             if (!updatedProduct) {
                 await rollbackStock(processedItems);
@@ -95,13 +118,25 @@ exports.createOrder = async (req, res) => {
             }
 
             // Track for potential rollback
-            processedItems.push({ productId: item.productId, quantity: item.quantity });
+            processedItems.push({ productId: item.productId, quantity: item.quantity, variationId: item.variationId });
 
             // 3. Use Database Price & GST
-            // STRICT PRICING: selling_price_a -> MRP. Ignore 'price' (legacy)
-            let price = product.selling_price_a;
-            if (price === undefined || price === null) {
-                price = product.mrp;
+            // STRICT PRICING: selling_price_a -> MRP. Ignore 'price' (legacy) NO - Use Variation Price if applicable
+            let price;
+
+            if (item.variationId && product.variations) {
+                const variant = product.variations.find(v => v._id.toString() === item.variationId);
+                if (variant) {
+                    price = variant.price; // Variation has specific price
+                }
+            }
+
+            if (price === undefined) {
+                // Fallback to Base Product Price
+                price = product.selling_price_a;
+                if (price === undefined || price === null) {
+                    price = product.mrp;
+                }
             }
 
             // Apply Wholesale Discount
@@ -122,6 +157,8 @@ exports.createOrder = async (req, res) => {
                 quantity: item.quantity,
                 priceAtBooking: price,
                 size: item.size || null,
+                variationId: item.variationId, // Store variation ID in order item
+                variationText: item.variationText, // Store variation text
                 gstRate: gstRate,
                 totalWithTax: itemTotal + itemTax
             };
