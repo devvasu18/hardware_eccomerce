@@ -151,12 +151,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                             <span className="product-code">PRODUCT CODE: IND-{product._id.slice(-6).toUpperCase()}</span>
                             <span className="separator">|</span>
                             <span className="product-category-tag">{categoryName}</span>
-                            {brandName && (
-                                <>
-                                    <span className="separator">|</span>
-                                    <span className="product-brand">{brandName}</span>
-                                </>
-                            )}
+
                         </div>
 
                         <h1 className="product-name">{productName}</h1>

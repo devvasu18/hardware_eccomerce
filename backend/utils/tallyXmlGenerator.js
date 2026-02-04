@@ -1,39 +1,95 @@
+const escapeXml = (unsafe) => {
+  if (!unsafe) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+};
+
 const generateSalesVoucherXML = (order, user, isCancellation = false) => {
-  // Format date as YYYYMMDD
+  // 1. DATE LOGIC (Education Mode: Force 1st of Month)
   const formatDate = (date) => {
     const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = '01'; // Education Mode Fix: Always use 1st of month
+    // EDUCATION MODE: Always 1st of the month
+    const day = '01';
     return `${year}${month}${day}`;
   };
 
-  const voucherDate = formatDate(order.createdAt);
-  const ledgerName = user.tallyLedgerName || user.username;
+  const voucherDate = formatDate(isCancellation ? (order.updatedAt || new Date()) : order.createdAt);
 
-  // Determine Voucher Type: Credit Note for Cancellation (Return), Sales for Normal
-  const voucherType = isCancellation ? "Credit Note" : "Sales";
-  const action = "Create"; // Always Create new voucher
+  // 2. LEDGER NAME LOGIC (Unique)
+  let uniqueName = user.username;
+  if (user.mobile) uniqueName = `${user.username} - ${user.mobile}`;
+  const ledgerName = escapeXml(user.tallyLedgerName || uniqueName);
+
+  // 3. STATE / GST LOGIC
+  // Check address to determine Place of Supply
+  const shippingAddress = JSON.stringify(order.shippingAddress || {}).toLowerCase();
+  const isLocal = shippingAddress.includes('gujarat'); // Base State
+
+  // NARRATION ENRICHMENT (Logistics Info)
+  let narration = `Order ID: ${order._id} | ${isLocal ? 'Local Sale' : 'Interstate Sale'}`;
+  if (!isCancellation && order.busDetails && order.busDetails.busNumber) {
+    narration += ` | Bus: ${order.busDetails.busNumber}`;
+    if (order.busDetails.driverContact) narration += ` (Driver: ${order.busDetails.driverContact})`;
+  } else if (isCancellation) {
+    narration += ` | (Cancellation/Return)`;
+  }
+
+  // 4. CALCULATION & ROUND OFF
+  // Sum up actual item totals vs Ordered Grand Total
+  let runningTotal = 0;
 
   let inventoryEntries = '';
   order.items.forEach(item => {
+    const itemValue = item.priceAtBooking * item.quantity;
+    runningTotal += itemValue;
+
+    const unit = item.product ? (item.product.unit || 'pcs') : 'pcs';
+
+    // Item XML
     inventoryEntries += `
           <ALLINVENTORYENTRIES.LIST>
-            <STOCKITEMNAME>${item.product.title}</STOCKITEMNAME>
-            <ISDEEMEDPOSITIVE>${isCancellation ? "Yes" : "No"}</ISDEEMEDPOSITIVE> <!-- Reverse for CN -->
-            <RATE>${item.priceAtBooking}/pcs</RATE>
-            <AMOUNT>${isCancellation ? "" : "-"}${item.priceAtBooking * item.quantity}</AMOUNT> <!-- Positive for CN -->
-            <ACTUALQTY>${item.quantity} pcs</ACTUALQTY>
-            <BILLEDQTY>${item.quantity} pcs</BILLEDQTY>
+            <STOCKITEMNAME>${escapeXml(item.product ? item.product.title : 'Deleted-Product-' + item._id)}</STOCKITEMNAME>
+            <ISDEEMEDPOSITIVE>${isCancellation ? "Yes" : "No"}</ISDEEMEDPOSITIVE>
+            <RATE>${item.priceAtBooking}/${unit}</RATE>
+            <AMOUNT>${isCancellation ? "" : "-"}${itemValue}</AMOUNT>
+            <ACTUALQTY>${item.quantity} ${unit}</ACTUALQTY>
+            <BILLEDQTY>${item.quantity} ${unit}</BILLEDQTY>
              <BATCHALLOCATIONS.LIST>
                 <GODOWNNAME>Main Location</GODOWNNAME>
                 <BATCHNAME>Primary Batch</BATCHNAME>
-                <AMOUNT>${isCancellation ? "" : "-"}${item.priceAtBooking * item.quantity}</AMOUNT>
-                <ACTUALQTY>${item.quantity} pcs</ACTUALQTY>
-                <BILLEDQTY>${item.quantity} pcs</BILLEDQTY>
+                <AMOUNT>${isCancellation ? "" : "-"}${itemValue}</AMOUNT>
+                <ACTUALQTY>${item.quantity} ${unit}</ACTUALQTY>
+                <BILLEDQTY>${item.quantity} ${unit}</BILLEDQTY>
              </BATCHALLOCATIONS.LIST>
+             
+             <!-- TAX ALLOCATION PER ITEM (Standard Tally Practice) -->
+             <ACCOUNTINGALLOCATIONS.LIST>
+                <LEDGERNAME>${isLocal ? 'Sales Account' : 'IGST Sales'}</LEDGERNAME>
+                <ISDEEMEDPOSITIVE>${isCancellation ? "Yes" : "No"}</ISDEEMEDPOSITIVE>
+                <AMOUNT>${isCancellation ? "" : "-"}${itemValue}</AMOUNT>
+             </ACCOUNTINGALLOCATIONS.LIST>
           </ALLINVENTORYENTRIES.LIST>`;
   });
+
+  // Calculate Tax (Simulated for Tally Ledger Entries)
+  // Note: Tally usually auto-calculates tax if configured, but we force values here to match Web App exactly.
+  // Ideally, we sum up the tax from order items.
+  const taxTotal = order.taxTotal || 0; // Ensure you have this field stored
+  runningTotal += taxTotal;
+
+  // Round Off Logic
+  const roundOffRaw = order.totalAmount - runningTotal;
+  const roundOff = Math.round(roundOffRaw * 100) / 100;
+
+  // 5. VOUCHER XML CONSTRUCTION
+  const voucherType = isCancellation ? "Credit Note" : "Sales";
+  const action = "Create";
 
   const xml = `
 <ENVELOPE>
@@ -50,27 +106,71 @@ const generateSalesVoucherXML = (order, user, isCancellation = false) => {
            <VOUCHER VCHTYPE="${voucherType}" ACTION="${action}">
               <DATE>${voucherDate}</DATE>
               <GUID>${isCancellation ? 'CN-' : 'ORD-'}${order._id}</GUID>
-              <NARRATION>Order ID: ${order._id} ${isCancellation ? '(Cancellation Return)' : ''}</NARRATION>
+              <NARRATION>${escapeXml(narration)}</NARRATION>
               <PARTYLEDGERNAME>${ledgerName}</PARTYLEDGERNAME>
               <VOUCHERTYPENAME>${voucherType}</VOUCHERTYPENAME>
               <EFFECTIVEDATE>${voucherDate}</EFFECTIVEDATE>
-              <ISINVOICE>No</ISINVOICE>
-
+              <ISINVOICE>Yes</ISINVOICE>
+              
+              <!-- IGNORE NEGATIVE STOCK ERRORS -->
+              <FBTPAYMENTTYPE>Default</FBTPAYMENTTYPE>
+              <PERSISTEDVIEW>Invoice Voucher View</PERSISTEDVIEW>
+              <VOUCHERNUMBER>${order.invoiceNumber || order._id}</VOUCHERNUMBER>
+              
+              <!-- SHIP TO / DISPATCH DETAILS (Consignee) -->
+              <BASICBUYERNAME>${ledgerName}</BASICBUYERNAME>
+              <BASICBUYERADDRESS.LIST>
+                 ${(user.address || '').split(',').map(part => `<BASICBUYERADDRESS>${escapeXml(part.trim())}</BASICBUYERADDRESS>`).join('\n')}
+              </BASICBUYERADDRESS.LIST>
+              <!-- If Shipping Address differs, we can map it here. For now using same for consistency unless specific shipping address object exists -->
+              
               <!-- Party Ledger (Debtor) -->
               <LEDGERENTRIES.LIST>
                 <LEDGERNAME>${ledgerName}</LEDGERNAME>
-                <ISDEEMEDPOSITIVE>${isCancellation ? "No" : "Yes"}</ISDEEMEDPOSITIVE> <!-- Credit for CN -->
+                <ISDEEMEDPOSITIVE>${isCancellation ? "No" : "Yes"}</ISDEEMEDPOSITIVE>
                 <AMOUNT>${isCancellation ? "" : "-"}${order.totalAmount}</AMOUNT>
+                
+                <!-- BILL WISE DETAILS (Auto-Settlement) -->
+                <BILLALLOCATIONS.LIST>
+                    <NAME>${order.invoiceNumber || order._id}</NAME>
+                    <BILLTYPE>${isCancellation ? 'Agst Ref' : 'New Ref'}</BILLTYPE>
+                    <AMOUNT>${isCancellation ? "" : "-"}${order.totalAmount}</AMOUNT>
+                </BILLALLOCATIONS.LIST>
               </LEDGERENTRIES.LIST>
 
-              <!-- Sales Account -->
-               <LEDGERENTRIES.LIST>
-                <LEDGERNAME>Sales Account</LEDGERNAME>
-                <ISDEEMEDPOSITIVE>${isCancellation ? "Yes" : "No"}</ISDEEMEDPOSITIVE> <!-- Debit for CN -->
-                <AMOUNT>${isCancellation ? "-" : ""}${order.totalAmount}</AMOUNT>
-              </LEDGERENTRIES.LIST>
-
+              <!-- ITEM ENTRIES -->
               ${inventoryEntries}
+
+              <!-- TAX LEDGERS -->
+              <!-- CGST/SGST for Local, IGST for Interstate -->
+              ${isLocal ? `
+              <LEDGERENTRIES.LIST>
+                <LEDGERNAME>CGST</LEDGERNAME>
+                <ISDEEMEDPOSITIVE>${isCancellation ? "Yes" : "No"}</ISDEEMEDPOSITIVE> 
+                <AMOUNT>${isCancellation ? "-" : ""}${taxTotal / 2}</AMOUNT>
+              </LEDGERENTRIES.LIST>
+              <LEDGERENTRIES.LIST>
+                <LEDGERNAME>SGST</LEDGERNAME>
+                <ISDEEMEDPOSITIVE>${isCancellation ? "Yes" : "No"}</ISDEEMEDPOSITIVE> 
+                <AMOUNT>${isCancellation ? "-" : ""}${taxTotal / 2}</AMOUNT>
+              </LEDGERENTRIES.LIST>
+              ` : `
+               <LEDGERENTRIES.LIST>
+                <LEDGERNAME>IGST</LEDGERNAME>
+                <ISDEEMEDPOSITIVE>${isCancellation ? "Yes" : "No"}</ISDEEMEDPOSITIVE> 
+                <AMOUNT>${isCancellation ? "-" : ""}${taxTotal}</AMOUNT>
+              </LEDGERENTRIES.LIST>
+              `}
+
+              <!-- ROUND OFF LEDGER (Only if non-zero) -->
+              ${roundOff !== 0 ? `
+              <LEDGERENTRIES.LIST>
+                <LEDGERNAME>Round Off</LEDGERNAME>
+                <ISDEEMEDPOSITIVE>${roundOff > 0 ? (isCancellation ? "Yes" : "No") : (isCancellation ? "No" : "Yes")}</ISDEEMEDPOSITIVE>
+                <AMOUNT>${Math.abs(roundOff)}</AMOUNT>
+              </LEDGERENTRIES.LIST>
+              ` : ''}
+
            </VOUCHER>
         </TALLYMESSAGE>
       </REQUESTDATA>

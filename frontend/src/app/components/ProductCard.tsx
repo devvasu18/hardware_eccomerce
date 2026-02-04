@@ -90,6 +90,12 @@ export default function ProductCard({ product }: { product: Product }) {
                     </svg>
                 </button>
 
+                {/* Discount Badge */}
+                {originalPrice > finalPrice && (
+                    <div className="product-badge badge-sale">
+                        {Math.round(((originalPrice - finalPrice) / originalPrice) * 100)}% OFF
+                    </div>
+                )}
             </div>
 
             <div className="product-card-content">

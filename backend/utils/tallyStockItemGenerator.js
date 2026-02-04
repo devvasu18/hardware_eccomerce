@@ -1,9 +1,19 @@
 /**
  * Generate Stock Item Master XML for Tally
  */
+const escapeXml = (unsafe) => {
+    if (!unsafe) return '';
+    return String(unsafe)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+};
+
 const generateStockItemXML = (product) => {
     // Tally uses 'title' from our standardized product schema
-    const itemName = product.title || 'Unknown Item';
+    const itemName = escapeXml(product.title || 'Unknown Item');
     const sellingPrice = parseFloat(product.price || product.mrp || 0);
     // Use HSN code if populated, else default or simple string
     const hsnCode = (product.hsn_code && product.hsn_code.code) ? product.hsn_code.code : '8703';

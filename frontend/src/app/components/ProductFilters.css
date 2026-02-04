@@ -1,14 +1,16 @@
 /* ProductFilters.css */
 
 .filters-sidebar {
-    width: 260px;
+    width: 280px;
     flex-shrink: 0;
     background: #fff;
-    border-right: 1px solid #e2e8f0;
-    padding: 1.5rem;
+    /* border-right: 1px solid #e2e8f0; Removed for cleaner look */
+    padding: 2rem;
     height: fit-content;
-    border-radius: 8px;
-    /* Optional, if detached */
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    /* Subtle float */
+    border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 /* Header */
@@ -16,49 +18,50 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px dashed #e2e8f0;
 }
 
 .filters-header h3 {
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 1.25rem;
+    font-weight: 800;
     color: #0f172a;
     margin: 0;
+    letter-spacing: -0.02em;
 }
 
 .close-filters {
     display: none;
-    /* Mobile only */
     background: none;
     border: none;
     font-size: 1.25rem;
     cursor: pointer;
+    color: #64748b;
 }
 
 /* Filter Groups */
 .filter-group {
-    margin-bottom: 2rem;
-    border-bottom: 1px solid #f1f5f9;
-    padding-bottom: 1.5rem;
+    margin-bottom: 2.5rem;
 }
 
 .filter-group:last-child {
-    border-bottom: none;
     margin-bottom: 0;
 }
 
 .filter-group h4 {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #334155;
-    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 1.25rem;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
+    opacity: 0.8;
 }
 
 /* Refine Search Input */
 .search-group {
-    padding-bottom: 2rem;
+    padding-bottom: 0;
 }
 
 .refine-search-form {
@@ -68,19 +71,20 @@
 
 .refine-input {
     width: 100%;
-    padding: 0.5rem 0.75rem;
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+    border: 2px solid #f1f5f9;
+    border-radius: 12px;
+    font-size: 0.9rem;
     background: #f8fafc;
     transition: all 0.2s;
+    color: #0f172a;
 }
 
 .refine-input:focus {
     background: #fff;
-    border-color: #6366f1;
+    border-color: #F37021;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 4px rgba(243, 112, 33, 0.1);
 }
 
 .refine-btn {

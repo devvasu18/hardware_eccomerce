@@ -1,5 +1,5 @@
-const generateUnitXML = () => {
-    return `<ENVELOPE>
+const generateUnitXML = (unitName = 'pcs') => {
+  return `<ENVELOPE>
   <HEADER>
     <TALLYREQUEST>Import Data</TALLYREQUEST>
   </HEADER>
@@ -10,10 +10,11 @@ const generateUnitXML = () => {
       </REQUESTDESC>
       <REQUESTDATA>
         <TALLYMESSAGE xmlns:UDF="TallyUDF">
-           <UNIT NAME="pcs" ACTION="Create">
-              <NAME>pcs</NAME>
+           <UNIT NAME="${unitName}" ACTION="Create">
+              <NAME>${unitName}</NAME>
               <ISSIMPLEUNIT>Yes</ISSIMPLEUNIT>
               <FORPAYROLL>No</FORPAYROLL>
+              <DECIMALPLACES>2</DECIMALPLACES>
            </UNIT>
         </TALLYMESSAGE>
       </REQUESTDATA>

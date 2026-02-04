@@ -95,7 +95,7 @@ export default async function ProductsPage({ searchParams }: Props) {
             </div>
 
             {/* Content Section */}
-            <div className="container" style={{ padding: '3rem 2rem', flex: 1 }}>
+            <div className="container" style={{ padding: '3rem 0rem', maxWidth: '1400px', margin: '0 auto', flex: 1 }}>
                 <div style={{ display: 'flex', gap: '3rem', alignItems: 'flex-start' }}>
 
                     {/* Sidebar Filters */}

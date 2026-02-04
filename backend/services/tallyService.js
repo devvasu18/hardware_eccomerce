@@ -246,13 +246,17 @@ async function syncOrderToTally(orderId) {
         const user = await User.findById(order.user);
         if (!user) return { success: false, error: 'User not found' };
 
-        // 1. Sync Unit [pcs]
-        await syncWithHealthCheck({
-            xmlData: generateUnitXML(),
-            type: 'Unit',
-            relatedId: 'UNIT-PCS', // Static ID for now
-            relatedModel: 'Unit'
-        });
+        // 1. Sync Units (Dynamic)
+        const uniqueUnits = [...new Set(order.items.map(i => i.product?.unit || 'pcs'))];
+
+        for (const unit of uniqueUnits) {
+            await syncWithHealthCheck({
+                xmlData: generateUnitXML(unit),
+                type: 'Unit',
+                relatedId: `UNIT-${unit}`,
+                relatedModel: 'Unit'
+            });
+        }
 
         // 2. Sync Sales Ledger
         await syncWithHealthCheck({

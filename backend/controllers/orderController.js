@@ -466,7 +466,7 @@ exports.updateOrderStatus = async (req, res) => {
         }
 
         // Tally Sync Trigger
-        if (status === 'Delivered') {
+        if (status === 'Assigned to Bus') {
             // We don't await this to keep the API response fast. 
             // Tally sync happens in background/async.
             tallyService.syncOrderToTally(order._id)

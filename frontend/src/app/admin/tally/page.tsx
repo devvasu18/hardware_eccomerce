@@ -118,7 +118,7 @@ export default function TallySyncPage() {
                                     )}
                                 </td>
                                 <td style={{ padding: '1rem' }}>
-                                    {order.tallyStatus !== 'saved' && (
+                                    {order.tallyStatus !== 'saved' && order.status !== 'Cancelled' && (
                                         <button
                                             onClick={() => handleSync(order._id)}
                                             disabled={loading}
