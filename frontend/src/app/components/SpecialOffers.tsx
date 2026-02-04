@@ -14,6 +14,10 @@ interface Product {
     imageUrl?: string;
     featured_image?: string;
     gallery_images?: string[];
+    mrp?: number;
+    basePrice?: number;
+    selling_price_a?: number;
+    discountedPrice?: number;
 }
 
 interface SpecialOffer {
@@ -163,13 +167,22 @@ export default function SpecialOffers() {
 
 
                                 <div className="deal-pricing">
-                                    <div className="price-row">
-                                        <span className="original-price">₹{offer.originalPrice.toLocaleString()}</span>
-                                        <span className="savings-badge">
-                                            Save ₹{(offer.originalPrice - offer.offerPrice).toLocaleString()}
-                                        </span>
-                                    </div>
-                                    <div className="discounted-price">₹{offer.offerPrice.toLocaleString()}</div>
+                                    {(() => {
+                                        const product = offer.productId;
+                                        const basePrice = product?.mrp || product?.basePrice || offer.originalPrice;
+                                        const discountedPrice = product?.selling_price_a || product?.discountedPrice || offer.offerPrice;
+                                        return (
+                                            <>
+                                                <div className="price-row">
+                                                    <span className="original-price">₹{basePrice.toLocaleString()}</span>
+                                                    <span className="savings-badge">
+                                                        Save ₹{(basePrice - discountedPrice).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <div className="discounted-price">₹{discountedPrice.toLocaleString()}</div>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
 
                                 <div className="deal-timer">

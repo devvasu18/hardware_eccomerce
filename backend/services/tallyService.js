@@ -1,5 +1,6 @@
 const axios = require('axios');
 const TallySyncQueue = require('../models/TallySyncQueue');
+const TallyStatusLog = require('../models/TallyStatusLog');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const { generateSalesVoucherXML } = require('../utils/tallyXmlGenerator');
@@ -51,12 +52,25 @@ async function sendToTally(xmlData) {
 
         // Basic check for success response in Tally XML
         if (responseData.includes('<CREATED>1</CREATED>') || responseData.includes('<ALTERED>1</ALTERED>')) {
+            // Log Success
+            await TallyStatusLog.create({
+                status: 'online',
+                errorMessage: 'Sync Success', // Using errorMessage field for success info to show in existing UI logs
+                queueSuccess: 1
+            });
             return { success: true, response: responseData, error: null };
         } else {
             // Try to extract error
             let errorMsg = 'Tally rejected the voucher';
             const errorMatch = responseData.match(/<LINEERROR>(.*?)<\/LINEERROR>/);
             if (errorMatch) errorMsg = errorMatch[1];
+
+            // Log Failure
+            await TallyStatusLog.create({
+                status: 'online',
+                errorMessage: `Rejected: ${errorMsg}`,
+                queueFailed: 1
+            });
 
             return { success: false, response: responseData, error: errorMsg };
         }

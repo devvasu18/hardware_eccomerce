@@ -23,8 +23,24 @@ export default function TallySyncPage() {
     }, []);
 
     const fetchOrders = async () => {
-        const res = await fetch('http://localhost:5000/api/orders');
-        if (res.ok) setOrders(await res.json());
+        const token = localStorage.getItem('token');
+        const res = await fetch('http://localhost:5000/api/orders', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            // API returns { orders: [...], page, pages, count }
+            if (data.orders && Array.isArray(data.orders)) {
+                setOrders(data.orders);
+            } else if (Array.isArray(data)) {
+                // Fallback if API changes to return array directly
+                setOrders(data);
+            } else {
+                setOrders([]);
+            }
+        }
     };
 
     const handleSync = async (id: string) => {
@@ -119,6 +135,10 @@ export default function TallySyncPage() {
                 </table>
             </div>
 
+            {/* --- NEW SECTION: Status Logs --- */}
+            <h2 style={{ fontSize: '1.25rem', marginTop: '3rem', marginBottom: '1rem' }}>Activity Logs</h2>
+            <StatusLogsTable />
+
             <Modal
                 isOpen={modalState.isOpen}
                 onClose={hideModal}
@@ -130,6 +150,66 @@ export default function TallySyncPage() {
                 onConfirm={modalState.onConfirm}
                 showCancel={modalState.showCancel}
             />
+        </div>
+    );
+}
+
+function StatusLogsTable() {
+    const [logs, setLogs] = useState([]);
+
+    useEffect(() => {
+        const fetchLogs = async () => {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:5000/api/tally/admin/logs', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.success) setLogs(data.data);
+        };
+        fetchLogs();
+    }, []);
+
+    return (
+        <div style={{ background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.1)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>
+                    <tr>
+                        <th style={{ padding: '0.75rem 1rem' }}>Time</th>
+                        <th style={{ padding: '0.75rem 1rem' }}>Status</th>
+                        <th style={{ padding: '0.75rem 1rem' }}>Message</th>
+                        <th style={{ padding: '0.75rem 1rem' }}>Stats (Q/S/F)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {logs.map((log: any) => (
+                        <tr key={log._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '0.75rem 1rem' }}>
+                                {new Date(log.checkedAt).toLocaleTimeString()} <br />
+                                <span style={{ color: '#94a3b8', fontSize: '0.75rem' }}>
+                                    {new Date(log.checkedAt).toLocaleDateString()}
+                                </span>
+                            </td>
+                            <td style={{ padding: '0.75rem 1rem' }}>
+                                <span className="badge" style={{
+                                    background: log.status === 'online' ? '#ecfdf5' : '#fef2f2',
+                                    color: log.status === 'online' ? '#047857' : '#b91c1c'
+                                }}>
+                                    {log.status.toUpperCase()}
+                                </span>
+                            </td>
+                            <td style={{ padding: '0.75rem 1rem', maxWidth: '300px' }}>
+                                {log.errorMessage || '-'}
+                            </td>
+                            <td style={{ padding: '0.75rem 1rem' }}>
+                                {log.queueProcessed} / <span style={{ color: 'green' }}>{log.queueSuccess}</span> / <span style={{ color: 'red' }}>{log.queueFailed}</span>
+                            </td>
+                        </tr>
+                    ))}
+                    {logs.length === 0 && (
+                        <tr><td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>No logs available</td></tr>
+                    )}
+                </tbody>
+            </table>
         </div>
     );
 }

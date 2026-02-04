@@ -19,7 +19,14 @@ async function getNewArrivals(): Promise<Product[]> {
     if (!res.ok) {
         return [];
     }
-    return res.json();
+    const data = await res.json();
+    return data.map((p: any) => ({
+        ...p,
+        basePrice: p.mrp || p.basePrice,
+        discountedPrice: p.selling_price_a || p.discountedPrice,
+        title: p.title || p.name,
+        name: p.title || p.name
+    }));
 }
 
 export default async function NewArrivals() {
