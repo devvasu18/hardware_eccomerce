@@ -41,6 +41,7 @@ function ModelVariationManager({ modelIndex, control, register, errors, watch, V
                             <tr style={{ color: '#64748B' }}>
                                 <th style={{ padding: '0.4rem', textAlign: 'left' }}>Type</th>
                                 <th style={{ padding: '0.4rem', textAlign: 'left' }}>Value</th>
+                                <th style={{ padding: '0.4rem', textAlign: 'left' }}>Base MRP</th>
                                 <th style={{ padding: '0.4rem', textAlign: 'left' }}>Price</th>
                                 <th style={{ padding: '0.4rem', textAlign: 'left' }}>Stock</th>
                                 <th style={{ padding: '0.4rem', textAlign: 'center' }}>Action</th>
@@ -66,10 +67,13 @@ function ModelVariationManager({ modelIndex, control, register, errors, watch, V
                                         <input
                                             {...register(`models.${modelIndex}.variations.${vIdx}.value`)}
                                             className="form-input"
-                                            style={{ padding: '2px', fontSize: '0.75rem' }}
                                             placeholder="Value"
                                             list={`model-${modelIndex}-suggestions-${vIdx}`}
+                                            style={{ padding: '2px', fontSize: '0.75rem', borderColor: errors.models?.[modelIndex]?.variations?.[vIdx]?.value ? 'var(--danger)' : undefined }}
                                         />
+                                        {errors.models?.[modelIndex]?.variations?.[vIdx]?.value && (
+                                            <span style={{ color: 'var(--danger)', fontSize: '0.65rem' }}>Required</span>
+                                        )}
                                         <datalist id={`model-${modelIndex}-suggestions-${vIdx}`}>
                                             {VARIATION_SUGGESTIONS[watch(`models.${modelIndex}.variations.${vIdx}.type`)]?.map((opt: string) => (
                                                 <option key={opt} value={opt} />
@@ -77,8 +81,12 @@ function ModelVariationManager({ modelIndex, control, register, errors, watch, V
                                         </datalist>
                                     </td>
                                     <td style={{ padding: '0.4rem' }}>
-                                        <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.price`)} className="form-input" style={{ padding: '2px', width: '60px', fontSize: '0.75rem' }} />
+                                        <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.mrp`)} className="form-input" style={{ padding: '2px', width: '60px', fontSize: '0.75rem' }} />
                                     </td>
+                                    <td style={{ padding: '0.4rem' }}>
+                                        <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.price`)} className="form-input" style={{ padding: '2px', width: '60px', fontSize: '0.75rem', borderColor: errors.models?.[modelIndex]?.variations?.[vIdx]?.price ? 'var(--danger)' : undefined }} />
+                                    </td>
+
                                     <td style={{ padding: '0.4rem' }}>
                                         <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.stock`)} className="form-input" style={{ padding: '2px', width: '50px', fontSize: '0.75rem' }} />
                                     </td>
@@ -225,6 +233,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
         setValue,
         watch,
         reset,
+        setError,
         formState: { errors },
     } = useForm<any>({
         resolver: zodResolver(productSchema),
@@ -414,7 +423,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
             } else if (!data.mrp) {
                 // Manual validation for standard mode since Zod is now optional for flexibility
                 setLoading(false);
-                alert("MRP is required for Standard products");
+                setError("mrp", { type: "manual", message: "MRP is required" });
+                alert("Please fix the errors in the form (MRP is missing)");
                 return;
             } else {
                 // For standard mode, just ensure stock matches opening_stock
@@ -545,7 +555,10 @@ export default function ProductForm({ productId }: ProductFormProps) {
                     <FiArrowLeft /> Back to List
                 </button>
                 <button
-                    onClick={handleSubmit(onSubmit)}
+                    onClick={handleSubmit(onSubmit, (errors) => {
+                        console.error(errors);
+                        alert("Please fill in all required fields marked in red.");
+                    })}
                     disabled={loading}
                     className="btn btn-primary"
                 >
@@ -586,6 +599,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                     </div>
 
                     {/* Variation Mode Selector (Slider) */}
+                    {/* Inventory System (Merged) */}
                     <div className="card" style={{ marginBottom: '2rem' }}>
                         <div className="card-header">Inventory System</div>
                         <div style={{ padding: '1.5rem' }}>
@@ -630,202 +644,206 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                     Product Models
                                 </button>
                             </div>
-                            <p style={{ marginTop: '1rem', marginBottom: 0, fontSize: '0.85rem', color: '#64748B', textAlign: 'center' }}>
+                            <p style={{ marginTop: '1rem', marginBottom: '1.5rem', fontSize: '0.85rem', color: '#64748B', textAlign: 'center' }}>
                                 {variationMode === 'standard' && "Best for products with a fixed price and stock level."}
                                 {variationMode === 'standalone' && "Best for single-model products with multiple sizes, colors, or packs."}
                                 {variationMode === 'models' && "Best for complex products that have distinct sub-models (e.g. Pro, Max) with their own variants."}
                             </p>
-                        </div>
-                    </div>
 
-                    {/* Product Models Manager (Hierarchical) */}
-                    {variationMode === 'models' && (
-                        <div className="card">
-                            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>Product Models (Hierarchical)</span>
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-secondary"
-                                    onClick={() => appendModel({ name: '', variations: [], isActive: true })}
-                                >
-                                    + Add New Model
-                                </button>
-                            </div>
-                            <div style={{ padding: '1.5rem' }}>
-                                {modelFields.length === 0 ? (
-                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', border: '2px dashed var(--border)', borderRadius: '12px' }}>
-                                        <p style={{ margin: 0 }}>Click "+ Add New Model" to start building your product structure.</p>
+                            {/* Separator if not standard */}
+                            {variationMode !== 'standard' && <div style={{ height: '1px', backgroundColor: '#E2E8F0', marginBottom: '1.5rem' }}></div>}
+
+                            {/* Standard Mode Info */}
+                            {variationMode === 'standard' && (
+                                <div style={{ textAlign: 'center', padding: '1rem', color: '#94A3B8', fontSize: '0.9rem', border: '1px dashed #E2E8F0', borderRadius: '8px' }}>
+                                    Standard product mode selected. No variations needed.
+                                </div>
+                            )}
+
+                            {/* Product Models Manager (Hierarchical) */}
+                            {variationMode === 'models' && (
+                                <div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Product Models</h4>
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-secondary"
+                                            onClick={() => appendModel({ name: '', variations: [], isActive: true })}
+                                        >
+                                            + Add New Model
+                                        </button>
                                     </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                        {modelFields.map((field, mIdx) => (
-                                            <div key={field.id} style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#F8FAFC' }}>
-                                                <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff' }}>
-                                                    <div style={{ display: 'flex', gap: '1rem', flex: 1, alignItems: 'center' }}>
-                                                        <div style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '8px', border: '2px dashed #CBD5E1', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                            {watch(`models.${mIdx}.imageFile`)?.[0] ? (
-                                                                <Image src={URL.createObjectURL(watch(`models.${mIdx}.imageFile`)[0])} alt="Preview" fill style={{ objectFit: 'cover' }} />
-                                                            ) : watch(`models.${mIdx}.featured_image`) ? (
-                                                                <Image src={watch(`models.${mIdx}.featured_image`)?.startsWith('http') ? watch(`models.${mIdx}.featured_image`) : `http://localhost:5000/${watch(`models.${mIdx}.featured_image`)}`} alt="Exist" fill style={{ objectFit: 'cover' }} />
-                                                            ) : (
-                                                                <FiUploadCloud size={20} color="#94A3B8" />
-                                                            )}
-                                                            <input type="file" {...register(`models.${mIdx}.imageFile`)} accept="image/*" style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+                                    <div>
+                                        {modelFields.length === 0 ? (
+                                            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', border: '2px dashed var(--border)', borderRadius: '12px' }}>
+                                                <p style={{ margin: 0 }}>Click "+ Add New Model" to start building your product structure.</p>
+                                            </div>
+                                        ) : (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                                {modelFields.map((field, mIdx) => (
+                                                    <div key={field.id} style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#F8FAFC' }}>
+                                                        <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff' }}>
+                                                            <div style={{ display: 'flex', gap: '1rem', flex: 1, alignItems: 'center' }}>
+                                                                <div style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '8px', border: '2px dashed #CBD5E1', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                    {watch(`models.${mIdx}.imageFile`)?.[0] ? (
+                                                                        <Image src={URL.createObjectURL(watch(`models.${mIdx}.imageFile`)[0])} alt="Preview" fill style={{ objectFit: 'cover' }} />
+                                                                    ) : watch(`models.${mIdx}.featured_image`) ? (
+                                                                        <Image src={watch(`models.${mIdx}.featured_image`)?.startsWith('http') ? watch(`models.${mIdx}.featured_image`) : `http://localhost:5000/${watch(`models.${mIdx}.featured_image`)}`} alt="Exist" fill style={{ objectFit: 'cover' }} />
+                                                                    ) : (
+                                                                        <FiUploadCloud size={20} color="#94A3B8" />
+                                                                    )}
+                                                                    <input type="file" {...register(`models.${mIdx}.imageFile`)} accept="image/*" style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+                                                                </div>
+                                                                <div style={{ flex: 1, paddingRight: '1rem' }}>
+                                                                    <div className="form-group" style={{ marginBottom: 0 }}>
+                                                                        <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>Model Name</label>
+                                                                        <input {...register(`models.${mIdx}.name`)} className="form-input" placeholder="e.g. Pro Edition" style={{ borderColor: errors.models?.[mIdx]?.name ? 'var(--danger)' : undefined }} />
+                                                                        {errors.models?.[mIdx]?.name && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>Title is required</span>}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <button type="button" onClick={() => removeModel(mIdx)} style={{ marginLeft: '1rem', color: 'var(--danger)', border: 'none', background: 'none', cursor: 'pointer' }}><FiTrash2 size={20} /></button>
                                                         </div>
-                                                        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: '1rem', flex: 1 }}>
-                                                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>Model Name</label>
-                                                                <input {...register(`models.${mIdx}.name`)} className="form-input" placeholder="e.g. Pro Edition" />
-                                                            </div>
-                                                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>Base MRP</label>
-                                                                <input type="number" {...register(`models.${mIdx}.mrp`)} className="form-input" placeholder="0" />
-                                                            </div>
-                                                            <div className="form-group" style={{ marginBottom: 0 }}>
-                                                                <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>Base Price</label>
-                                                                <input type="number" {...register(`models.${mIdx}.selling_price_a`)} className="form-input" placeholder="0" />
-                                                            </div>
+
+                                                        <div style={{ padding: '0 1.25rem 1.25rem 1.25rem' }}>
+                                                            <ModelVariationManager modelIndex={mIdx} control={control} register={register} errors={errors} watch={watch} VARIATION_SUGGESTIONS={VARIATION_SUGGESTIONS} />
                                                         </div>
                                                     </div>
-                                                    <button type="button" onClick={() => removeModel(mIdx)} style={{ marginLeft: '1rem', color: 'var(--danger)', border: 'none', background: 'none', cursor: 'pointer' }}><FiTrash2 size={20} /></button>
-                                                </div>
-
-                                                <div style={{ padding: '0 1.25rem 1.25rem 1.25rem' }}>
-                                                    <ModelVariationManager modelIndex={mIdx} control={control} register={register} errors={errors} watch={watch} VARIATION_SUGGESTIONS={VARIATION_SUGGESTIONS} />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Variations Manager (Standalone) */}
-                    {variationMode === 'standalone' && (
-                        <div className="card">
-                            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span>Standalone Variations (Direct Selection)</span>
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-secondary"
-                                    onClick={() => append({ type: 'Size', value: '', price: sellingPrice || 0, mrp: mrp || 0, stock: 0, isActive: true })}
-                                >
-                                    + Add Selection
-                                </button>
-                            </div>
-                            <div style={{ padding: '1rem' }}>
-                                {fields.length === 0 ? (
-                                    <div style={{ padding: '1rem', color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.9rem' }}>
-                                        No variations added. Standard single price/stock will be used.
-                                    </div>
-                                ) : (
-                                    <div style={{ overflowX: 'auto' }}>
-                                        <table style={{ width: '100%', fontSize: '0.9rem', borderCollapse: 'collapse' }}>
-                                            <thead style={{ background: '#f8fafc', color: 'var(--text-muted)' }}>
-                                                <tr>
-                                                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Image</th>
-                                                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Type</th>
-                                                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Value</th>
-                                                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Price (₹)</th>
-                                                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>MRP (₹)</th>
-                                                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>Stock</th>
-                                                    <th style={{ padding: '0.5rem', textAlign: 'left' }}>SKU</th>
-                                                    <th style={{ padding: '0.5rem', textAlign: 'center' }}>Active</th>
-                                                    <th style={{ padding: '0.5rem', textAlign: 'center' }}>Action</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {fields.map((field, index) => (
-                                                    <tr key={field.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                        <td style={{ padding: '0.5rem', width: '80px' }}>
-                                                            {/* Image Preview & Input */}
-                                                            <div style={{ position: 'relative', width: '50px', height: '50px', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
-                                                                {watch(`variations.${index}.imageFile`)?.[0] ? (
-                                                                    <Image
-                                                                        src={URL.createObjectURL(watch(`variations.${index}.imageFile`)[0])}
-                                                                        alt="New"
-                                                                        fill
-                                                                        style={{ objectFit: 'cover' }}
-                                                                    />
-                                                                ) : watch(`variations.${index}.image`) ? (
-                                                                    <Image
-                                                                        src={watch(`variations.${index}.image`)?.startsWith('http') ? watch(`variations.${index}.image`)! : `http://localhost:5000/${watch(`variations.${index}.image`)}`}
-                                                                        alt="Existing"
-                                                                        fill
-                                                                        style={{ objectFit: 'cover' }}
-                                                                    />
-                                                                ) : (
-                                                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
-                                                                        <FiUploadCloud size={16} color="#ccc" />
-                                                                    </div>
-                                                                )}
-                                                                <input
-                                                                    type="file"
-                                                                    {...register(`variations.${index}.imageFile`)}
-                                                                    accept="image/*"
-                                                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                                                                />
-                                                            </div>
-                                                        </td>
-                                                        <td style={{ padding: '0.5rem' }}>
-                                                            <select {...register(`variations.${index}.type`)} className="form-select" style={{ fontSize: '0.85rem', padding: '0.3rem' }}>
-                                                                <option value="Size">Size</option>
-                                                                <option value="Color">Color</option>
-                                                                <option value="Weight">Weight (kg/gm)</option>
-                                                                <option value="Volume">Volume (L/ml)</option>
-                                                                <option value="Pack">Pack (Qty)</option>
-                                                                <option value="Battery">Battery</option>
-                                                                <option value="Range">Range</option>
-                                                                <option value="Storage">Storage</option>
-                                                                <option value="Other">Other</option>
-                                                            </select>
-                                                            <input type="hidden" {...register(`variations.${index}._id`)} />
-                                                        </td>
-                                                        <td style={{ padding: '0.5rem' }}>
-                                                            <input
-                                                                {...register(`variations.${index}.value`)}
-                                                                className="form-input"
-                                                                placeholder="Value"
-                                                                style={{ fontSize: '0.85rem', padding: '0.3rem' }}
-                                                                list={`suggestions-${index}`}
-                                                            />
-                                                            <datalist id={`suggestions-${index}`}>
-                                                                {VARIATION_SUGGESTIONS[watch(`variations.${index}.type`)]?.map(opt => (
-                                                                    <option key={opt} value={opt} />
-                                                                ))}
-                                                            </datalist>
-                                                            {errors.variations?.[index]?.value && <span style={{ color: 'red', fontSize: '0.7rem' }}>Required</span>}
-                                                        </td>
-                                                        <td style={{ padding: '0.5rem' }}>
-                                                            <input type="number" {...register(`variations.${index}.price`)} className="form-input" placeholder="Price" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px' }} />
-                                                        </td>
-                                                        <td style={{ padding: '0.5rem' }}>
-                                                            <input type="number" {...register(`variations.${index}.mrp`)} className="form-input" placeholder="MRP" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px' }} />
-                                                        </td>
-                                                        <td style={{ padding: '0.5rem' }}>
-                                                            <input type="number" {...register(`variations.${index}.stock`)} className="form-input" placeholder="Qty" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '60px' }} />
-                                                        </td>
-                                                        <td style={{ padding: '0.5rem' }}>
-                                                            <input {...register(`variations.${index}.sku`)} className="form-input" placeholder="SKU" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '100px' }} />
-                                                        </td>
-                                                        <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                                                            <input type="checkbox" {...register(`variations.${index}.isActive`)} />
-                                                        </td>
-                                                        <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                                                            <button type="button" onClick={() => remove(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                                                <FiX />
-                                                            </button>
-                                                        </td>
-                                                    </tr>
                                                 ))}
-                                            </tbody>
-                                        </table>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
+
+                            {/* Variations Manager (Standalone) */}
+                            {variationMode === 'standalone' && (
+                                <div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 600 }}>Standalone Variations</h4>
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-secondary"
+                                            onClick={() => append({ type: 'Size', value: '', price: sellingPrice || 0, mrp: mrp || 0, stock: 0, isActive: true })}
+                                        >
+                                            + Add Selection
+                                        </button>
+                                    </div>
+                                    <div>
+                                        {fields.length === 0 ? (
+                                            <div style={{ padding: '1rem', color: 'var(--text-muted)', textAlign: 'center', fontSize: '0.9rem' }}>
+                                                No variations added. Standard single price/stock will be used.
+                                            </div>
+                                        ) : (
+                                            <div style={{ overflowX: 'auto' }}>
+                                                <table style={{ width: '100%', fontSize: '0.9rem', borderCollapse: 'collapse' }}>
+                                                    <thead style={{ background: '#f8fafc', color: 'var(--text-muted)' }}>
+                                                        <tr>
+                                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Image</th>
+                                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Type</th>
+                                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Value</th>
+                                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Price (₹)</th>
+                                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>MRP (₹)</th>
+                                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Stock</th>
+                                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>SKU</th>
+                                                            <th style={{ padding: '0.5rem', textAlign: 'center' }}>Active</th>
+                                                            <th style={{ padding: '0.5rem', textAlign: 'center' }}>Action</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {fields.map((field, index) => (
+                                                            <tr key={field.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                                <td style={{ padding: '0.5rem', width: '80px' }}>
+                                                                    {/* Image Preview & Input */}
+                                                                    <div style={{ position: 'relative', width: '50px', height: '50px', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+                                                                        {watch(`variations.${index}.imageFile`)?.[0] ? (
+                                                                            <Image
+                                                                                src={URL.createObjectURL(watch(`variations.${index}.imageFile`)[0])}
+                                                                                alt="New"
+                                                                                fill
+                                                                                style={{ objectFit: 'cover' }}
+                                                                            />
+                                                                        ) : watch(`variations.${index}.image`) ? (
+                                                                            <Image
+                                                                                src={watch(`variations.${index}.image`)?.startsWith('http') ? watch(`variations.${index}.image`)! : `http://localhost:5000/${watch(`variations.${index}.image`)}`}
+                                                                                alt="Existing"
+                                                                                fill
+                                                                                style={{ objectFit: 'cover' }}
+                                                                            />
+                                                                        ) : (
+                                                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
+                                                                                <FiUploadCloud size={16} color="#ccc" />
+                                                                            </div>
+                                                                        )}
+                                                                        <input
+                                                                            type="file"
+                                                                            {...register(`variations.${index}.imageFile`)}
+                                                                            accept="image/*"
+                                                                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                                                                        />
+                                                                    </div>
+                                                                </td>
+                                                                <td style={{ padding: '0.5rem' }}>
+                                                                    <select {...register(`variations.${index}.type`)} className="form-select" style={{ fontSize: '0.85rem', padding: '0.3rem' }}>
+                                                                        <option value="Size">Size</option>
+                                                                        <option value="Color">Color</option>
+                                                                        <option value="Weight">Weight (kg/gm)</option>
+                                                                        <option value="Volume">Volume (L/ml)</option>
+                                                                        <option value="Pack">Pack (Qty)</option>
+                                                                        <option value="Battery">Battery</option>
+                                                                        <option value="Range">Range</option>
+                                                                        <option value="Storage">Storage</option>
+                                                                        <option value="Other">Other</option>
+                                                                    </select>
+                                                                    <input type="hidden" {...register(`variations.${index}._id`)} />
+                                                                </td>
+                                                                <td style={{ padding: '0.5rem' }}>
+                                                                    <input
+                                                                        {...register(`variations.${index}.value`)}
+                                                                        className="form-input"
+                                                                        placeholder="Value"
+                                                                        style={{ fontSize: '0.85rem', padding: '0.3rem' }}
+                                                                        list={`suggestions-${index}`}
+                                                                    />
+                                                                    <datalist id={`suggestions-${index}`}>
+                                                                        {VARIATION_SUGGESTIONS[watch(`variations.${index}.type`)]?.map(opt => (
+                                                                            <option key={opt} value={opt} />
+                                                                        ))}
+                                                                    </datalist>
+                                                                    {errors.variations?.[index]?.value && <span style={{ color: 'red', fontSize: '0.7rem' }}>Required</span>}
+                                                                </td>
+                                                                <td style={{ padding: '0.5rem' }}>
+                                                                    <input type="number" {...register(`variations.${index}.price`)} className="form-input" placeholder="Price" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px', borderColor: errors.variations?.[index]?.price ? 'var(--danger)' : undefined }} />
+                                                                </td>
+                                                                <td style={{ padding: '0.5rem' }}>
+                                                                    <input type="number" {...register(`variations.${index}.mrp`)} className="form-input" placeholder="MRP" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px' }} />
+                                                                </td>
+                                                                <td style={{ padding: '0.5rem' }}>
+                                                                    <input type="number" {...register(`variations.${index}.stock`)} className="form-input" placeholder="Qty" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '60px' }} />
+                                                                </td>
+                                                                <td style={{ padding: '0.5rem' }}>
+                                                                    <input {...register(`variations.${index}.sku`)} className="form-input" placeholder="SKU" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '100px' }} />
+                                                                </td>
+                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                                                                    <input type="checkbox" {...register(`variations.${index}.isActive`)} />
+                                                                </td>
+                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                                                                    <button type="button" onClick={() => remove(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                                                        <FiX />
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                         </div>
-                    )}
+                    </div>
 
                     {/* Pricing Card */}
                     <div className="card">
@@ -854,7 +872,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                 <div className="form-grid">
                                     <div className="form-group">
                                         <label className="form-label">MRP (₹)</label>
-                                        <input type="number" {...register("mrp")} className="form-input" placeholder="0.00" style={{ fontWeight: 'bold' }} />
+                                        <input type="number" {...register("mrp")} className="form-input" placeholder="0.00" style={{ fontWeight: 'bold', borderColor: errors.mrp ? 'var(--danger)' : undefined }} />
+                                        {errors.mrp && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.mrp.message as string}</span>}
                                     </div>
                                     <div className="form-group">
                                         <label className="form-label">Selling Price A (₹)</label>

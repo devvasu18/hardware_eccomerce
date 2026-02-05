@@ -42,6 +42,7 @@ interface Product {
     availableSizes?: string[];
     variations?: Variation[];
     models?: Model[];
+    mrp?: number;
 }
 
 // ... imports
@@ -64,13 +65,72 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
     const [selectedVariations, setSelectedVariations] = useState<{ [key: string]: string }>({});
     const [currentVariation, setCurrentVariation] = useState<Variation | null>(null);
 
-    // Auto-select first model if only one exists or for better UX
+    // Auto-select lowest price model/variation
     useEffect(() => {
-        if (product.models && product.models.length > 0 && !selectedModel) {
-            // Optional: don't auto-select to force user choice
-            // setSelectedModel(product.models[0]);
+        // If selection already exists, do nothing (preserves user selection if they navigate back/forth or something, though on mount it's usually null)
+        if (selectedModel || currentVariation) return;
+
+        let bestPrice = Infinity;
+        let bestModel: Model | null = null;
+        let bestVar: Variation | null = null;
+
+        const hasModelsLocal = product.models && product.models.length > 0;
+
+        if (hasModelsLocal) {
+            product.models?.forEach(m => {
+                if (m.isActive === false) return;
+
+                // If model has variations, we usually MUST pick a variation. 
+                // So we check variations.
+                // If model has NO variations, we check model base price.
+                const mVars = m.variations?.filter(v => v.isActive !== false) || [];
+
+                if (mVars.length > 0) {
+                    mVars.forEach(v => {
+                        if (v.price && v.price < bestPrice) {
+                            bestPrice = v.price;
+                            bestModel = m;
+                            bestVar = v;
+                        }
+                    });
+                } else {
+                    // Start checking model base price if no variations
+                    if (m.selling_price_a && m.selling_price_a < bestPrice) {
+                        bestPrice = m.selling_price_a;
+                        bestModel = m;
+                        bestVar = null;
+                    }
+                }
+            });
+        } else {
+            // No models, check global variations
+            const pVars = product.variations?.filter(v => v.isActive !== false) || [];
+            pVars.forEach(v => {
+                if (v.price && v.price < bestPrice) {
+                    bestPrice = v.price;
+                    bestVar = v;
+                }
+            });
         }
-    }, [product.models]);
+
+        // Apply Selection
+        if (bestPrice !== Infinity) {
+            if (bestModel) {
+                setSelectedModel(bestModel);
+            }
+            if (bestVar) {
+                setCurrentVariation(bestVar);
+                setSelectedVariations({ [bestVar.type]: bestVar.value });
+                if (onVariationSelect) onVariationSelect(bestVar);
+            } else if (bestModel) {
+                // Model selected, no variation (standalone model)
+                setCurrentVariation(null);
+                setSelectedVariations({});
+                if (onVariationSelect) onVariationSelect(null);
+            }
+        }
+
+    }, [product]);
 
     // Group variations by Type
     const variationGroups = useMemo(() => {
@@ -138,6 +198,40 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
         return allPrices.length > 0 ? Math.min(...allPrices) : null;
     }, [product.models]);
 
+    // Calculate default MRP for the starting price
+    const defaultDisplayMRP = useMemo(() => {
+        if (!minModelPrice) return null;
+
+        let foundMrp: number | null = null;
+
+        // Check variations first (if standalone)
+        const matchingVar = product.variations?.find(v => v.price === minModelPrice && v.isActive !== false);
+        if (matchingVar && matchingVar.mrp) {
+            return matchingVar.mrp;
+        }
+
+        // Check models
+        if (product.models) {
+            const matchingModel = product.models.find(m => {
+                if (m.isActive === false) return false;
+                // check model base price
+                if (m.selling_price_a === minModelPrice) return true;
+                // check model variations
+                return m.variations?.some(v => v.isActive !== false && v.price === minModelPrice);
+            });
+
+            if (matchingModel) {
+                const matchingModelVar = matchingModel.variations?.find(v => v.isActive !== false && v.price === minModelPrice);
+                if (matchingModelVar && matchingModelVar.mrp) {
+                    return matchingModelVar.mrp;
+                } else if (matchingModel.mrp) {
+                    return matchingModel.mrp;
+                }
+            }
+        }
+        return null;
+    }, [minModelPrice, product.models, product.variations]);
+
     const basePrice = currentVariation
         ? currentVariation.price
         : (selectedModel
@@ -154,6 +248,33 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
     let finalPrice = basePrice;
     if (user?.wholesaleDiscount && user.wholesaleDiscount > 0) {
         finalPrice = Math.round(basePrice * (1 - user.wholesaleDiscount / 100));
+    }
+
+    // Calculate Effective MRP for Display
+    let effectiveMRP: number | null | undefined = null;
+
+    if (currentVariation) {
+        // Heuristic: If variation price matches model price, prefer model MRP 
+        // This fixes issues where variations have default/incorrect MRPs (like the lowest variant's MRP)
+        const modelPrice = selectedModel?.selling_price_a;
+        const variationPrice = currentVariation.price;
+        const variationMatchesModelPrice = modelPrice !== undefined && Math.abs(variationPrice - modelPrice) < 0.01;
+
+        if (variationMatchesModelPrice && selectedModel && selectedModel.mrp && selectedModel.mrp > 0) {
+            effectiveMRP = selectedModel.mrp;
+        } else if (currentVariation.mrp && currentVariation.mrp > 0) {
+            effectiveMRP = currentVariation.mrp;
+        } else if (selectedModel && selectedModel.mrp && selectedModel.mrp > 0) {
+            // Fallback to model MRP if variation (inside model) doesn't have one
+            effectiveMRP = selectedModel.mrp;
+        }
+    } else if (selectedModel) {
+        if (selectedModel.mrp && selectedModel.mrp > 0) {
+            effectiveMRP = selectedModel.mrp;
+        }
+    } else {
+        // Default "Starting From" MRP
+        effectiveMRP = defaultDisplayMRP || product.basePrice || product.mrp;
     }
 
     const isOutOfStock = !isStrictlyOnDemand && stock < 1;
@@ -235,28 +356,16 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                 {/* Pricing */}
                 <div className="pricing-section">
                     <div className="price-display">
-                        {currentVariation && currentVariation.mrp && currentVariation.mrp > finalPrice ? (
+                        {effectiveMRP && effectiveMRP > finalPrice ? (
                             <>
-                                <span className="price-original">₹{currentVariation.mrp}</span>
-                                <span className="price-separator">/</span>
-                                <span className="price-current">₹{finalPrice}</span>
-                            </>
-                        ) : (selectedModel && selectedModel.mrp && selectedModel.mrp > finalPrice && !currentVariation) ? (
-                            <>
-                                <span className="price-original">₹{selectedModel.mrp}</span>
-                                <span className="price-separator">/</span>
-                                <span className="price-current">₹{finalPrice}</span>
-                            </>
-                        ) : (!currentVariation && product.discountedPrice > 0 && product.discountedPrice < product.basePrice) ? (
-                            <>
-                                {hasVariations && <span style={{ fontSize: '0.9rem', color: '#64748B', display: 'block', marginBottom: '4px' }}>Starting from</span>}
-                                <span className="price-original">₹{product.basePrice}</span>
+                                {!currentVariation && !selectedModel && hasVariations && <span style={{ fontSize: '0.9rem', color: '#64748B', display: 'block', marginBottom: '4px' }}>Starting from</span>}
+                                <span className="price-original">₹{effectiveMRP}</span>
                                 <span className="price-separator">/</span>
                                 <span className="price-current">₹{finalPrice}</span>
                             </>
                         ) : (
                             <>
-                                {hasVariations && !currentVariation && <span style={{ fontSize: '0.9rem', color: '#64748B', display: 'block', marginBottom: '4px' }}>Starting from</span>}
+                                {!currentVariation && !selectedModel && hasVariations && <span style={{ fontSize: '0.9rem', color: '#64748B', display: 'block', marginBottom: '4px' }}>Starting from</span>}
                                 <span className="price-current">₹{finalPrice}</span>
                             </>
                         )}
