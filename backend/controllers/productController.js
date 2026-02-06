@@ -1,4 +1,6 @@
 const Product = require('../models/Product');
+const Brand = require('../models/Brand');
+const Category = require('../models/Category');
 const { deleteFile } = require('../utils/fileHandler');
 const { logAction } = require('../utils/auditLogger');
 
@@ -7,15 +9,63 @@ const { logAction } = require('../utils/auditLogger');
 // @access  Admin
 exports.getAdminProducts = async (req, res) => {
     try {
-        const products = await Product.find({})
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const skip = (page - 1) * limit;
+
+        const search = req.query.search || '';
+        const status = req.query.status || 'active'; // 'active', 'inactive', 'all'
+
+        let query = {};
+
+        // Status Filter
+        if (status === 'active') {
+            query.isActive = { $ne: false }; // active or undefined = active
+        } else if (status === 'inactive') {
+            query.isActive = false;
+        }
+
+        // Search Filter
+        if (search) {
+            const searchRegex = { $regex: search, $options: 'i' };
+
+            // Find related Brands and Categories
+            const brands = await Brand.find({ name: searchRegex }).select('_id');
+            const categories = await Category.find({ name: searchRegex }).select('_id');
+
+            const brandIds = brands.map(b => b._id);
+            const categoryIds = categories.map(c => c._id);
+
+            query.$or = [
+                { title: searchRegex },
+                { slug: searchRegex },
+                { part_number: searchRegex },
+                { brand: { $in: brandIds } },
+                { category: { $in: categoryIds } }
+            ];
+        }
+
+        const total = await Product.countDocuments(query);
+        const totalPages = Math.ceil(total / limit);
+
+        const products = await Product.find(query)
             .populate('category', 'name')
             .populate('sub_category', 'name')
             .populate('brand', 'name')
             .populate('offer', 'title percentage')
             .populate('hsn_code', 'hsn_code gst_rate')
-            .sort({ createdAt: -1 });
-        res.json(products);
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit);
+
+        res.json({
+            products,
+            currentPage: page,
+            totalPages,
+            totalProducts: total
+        });
     } catch (error) {
+        console.error('Error fetching admin products:', error);
         res.status(500).json({ message: 'Failed to fetch products', error: error.message });
     }
 };

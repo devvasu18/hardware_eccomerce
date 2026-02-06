@@ -853,8 +853,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                             <th style={{ padding: '0.5rem', textAlign: 'left' }}>Image</th>
                                                             <th style={{ padding: '0.5rem', textAlign: 'left' }}>Type</th>
                                                             <th style={{ padding: '0.5rem', textAlign: 'left' }}>Value</th>
-                                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Price (₹)</th>
                                                             <th style={{ padding: '0.5rem', textAlign: 'left' }}>MRP (₹)</th>
+                                                            <th style={{ padding: '0.5rem', textAlign: 'left' }}>Price (₹)</th>
                                                             <th style={{ padding: '0.5rem', textAlign: 'left' }}>Stock</th>
                                                             <th style={{ padding: '0.5rem', textAlign: 'left' }}>SKU</th>
                                                             <th style={{ padding: '0.5rem', textAlign: 'center' }}>Active</th>
@@ -933,6 +933,9 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                                         {errors.variations?.[index]?.value && <span style={{ color: 'red', fontSize: '0.7rem' }}>Required</span>}
                                                                     </td>
                                                                     <td style={{ padding: '0.5rem' }}>
+                                                                        <input type="number" {...register(`variations.${index}.mrp`)} className="form-input" placeholder="MRP" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px' }} />
+                                                                    </td>
+                                                                    <td style={{ padding: '0.5rem' }}>
                                                                         <input
                                                                             type="number"
                                                                             {...register(`variations.${index}.price`)}
@@ -949,9 +952,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                                             </div>
                                                                         )}
                                                                     </td>
-                                                                    <td style={{ padding: '0.5rem' }}>
-                                                                        <input type="number" {...register(`variations.${index}.mrp`)} className="form-input" placeholder="MRP" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px' }} />
-                                                                    </td>
+
                                                                     <td style={{ padding: '0.5rem' }}>
                                                                         <input type="number" {...register(`variations.${index}.stock`)} className="form-input" placeholder="Qty" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '60px' }} />
                                                                     </td>

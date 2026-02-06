@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import Link from "next/link";
 import Image from "next/image";
-import { FiEdit2, FiTrash2, FiPlus, FiEye, FiSearch, FiRefreshCw } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiPlus, FiEye, FiSearch, FiRefreshCw, FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
 interface Product {
     _id: string;
@@ -38,16 +38,56 @@ export default function ProductList() {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [activeTab, setActiveTab] = useState<'active' | 'inactive'>('active');
+
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [limit, setLimit] = useState(20);
+    const [totalProducts, setTotalProducts] = useState(0);
+
+    // Debounce search
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedSearch(searchTerm);
+            setCurrentPage(1);
+        }, 500);
+        return () => clearTimeout(handler);
+    }, [searchTerm]);
+
+    // Reset page when tab changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [activeTab]);
 
     useEffect(() => {
         fetchProducts();
-    }, []);
+    }, [currentPage, activeTab, debouncedSearch, limit]);
 
     const fetchProducts = async () => {
+        setLoading(true);
         try {
-            const res = await api.get('/admin/products');
-            setProducts(res.data);
+            const res = await api.get('/admin/products', {
+                params: {
+                    page: currentPage,
+                    limit: limit,
+                    search: debouncedSearch,
+                    status: activeTab
+                }
+            });
+
+            if (res.data.products) {
+                setProducts(res.data.products);
+                setTotalPages(res.data.totalPages);
+                setTotalProducts(res.data.totalProducts);
+                // Ensure current page is valid
+                if (res.data.currentPage > res.data.totalPages && res.data.totalPages > 0) {
+                    setCurrentPage(res.data.totalPages);
+                }
+            } else {
+                setProducts(res.data);
+            }
         } catch (error) {
             console.error("Failed to fetch products", error);
         } finally {
@@ -59,14 +99,9 @@ export default function ProductList() {
         if (!confirm("Are you sure you want to deactivate this product?")) return;
         try {
             await api.delete(`/admin/products/${id}`);
-            // Update local state to mark as inactive instead of removing
-            setProducts(prev => prev.map(p =>
-                p._id === id ? { ...p, isActive: false } : p
-            ));
+            fetchProducts(); // Refetch to update list and counts
             alert("Product deactivated successfully");
         } catch (error) {
-            // Check if error is due to product already being inactive (depends on backend logic)
-            // But since we want to move it to inactive tab, we assume success if no error.
             console.error(error);
             alert("Failed to deactivate product");
         }
@@ -75,12 +110,8 @@ export default function ProductList() {
     const handleRestore = async (id: string) => {
         if (!confirm("Are you sure you want to restore this product?")) return;
         try {
-            // Reuse the update endpoint to set isActive: true
             await api.put(`/admin/products/${id}`, { isActive: true });
-
-            setProducts(prev => prev.map(p =>
-                p._id === id ? { ...p, isActive: true } : p
-            ));
+            fetchProducts(); // Refetch
             alert("Product restored successfully");
         } catch (error) {
             console.error(error);
@@ -88,23 +119,7 @@ export default function ProductList() {
         }
     };
 
-    // Filter products
-    const filteredProducts = products.filter(product => {
-        // Tab Filter
-        // If activeTab is 'active', we show products where isActive is true (or undefined/default)
-        // If activeTab is 'inactive', we show products where isActive is false
-        const matchesTab = activeTab === 'active' ? product.isActive !== false : product.isActive === false;
 
-        // Search Filter (Case insensitive)
-        const searchLower = searchTerm.toLowerCase();
-        const matchesSearch =
-            (product.title || '').toLowerCase().includes(searchLower) ||
-            (product.slug || '').toLowerCase().includes(searchLower) ||
-            (product.brand?.name || '').toLowerCase().includes(searchLower) ||
-            (product.category?.name || '').toLowerCase().includes(searchLower);
-
-        return matchesTab && matchesSearch;
-    });
 
     return (
         <div className="container" style={{ maxWidth: '100%' }}>
@@ -197,7 +212,7 @@ export default function ProductList() {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredProducts.map(product => {
+                        {products.map(product => {
                             // Find lowest price from variations for display if main price is 0
                             const variationPrices = product.variations?.filter(v => v.isActive).map(v => v.price) || [];
                             const minVarPrice = variationPrices.length > 0 ? Math.min(...variationPrices) : null;
@@ -290,7 +305,7 @@ export default function ProductList() {
                     </tbody>
                 </table>
                 {loading && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading inventory...</div>}
-                {!loading && filteredProducts.length === 0 && (
+                {!loading && products.length === 0 && (
                     <div style={{ padding: '3rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                         <div style={{ fontSize: '2.5rem', opacity: 0.5 }}>{searchTerm ? '🔍' : '📦'}</div>
                         <h3 style={{ fontWeight: 600, color: 'var(--text-main)', margin: 0 }}>
@@ -304,7 +319,118 @@ export default function ProductList() {
                         )}
                     </div>
                 )}
+
+
+                {/* Pagination Controls */}
+                {!loading && products.length > 0 && (
+                    <div style={{
+                        marginTop: '1rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '1rem',
+                        background: '#fff',
+                        borderRadius: '0 0 8px 8px',
+                        borderTop: '1px solid #eee',
+                        flexWrap: 'wrap',
+                        gap: '1rem'
+                    }}>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                            Showing page <strong>{currentPage}</strong> of <strong>{totalPages}</strong> ({totalProducts} items)
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                            <select
+                                value={limit}
+                                onChange={(e) => {
+                                    setLimit(Number(e.target.value));
+                                    setCurrentPage(1);
+                                }}
+                                style={{
+                                    padding: '0.3rem',
+                                    borderRadius: '4px',
+                                    border: '1px solid #ddd',
+                                    marginRight: '1rem',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <option value={10}>10 / page</option>
+                                <option value={20}>20 / page</option>
+                                <option value={50}>50 / page</option>
+                                <option value={100}>100 / page</option>
+                            </select>
+
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    border: '1px solid #ddd',
+                                    background: currentPage === 1 ? '#f5f5f5' : 'white',
+                                    color: currentPage === 1 ? '#ccc' : 'var(--text-main)',
+                                    borderRadius: '6px',
+                                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
+                                <FiChevronLeft /> Previous
+                            </button>
+
+                            <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                {/* Simple Page Numbers - can be enhanced for many pages */}
+                                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                    // Logic to show ranges around current page could go here
+                                    // For now, let's just show dynamic range or simple previous/next if simple.
+                                    // Let's implement a smart-ish range: current-2 to current+2
+                                    let p = currentPage - 2 + i;
+                                    if (currentPage < 3) p = 1 + i;
+                                    if (p > totalPages) return null;
+                                    if (p < 1) return null;
+
+                                    return (
+                                        <button
+                                            key={p}
+                                            onClick={() => setCurrentPage(p)}
+                                            style={{
+                                                width: '32px',
+                                                height: '32px',
+                                                border: p === currentPage ? 'none' : '1px solid #ddd',
+                                                background: p === currentPage ? 'var(--primary)' : 'white',
+                                                color: p === currentPage ? 'white' : 'var(--text-main)',
+                                                borderRadius: '6px',
+                                                cursor: 'pointer',
+                                                fontWeight: p === currentPage ? 600 : 400
+                                            }}
+                                        >
+                                            {p}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <button
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                style={{
+                                    padding: '0.5rem 1rem',
+                                    border: '1px solid #ddd',
+                                    background: currentPage === totalPages ? '#f5f5f5' : 'white',
+                                    color: currentPage === totalPages ? '#ccc' : 'var(--text-main)',
+                                    borderRadius: '6px',
+                                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem'
+                                }}
+                            >
+                                Next <FiChevronRight />
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
+        </div >
     );
 }
