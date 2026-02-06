@@ -24,6 +24,8 @@ interface Request {
     createdAt: string;
     modelId?: string;
     variationId?: string;
+    modelName?: string;
+    variationText?: string;
     declaredBasePrice?: number;
 }
 
@@ -110,12 +112,44 @@ export default function RequestsPage() {
         window.open(url, '_blank');
     };
 
+    const [filterStatus, setFilterStatus] = useState('All');
+
+    const filteredRequests = requests.filter(req => {
+        if (filterStatus === 'All') return true;
+        return req.status === filterStatus;
+    });
+
+    const tabs = ['All', 'Pending', 'Approved', 'Rejected'];
+
     return (
         <div>
             <h1 style={{ marginBottom: '2rem' }}>Procurement Requests</h1>
 
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid #e2e8f0' }}>
+                {tabs.map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setFilterStatus(tab)}
+                        style={{
+                            padding: '0.75rem 1.5rem',
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: filterStatus === tab ? '2px solid var(--primary)' : '2px solid transparent',
+                            color: filterStatus === tab ? 'var(--primary)' : '#64748B',
+                            fontWeight: filterStatus === tab ? 600 : 400,
+                            cursor: 'pointer',
+                            fontSize: '1rem'
+                        }}
+                    >
+                        {tab}
+                        {tab === 'All' ? ` (${requests.length})` :
+                            tab === 'Pending' ? (requests.filter(r => r.status === 'Pending').length > 0 ? ` (${requests.filter(r => r.status === 'Pending').length})` : '') : ''}
+                    </button>
+                ))}
+            </div>
+
             <div className="grid">
-                {requests.map(req => (
+                {filteredRequests.map(req => (
                     <div key={req._id} className="card" style={{
                         borderLeft: req.status === 'Pending' ? '4px solid #f59e0b' :
                             (req.status === 'Rejected' || req.status === 'Cancelled' ? '4px solid #ef4444' : '4px solid #10b981'),
@@ -167,6 +201,13 @@ export default function RequestsPage() {
 
                         <div style={{ marginBottom: '1rem', color: '#64748B' }}>
                             <p>Request ID: <span style={{ fontFamily: 'monospace' }}>{req._id}</span></p>
+                            {/* VARIANT/MODEL DETAILS */}
+                            {(req.modelName || req.variationText) && (
+                                <p style={{ color: '#F37021', fontWeight: 600 }}>
+                                    Spec: {req.modelName ? req.modelName : ''} {req.variationText ? `(${req.variationText})` : ''}
+                                </p>
+                            )}
+                            {/* ----------------------- */}
                             <p>Requested Qty: <strong>{req.requestedQuantity}</strong></p>
                             <p>Current Stock: {req.product.stock}</p>
                             <p>Base Price (Excl. GST): <strong>₹{typeof req.declaredBasePrice === 'number' ? req.declaredBasePrice : (req.product.selling_price_a || req.product.mrp || req.product.basePrice)}</strong></p>

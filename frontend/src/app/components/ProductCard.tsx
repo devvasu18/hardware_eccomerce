@@ -184,7 +184,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     <div className="product-price">
                         <>
                             {showStartingAt && <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', marginBottom: '2px' }}>From</span>}
-                            {(displayMRP && displayMRP > finalPrice) && (
+                            {(displayMRP && displayMRP > 0 && displayMRP > finalPrice) && (
                                 <span className="price-original">₹{displayMRP}</span>
                             )}
                             <span className="price-current">₹{finalPrice}</span>

@@ -17,6 +17,7 @@ export interface CartItem {
     isOnDemand?: boolean;
     gst_rate?: number;
     requestId?: string;
+    approvedLimit?: number;
 }
 
 interface CartContextType {
@@ -177,7 +178,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         name: item.variationText ? `${item.product?.title} (${item.variationText})` : (item.product?.title || 'Unknown Product'),
                         price: item.price,
                         quantity: item.quantity,
-                        image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
+                        image: item.resolvedImage || item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
                         variationId: item.variationId,
                         variationText: item.variationText,
@@ -185,7 +186,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         modelName: item.modelName,
                         isOnDemand: (!item.requestId && item.product?.isOnDemand) || ((!item.requestId) && typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
                         gst_rate: item.product?.gst_rate,
-                        requestId: item.requestId
+                        requestId: item.requestId,
+                        approvedLimit: item.approvedLimit
                     }));
                 setItems(dbItems);
             }
@@ -238,7 +240,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         modelName: item.modelName,
                         isOnDemand: (!item.requestId && item.product?.isOnDemand) || ((!item.requestId) && typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
                         gst_rate: item.product?.gst_rate,
-                        requestId: item.requestId
+                        requestId: item.requestId,
+                        approvedLimit: item.approvedLimit
                     }));
                 setItems(syncedItems);
                 localStorage.removeItem('cart'); // Clear localStorage after successful sync

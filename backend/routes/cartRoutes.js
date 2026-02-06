@@ -8,17 +8,62 @@ const { authenticateToken } = require('../middleware/auth');
 // Get user's cart
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const cart = await Cart.findOne({ user: req.user.id }).populate({
-            path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate'
-        });
+        // This tool call is just to verify logic, selecting correct file viewing first.
+        // I will cancel this edit and view CartContext.tsx.
+        // Wait, I can't cancel. I will just execute a view.
+        // Actually, I can view `CartContext.tsx` in a separate step or just update backend to be "API-first" and provide the resolved image.
+        // Providing resolved image from backend is safer/better architecture.
+
+        // Backend changes:
+        // Update populate to include `models` and `variations` so we can resolve specific images.
+        const cart = await Cart.findOne({ user: req.user.id }).populate([
+            {
+                path: 'items.product',
+                select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations'
+            },
+            {
+                path: 'items.requestId',
+                model: 'ProcurementRequest',
+                select: 'requestedQuantity status'
+            }
+        ]);
 
         if (!cart) {
             return res.json({ items: [], total: 0, itemCount: 0 });
         }
 
         // Filter out items where product was deleted (null)
-        const validItems = cart.items.filter(item => item.product);
+        const validItems = cart.items
+            .filter(item => item.product)
+            .map(item => {
+                const itemObj = item.toObject();
+
+                // --- RESOLVE SPECIFIC IMAGE ---
+                let specificImage = item.product.featured_image;
+
+                if (item.modelId && item.product.models) {
+                    const model = item.product.models.find(m => m._id.toString() === item.modelId.toString());
+                    if (model) {
+                        if (model.featured_image) specificImage = model.featured_image;
+                        // Check variant inside model
+                        if (item.variationId && model.variations) {
+                            const variant = model.variations.find(v => v._id.toString() === item.variationId.toString());
+                            if (variant && variant.image) specificImage = variant.image;
+                        }
+                    }
+                } else if (item.variationId && item.product.variations) {
+                    const variant = item.product.variations.find(v => v._id.toString() === item.variationId.toString());
+                    if (variant && variant.image) specificImage = variant.image;
+                }
+
+                itemObj.resolvedImage = specificImage;
+                // -----------------------------
+
+                if (item.requestId && item.requestId.requestedQuantity) {
+                    itemObj.approvedLimit = item.requestId.requestedQuantity;
+                }
+                return itemObj;
+            });
 
         // Calculate totals based on valid items
         const total = validItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -236,6 +281,19 @@ router.patch('/update', authenticateToken, async (req, res) => {
 
             if (!product.isOnDemand && limit < quantity) {
                 return res.status(400).json({ message: `Insufficient stock. Only ${limit} available.` });
+            }
+
+            // CHECK PROCUREMENT LIMIT
+            if (cart.items[itemIndex].requestId) {
+                const ProcurementRequest = require('../models/ProcurementRequest');
+                const request = await ProcurementRequest.findById(cart.items[itemIndex].requestId);
+                if (request) {
+                    if (quantity > request.requestedQuantity) {
+                        return res.status(400).json({
+                            message: `Quantity Limit Exceeded! Your request was approved for only ${request.requestedQuantity} units. Please complete this purchase first, then request more.`
+                        });
+                    }
+                }
             }
 
             // Apply Wholesale Discount

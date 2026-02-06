@@ -115,6 +115,8 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
         ? Math.round(((activeMRP - activePrice) / activeMRP) * 100)
         : 0;
 
+    const [isZoomOpen, setIsZoomOpen] = useState(false);
+
     return (
         <div className="product-detail-grid">
             {/* Left: Image Gallery */}
@@ -125,7 +127,11 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
                     </div>
                 )}
 
-                <div className="main-image">
+                <div
+                    className="main-image"
+                    onClick={() => setIsZoomOpen(true)}
+                    style={{ cursor: 'zoom-in' }}
+                >
                     {activeImage ? (
                         <ProductImage
                             src={activeImage}
@@ -198,6 +204,39 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
                     <p>Express delivery available at checkout</p>
                 </div>
             </div>
+
+            {/* FULL SCREEN ZOOM MODAL */}
+            {isZoomOpen && activeImage && (
+                <div
+                    style={{
+                        position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+                        backgroundColor: 'rgba(0,0,0,0.9)', zIndex: 10000,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'zoom-out'
+                    }}
+                    onClick={() => setIsZoomOpen(false)}
+                >
+                    <div style={{ position: 'relative', width: '90%', height: '90%' }}>
+                        <ProductImage
+                            src={activeImage}
+                            alt="Zoomed Product"
+                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                        />
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setIsZoomOpen(false); }}
+                            style={{
+                                position: 'absolute', top: '20px', right: '20px',
+                                background: 'white', color: 'black', border: 'none',
+                                borderRadius: '50%', width: '40px', height: '40px',
+                                fontSize: '1.5rem', cursor: 'pointer', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center'
+                            }}
+                        >
+                            &times;
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

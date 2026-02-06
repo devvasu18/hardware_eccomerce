@@ -113,6 +113,73 @@ productSchema.index({ isOnDemand: 1 });
 // Text index for search (title & description)
 productSchema.index({ title: 'text', description: 'text', part_number: 'text', 'variations.value': 'text' });
 
+// AUTO-CALCULATE LOWEST PRICE ON SAVE
+productSchema.pre('save', async function () {
+    try {
+        let minPrice = Infinity;
+        let minMrp = Infinity;
+        let hasVariants = false;
+
+        // 1. Check Models
+        if (this.models && this.models.length > 0) {
+            this.models.forEach(m => {
+                if (m.isActive !== false) {
+                    // Check model base price
+                    if (m.selling_price_a && m.selling_price_a > 0) {
+                        if (m.selling_price_a < minPrice) {
+                            minPrice = m.selling_price_a;
+                            minMrp = m.mrp || minPrice; // best effort
+                        }
+                        hasVariants = true;
+                    }
+
+                    // Check model variations
+                    if (m.variations && m.variations.length > 0) {
+                        m.variations.forEach(v => {
+                            if (v.isActive !== false && v.price > 0) {
+                                if (v.price < minPrice) {
+                                    minPrice = v.price;
+                                    minMrp = v.mrp || v.price;
+                                }
+                                hasVariants = true;
+                            }
+                        });
+                    }
+                }
+            });
+        }
+
+        // 2. Check Legacy Variations
+        if (this.variations && this.variations.length > 0) {
+            this.variations.forEach(v => {
+                if (v.isActive !== false && v.price > 0) {
+                    if (v.price < minPrice) {
+                        minPrice = v.price;
+                        minMrp = v.mrp || v.price;
+                    }
+                    hasVariants = true;
+                }
+            });
+        }
+
+        // 3. Update Root Fields if variants found
+        if (hasVariants && minPrice !== Infinity) {
+            this.selling_price_a = minPrice;
+            this.discountedPrice = minPrice; // Alias
+
+            // Only update MRP if we found a valid one, otherwise leave it (or set to minMrp)
+            if (minMrp !== Infinity) {
+                this.mrp = minMrp;
+                this.basePrice = minMrp; // Alias
+            }
+        }
+
+    } catch (err) {
+        console.error('Error in pre-save price calculation:', err);
+        throw err;
+    }
+});
+
 // SKU uniqueness constraints (sparse to allow empty values)
 productSchema.index({ 'variations.sku': 1 }, { unique: true, sparse: true });
 productSchema.index({ 'models.variations.sku': 1 }, { unique: true, sparse: true });

@@ -336,7 +336,55 @@ exports.updateProduct = async (req, res) => {
             } catch (e) { console.error('Error parsing models:', e); }
         }
 
-        const updatedProduct = await Product.findByIdAndUpdate(req.params.id, updates, { new: true });
+        // Helper to sanitize numeric fields (convert "" to undefined)
+        const sanitizeNumber = (val) => (val === '' ? undefined : val);
+        const numberFields = ['mrp', 'selling_price_a', 'selling_price_b', 'selling_price_c', 'delivery_charge', 'opening_stock', 'max_unit_buy', 'low_stock_threshold', 'gst_rate'];
+
+        numberFields.forEach(field => {
+            if (updates[field] !== undefined) updates[field] = sanitizeNumber(updates[field]);
+        });
+
+        // Parse and Sanitize Models
+        if (updates.models && typeof updates.models === 'string') {
+            try {
+                updates.models = JSON.parse(updates.models);
+                if (req.files) {
+                    // ... (image logic existing in previous block, we need to preserve or re-include it. 
+                    // Wait, the previous block ALREADY parsed and updated `updates.models`. 
+                    // I must reuse `updates.models` which is already parsed object array from lines 306-337)
+                }
+            } catch (e) { console.error('Error parsing models:', e); }
+        }
+
+        // Since the previous code block (lines 306-337) ALREADY processed models/variations and images, 
+        // `updates.models` and `updates.variations` are already Objects (if they were present).
+        // We just need to sanitize numbers inside them.
+
+        if (Array.isArray(updates.models)) {
+            updates.models.forEach(m => {
+                ['mrp', 'selling_price_a'].forEach(f => { if (m[f] !== undefined) m[f] = sanitizeNumber(m[f]); });
+                if (Array.isArray(m.variations)) {
+                    m.variations.forEach(v => {
+                        ['price', 'mrp', 'stock'].forEach(f => { if (v[f] !== undefined) v[f] = sanitizeNumber(v[f]); });
+                    });
+                }
+            });
+        }
+
+        if (Array.isArray(updates.variations)) {
+            updates.variations.forEach(v => {
+                ['price', 'mrp', 'stock'].forEach(f => { if (v[f] !== undefined) v[f] = sanitizeNumber(v[f]); });
+            });
+        }
+
+        // Filter out immutable fields
+        const immutableFields = ['_id', 'createdAt', 'updatedAt', '__v'];
+        immutableFields.forEach(field => delete updates[field]);
+
+        // Apply updates
+        product.set(updates);
+
+        const updatedProduct = await product.save();
         await logAction({ action: 'UPDATE_PRODUCT_ADMIN', req, targetResource: 'Product', targetId: req.params.id, details: { title: updatedProduct.title } });
         res.json(updatedProduct);
 

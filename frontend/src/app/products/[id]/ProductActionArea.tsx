@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import Modal from '@/app/components/Modal';
@@ -65,11 +66,47 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
     const [selectedVariations, setSelectedVariations] = useState<{ [key: string]: string }>({});
     const [currentVariation, setCurrentVariation] = useState<Variation | null>(null);
 
-    // Auto-select lowest price model/variation
+    const searchParams = useSearchParams();
+
+    // Auto-select logic: URL Params -> Lowest Price
     useEffect(() => {
         // If selection already exists, do nothing (preserves user selection if they navigate back/forth or something, though on mount it's usually null)
         if (selectedModel || currentVariation) return;
 
+        // 1. Check URL Params (Priority)
+        const paramModelId = searchParams.get('model');
+        const paramVariantId = searchParams.get('variant');
+
+        if (paramModelId || paramVariantId) {
+            let foundModel: Model | undefined;
+            if (paramModelId && product.models) {
+                foundModel = product.models.find(m => m._id === paramModelId);
+                if (foundModel) setSelectedModel(foundModel);
+            }
+
+            if (paramVariantId) {
+                let foundVar: Variation | undefined;
+                // Search in model if selected, or global
+                if (foundModel && foundModel.variations) {
+                    foundVar = foundModel.variations.find(v => v._id === paramVariantId);
+                } else if (!foundModel && product.variations) {
+                    foundVar = product.variations.find(v => v._id === paramVariantId);
+                }
+
+                if (foundVar) {
+                    setCurrentVariation(foundVar);
+                    setSelectedVariations({ [foundVar.type]: foundVar.value });
+                    if (onVariationSelect) onVariationSelect(foundVar, foundModel || null, true);
+                    return; // Done
+                }
+            } else if (foundModel) {
+                // Model only found
+                if (onVariationSelect) onVariationSelect(null, foundModel, true);
+                return; // Done
+            }
+        }
+
+        // 2. Fallback: Lowest Price Logic
         let bestPrice = Infinity;
         let bestModel: Model | null = null;
         let bestVar: Variation | null = null;
@@ -130,7 +167,7 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             }
         }
 
-    }, [product]);
+    }, [product, searchParams]);
 
     // Group variations by Type
     const variationGroups = useMemo(() => {

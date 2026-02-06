@@ -28,6 +28,27 @@ router.post('/', async (req, res) => {
             }
         }
 
+        // Lookup Names for Admin Clarity
+        let modelName = undefined;
+        let variationText = undefined;
+
+        if (modelId && product.models) {
+            const m = product.models.find(m => m._id.toString() === modelId);
+            if (m) modelName = m.name;
+        }
+
+        if (variationId) {
+            let v = null;
+            if (modelId && product.models) {
+                const m = product.models.find(m => m._id.toString() === modelId);
+                if (m && m.variations) v = m.variations.find(v => v._id.toString() === variationId);
+            } else if (product.variations) {
+                v = product.variations.find(v => v._id.toString() === variationId);
+            }
+
+            if (v) variationText = `${v.type}: ${v.value}`;
+        }
+
         const newRequest = new ProcurementRequest({
             product: productId,
             requestedQuantity: quantity,
@@ -36,7 +57,9 @@ router.post('/', async (req, res) => {
             customerContact: customerContact, // { name, mobile }
             user: userId,
             modelId: modelId || undefined,
-            variationId: variationId || undefined
+            variationId: variationId || undefined,
+            modelName: modelName,
+            variationText: variationText
         });
 
         const savedRequest = await newRequest.save();

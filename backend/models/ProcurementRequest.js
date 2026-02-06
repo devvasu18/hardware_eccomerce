@@ -10,6 +10,8 @@ const requestSchema = new mongoose.Schema({
     // Configuration
     modelId: { type: mongoose.Schema.Types.ObjectId },
     variationId: { type: mongoose.Schema.Types.ObjectId },
+    modelName: { type: String },
+    variationText: { type: String },
 
     status: {
         type: String,
