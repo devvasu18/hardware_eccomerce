@@ -154,9 +154,33 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
 
     const handleModelSelect = (model: Model) => {
         setSelectedModel(model);
-        setSelectedVariations({});
-        setCurrentVariation(null);
-        if (onVariationSelect) onVariationSelect(null);
+
+        // Auto-select lowest priced variation in the selected model
+        let bestVar: Variation | null = null;
+        let minPrice = Infinity;
+
+        // Filter active variations
+        const activeVariations = model.variations?.filter(v => v.isActive !== false) || [];
+
+        if (activeVariations.length > 0) {
+            activeVariations.forEach(v => {
+                if (v.price < minPrice) {
+                    minPrice = v.price;
+                    bestVar = v;
+                }
+            });
+        }
+
+        if (bestVar) {
+            setCurrentVariation(bestVar);
+            setSelectedVariations({ [bestVar.type]: bestVar.value });
+            if (onVariationSelect) onVariationSelect(bestVar);
+        } else {
+            // If no variations, clear selection
+            setSelectedVariations({});
+            setCurrentVariation(null);
+            if (onVariationSelect) onVariationSelect(null);
+        }
     };
 
     // Handle Selection

@@ -21,8 +21,8 @@ export interface CartItem {
 interface CartContextType {
     items: CartItem[];
     addToCart: (item: CartItem) => void;
-    removeFromCart: (productId: string, size?: string) => void;
-    updateQuantity: (productId: string, quantity: number, size?: string) => void;
+    removeFromCart: (productId: string, size?: string, modelId?: string) => void;
+    updateQuantity: (productId: string, quantity: number, size?: string, modelId?: string) => void;
     clearCart: () => void;
     cartTotal: number;
     cartCount: number;
@@ -312,12 +312,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     // Remove from cart
-    const removeFromCart = async (productId: string, size?: string) => {
+    const removeFromCart = async (productId: string, size?: string, modelId?: string) => {
         // NOTE: The 'size' parameter here is often used as a generic 'variant identifier' in legacy code.
         // We should check if it looks like a MongoID (24 hex chars) - if so treat as variationId.
         const isVariationId = size && size.length === 24 && /^[0-9a-fA-F]+$/.test(size);
 
-        console.log('Removing from cart:', { productId, size, isVariationId });
+        console.log('Removing from cart:', { productId, size, isVariationId, modelId });
 
         if (user) {
             // Logged-in: Remove from database
@@ -332,7 +332,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     body: JSON.stringify({
                         productId,
                         size: !isVariationId ? size : undefined,
-                        variationId: isVariationId ? size : undefined
+                        variationId: isVariationId ? size : undefined,
+                        modelId
                     })
                 });
 
@@ -350,7 +351,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 const idMatch = i.productId === productId;
                 // Normalize identifier comparison
                 const currentKey = `${i.modelId || ''}-${i.variationId || i.size || ''}`;
-                const targetKey = size || '';
+
+                // Construct target key based on what we have. 
+                // Note: Guest "Add" logic uses: `${newItem.modelId || ""}-${newItem.variationId || newItem.size || ""}`
+                // So we must match that reconstruction.
+                const targetKey = `${modelId || ''}-${size || ''}`;
 
                 return !(idMatch && currentKey === targetKey);
             }));
@@ -358,7 +363,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     };
 
     // Update quantity
-    const updateQuantity = async (productId: string, quantity: number, size?: string) => {
+    const updateQuantity = async (productId: string, quantity: number, size?: string, modelId?: string) => {
         if (quantity < 1) return;
 
         const isVariationId = size && size.length === 24 && /^[0-9a-fA-F]+$/.test(size);
@@ -377,7 +382,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         productId,
                         quantity,
                         size: !isVariationId ? size : undefined,
-                        variationId: isVariationId ? size : undefined
+                        variationId: isVariationId ? size : undefined,
+                        modelId
                     })
                 });
 
@@ -391,7 +397,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
             // Guest: Update in localStorage
             setItems(prev => prev.map(i => {
                 const currentKey = `${i.modelId || ''}-${i.variationId || i.size || ''}`;
-                const targetKey = size || '';
+                const targetKey = `${modelId || ''}-${size || ''}`;
 
                 if (i.productId === productId && currentKey === targetKey) {
                     return { ...i, quantity };

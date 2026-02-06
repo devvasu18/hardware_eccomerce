@@ -48,53 +48,74 @@ function ModelVariationManager({ modelIndex, control, register, errors, watch, V
                             </tr>
                         </thead>
                         <tbody>
-                            {fields.map((field, vIdx) => (
-                                <tr key={field.id}>
-                                    <td style={{ padding: '0.4rem' }}>
-                                        <select {...register(`models.${modelIndex}.variations.${vIdx}.type`)} className="form-select" style={{ padding: '2px', fontSize: '0.75rem' }}>
-                                            <option value="Color">Color</option>
-                                            <option value="Size">Size</option>
-                                            <option value="Weight">Weight</option>
-                                            <option value="Volume">Volume</option>
-                                            <option value="Battery">Battery</option>
-                                            <option value="Range">Range</option>
-                                            <option value="Storage">Storage</option>
-                                            <option value="Pack">Pack</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </td>
-                                    <td style={{ padding: '0.4rem' }}>
-                                        <input
-                                            {...register(`models.${modelIndex}.variations.${vIdx}.value`)}
-                                            className="form-input"
-                                            placeholder="Value"
-                                            list={`model-${modelIndex}-suggestions-${vIdx}`}
-                                            style={{ padding: '2px', fontSize: '0.75rem', borderColor: errors.models?.[modelIndex]?.variations?.[vIdx]?.value ? 'var(--danger)' : undefined }}
-                                        />
-                                        {errors.models?.[modelIndex]?.variations?.[vIdx]?.value && (
-                                            <span style={{ color: 'var(--danger)', fontSize: '0.65rem' }}>Required</span>
-                                        )}
-                                        <datalist id={`model-${modelIndex}-suggestions-${vIdx}`}>
-                                            {VARIATION_SUGGESTIONS[watch(`models.${modelIndex}.variations.${vIdx}.type`)]?.map((opt: string) => (
-                                                <option key={opt} value={opt} />
-                                            ))}
-                                        </datalist>
-                                    </td>
-                                    <td style={{ padding: '0.4rem' }}>
-                                        <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.mrp`)} className="form-input" style={{ padding: '2px', width: '60px', fontSize: '0.75rem' }} />
-                                    </td>
-                                    <td style={{ padding: '0.4rem' }}>
-                                        <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.price`)} className="form-input" style={{ padding: '2px', width: '60px', fontSize: '0.75rem', borderColor: errors.models?.[modelIndex]?.variations?.[vIdx]?.price ? 'var(--danger)' : undefined }} />
-                                    </td>
+                            {fields.map((field, vIdx) => {
+                                const rowMrp = watch(`models.${modelIndex}.variations.${vIdx}.mrp`);
+                                const rowPrice = watch(`models.${modelIndex}.variations.${vIdx}.price`);
+                                const isInvalidPrice = Number(rowMrp) > 0 && Number(rowPrice) >= Number(rowMrp);
 
-                                    <td style={{ padding: '0.4rem' }}>
-                                        <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.stock`)} className="form-input" style={{ padding: '2px', width: '50px', fontSize: '0.75rem' }} />
-                                    </td>
-                                    <td style={{ padding: '0.4rem', textAlign: 'center' }}>
-                                        <button type="button" onClick={() => remove(vIdx)} style={{ color: 'var(--danger)', border: 'none', background: 'none' }}><FiTrash2 size={14} /></button>
-                                    </td>
-                                </tr>
-                            ))}
+                                return (
+                                    <tr key={field.id}>
+                                        <td style={{ padding: '0.4rem' }}>
+                                            <select {...register(`models.${modelIndex}.variations.${vIdx}.type`)} className="form-select" style={{ padding: '2px', fontSize: '0.75rem' }}>
+                                                <option value="Color">Color</option>
+                                                <option value="Size">Size</option>
+                                                <option value="Weight">Weight</option>
+                                                <option value="Volume">Volume</option>
+                                                <option value="Battery">Battery</option>
+                                                <option value="Range">Range</option>
+                                                <option value="Storage">Storage</option>
+                                                <option value="Pack">Pack</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </td>
+                                        <td style={{ padding: '0.4rem' }}>
+                                            <input
+                                                {...register(`models.${modelIndex}.variations.${vIdx}.value`)}
+                                                className="form-input"
+                                                placeholder="Value"
+                                                list={`model-${modelIndex}-suggestions-${vIdx}`}
+                                                style={{ padding: '2px', fontSize: '0.75rem', borderColor: errors.models?.[modelIndex]?.variations?.[vIdx]?.value ? 'var(--danger)' : undefined }}
+                                            />
+                                            {errors.models?.[modelIndex]?.variations?.[vIdx]?.value && (
+                                                <span style={{ color: 'var(--danger)', fontSize: '0.65rem' }}>Required</span>
+                                            )}
+                                            <datalist id={`model-${modelIndex}-suggestions-${vIdx}`}>
+                                                {VARIATION_SUGGESTIONS[watch(`models.${modelIndex}.variations.${vIdx}.type`)]?.map((opt: string) => (
+                                                    <option key={opt} value={opt} />
+                                                ))}
+                                            </datalist>
+                                        </td>
+                                        <td style={{ padding: '0.4rem' }}>
+                                            <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.mrp`)} className="form-input" style={{ padding: '2px', width: '60px', fontSize: '0.75rem' }} />
+                                        </td>
+                                        <td style={{ padding: '0.4rem' }}>
+                                            <input
+                                                type="number"
+                                                {...register(`models.${modelIndex}.variations.${vIdx}.price`)}
+                                                className="form-input"
+                                                style={{
+                                                    padding: '2px',
+                                                    width: '60px',
+                                                    fontSize: '0.75rem',
+                                                    borderColor: (errors.models?.[modelIndex]?.variations?.[vIdx]?.price || isInvalidPrice) ? 'var(--danger)' : undefined
+                                                }}
+                                            />
+                                            {(errors.models?.[modelIndex]?.variations?.[vIdx]?.price?.message || isInvalidPrice) && (
+                                                <div style={{ color: 'var(--danger)', fontSize: '0.65rem', lineHeight: 1.1 }}>
+                                                    {errors.models?.[modelIndex]?.variations?.[vIdx]?.price?.message || "MRP > Price"}
+                                                </div>
+                                            )}
+                                        </td>
+
+                                        <td style={{ padding: '0.4rem' }}>
+                                            <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.stock`)} className="form-input" style={{ padding: '2px', width: '50px', fontSize: '0.75rem' }} />
+                                        </td>
+                                        <td style={{ padding: '0.4rem', textAlign: 'center' }}>
+                                            <button type="button" onClick={() => remove(vIdx)} style={{ color: 'var(--danger)', border: 'none', background: 'none' }}><FiTrash2 size={14} /></button>
+                                        </td>
+                                    </tr>
+                                )
+                            })}
                         </tbody>
                     </table>
                 </div>
@@ -156,8 +177,10 @@ const productSchema = z.object({
         image: z.string().optional(),
         imageFile: z.any().optional(),
         _id: z.string().optional()
+    }).refine((data) => !data.mrp || Number(data.mrp) > Number(data.price), {
+        message: "MRP > Price",
+        path: ["price"]
     })).optional(),
-
     // Models
     models: z.array(z.object({
         _id: z.string().optional(),
@@ -178,6 +201,9 @@ const productSchema = z.object({
             isActive: z.boolean().default(true),
             image: z.string().optional(),
             imageFile: z.any().optional()
+        }).refine((data) => !data.mrp || Number(data.mrp) > Number(data.price), {
+            message: "MRP > Price",
+            path: ["price"]
         })).optional()
     })).optional()
 });
@@ -751,89 +777,109 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {fields.map((field, index) => (
-                                                            <tr key={field.id} style={{ borderBottom: '1px solid #eee' }}>
-                                                                <td style={{ padding: '0.5rem', width: '80px' }}>
-                                                                    {/* Image Preview & Input */}
-                                                                    <div style={{ position: 'relative', width: '50px', height: '50px', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
-                                                                        {watch(`variations.${index}.imageFile`)?.[0] ? (
-                                                                            <Image
-                                                                                src={URL.createObjectURL(watch(`variations.${index}.imageFile`)[0])}
-                                                                                alt="New"
-                                                                                fill
-                                                                                style={{ objectFit: 'cover' }}
+                                                        {fields.map((field, index) => {
+                                                            const rowMrp = watch(`variations.${index}.mrp`);
+                                                            const rowPrice = watch(`variations.${index}.price`);
+                                                            const isInvalidPrice = Number(rowMrp) > 0 && Number(rowPrice) >= Number(rowMrp);
+
+                                                            return (
+                                                                <tr key={field.id} style={{ borderBottom: '1px solid #eee' }}>
+                                                                    <td style={{ padding: '0.5rem', width: '80px' }}>
+                                                                        {/* Image Preview & Input */}
+                                                                        <div style={{ position: 'relative', width: '50px', height: '50px', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+                                                                            {watch(`variations.${index}.imageFile`)?.[0] ? (
+                                                                                <Image
+                                                                                    src={URL.createObjectURL(watch(`variations.${index}.imageFile`)[0])}
+                                                                                    alt="New"
+                                                                                    fill
+                                                                                    style={{ objectFit: 'cover' }}
+                                                                                />
+                                                                            ) : watch(`variations.${index}.image`) ? (
+                                                                                <Image
+                                                                                    src={watch(`variations.${index}.image`)?.startsWith('http') ? watch(`variations.${index}.image`)! : `http://localhost:5000/${watch(`variations.${index}.image`)}`}
+                                                                                    alt="Existing"
+                                                                                    fill
+                                                                                    style={{ objectFit: 'cover' }}
+                                                                                />
+                                                                            ) : (
+                                                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
+                                                                                    <FiUploadCloud size={16} color="#ccc" />
+                                                                                </div>
+                                                                            )}
+                                                                            <input
+                                                                                type="file"
+                                                                                {...register(`variations.${index}.imageFile`)}
+                                                                                accept="image/*"
+                                                                                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
                                                                             />
-                                                                        ) : watch(`variations.${index}.image`) ? (
-                                                                            <Image
-                                                                                src={watch(`variations.${index}.image`)?.startsWith('http') ? watch(`variations.${index}.image`)! : `http://localhost:5000/${watch(`variations.${index}.image`)}`}
-                                                                                alt="Existing"
-                                                                                fill
-                                                                                style={{ objectFit: 'cover' }}
-                                                                            />
-                                                                        ) : (
-                                                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5' }}>
-                                                                                <FiUploadCloud size={16} color="#ccc" />
+                                                                        </div>
+                                                                    </td>
+                                                                    <td style={{ padding: '0.5rem' }}>
+                                                                        <select {...register(`variations.${index}.type`)} className="form-select" style={{ fontSize: '0.85rem', padding: '0.3rem' }}>
+                                                                            <option value="Size">Size</option>
+                                                                            <option value="Color">Color</option>
+                                                                            <option value="Weight">Weight (kg/gm)</option>
+                                                                            <option value="Volume">Volume (L/ml)</option>
+                                                                            <option value="Pack">Pack (Qty)</option>
+                                                                            <option value="Battery">Battery</option>
+                                                                            <option value="Range">Range</option>
+                                                                            <option value="Storage">Storage</option>
+                                                                            <option value="Other">Other</option>
+                                                                        </select>
+                                                                        <input type="hidden" {...register(`variations.${index}._id`)} />
+                                                                    </td>
+                                                                    <td style={{ padding: '0.5rem' }}>
+                                                                        <input
+                                                                            {...register(`variations.${index}.value`)}
+                                                                            className="form-input"
+                                                                            placeholder="Value"
+                                                                            style={{ fontSize: '0.85rem', padding: '0.3rem' }}
+                                                                            list={`suggestions-${index}`}
+                                                                        />
+                                                                        <datalist id={`suggestions-${index}`}>
+                                                                            {VARIATION_SUGGESTIONS[watch(`variations.${index}.type`)]?.map(opt => (
+                                                                                <option key={opt} value={opt} />
+                                                                            ))}
+                                                                        </datalist>
+                                                                        {errors.variations?.[index]?.value && <span style={{ color: 'red', fontSize: '0.7rem' }}>Required</span>}
+                                                                    </td>
+                                                                    <td style={{ padding: '0.5rem' }}>
+                                                                        <input
+                                                                            type="number"
+                                                                            {...register(`variations.${index}.price`)}
+                                                                            className="form-input"
+                                                                            placeholder="Price"
+                                                                            style={{
+                                                                                fontSize: '0.85rem', padding: '0.3rem', width: '80px',
+                                                                                borderColor: (errors.variations?.[index]?.price || isInvalidPrice) ? 'var(--danger)' : undefined
+                                                                            }}
+                                                                        />
+                                                                        {(errors.variations?.[index]?.price?.message || isInvalidPrice) && (
+                                                                            <div style={{ color: 'var(--danger)', fontSize: '0.65rem', lineHeight: 1.1 }}>
+                                                                                {errors.variations?.[index]?.price?.message || "MRP > Price"}
                                                                             </div>
                                                                         )}
-                                                                        <input
-                                                                            type="file"
-                                                                            {...register(`variations.${index}.imageFile`)}
-                                                                            accept="image/*"
-                                                                            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
-                                                                        />
-                                                                    </div>
-                                                                </td>
-                                                                <td style={{ padding: '0.5rem' }}>
-                                                                    <select {...register(`variations.${index}.type`)} className="form-select" style={{ fontSize: '0.85rem', padding: '0.3rem' }}>
-                                                                        <option value="Size">Size</option>
-                                                                        <option value="Color">Color</option>
-                                                                        <option value="Weight">Weight (kg/gm)</option>
-                                                                        <option value="Volume">Volume (L/ml)</option>
-                                                                        <option value="Pack">Pack (Qty)</option>
-                                                                        <option value="Battery">Battery</option>
-                                                                        <option value="Range">Range</option>
-                                                                        <option value="Storage">Storage</option>
-                                                                        <option value="Other">Other</option>
-                                                                    </select>
-                                                                    <input type="hidden" {...register(`variations.${index}._id`)} />
-                                                                </td>
-                                                                <td style={{ padding: '0.5rem' }}>
-                                                                    <input
-                                                                        {...register(`variations.${index}.value`)}
-                                                                        className="form-input"
-                                                                        placeholder="Value"
-                                                                        style={{ fontSize: '0.85rem', padding: '0.3rem' }}
-                                                                        list={`suggestions-${index}`}
-                                                                    />
-                                                                    <datalist id={`suggestions-${index}`}>
-                                                                        {VARIATION_SUGGESTIONS[watch(`variations.${index}.type`)]?.map(opt => (
-                                                                            <option key={opt} value={opt} />
-                                                                        ))}
-                                                                    </datalist>
-                                                                    {errors.variations?.[index]?.value && <span style={{ color: 'red', fontSize: '0.7rem' }}>Required</span>}
-                                                                </td>
-                                                                <td style={{ padding: '0.5rem' }}>
-                                                                    <input type="number" {...register(`variations.${index}.price`)} className="form-input" placeholder="Price" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px', borderColor: errors.variations?.[index]?.price ? 'var(--danger)' : undefined }} />
-                                                                </td>
-                                                                <td style={{ padding: '0.5rem' }}>
-                                                                    <input type="number" {...register(`variations.${index}.mrp`)} className="form-input" placeholder="MRP" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px' }} />
-                                                                </td>
-                                                                <td style={{ padding: '0.5rem' }}>
-                                                                    <input type="number" {...register(`variations.${index}.stock`)} className="form-input" placeholder="Qty" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '60px' }} />
-                                                                </td>
-                                                                <td style={{ padding: '0.5rem' }}>
-                                                                    <input {...register(`variations.${index}.sku`)} className="form-input" placeholder="SKU" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '100px' }} />
-                                                                </td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                                                                    <input type="checkbox" {...register(`variations.${index}.isActive`)} />
-                                                                </td>
-                                                                <td style={{ padding: '0.5rem', textAlign: 'center' }}>
-                                                                    <button type="button" onClick={() => remove(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
-                                                                        <FiX />
-                                                                    </button>
-                                                                </td>
-                                                            </tr>
-                                                        ))}
+                                                                    </td>
+                                                                    <td style={{ padding: '0.5rem' }}>
+                                                                        <input type="number" {...register(`variations.${index}.mrp`)} className="form-input" placeholder="MRP" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '80px' }} />
+                                                                    </td>
+                                                                    <td style={{ padding: '0.5rem' }}>
+                                                                        <input type="number" {...register(`variations.${index}.stock`)} className="form-input" placeholder="Qty" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '60px' }} />
+                                                                    </td>
+                                                                    <td style={{ padding: '0.5rem' }}>
+                                                                        <input {...register(`variations.${index}.sku`)} className="form-input" placeholder="SKU" style={{ fontSize: '0.85rem', padding: '0.3rem', width: '100px' }} />
+                                                                    </td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                                                                        <input type="checkbox" {...register(`variations.${index}.isActive`)} />
+                                                                    </td>
+                                                                    <td style={{ padding: '0.5rem', textAlign: 'center' }}>
+                                                                        <button type="button" onClick={() => remove(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                                                            <FiX />
+                                                                        </button>
+                                                                    </td>
+                                                                </tr>
+                                                            )
+                                                        })}
                                                     </tbody>
                                                 </table>
                                             </div>
