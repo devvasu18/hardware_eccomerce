@@ -243,7 +243,11 @@ router.patch('/update', authenticateToken, async (req, res) => {
                 const discountAmount = (securePrice * user.wholesaleDiscount) / 100;
                 securePrice = Math.round((securePrice - discountAmount) * 100) / 100;
             }
-            cart.items[itemIndex].price = securePrice;
+
+            // Only update price if it's NOT a special request item
+            if (!cart.items[itemIndex].requestId) {
+                cart.items[itemIndex].price = securePrice;
+            }
         }
 
         cart.items[itemIndex].quantity = quantity;

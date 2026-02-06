@@ -71,7 +71,8 @@ router.post('/register', authLimiter, [
                 role: savedUser.role,
                 customerType: savedUser.customerType,
                 wholesaleDiscount: savedUser.wholesaleDiscount,
-                savedAddresses: savedUser.savedAddresses
+                savedAddresses: savedUser.savedAddresses,
+                mobile: savedUser.mobile
             }
         });
 
@@ -117,7 +118,8 @@ router.post('/login', authLimiter, [
                 role: user.role,
                 customerType: user.customerType,
                 wholesaleDiscount: user.wholesaleDiscount,
-                savedAddresses: user.savedAddresses
+                savedAddresses: user.savedAddresses,
+                mobile: user.mobile
             }
         });
 

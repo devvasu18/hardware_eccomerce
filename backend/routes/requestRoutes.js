@@ -4,25 +4,39 @@ const ProcurementRequest = require('../models/ProcurementRequest');
 const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/authMiddleware');
 
+const jwt = require('jsonwebtoken'); // Ensure jwt is available
+const Cart = require('../models/Cart');
+
 // Submit a Request (Hybrid Logic)
 router.post('/', async (req, res) => {
     try {
-        const { productId, quantity, customerContact } = req.body;
+        const { productId, quantity, customerContact, modelId, variationId, declaredBasePrice } = req.body;
 
         // 1. Fetch Product to validate
         const product = await Product.findById(productId);
         if (!product) return res.status(404).json({ message: 'Product not found' });
 
-        // 2. Logic: If quantity > stock, it is a VALID request. 
-        // If quantity <= stock, frontend should have handled it as "Buy Now", 
-        // but we can accept requests even for in-stock items if user prefers negotiation.
+        // Identify User (Optional)
+        let userId = null;
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+            try {
+                const token = req.headers.authorization.split(' ')[1];
+                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                userId = decoded.id;
+            } catch (e) {
+                console.log('Token decode failed in request submit', e.message);
+            }
+        }
 
         const newRequest = new ProcurementRequest({
             product: productId,
             requestedQuantity: quantity,
             currentStockAtRequest: product.stock,
+            declaredBasePrice: declaredBasePrice,
             customerContact: customerContact, // { name, mobile }
-            // user: req.user._id // if auth middleware exists
+            user: userId,
+            modelId: modelId || undefined,
+            variationId: variationId || undefined
         });
 
         const savedRequest = await newRequest.save();
@@ -59,6 +73,33 @@ router.patch('/:id/respond', protect, admin, async (req, res) => {
         };
 
         const updatedRequest = await ProcurementRequest.findByIdAndUpdate(req.params.id, updateData, { new: true });
+
+        // --- AUTO ADD TO CART IF APPROVED ---
+        if (status === 'Approved' && updatedRequest.user && priceQuote) {
+            try {
+                let cart = await Cart.findOne({ user: updatedRequest.user });
+                if (!cart) {
+                    cart = new Cart({ user: updatedRequest.user, items: [] });
+                }
+
+                // Check for duplicate request in cart
+                const exists = cart.items.find(i => i.requestId && i.requestId.toString() === updatedRequest._id.toString());
+
+                if (!exists) {
+                    cart.items.push({
+                        product: updatedRequest.product,
+                        quantity: updatedRequest.requestedQuantity,
+                        price: priceQuote, // Quoted Price
+                        requestId: updatedRequest._id
+                    });
+                    await cart.save();
+                    console.log(`[Request] Auto-added request ${updatedRequest._id} to user ${updatedRequest.user} cart`);
+                }
+            } catch (cartErr) {
+                console.error('Failed to auto-add approved request to cart:', cartErr);
+            }
+        }
+
         res.json(updatedRequest);
     } catch (err) {
         res.status(500).json(err);

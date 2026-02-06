@@ -7,9 +7,13 @@ import { useModal } from '../../hooks/useModal';
 interface Request {
     _id: string;
     product: {
-        name: string;
+        _id: string;
+        title: string;
         basePrice: number;
+        mrp: number;
+        selling_price_a?: number;
         stock: number;
+        featured_image: string;
     };
     requestedQuantity: number;
     customerContact: {
@@ -18,6 +22,9 @@ interface Request {
     };
     status: string;
     createdAt: string;
+    modelId?: string;
+    variationId?: string;
+    declaredBasePrice?: number;
 }
 
 export default function RequestsPage() {
@@ -33,16 +40,25 @@ export default function RequestsPage() {
     }, []);
 
     const fetchRequests = async () => {
-        const res = await fetch('http://localhost:5000/api/requests');
+        const token = localStorage.getItem('token');
+        const res = await fetch('http://localhost:5000/api/requests', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
         if (res.ok) setRequests(await res.json());
     };
 
     const handleApprove = async () => {
         if (!selectedRequest) return;
+        const token = localStorage.getItem('token');
         try {
             const res = await fetch(`http://localhost:5000/api/requests/${selectedRequest._id}/respond`, {
                 method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
                 body: JSON.stringify({
                     status: 'Approved',
                     priceQuote: parseFloat(responseForm.priceQuote),
@@ -61,6 +77,7 @@ export default function RequestsPage() {
     };
 
     const handleReject = async (id: string) => {
+        const token = localStorage.getItem('token');
         showModal(
             'Reject Request',
             'Are you sure you want to reject this request? The customer will be notified.',
@@ -72,7 +89,10 @@ export default function RequestsPage() {
                     try {
                         await fetch(`http://localhost:5000/api/requests/${id}/respond`, {
                             method: 'PATCH',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
                             body: JSON.stringify({ status: 'Rejected' })
                         });
                         fetchRequests();
@@ -85,34 +105,94 @@ export default function RequestsPage() {
         );
     };
 
+    const openProductPage = (req: Request) => {
+        const url = `/products/${req.product._id}?model=${req.modelId || ''}&variant=${req.variationId || ''}`;
+        window.open(url, '_blank');
+    };
+
     return (
         <div>
             <h1 style={{ marginBottom: '2rem' }}>Procurement Requests</h1>
 
             <div className="grid">
                 {requests.map(req => (
-                    <div key={req._id} className="card" style={{ borderLeft: req.status === 'Pending' ? '4px solid #f59e0b' : '4px solid #10b981' }}>
+                    <div key={req._id} className="card" style={{
+                        borderLeft: req.status === 'Pending' ? '4px solid #f59e0b' :
+                            (req.status === 'Rejected' || req.status === 'Cancelled' ? '4px solid #ef4444' : '4px solid #10b981'),
+                        position: 'relative'
+                    }}>
+                        {/* Eye Button */}
+                        <button
+                            onClick={() => openProductPage(req)}
+                            style={{
+                                position: 'absolute',
+                                top: '1rem',
+                                right: '1rem',
+                                background: '#3b82f6',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '32px',
+                                height: '32px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            title="View Product Configuration"
+                        >
+                            <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 576 512" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M572.52 241.4C518.29 135.59 410.93 64 288 64S57.68 135.64 3.48 241.41a32.35 32.35 0 0 0 0 29.19C57.71 376.41 165.07 448 288 448s230.32-71.64 284.52-177.41a32.35 32.35 0 0 0 0-29.19zM288 400a144 144 0 1 1 144-144 143.93 143.93 0 0 1-144 144zm0-240a95.31 95.31 0 0 0-25.31 3.79 47.85 47.85 0 0 1-66.9 66.9A95.78 95.78 0 1 0 288 160z"></path></svg>
+                        </button>
+
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span className="badge" style={{ background: '#f1f5f9' }}>{req.createdAt.split('T')[0]}</span>
                             <span style={{
                                 fontWeight: 600,
-                                color: req.status === 'Pending' ? '#b45309' : (req.status === 'Approved' ? '#065f46' : '#991b1b')
+                                color: req.status === 'Pending' ? '#b45309' : (req.status === 'Approved' ? '#065f46' : '#991b1b'),
+                                marginRight: '2.5rem' // Make space for eye button
                             }}>
                                 {req.status}
                             </span>
                         </div>
-                        <h3 style={{ fontSize: '1.2rem', marginBottom: '0.25rem' }}>{req.product.name}</h3>
-                        <p style={{ color: '#64748B', marginBottom: '1rem' }}>Qty Requested: <strong>{req.requestedQuantity}</strong> (Stock: {req.product.stock})</p>
+
+                        {/* Product Image and Title */}
+                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
+                            <img
+                                src={req.product.featured_image}
+                                alt={req.product.title}
+                                style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e2e8f0' }}
+                            />
+                            <h3 style={{ fontSize: '1.2rem', margin: 0 }}>{req.product.title}</h3>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem', color: '#64748B' }}>
+                            <p>Request ID: <span style={{ fontFamily: 'monospace' }}>{req._id}</span></p>
+                            <p>Requested Qty: <strong>{req.requestedQuantity}</strong></p>
+                            <p>Current Stock: {req.product.stock}</p>
+                            <p>Base Price (Excl. GST): <strong>₹{typeof req.declaredBasePrice === 'number' ? req.declaredBasePrice : (req.product.selling_price_a || req.product.mrp || req.product.basePrice)}</strong></p>
+                        </div>
 
                         <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '4px', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                            <strong>Customer:</strong> {req.customerContact.name}<br />
-                            <strong>Mobile:</strong> {req.customerContact.mobile}
+                            <strong>Customer Details:</strong><br />
+                            Name: {req.customerContact.name}<br />
+                            Mobile: {req.customerContact.mobile}
+                            <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#94a3b8' }}>
+                                Submitted: {new Date(req.createdAt).toLocaleString()}
+                            </div>
                         </div>
 
                         {req.status === 'Pending' && (
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                 <button
-                                    onClick={() => { setSelectedRequest(req); setResponseForm({ priceQuote: '', estimatedDelivery: '', adminNotes: '' }); }}
+                                    onClick={() => {
+                                        setSelectedRequest(req);
+                                        const defaultPrice = req.declaredBasePrice || req.product.selling_price_a || req.product.mrp || req.product.basePrice || 0;
+                                        setResponseForm({
+                                            priceQuote: defaultPrice.toString(),
+                                            estimatedDelivery: '',
+                                            adminNotes: ''
+                                        });
+                                    }}
                                     className="btn btn-primary"
                                     style={{ flex: 1, padding: '0.5rem', fontSize: '0.9rem' }}
                                 >
@@ -135,17 +215,17 @@ export default function RequestsPage() {
             {selectedRequest && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', width: '450px' }}>
-                        <h3>Draft Quote for {selectedRequest.product.name}</h3>
+                        <h3>Draft Quote for {selectedRequest.product.title}</h3>
                         <p style={{ marginBottom: '1rem', color: '#64748B' }}>Customer asking for {selectedRequest.requestedQuantity} units.</p>
 
                         <div style={{ marginBottom: '1rem' }}>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Quoted Price (Per Unit)</label>
                             <input
                                 type="number"
-                                placeholder={`Base Price is ₹${selectedRequest.product.basePrice}`}
+                                placeholder={`Customer saw ₹${selectedRequest.declaredBasePrice || selectedRequest.product.basePrice}`}
                                 value={responseForm.priceQuote}
-                                onChange={(e) => setResponseForm({ ...responseForm, priceQuote: e.target.value })}
-                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                readOnly
+                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: '#e2e8f0', cursor: 'not-allowed' }}
                             />
                         </div>
                         <div style={{ marginBottom: '1rem' }}>

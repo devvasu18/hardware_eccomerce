@@ -5,6 +5,11 @@ const requestSchema = new mongoose.Schema({
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     requestedQuantity: { type: Number, required: true },
     currentStockAtRequest: { type: Number }, // Snapshot
+    declaredBasePrice: { type: Number }, // Price seen by customer at time of request
+
+    // Configuration
+    modelId: { type: mongoose.Schema.Types.ObjectId },
+    variationId: { type: mongoose.Schema.Types.ObjectId },
 
     status: {
         type: String,

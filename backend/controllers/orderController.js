@@ -108,7 +108,7 @@ exports.createOrder = async (req, res) => {
             }
 
             // 2. ATOMIC DECREMENT: Check local stock first to fail fast, then db atomic
-            if (availableStock < item.quantity) {
+            if (!product.isOnDemand && availableStock < item.quantity) {
                 await rollbackStock(processedItems);
                 return res.status(400).json({
                     success: false,
@@ -117,7 +117,10 @@ exports.createOrder = async (req, res) => {
             }
 
             let updatedProduct;
-            if (item.modelId) {
+            // SKIP STOCK DECREMENT FOR ON-DEMAND ITEMS
+            if (product.isOnDemand) {
+                updatedProduct = product; // No change needed
+            } else if (item.modelId) {
                 if (item.variationId) {
                     updatedProduct = await Product.findOneAndUpdate(
                         { _id: item.productId },
@@ -208,7 +211,8 @@ exports.createOrder = async (req, res) => {
                 modelId: item.modelId,
                 modelName: item.modelName,
                 gstRate: gstRate,
-                totalWithTax: itemTotal + itemTax
+                totalWithTax: itemTotal + itemTax,
+                requestId: item.requestId
             };
 
             // Split Tax
@@ -301,6 +305,20 @@ exports.createOrder = async (req, res) => {
             }
 
             await StatusLog.create(statusLogData);
+
+            // --- Update Request Status logic ---
+            // If this order contains items from approved requests, mark them as converted
+            for (const item of orderItems) {
+                if (item.requestId) {
+                    try {
+                        const ProcurementRequest = require('../models/ProcurementRequest');
+                        await ProcurementRequest.findByIdAndUpdate(item.requestId, { status: 'Converted to Order' });
+                    } catch (reqErr) {
+                        console.error('Failed to update ProcurementRequest status:', reqErr);
+                        // Do not fail order creation for this
+                    }
+                }
+            }
 
             // --- Send Email Notifications (Async, don't fail order if email fails) ---
             try {

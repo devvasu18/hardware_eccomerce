@@ -545,6 +545,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
                     data.variations.forEach((v: any, index: number) => {
                         const clone = { ...v };
                         if (!clone._id) delete clone._id;
+                        // Remote empty SKU strings to avoid unique index "duplicate key" error on empty strings
+                        if (!clone.sku || clone.sku.trim() === "") {
+                            delete clone.sku;
+                        }
+
                         const vFile = data.variations[index].imageFile;
                         if (vFile?.[0]) {
                             formData.append(`variation_image_${index}`, vFile[0]);
@@ -574,6 +579,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             const mVarCleaned: any[] = [];
                             m.variations.forEach((v: any, vIdx: number) => {
                                 const vClone = { ...v };
+                                // Remote empty SKU strings to avoid unique index "duplicate key" error on empty strings
+                                if (!vClone.sku || vClone.sku.trim() === "") {
+                                    delete vClone.sku;
+                                }
+
                                 const mvFile = data.models[mIdx].variations[vIdx].imageFile;
                                 if (mvFile?.[0]) {
                                     formData.append(`model_${mIdx}_variation_image_${vIdx}`, mvFile[0]);
@@ -622,10 +632,23 @@ export default function ProductForm({ productId }: ProductFormProps) {
             router.push('/admin/products');
         } catch (err: any) {
             console.error(err);
+            console.error("Product Save Error Details:", err.response?.data); // Log full error for debugging
+
             let msg = err.response?.data?.message || err.message;
-            if (err.response?.data?.errors) {
-                msg += ": " + err.response.data.errors.map((e: any) => `${e.path || e.param}: ${e.msg}`).join(', ');
+            const backendError = err.response?.data?.error;
+
+            if (typeof backendError === 'string' && backendError.includes('E11000')) {
+                if (backendError.includes('slug')) {
+                    msg = "A product with this name/slug already exists. Please change the title or the slug.";
+                    setError("slug", { type: "manual", message: "Slug already exists" });
+                } else {
+                    msg = `Duplicate Entry Error: ${backendError}`;
+                }
+            } else if (err.response?.data?.errors) {
+                const details = err.response.data.errors.map((e: any) => `${e.path || e.param}: ${e.msg}`).join(', ');
+                msg += ": " + details;
             }
+
             alert('Error saving product: ' + msg);
         } finally {
             setLoading(false);
@@ -639,8 +662,19 @@ export default function ProductForm({ productId }: ProductFormProps) {
     const variationMRPs = variations?.filter((v: any) => v.isActive).map((v: any) => Number(v.mrp)).filter((m: number) => !isNaN(m) && m > 0) || [];
     const minVarMRP = variationMRPs.length > 0 ? Math.min(...variationMRPs) : null;
 
-    const effectiveMRP = mrp || minVarMRP || 0;
-    const effectiveSellingPrice = sellingPrice || minVarPrice || 0;
+    // Calculate details from models
+    const modelPrices = models?.flatMap((m: any) =>
+        m.variations?.filter((v: any) => v.isActive !== false).map((v: any) => Number(v.price))
+    ).filter((p: number) => !isNaN(p) && p > 0) || [];
+    const minModelPrice = modelPrices.length > 0 ? Math.min(...modelPrices) : null;
+
+    const modelMRPs = models?.flatMap((m: any) =>
+        m.variations?.filter((v: any) => v.isActive !== false).map((v: any) => Number(v.mrp))
+    ).filter((m: number) => !isNaN(m) && m > 0) || [];
+    const minModelMRP = modelMRPs.length > 0 ? Math.min(...modelMRPs) : null;
+
+    const effectiveMRP = mrp || minVarMRP || minModelMRP || 0;
+    const effectiveSellingPrice = sellingPrice || minVarPrice || minModelPrice || 0;
 
     const youSave = effectiveMRP - effectiveSellingPrice;
     const youSavePercent = effectiveMRP ? Math.round((youSave / effectiveMRP) * 100) : 0;
@@ -688,7 +722,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Slug</label>
-                                <input {...register("slug")} className="form-input" readOnly />
+                                <input {...register("slug")} className="form-input" />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Part Number</label>

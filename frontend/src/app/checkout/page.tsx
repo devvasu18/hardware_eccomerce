@@ -28,6 +28,8 @@ export default function CheckoutPage() {
 
     // Calculate totals only for Available items
     const cartTotal = useMemo(() => availableItems.reduce((acc, item) => acc + (item.price * item.quantity), 0), [availableItems]);
+    const taxAmount = useMemo(() => availableItems.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0), [availableItems]);
+    const grandTotal = Math.round(cartTotal + taxAmount);
 
     // Guest customer details
     const [guestName, setGuestName] = useState('');
@@ -101,12 +103,10 @@ export default function CheckoutPage() {
         }
     }, [items, router, orderPlaced, cartLoading]);
 
-    if (items.length === 0) {
+
+    if (items.length === 0 && !orderPlaced) {
         return null;
     }
-
-    const taxAmount = useMemo(() => availableItems.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0), [availableItems]);
-    const grandTotal = Math.round(cartTotal + taxAmount);
 
     // SHOP LOCATION ASSUMPTION: GUJARAT (Based on previous logic where 'Gujarat' triggered SGST)
     const SHOP_STATE = 'Gujarat';
@@ -257,10 +257,13 @@ export default function CheckoutPage() {
                 const requestPromises = requestItems.map(item =>
                     fetch('http://localhost:5000/api/requests', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers, // Use headers with Auth token
                         body: JSON.stringify({
                             productId: item.productId,
                             quantity: item.quantity,
+                            modelId: item.modelId,
+                            variationId: item.variationId,
+                            declaredBasePrice: item.price,
                             customerContact: user ? { name: user.username, mobile: user.mobile } : { name: guestName, mobile: guestPhone }
                         })
                     })
@@ -603,7 +606,7 @@ export default function CheckoutPage() {
                             </>
                         ) : (
                             <div className="text-muted-italic">
-                                No payment required for procurement requests. We will provide a quote.
+                                No payment required for ON-DEMAND items. We will contact you within 24 hours.
                             </div>
                         )}
 
@@ -618,7 +621,7 @@ export default function CheckoutPage() {
                         <p className="terms-text">
                             {availableItems.length > 0
                                 ? 'By placing this order, you agree to our terms and conditions'
-                                : 'We will contact you within 24 hours with a quote.'}
+                                : 'For more information about ON-DEMAND items, please contact us on 9876543210.'}
                         </p>
                     </div>
                 </div>

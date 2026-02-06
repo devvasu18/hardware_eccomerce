@@ -26,6 +26,10 @@ const cartItemSchema = new mongoose.Schema({
     },
     modelName: {
         type: String
+    },
+    requestId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ProcurementRequest'
     }
 }, { _id: false });
 

@@ -16,6 +16,7 @@ export interface CartItem {
     modelName?: string; // New
     isOnDemand?: boolean;
     gst_rate?: number;
+    requestId?: string;
 }
 
 interface CartContextType {
@@ -182,8 +183,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         variationText: item.variationText,
                         modelId: item.modelId,
                         modelName: item.modelName,
-                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
-                        gst_rate: item.product?.gst_rate
+                        isOnDemand: (!item.requestId && item.product?.isOnDemand) || ((!item.requestId) && typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
+                        gst_rate: item.product?.gst_rate,
+                        requestId: item.requestId
                     }));
                 setItems(dbItems);
             }
@@ -234,8 +236,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         variationText: item.variationText,
                         modelId: item.modelId,
                         modelName: item.modelName,
-                        isOnDemand: item.product?.isOnDemand || (typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
-                        gst_rate: item.product?.gst_rate
+                        isOnDemand: (!item.requestId && item.product?.isOnDemand) || ((!item.requestId) && typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
+                        gst_rate: item.product?.gst_rate,
+                        requestId: item.requestId
                     }));
                 setItems(syncedItems);
                 localStorage.removeItem('cart'); // Clear localStorage after successful sync

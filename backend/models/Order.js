@@ -33,10 +33,10 @@ const orderSchema = new mongoose.Schema({
         modelId: { type: mongoose.Schema.Types.ObjectId },
         modelName: { type: String },
         gstRate: { type: Number },
-        cgst: { type: Number },
         sgst: { type: Number },
         igst: { type: Number }, // If interstate
-        totalWithTax: { type: Number }
+        totalWithTax: { type: Number },
+        requestId: { type: mongoose.Schema.Types.ObjectId, ref: 'ProcurementRequest' } // Link to original request
     }],
     totalAmount: { type: Number, required: true },
     taxTotal: { type: Number },
