@@ -48,7 +48,7 @@ interface Product {
 // ... imports
 interface ProductActionAreaProps {
     product: Product;
-    onVariationSelect?: (variation: Variation | null) => void;
+    onVariationSelect?: (variation: Variation | null, model: Model | null, isAutoSelect?: boolean) => void;
 }
 
 
@@ -121,12 +121,12 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             if (bestVar) {
                 setCurrentVariation(bestVar);
                 setSelectedVariations({ [bestVar.type]: bestVar.value });
-                if (onVariationSelect) onVariationSelect(bestVar);
+                if (onVariationSelect) onVariationSelect(bestVar, bestModel, true);
             } else if (bestModel) {
                 // Model selected, no variation (standalone model)
                 setCurrentVariation(null);
                 setSelectedVariations({});
-                if (onVariationSelect) onVariationSelect(null);
+                if (onVariationSelect) onVariationSelect(null, bestModel, true);
             }
         }
 
@@ -174,12 +174,12 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
         if (bestVar) {
             setCurrentVariation(bestVar);
             setSelectedVariations({ [bestVar.type]: bestVar.value });
-            if (onVariationSelect) onVariationSelect(bestVar);
+            if (onVariationSelect) onVariationSelect(bestVar, model, false);
         } else {
             // If no variations, clear selection
             setSelectedVariations({});
             setCurrentVariation(null);
-            if (onVariationSelect) onVariationSelect(null);
+            if (onVariationSelect) onVariationSelect(null, model, false);
         }
     };
 
@@ -194,7 +194,7 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
         );
         if (match) {
             setCurrentVariation(match);
-            if (onVariationSelect) onVariationSelect(match);
+            if (onVariationSelect) onVariationSelect(match, selectedModel, false);
         }
     };
     // ALSO update on click logic in the map loop

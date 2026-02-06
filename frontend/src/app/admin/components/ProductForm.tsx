@@ -39,6 +39,7 @@ function ModelVariationManager({ modelIndex, control, register, errors, watch, V
                     <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse' }}>
                         <thead>
                             <tr style={{ color: '#64748B' }}>
+                                <th style={{ padding: '0.4rem', textAlign: 'left' }}>Image</th>
                                 <th style={{ padding: '0.4rem', textAlign: 'left' }}>Type</th>
                                 <th style={{ padding: '0.4rem', textAlign: 'left' }}>Value</th>
                                 <th style={{ padding: '0.4rem', textAlign: 'left' }}>Base MRP</th>
@@ -55,6 +56,24 @@ function ModelVariationManager({ modelIndex, control, register, errors, watch, V
 
                                 return (
                                     <tr key={field.id}>
+                                        <td style={{ padding: '0.4rem', width: '60px' }}>
+                                            <div style={{
+                                                position: 'relative', width: '40px', height: '40px',
+                                                border: errors.models?.[modelIndex]?.variations?.[vIdx]?.imageFile ? '1px solid var(--danger)' : '1px solid #ddd',
+                                                borderRadius: '4px', overflow: 'hidden'
+                                            }}>
+                                                {watch(`models.${modelIndex}.variations.${vIdx}.imageFile`)?.[0] ? (
+                                                    <Image src={URL.createObjectURL(watch(`models.${modelIndex}.variations.${vIdx}.imageFile`)[0])} alt="New" fill style={{ objectFit: 'cover' }} />
+                                                ) : watch(`models.${modelIndex}.variations.${vIdx}.image`) ? (
+                                                    <Image src={watch(`models.${modelIndex}.variations.${vIdx}.image`)?.startsWith('http') ? watch(`models.${modelIndex}.variations.${vIdx}.image`) : `http://localhost:5000/${watch(`models.${modelIndex}.variations.${vIdx}.image`)}`} alt="Ext" fill style={{ objectFit: 'cover' }} />
+                                                ) : (
+                                                    <div style={{ width: '100%', height: '100%', background: '#f1f1f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <span style={{ fontSize: '10px', color: '#999' }}>+</span>
+                                                    </div>
+                                                )}
+                                                <input type="file" {...register(`models.${modelIndex}.variations.${vIdx}.imageFile`)} accept="image/*" style={{ position: 'absolute', opacity: 0, top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+                                            </div>
+                                        </td>
                                         <td style={{ padding: '0.4rem' }}>
                                             <select {...register(`models.${modelIndex}.variations.${vIdx}.type`)} className="form-select" style={{ padding: '2px', fontSize: '0.75rem' }}>
                                                 <option value="Color">Color</option>
@@ -416,6 +435,68 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
     const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
         setLoading(true);
+
+        // --- Custom Image Validation ---
+        let mainImageValid = false;
+        if (featuredMethod === 'upload') {
+            if (featuredImage || (productId && previewFeatured)) mainImageValid = true;
+        } else {
+            if (featuredLink.trim()) mainImageValid = true;
+        }
+
+        if (!mainImageValid) {
+            alert("Main Product Image is required!");
+            setLoading(false);
+            return;
+        }
+
+        let hasImageError = false;
+
+        if (variationMode === 'models') {
+            if (data.models) {
+                data.models.forEach((m: any, mIdx: number) => {
+                    // Check Model Image
+                    const hasModelImage = (m.imageFile && m.imageFile.length > 0) || m.featured_image;
+                    if (!hasModelImage) {
+                        setError(`models.${mIdx}.imageFile`, { type: 'manual', message: 'Required' });
+                        hasImageError = true;
+                    }
+
+                    // Check Model Variation Images
+                    if (m.variations) {
+                        m.variations.forEach((v: any, vIdx: number) => {
+                            // Note: Accessing data from the form data object passed by RHF. 
+                            // Verify if data.models[mIdx].variations[vIdx].imageFile follows the structure.
+                            const vFile = data.models[mIdx]?.variations?.[vIdx]?.imageFile;
+                            const hasVarImage = (vFile && vFile.length > 0) || v.image;
+                            if (!hasVarImage) {
+                                setError(`models.${mIdx}.variations.${vIdx}.imageFile`, { type: 'manual', message: 'Required' });
+                                hasImageError = true;
+                            }
+                        });
+                    }
+                });
+            }
+        } else if (variationMode === 'standalone') {
+            if (data.variations) {
+                data.variations.forEach((v: any, vIdx: number) => {
+                    const vFile = data.variations[vIdx]?.imageFile;
+                    const hasVarImage = (vFile && vFile.length > 0) || v.image;
+                    if (!hasVarImage) {
+                        setError(`variations.${vIdx}.imageFile`, { type: 'manual', message: 'Required' });
+                        hasImageError = true;
+                    }
+                });
+            }
+        }
+
+        if (hasImageError) {
+            alert("Please upload images for all models and variations (marked in red).");
+            setLoading(false);
+            return;
+        }
+        // -------------------------------
+
         try {
             const formData = new FormData();
 
@@ -710,7 +791,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                     <div key={field.id} style={{ border: '1px solid var(--border)', borderRadius: '12px', overflow: 'hidden', backgroundColor: '#F8FAFC' }}>
                                                         <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#fff' }}>
                                                             <div style={{ display: 'flex', gap: '1rem', flex: 1, alignItems: 'center' }}>
-                                                                <div style={{ position: 'relative', width: '60px', height: '60px', borderRadius: '8px', border: '2px dashed #CBD5E1', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                                <div style={{
+                                                                    position: 'relative', width: '60px', height: '60px', borderRadius: '8px',
+                                                                    border: errors.models?.[mIdx]?.imageFile ? '2px dashed var(--danger)' : '2px dashed #CBD5E1',
+                                                                    overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                                }}>
                                                                     {watch(`models.${mIdx}.imageFile`)?.[0] ? (
                                                                         <Image src={URL.createObjectURL(watch(`models.${mIdx}.imageFile`)[0])} alt="Preview" fill style={{ objectFit: 'cover' }} />
                                                                     ) : watch(`models.${mIdx}.featured_image`) ? (
@@ -786,7 +871,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                                 <tr key={field.id} style={{ borderBottom: '1px solid #eee' }}>
                                                                     <td style={{ padding: '0.5rem', width: '80px' }}>
                                                                         {/* Image Preview & Input */}
-                                                                        <div style={{ position: 'relative', width: '50px', height: '50px', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+                                                                        <div style={{
+                                                                            position: 'relative', width: '50px', height: '50px',
+                                                                            border: errors.variations?.[index]?.imageFile ? '1px solid var(--danger)' : '1px solid #ddd',
+                                                                            borderRadius: '4px', overflow: 'hidden'
+                                                                        }}>
                                                                             {watch(`variations.${index}.imageFile`)?.[0] ? (
                                                                                 <Image
                                                                                     src={URL.createObjectURL(watch(`variations.${index}.imageFile`)[0])}

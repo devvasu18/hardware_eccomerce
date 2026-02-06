@@ -35,23 +35,66 @@ interface Props {
 export default function ProductOverview({ product, categoryName, brandName }: Props) {
     const productName = product.title || product.name || 'Product';
 
-
-    // Images Array
-    const productImages = [
+    // Default Image Sequence: Main -> Gallery -> Model Images -> Main (Repeated)
+    const defaultImages = [
         ...(product.featured_image ? [product.featured_image] : []),
-        ...(product.gallery_images || [])
-    ];
+        ...(product.gallery_images || []),
+        ...(product.models?.map((m: any) => m.featured_image).filter(Boolean) || []),
+        ...(product.featured_image ? [product.featured_image] : [])
+    ].filter((img, index, self) => img && self.indexOf(img) === index); // Unique filter, or keep duplicates? Requirement says "Repeat...". 
+    // "Repeat the main product image AFTER model images" implies allowing duplicates. 
+    // Let's strictly follow the sequence: Main -> Gallery -> Models -> Main.
+    // However, React keys in map might complain if strings are identical. 
+    // I will construct it carefully.
 
-    const [activeImage, setActiveImage] = useState(productImages[0] || '');
+    const buildDefaultImages = () => {
+        const list: string[] = [];
+        if (product.featured_image) list.push(product.featured_image);
+        if (product.gallery_images) list.push(...product.gallery_images);
+        if (product.models) list.push(...product.models.map((m: any) => m.featured_image).filter((s: any) => s));
+        if (product.featured_image) list.push(product.featured_image);
+        return list.length > 0 ? list : [''];
+    };
+
+    const initialImages = buildDefaultImages();
+
+    const [sliderImages, setSliderImages] = useState<string[]>(initialImages);
+    const [activeImage, setActiveImage] = useState(initialImages[0] || '');
     const [selectedVariation, setSelectedVariation] = useState<any>(null);
 
-    const handleVariationSelect = (variation: any) => {
+    const handleVariationSelect = (variation: any, model: any, isAutoSelect: boolean = false) => {
         setSelectedVariation(variation);
-        // If variation has a specific image, show it, otherwise fallback to default
-        if (variation && variation.image) {
-            setActiveImage(variation.image);
+
+        // Requirement 4: "This auto-selection ... Must not affect the default image slider behavior."
+        if (isAutoSelect) return;
+
+        // Requirement 3: Model Selection Image Logic
+        if (model) {
+            const modelImages = [
+                model.featured_image,
+                ...(model.variations?.map((v: any) => v.image).filter((s: any) => s) || [])
+            ].filter(Boolean);
+
+            if (modelImages.length > 0) {
+                setSliderImages(modelImages);
+                if (variation && variation.image) {
+                    setActiveImage(variation.image);
+                } else {
+                    setActiveImage(modelImages[0]);
+                }
+            } else {
+                // If model has no specific images, maybe fallback to default or keep current?
+                // Logic implies we should focus on the model. If no images, maybe just keep default but select something?
+                // For now, if no model images, we don't change the slider, just the active image if variant has one.
+                if (variation && variation.image) {
+                    setActiveImage(variation.image);
+                }
+            }
         } else {
-            setActiveImage(productImages[0] || '');
+            // Standalone or Model Deselection (if possible)
+            if (variation && variation.image) {
+                setActiveImage(variation.image);
+            }
         }
     };
 
@@ -95,13 +138,13 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
                 </div>
 
                 {/* Thumbnail Gallery */}
-                {productImages.length > 1 && (
+                {sliderImages.length > 1 && (
                     <div className="thumbnail-gallery">
-                        <h4>OTHER VARIATIONS</h4>
+                        {/* <h4>IMAGES</h4> */}
                         <div className="thumbnails">
-                            {productImages.map((img, idx) => (
+                            {sliderImages.map((img, idx) => (
                                 <div
-                                    key={idx}
+                                    key={idx + '-' + img} // simple key to avoid dupes
                                     className={`thumbnail ${activeImage === img ? 'active' : ''}`}
                                     onClick={() => setActiveImage(img)}
                                     style={{ cursor: 'pointer' }}

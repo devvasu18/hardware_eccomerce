@@ -22,7 +22,7 @@ app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true
 }));
-app.use(express.json({ limit: '10kb' })); // Body limit
+app.use(express.json({ limit: '10MB' })); // Body limit
 
 const { mongoSanitize, xssSanitize } = require('./middleware/security');
 
@@ -98,6 +98,9 @@ runStockCleanup();
 startTallyHealthCheckJob();
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
     logger.info(`Server running on port ${PORT}`);
 });
+server.setTimeout(10 * 60 * 1000); // 10 minutes timeout
+server.keepAliveTimeout = 120 * 1000; // 2 minutes
+server.headersTimeout = 120 * 1000; // 2 minutes

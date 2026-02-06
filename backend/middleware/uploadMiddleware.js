@@ -16,7 +16,7 @@ const storage = new CloudinaryStorage({
     params: {
         folder: 'hardware-store', // The folder in cloudinary
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-        transformation: [{ width: 1000, crop: "limit" }] // Optional resizing
+        // transformation: [{ width: 1000, crop: "limit" }] // Optional resizing disabled for stability
     }
 });
 
@@ -36,7 +36,10 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit per file
+    limits: {
+        fileSize: 50 * 1024 * 1024,
+        fieldSize: 25 * 1024 * 1024 // Increase non-file field limit to 25MB
+    }, // 50MB limit per file
     fileFilter: fileFilter
 });
 

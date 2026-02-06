@@ -1,4 +1,5 @@
 const express = require('express');
+const multer = require('multer');
 const router = express.Router();
 const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/authMiddleware');
@@ -23,13 +24,20 @@ const validateProduct = [
 ];
 
 // Upload configuration for product images
-const productUploads = upload.any(); // Allow dynamic fields for variations
-// const productUploads = upload.fields([
-//     { name: 'featured_image', maxCount: 1 },
-//     { name: 'featured_image_2', maxCount: 1 },
-//     { name: 'size_chart', maxCount: 1 },
-//     { name: 'gallery_images', maxCount: 10 }
-// ]);
+// Upload configuration for product images
+const productUploads = (req, res, next) => {
+    upload.any()(req, res, (err) => {
+        if (err) {
+            console.error('Multer Upload Error:', err);
+            // Handle specific Multer errors if needed
+            if (err instanceof multer.MulterError) {
+                return res.status(400).json({ message: 'File Upload Error', error: err.message, code: err.code });
+            }
+            return res.status(500).json({ message: 'File Upload Error', error: err.message });
+        }
+        next();
+    });
+};
 
 // Helper for patch (keep existing logic or move to controller? Keeping here for now to avoid breaking existing workflow if any)
 // @desc    Toggle/Update New Arrival status for a product

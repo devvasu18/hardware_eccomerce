@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: '/api' // Next.js redirects to backend
+    baseURL: '/api', // Next.js redirects to backend
+    timeout: 10 * 60 * 1000 // 10 minutes
 });
 
 api.interceptors.request.use((config) => {
