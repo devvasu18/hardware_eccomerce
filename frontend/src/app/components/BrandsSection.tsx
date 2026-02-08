@@ -19,8 +19,8 @@ export default function BrandsSection() {
     const fetchBrandsFromPublic = async () => {
         try {
             const res = await api.get('/brands/featured');
-            // Take first 6 for the hex grid
-            setBrands(res.data.slice(0, 6));
+            // Show up to 12 brands in the grid
+            setBrands(res.data.slice(0, 12));
         } catch (e) {
             console.error(e);
         }

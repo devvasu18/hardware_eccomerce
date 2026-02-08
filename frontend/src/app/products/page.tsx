@@ -122,7 +122,9 @@ export default async function ProductsPage({ searchParams }: Props) {
                                     {products.map((item) => (
                                         <ProductCard key={item._id} product={{
                                             ...item,
-                                            category: typeof item.category === 'object' ? item.category.name : (item.category.length > 10 ? 'Auto Part' : item.category)
+                                            category: item.category
+                                                ? (typeof item.category === 'object' ? item.category.name : (item.category.length > 10 ? 'Auto Part' : item.category))
+                                                : 'Uncategorized'
                                         }} />
                                     ))}
                                 </div>
