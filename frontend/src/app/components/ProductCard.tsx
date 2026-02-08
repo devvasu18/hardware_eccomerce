@@ -27,6 +27,7 @@ interface Product {
     // Add optional raw fields from API if they exist
     selling_price_a?: number;
     mrp?: number;
+    offers?: { percentage: number;[key: string]: any }[];
 }
 
 export default function ProductCard({ product }: { product: Product }) {
@@ -100,8 +101,21 @@ export default function ProductCard({ product }: { product: Product }) {
         }
     }
 
+    // 3. Offers Logic
+    const offers = product.offers || [];
+    const bestOfferPercentage = offers.reduce((max, offer) => Math.max(max, offer.percentage), 0);
+
+    // Apply Offer to Effective Price (for retail customers)
     let finalPrice = effectivePrice;
+    if (bestOfferPercentage > 0) {
+        finalPrice = Math.round(effectivePrice * (1 - bestOfferPercentage / 100));
+    }
+
     if (user?.customerType === 'wholesale' && user.wholesaleDiscount) {
+        // Wholesale discount applies on the original effective price (usually) or the already discounted price?
+        // Let's assume on the original effective price for now to be safe, or ask user.
+        // But usually wholesale doesn't stack with retail offers.
+        // Let's stick to existing wholesale logic which overrides everything.
         finalPrice = Math.round(effectivePrice * (1 - user.wholesaleDiscount / 100));
     }
 

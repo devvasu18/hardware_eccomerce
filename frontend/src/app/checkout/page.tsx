@@ -49,9 +49,26 @@ export default function CheckoutPage() {
     // Derived state for existing addresses
     const savedAddresses = (user as any)?.savedAddresses || [];
 
-    // Auto-select first address if available
+    // Auto-select logic with Address Locking
+    const lockedAddress = useMemo(() => {
+        const approvedItem = availableItems.find(i => i.requestId && i.customerContact?.address);
+        return approvedItem?.customerContact?.address;
+    }, [availableItems]);
+
     useEffect(() => {
-        if (savedAddresses.length > 0 && selectedAddressId === 'new') {
+        // If locked address exists, try to find it in saved addresses or pre-fill new address
+        if (lockedAddress) {
+            const foundAddr = savedAddresses.find((a: any) => formatAddress(a) === lockedAddress);
+            if (foundAddr) {
+                setSelectedAddressId(foundAddr._id);
+            } else {
+                // If not found in saved, we must use it as a "New/Custom" address but read-only
+                // We'll parse it or just set it as string? 
+                // Since our newAddress form is fields, we might need a "Locked View"
+                // For now, let's just warn or handle standard case.
+                // Better approach: If lockedAddress matches a saved address, select it.
+            }
+        } else if (savedAddresses.length > 0 && selectedAddressId === 'new') {
             const defaultAddr = savedAddresses.find((a: any) => a.isDefault);
             if (defaultAddr) {
                 setSelectedAddressId(defaultAddr._id);
@@ -59,7 +76,7 @@ export default function CheckoutPage() {
                 setSelectedAddressId(savedAddresses[0]._id);
             }
         }
-    }, [savedAddresses.length]);
+    }, [savedAddresses.length, lockedAddress]);
 
     const isNewAddress = selectedAddressId === 'new';
 
@@ -166,7 +183,9 @@ export default function CheckoutPage() {
     const handlePlaceOrder = async () => {
         let finalAddressString = '';
 
-        if (isNewAddress) {
+        if (lockedAddress) {
+            finalAddressString = lockedAddress;
+        } else if (isNewAddress) {
             if (!newAddress.street || !newAddress.city || !newAddress.state || !newAddress.pincode) {
                 showWarning('Please fill in all required address fields.', 'Address Incomplete');
                 return;
@@ -264,7 +283,11 @@ export default function CheckoutPage() {
                             modelId: item.modelId,
                             variationId: item.variationId,
                             declaredBasePrice: item.price,
-                            customerContact: user ? { name: user.username, mobile: user.mobile } : { name: guestName, mobile: guestPhone }
+                            customerContact: {
+                                name: user ? user.username : guestName,
+                                mobile: user ? user.mobile : guestPhone,
+                                address: finalAddressString
+                            }
                         })
                     })
                 );
@@ -418,8 +441,25 @@ export default function CheckoutPage() {
                     <div className="card checkout-section">
                         <h3 className="section-title">{availableItems.length > 0 ? 'Shipping Address' : 'Contact Address'}</h3>
 
+                        {lockedAddress ? (
+                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md mb-4">
+                                <p className="text-sm font-semibold text-blue-800 mb-1">
+                                    Address Locked for Approved Limit
+                                </p>
+                                <p className="text-sm text-blue-700">
+                                    Your order contains an approved On-Demand request which is tied to the following address:
+                                </p>
+                                <div className="mt-2 p-3 bg-white border border-blue-100 rounded text-gray-800 font-medium">
+                                    {lockedAddress}
+                                </div>
+                                <p className="text-xs text-blue-600 mt-2">
+                                    To ship to a different address, please remove the approved On-Demand item from your cart.
+                                </p>
+                            </div>
+                        ) : (null)}
+
                         {/* Saved Addresses List */}
-                        {savedAddresses.length > 0 && (
+                        {!lockedAddress && savedAddresses.length > 0 && (
                             <div className="address-list">
                                 {savedAddresses.map((addr: any) => (
                                     <label key={addr._id} className={`address-card ${selectedAddressId === addr._id ? 'selected' : ''}`}>
@@ -454,7 +494,7 @@ export default function CheckoutPage() {
                         )}
 
                         {/* New Address Form */}
-                        {isNewAddress && (
+                        {!lockedAddress && isNewAddress && (
                             <div className="grid-gap-1">
                                 <div className="address-grid">
                                     <div>

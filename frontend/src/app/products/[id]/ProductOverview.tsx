@@ -24,6 +24,7 @@ interface Product {
     countryOfOrigin?: string;
     variations?: any[];
     models?: any[];
+    offers?: { percentage: number; title: string;[key: string]: any }[];
 }
 
 interface Props {
@@ -111,8 +112,16 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
         ? selectedVariation.price
         : (product.discountedPrice || minVariationPrice || product.basePrice);
 
-    const discountPercentage = activeMRP && activePrice && activePrice < activeMRP
-        ? Math.round(((activeMRP - activePrice) / activeMRP) * 100)
+    const offers = product.offers || [];
+    const bestOffer = offers.reduce((prev, current) => (prev.percentage > current.percentage) ? prev : current, { percentage: 0, title: '' });
+
+    let finalActivePrice = activePrice;
+    if (bestOffer.percentage > 0) {
+        finalActivePrice = Math.round(activePrice * (1 - bestOffer.percentage / 100));
+    }
+
+    const discountPercentage = activeMRP && finalActivePrice && finalActivePrice < activeMRP
+        ? Math.round(((activeMRP - finalActivePrice) / activeMRP) * 100)
         : 0;
 
     const [isZoomOpen, setIsZoomOpen] = useState(false);

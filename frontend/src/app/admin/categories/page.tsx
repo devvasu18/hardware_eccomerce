@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
+import FormModal from '../../components/FormModal';
 import { useModal } from '../../hooks/useModal';
+import { FiPlus } from 'react-icons/fi';
 
 interface Category {
     _id: string;
@@ -31,6 +33,7 @@ export default function CategoryManager() {
         showInNav: false
     });
     const [editId, setEditId] = useState<string | null>(null);
+    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
     const { modalState, hideModal, showSuccess, showError, showModal } = useModal();
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -53,6 +56,11 @@ export default function CategoryManager() {
         }
     };
 
+    const startAdd = () => {
+        resetForm();
+        setIsFormModalOpen(true);
+    };
+
     const handleEdit = (category: Category) => {
         setFormData({
             name: category.name,
@@ -65,7 +73,7 @@ export default function CategoryManager() {
             showInNav: category.showInNav
         });
         setEditId(category._id);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsFormModalOpen(true);
     };
 
     const resetForm = () => {
@@ -80,6 +88,11 @@ export default function CategoryManager() {
             showInNav: false
         });
         setEditId(null);
+    };
+
+    const handleCloseFormModal = () => {
+        setIsFormModalOpen(false);
+        resetForm();
     };
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,6 +122,7 @@ export default function CategoryManager() {
                 resetForm();
                 fetchCategories();
                 showSuccess(editId ? 'Category updated successfully!' : 'Category created successfully!');
+                setIsFormModalOpen(false);
             } else {
                 const err = await res.json();
                 showError(err.message || 'Failed to create category');
@@ -149,10 +163,93 @@ export default function CategoryManager() {
 
     return (
         <div>
-            <h1 style={{ marginBottom: '2rem' }}>Category Management</h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h1 style={{ marginBottom: 0 }}>Category Management</h1>
+                <button
+                    onClick={startAdd}
+                    className="btn btn-primary"
+                    style={{
+                        background: '#F37021',
+                        border: 'none',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '6px',
+                        color: 'white',
+                        fontWeight: 600,
+                        fontSize: '1rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}
+                >
+                    <FiPlus /> Add New Category
+                </button>
+            </div>
 
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', marginBottom: '3rem' }}>
-                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>{editId ? 'Edit Category' : 'Add New Category'}</h3>
+            <div className="grid">
+                {loading ? (
+                    <p>Loading categories...</p>
+                ) : Array.isArray(categories) && categories.length > 0 ? (
+                    categories.map(cat => (
+                        <div key={cat._id} className="card" style={{ position: 'relative', overflow: 'hidden', padding: '1rem', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                            <div style={{
+                                height: '100px',
+                                background: cat.gradient || '#f1f5f9',
+                                color: 'white',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '4px',
+                                marginBottom: '1rem',
+                                position: 'relative'
+                            }}>
+                                <img src={cat.imageUrl} alt={cat.name} style={{ height: '80%', objectFit: 'contain', zIndex: 1 }} />
+                            </div>
+                            <h4 style={{ margin: '0 0 0.5rem 0' }}>{cat.name}</h4>
+                            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.5rem 0' }}>{cat.slug}</p>
+                            <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>{cat.productCount} Products</p>
+
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
+                                <button
+                                    onClick={() => handleEdit(cat)}
+                                    className="btn btn-outline"
+                                    style={{ flex: 1, borderColor: '#3b82f6', color: '#3b82f6', background: 'white', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', border: '1px solid #3b82f6' }}
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(cat._id)}
+                                    className="btn btn-outline"
+                                    style={{ flex: 1, borderColor: 'red', color: 'red', background: 'white', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', border: '1px solid red' }}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <p>No categories found.</p>
+                )}
+            </div>
+
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
+
+            <FormModal
+                isOpen={isFormModalOpen}
+                onClose={handleCloseFormModal}
+                title={editId ? 'Edit Category' : 'Add New Category'}
+                maxWidth="800px"
+            >
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
                     <div className="form-group">
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Category Name</label>
@@ -220,7 +317,24 @@ export default function CategoryManager() {
                         </label>
                     </div>
 
-                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                        <button
+                            type="button"
+                            onClick={handleCloseFormModal}
+                            className="btn"
+                            style={{
+                                background: '#cbd5e1',
+                                border: 'none',
+                                padding: '0.75rem 1.5rem',
+                                borderRadius: '6px',
+                                color: '#475569',
+                                fontWeight: 600,
+                                fontSize: '1rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Cancel
+                        </button>
                         <button
                             type="submit"
                             className="btn btn-primary"
@@ -240,87 +354,9 @@ export default function CategoryManager() {
                         >
                             {editId ? 'Update Category' : 'Create Category'}
                         </button>
-                        {editId && (
-                            <button
-                                type="button"
-                                onClick={resetForm}
-                                className="btn"
-                                style={{
-                                    marginLeft: '1rem',
-                                    background: '#cbd5e1',
-                                    border: 'none',
-                                    padding: '0.75rem 2rem',
-                                    borderRadius: '6px',
-                                    color: '#475569',
-                                    fontWeight: 600,
-                                    fontSize: '1rem',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                Cancel
-                            </button>
-                        )}
                     </div>
                 </form>
-            </div>
-
-            <div className="grid">
-                {loading ? (
-                    <p>Loading categories...</p>
-                ) : Array.isArray(categories) && categories.length > 0 ? (
-                    categories.map(cat => (
-                        <div key={cat._id} className="card" style={{ position: 'relative', overflow: 'hidden' }}>
-                            <div style={{
-                                height: '100px',
-                                background: cat.gradient || '#f1f5f9',
-                                color: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: '4px',
-                                marginBottom: '1rem',
-                                position: 'relative'
-                            }}>
-                                <img src={cat.imageUrl} alt={cat.name} style={{ height: '80%', objectFit: 'contain', zIndex: 1 }} />
-                            </div>
-                            <h4>{cat.name}</h4>
-                            <p style={{ fontSize: '0.85rem', color: '#64748b' }}>{cat.slug}</p>
-                            <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>{cat.productCount} Products</p>
-
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                                <button
-                                    onClick={() => handleEdit(cat)}
-                                    className="btn btn-outline"
-                                    style={{ flex: 1, borderColor: '#3b82f6', color: '#3b82f6' }}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(cat._id)}
-                                    className="btn btn-outline"
-                                    style={{ flex: 1, borderColor: 'red', color: 'red' }}
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <p>No categories found.</p>
-                )}
-            </div>
-
-            <Modal
-                isOpen={modalState.isOpen}
-                onClose={hideModal}
-                title={modalState.title}
-                message={modalState.message}
-                type={modalState.type}
-                confirmText={modalState.confirmText}
-                cancelText={modalState.cancelText}
-                onConfirm={modalState.onConfirm}
-                showCancel={modalState.showCancel}
-            />
+            </FormModal>
         </div >
     );
 }

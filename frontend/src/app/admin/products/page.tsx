@@ -47,6 +47,12 @@ export default function ProductList() {
     const [limit, setLimit] = useState(20);
     const [totalProducts, setTotalProducts] = useState(0);
 
+    // Filter State
+    const [categories, setCategories] = useState<{ _id: string, name: string }[]>([]);
+    const [subCategories, setSubCategories] = useState<{ _id: string, name: string }[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedSubCategory, setSelectedSubCategory] = useState('');
+
     // Debounce search
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -56,14 +62,43 @@ export default function ProductList() {
         return () => clearTimeout(handler);
     }, [searchTerm]);
 
-    // Reset page when tab changes
+    // Reset page when tab or filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [activeTab]);
+    }, [activeTab, selectedCategory, selectedSubCategory]);
+
+    // Fetch Categories
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const res = await api.get('/admin/categories');
+                setCategories(res.data);
+            } catch (error) { console.error("Failed to fetch categories", error); }
+        };
+        fetchCategories();
+    }, []);
+
+    // Fetch SubCategories when Category changes
+    useEffect(() => {
+        if (!selectedCategory) {
+            setSubCategories([]);
+            setSelectedSubCategory('');
+            return;
+        }
+        const fetchSubCategories = async () => {
+            try {
+                const res = await api.get('/admin/sub-categories', {
+                    params: { category_id: selectedCategory }
+                });
+                setSubCategories(res.data);
+            } catch (error) { console.error("Failed to fetch sub-categories", error); }
+        };
+        fetchSubCategories();
+    }, [selectedCategory]);
 
     useEffect(() => {
         fetchProducts();
-    }, [currentPage, activeTab, debouncedSearch, limit]);
+    }, [currentPage, activeTab, debouncedSearch, limit, selectedCategory, selectedSubCategory]);
 
     const fetchProducts = async () => {
         setLoading(true);
@@ -73,7 +108,9 @@ export default function ProductList() {
                     page: currentPage,
                     limit: limit,
                     search: debouncedSearch,
-                    status: activeTab
+                    status: activeTab,
+                    category: selectedCategory || undefined,
+                    sub_category: selectedSubCategory || undefined
                 }
             });
 
@@ -181,22 +218,66 @@ export default function ProductList() {
                     </button>
                 </div>
 
-                <div className="search-box" style={{ position: 'relative', width: '300px' }}>
-                    <FiSearch style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
-                    <input
-                        type="text"
-                        placeholder="Search by name, sku, brand..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <select
+                        value={selectedCategory}
+                        onChange={(e) => {
+                            setSelectedCategory(e.target.value);
+                            setSelectedSubCategory('');
+                        }}
                         style={{
-                            width: '100%',
-                            padding: '8px 10px 8px 35px',
+                            padding: '8px',
                             border: '1px solid #ddd',
                             borderRadius: '6px',
                             outline: 'none',
-                            fontSize: '0.9rem'
+                            fontSize: '0.9rem',
+                            minWidth: '150px'
                         }}
-                    />
+                    >
+                        <option value="">All Categories</option>
+                        {categories.map(cat => (
+                            <option key={cat._id} value={cat._id}>{cat.name}</option>
+                        ))}
+                    </select>
+
+                    <select
+                        value={selectedSubCategory}
+                        onChange={(e) => setSelectedSubCategory(e.target.value)}
+                        disabled={!selectedCategory}
+                        style={{
+                            padding: '8px',
+                            border: '1px solid #ddd',
+                            borderRadius: '6px',
+                            outline: 'none',
+                            fontSize: '0.9rem',
+                            minWidth: '150px',
+                            opacity: !selectedCategory ? 0.6 : 1,
+                            cursor: !selectedCategory ? 'not-allowed' : 'pointer'
+                        }}
+                    >
+                        <option value="">All Sub-Categories</option>
+                        {subCategories.map(sub => (
+                            <option key={sub._id} value={sub._id}>{sub.name}</option>
+                        ))}
+                    </select>
+
+                    <div className="search-box" style={{ position: 'relative', width: '300px' }}>
+                        <FiSearch style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
+                        <input
+                            type="text"
+                            placeholder="Search by name, sku, brand..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '8px 10px 8px 35px',
+                                border: '1px solid #ddd',
+                                borderRadius: '6px',
+                                outline: 'none',
+                                fontSize: '0.9rem'
+                            }}
+                        />
+                    </div>
                 </div>
             </div>
 

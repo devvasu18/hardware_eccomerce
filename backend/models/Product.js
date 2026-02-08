@@ -11,7 +11,7 @@ const productSchema = new mongoose.Schema({
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
     sub_category: [{ type: mongoose.Schema.Types.ObjectId, ref: 'SubCategory' }], // Single product can have multiple sub-categories
     brand: { type: mongoose.Schema.Types.ObjectId, ref: 'Brand' },
-    offer: { type: mongoose.Schema.Types.ObjectId, ref: 'Offer' },
+    offers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Offer' }],
 
     // HSN & Tax
     hsn_code: { type: mongoose.Schema.Types.ObjectId, ref: 'HSNCode' }, // Link to master
@@ -42,9 +42,15 @@ const productSchema = new mongoose.Schema({
     size: { type: String },
 
     // Media
-    featured_image: { type: String }, // Main thumbnail
-    featured_image_2: { type: String }, // Hover/Second view
-    // gallery_images: [{ type: String }],
+    images: [{
+        url: { type: String, required: true },
+        altText: { type: String },
+        isMain: { type: Boolean, default: false }
+    }],
+
+    // Legacy / Compatibility Fields (Auto-synced from 'images')
+    featured_image: { type: String },
+    featured_image_2: { type: String },
     gallery_images: { type: [String], default: [] },
     size_chart: { type: String },
 
@@ -172,6 +178,24 @@ productSchema.pre('save', async function () {
                 this.mrp = minMrp;
                 this.basePrice = minMrp; // Alias
             }
+        }
+
+        // 4. Sync Legacy Image Fields
+        if (this.images && this.images.length > 0) {
+            // Find main image
+            const mainImg = this.images.find(img => img.isMain) || this.images[0];
+            this.featured_image = mainImg.url;
+
+            // Set second image (for hover effects often used)
+            if (this.images.length > 1) {
+                const secondImg = this.images.find(img => !img.isMain && img.url !== mainImg.url) || this.images[1];
+                this.featured_image_2 = secondImg.url;
+            } else {
+                this.featured_image_2 = null;
+            }
+
+            // Sync gallery (all images)
+            this.gallery_images = this.images.map(img => img.url);
         }
 
     } catch (err) {

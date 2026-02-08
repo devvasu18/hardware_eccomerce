@@ -13,17 +13,27 @@ const getStateName = (input) => {
   if (!input) return 'Gujarat'; // Default for local business
   const lower = input.toLowerCase();
 
-  // Common mappings
-  if (lower.includes('gujarat')) return 'Gujarat';
-  if (lower.includes('maharashtra')) return 'Maharashtra';
-  if (lower.includes('rajasthan')) return 'Rajasthan';
-  if (lower.includes('delhi')) return 'Delhi';
-  if (lower.includes('karnataka')) return 'Karnataka';
-  if (lower.includes('tamil')) return 'Tamil Nadu';
-  if (lower.includes('uttar pradesh')) return 'Uttar Pradesh';
-  if (lower.includes('madhya pradesh')) return 'Madhya Pradesh';
-  // Add more as needed, fallback to Title Case simple
-  return input.charAt(0).toUpperCase() + input.slice(1);
+  const states = [
+    'Andaman and Nicobar Islands', 'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar',
+    'Chandigarh', 'Chhattisgarh', 'Dadra and Nagar Haveli and Daman and Diu', 'Delhi', 'Goa',
+    'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jammu and Kashmir', 'Jharkhand', 'Karnataka',
+    'Kerala', 'Ladakh', 'Lakshadweep', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya',
+    'Mizoram', 'Nagaland', 'Odisha', 'Puducherry', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu',
+    'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'
+  ];
+
+  for (const state of states) {
+    if (lower.includes(state.toLowerCase())) return state;
+  }
+
+  // Fallback: Check for common abbreviations or variations if needed
+  if (lower.includes('bangalore') || lower.includes('bengaluru')) return 'Karnataka';
+  if (lower.includes('mumbai') || lower.includes('pune')) return 'Maharashtra';
+  if (lower.includes('chennai')) return 'Tamil Nadu';
+  if (lower.includes('kolkata')) return 'West Bengal';
+  if (lower.includes('surat') || lower.includes('ahmedabad') || lower.includes('vadodara') || lower.includes('rajkot')) return 'Gujarat';
+
+  return 'Gujarat'; // Ultimate fallback
 };
 
 const generateLedgerXML = (user) => {
@@ -91,32 +101,61 @@ const generateLedgerXML = (user) => {
 
 const generateSalesLedgerXML = () => {
   return `
-<ENVELOPE>
-  <HEADER>
-    <TALLYREQUEST>Import Data</TALLYREQUEST>
-  </HEADER>
-  <BODY>
-    <IMPORTDATA>
-      <REQUESTDESC>
-        <REPORTNAME>All Masters</REPORTNAME>
-      </REQUESTDESC>
-      <REQUESTDATA>
-        <TALLYMESSAGE xmlns:UDF="TallyUDF">
-           <LEDGER NAME="Sales Account" ACTION="Create">
-              <NAME.LIST>
-                <NAME>Sales Account</NAME>
-              </NAME.LIST>
-              <PARENT>Sales Accounts</PARENT>
-              <OPENINGBALANCE>0</OPENINGBALANCE>
-              <ISBILLWISEON>No</ISBILLWISEON>
-              <AFFECTSSTOCK>Yes</AFFECTSSTOCK>
-              <ISGSTAPPLICABLE>Yes</ISGSTAPPLICABLE>
-           </LEDGER>
-        </TALLYMESSAGE>
-      </REQUESTDATA>
-    </IMPORTDATA>
-  </BODY>
-</ENVELOPE>`;
+  <ENVELOPE>
+    <HEADER>
+      <TALLYREQUEST>Import Data</TALLYREQUEST>
+    </HEADER>
+    <BODY>
+      <IMPORTDATA>
+        <REQUESTDESC>
+          <REPORTNAME>All Masters</REPORTNAME>
+        </REQUESTDESC>
+        <REQUESTDATA>
+          <TALLYMESSAGE xmlns:UDF="TallyUDF">
+             <LEDGER NAME="Sales Account" ACTION="Create">
+                <NAME.LIST>
+                  <NAME>Sales Account</NAME>
+                </NAME.LIST>
+                <PARENT>Sales Accounts</PARENT>
+                <OPENINGBALANCE>0</OPENINGBALANCE>
+                <ISBILLWISEON>No</ISBILLWISEON>
+                <AFFECTSSTOCK>Yes</AFFECTSSTOCK>
+                <ISGSTAPPLICABLE>Yes</ISGSTAPPLICABLE>
+             </LEDGER>
+          </TALLYMESSAGE>
+        </REQUESTDATA>
+      </IMPORTDATA>
+    </BODY>
+  </ENVELOPE>`;
 };
 
-module.exports = { generateLedgerXML, generateSalesLedgerXML };
+const generateTaxLedgerXML = (ledgerName, parentGroup = "Duties & Taxes") => {
+  return `
+  <ENVELOPE>
+    <HEADER>
+      <TALLYREQUEST>Import Data</TALLYREQUEST>
+    </HEADER>
+    <BODY>
+      <IMPORTDATA>
+        <REQUESTDESC>
+          <REPORTNAME>All Masters</REPORTNAME>
+        </REQUESTDESC>
+        <REQUESTDATA>
+          <TALLYMESSAGE xmlns:UDF="TallyUDF">
+             <LEDGER NAME="${ledgerName}" ACTION="Create">
+                <NAME.LIST>
+                  <NAME>${ledgerName}</NAME>
+                </NAME.LIST>
+                <PARENT>${parentGroup}</PARENT>
+                <OPENINGBALANCE>0</OPENINGBALANCE>
+                <ISBILLWISEON>No</ISBILLWISEON>
+                <AFFECTSSTOCK>No</AFFECTSSTOCK>
+             </LEDGER>
+          </TALLYMESSAGE>
+        </REQUESTDATA>
+      </IMPORTDATA>
+    </BODY>
+  </ENVELOPE>`;
+};
+
+module.exports = { generateLedgerXML, generateSalesLedgerXML, generateTaxLedgerXML };

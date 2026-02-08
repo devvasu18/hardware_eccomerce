@@ -3,7 +3,8 @@
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import api from "../../../utils/api";
-import { FiEdit2, FiTrash2, FiPlus, FiSave, FiX } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
+import FormModal from "../../../components/FormModal";
 
 interface HSN {
     _id: string;
@@ -15,6 +16,7 @@ export default function HSNMaster() {
     const [hsns, setHsns] = useState<HSN[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const { register, handleSubmit, reset, setValue } = useForm<{ hsn_code: string; gst_rate: number }>();
 
@@ -37,21 +39,36 @@ export default function HSNMaster() {
         try {
             if (editingId) {
                 await api.put(`/admin/hsn/${editingId}`, data);
-                setEditingId(null);
+                alert('HSN Updated successfully');
             } else {
                 await api.post('/admin/hsn', data);
+                alert('HSN Created successfully');
             }
-            reset();
+            handleCloseModal();
             fetchHSNs();
         } catch (error) {
+            console.error(error);
             alert('Operation failed');
         }
+    };
+
+    const handleAdd = () => {
+        setEditingId(null);
+        reset();
+        setIsModalOpen(true);
     };
 
     const startEdit = (hsn: HSN) => {
         setEditingId(hsn._id);
         setValue('hsn_code', hsn.hsn_code);
         setValue('gst_rate', hsn.gst_rate);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingId(null);
+        reset();
     };
 
     const handleDelete = async (id: string) => {
@@ -66,49 +83,14 @@ export default function HSNMaster() {
 
     return (
         <div className="container">
-            <h1 className="page-title">HSN Code Management</h1>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Manage Goods and Services Tax codes for your inventory.</p>
-
-            <div className="card">
-                <div className="card-header">
-                    {editingId ? 'Edit HSN Code' : 'Add New HSN Code'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <div>
+                    <h1 className="page-title" style={{ margin: 0 }}>HSN Code Management</h1>
+                    <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>Manage Goods and Services Tax codes for your inventory.</p>
                 </div>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                    <div className="form-grid">
-                        <div className="form-group">
-                            <label className="form-label">HSN Code</label>
-                            <input
-                                {...register("hsn_code", { required: true })}
-                                className="form-input"
-                                placeholder="e.g. 8467"
-                            />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">GST Rate (%)</label>
-                            <select
-                                {...register("gst_rate", { required: true })}
-                                className="form-select"
-                            >
-                                <option value="5">5%</option>
-                                <option value="12">12%</option>
-                                <option value="18">18%</option>
-                                <option value="28">28%</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
-                        <button type="submit" className="btn btn-primary">
-                            {editingId ? <FiSave /> : <FiPlus />}
-                            {editingId ? 'Update HSN Code' : 'Create HSN Code'}
-                        </button>
-                        {editingId && (
-                            <button type="button" onClick={() => { setEditingId(null); reset(); }} className="btn btn-secondary">
-                                Cancel
-                            </button>
-                        )}
-                    </div>
-                </form>
+                <button onClick={handleAdd} className="btn btn-primary">
+                    <FiPlus /> Add New HSN Code
+                </button>
             </div>
 
             <div className="table-container">
@@ -144,6 +126,49 @@ export default function HSNMaster() {
                     </tbody>
                 </table>
             </div>
+
+            <FormModal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                title={editingId ? 'Edit HSN Code' : 'Add New HSN Code'}
+                maxWidth="500px"
+            >
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <div className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div className="form-group">
+                            <label className="form-label">HSN Code</label>
+                            <input
+                                {...register("hsn_code", { required: true })}
+                                className="form-input"
+                                placeholder="e.g. 8467"
+                                style={{ width: '100%', padding: '0.5rem' }}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">GST Rate (%)</label>
+                            <select
+                                {...register("gst_rate", { required: true })}
+                                className="form-select"
+                                style={{ width: '100%', padding: '0.5rem' }}
+                            >
+                                <option value="5">5%</option>
+                                <option value="12">12%</option>
+                                <option value="18">18%</option>
+                                <option value="28">28%</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                        <button type="button" onClick={handleCloseModal} className="btn" style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', padding: '0.5rem 1rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
+                            {editingId ? 'Update HSN Code' : 'Create HSN Code'}
+                        </button>
+                    </div>
+                </form>
+            </FormModal>
         </div>
     );
 }

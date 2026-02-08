@@ -73,6 +73,7 @@ const orderSchema = new mongoose.Schema({
         expectedArrival: { type: Date },
         dispatchDate: { type: Date },
         busPhoto: { type: String }, // URL to uploaded image
+        notes: { type: String },
     },
 
     logisticsUpdates: [{

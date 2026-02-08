@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
+import FormModal from '../../components/FormModal';
 import { useModal } from '../../hooks/useModal';
+import { FiPlus } from 'react-icons/fi';
 
 interface Product {
     _id: string;
@@ -41,6 +43,7 @@ export default function SpecialDealsManager() {
         isActive: true
     });
     const [editId, setEditId] = useState<string | null>(null);
+    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
     const { modalState, hideModal, showSuccess, showError, showModal } = useModal();
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -58,18 +61,8 @@ export default function SpecialDealsManager() {
                 fetch('http://localhost:5000/api/products')
             ]);
 
-            if (!offerRes.ok) {
-                console.error('Failed to fetch offers:', offerRes.status);
-            }
-            if (!productRes.ok) {
-                console.error('Failed to fetch products:', productRes.status);
-            }
-
             const offersData = await offerRes.json();
             const productsData = await productRes.json();
-
-            console.log('Fetched offers:', offersData);
-            console.log('Fetched products:', productsData);
 
             setOffers(Array.isArray(offersData) ? offersData : []);
             setProducts(Array.isArray(productsData) ? productsData : []);
@@ -82,8 +75,12 @@ export default function SpecialDealsManager() {
         }
     };
 
+    const startAdd = () => {
+        resetForm();
+        setIsFormModalOpen(true);
+    };
+
     const handleEdit = (offer: SpecialOffer) => {
-        // Handle null productId (deleted product)
         const pId = offer.productId && typeof offer.productId === 'object'
             ? (offer.productId as Product)._id
             : (offer.productId as string) || '';
@@ -109,7 +106,7 @@ export default function SpecialDealsManager() {
             isActive: offer.isActive
         });
         setEditId(offer._id);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setIsFormModalOpen(true);
     };
 
     const resetForm = () => {
@@ -127,6 +124,11 @@ export default function SpecialDealsManager() {
         setEditId(null);
     };
 
+    const handleCloseForm = () => {
+        setIsFormModalOpen(false);
+        resetForm();
+    };
+
     const handleProductChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const pId = e.target.value;
         const product = products.find(p => p._id === pId);
@@ -137,7 +139,7 @@ export default function SpecialDealsManager() {
                 ...prev,
                 productId: pId,
                 originalPrice: price,
-                title: product.name || product.title || '', // meaningful default
+                title: product.name || product.title || '',
                 offerPrice: prev.discountPercent ? price - (price * prev.discountPercent / 100) : price
             }));
         } else {
@@ -165,7 +167,6 @@ export default function SpecialDealsManager() {
         let newDiscount = 0;
         if (original > 0) {
             newDiscount = ((original - newOfferPrice) / original) * 100;
-            // Round to 1 decimal place to avoid long decimals
             newDiscount = Math.round(newDiscount * 10) / 10;
         }
 
@@ -197,6 +198,7 @@ export default function SpecialDealsManager() {
                 resetForm();
                 fetchData();
                 showSuccess(editId ? 'Special Offer updated successfully!' : 'Special Offer created successfully!');
+                setIsFormModalOpen(false);
             } else {
                 const err = await res.json();
                 showError(err.message || (editId ? 'Failed to update offer' : 'Failed to create offer'));
@@ -237,12 +239,96 @@ export default function SpecialDealsManager() {
 
     return (
         <div>
-            <h1 style={{ marginBottom: '2rem' }}>Special Deals Management</h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h1 style={{ marginBottom: 0 }}>Special Deals Management</h1>
+                <button
+                    onClick={startAdd}
+                    className="btn btn-primary"
+                    style={{
+                        background: '#F37021',
+                        border: 'none',
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '6px',
+                        color: 'white',
+                        fontWeight: 600,
+                        fontSize: '1rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                    }}
+                >
+                    <FiPlus /> Add Special Offer
+                </button>
+            </div>
 
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)', marginBottom: '3rem' }}>
-                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>{editId ? 'Edit Special Offer' : 'Add Special Offer'}</h3>
+            <div className="grid">
+                {loading ? (
+                    <p>Loading offers...</p>
+                ) : Array.isArray(offers) && offers.length > 0 ? (
+                    offers.map(offer => (
+                        <div key={offer._id} className="card" style={{ position: 'relative', padding: '1.5rem', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
+                            <span className="badge" style={{ position: 'absolute', top: '10px', right: '10px', background: '#ef4444', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                                {offer.discountPercent}% OFF
+                            </span>
+                            <h4 style={{ margin: '0 0 0.5rem 0', paddingRight: '4rem' }}>{offer.title}</h4>
+                            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                                Product: {
+                                    offer.productId && typeof offer.productId === 'object'
+                                        ? ((offer.productId as Product).name || (offer.productId as Product).title || 'Unnamed Product')
+                                        : offer.productId
+                                            ? 'Product ID: ' + offer.productId
+                                            : '⚠️ Product Deleted'
+                                }
+                            </p>
+                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
+                                <span style={{ textDecoration: 'line-through', color: '#94a3b8' }}>₹{offer.originalPrice}</span>
+                                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#F37021' }}>₹{offer.offerPrice}</span>
+                            </div>
+                            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>Ends: {new Date(offer.endDate).toLocaleDateString()}</p>
+
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                    onClick={() => handleEdit(offer)}
+                                    className="btn btn-outline"
+                                    style={{ flex: 1, borderColor: '#3b82f6', color: '#3b82f6', background: 'white', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', border: '1px solid #3b82f6' }}
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(offer._id)}
+                                    className="btn btn-outline"
+                                    style={{ flex: 1, borderColor: 'red', color: 'red', background: 'white', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', border: '1px solid red' }}
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <p>No special offers found.</p>
+                )}
+            </div>
+
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
+
+            <FormModal
+                isOpen={isFormModalOpen}
+                onClose={handleCloseForm}
+                title={editId ? 'Edit Special Offer' : 'Add Special Offer'}
+                maxWidth="800px"
+            >
                 <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
-
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>
                             Select Product {products.length > 0 && `(${products.length} products)`}
@@ -343,7 +429,24 @@ export default function SpecialDealsManager() {
                         />
                     </div>
 
-                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
+                    <div style={{ gridColumn: '1 / -1', marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                        <button
+                            type="button"
+                            onClick={handleCloseForm}
+                            className="btn"
+                            style={{
+                                background: '#cbd5e1',
+                                border: 'none',
+                                padding: '0.75rem 1.5rem',
+                                borderRadius: '6px',
+                                color: '#475569',
+                                fontWeight: 600,
+                                fontSize: '1rem',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            Cancel
+                        </button>
                         <button
                             type="submit"
                             className="btn btn-primary"
@@ -363,89 +466,9 @@ export default function SpecialDealsManager() {
                         >
                             {editId ? 'Update Offer' : 'Create Offer'}
                         </button>
-                        {editId && (
-                            <button
-                                type="button"
-                                onClick={resetForm}
-                                className="btn"
-                                style={{
-                                    marginLeft: '1rem',
-                                    background: '#cbd5e1',
-                                    border: 'none',
-                                    padding: '0.75rem 2rem',
-                                    borderRadius: '6px',
-                                    color: '#475569',
-                                    fontWeight: 600,
-                                    fontSize: '1rem',
-                                    cursor: 'pointer'
-                                }}
-                            >
-                                Cancel
-                            </button>
-                        )}
                     </div>
                 </form>
-            </div>
-
-            <div className="grid">
-                {loading ? (
-                    <p>Loading offers...</p>
-                ) : Array.isArray(offers) && offers.length > 0 ? (
-                    offers.map(offer => (
-                        <div key={offer._id} className="card" style={{ position: 'relative' }}>
-                            <span className="badge" style={{ position: 'absolute', top: '10px', right: '10px', background: '#ef4444', color: 'white' }}>
-                                {offer.discountPercent}% OFF
-                            </span>
-                            <h4>{offer.title}</h4>
-                            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>
-                                Product: {
-                                    offer.productId && typeof offer.productId === 'object'
-                                        ? ((offer.productId as Product).name || (offer.productId as Product).title || 'Unnamed Product')
-                                        : offer.productId
-                                            ? 'Product ID: ' + offer.productId
-                                            : '⚠️ Product Deleted'
-                                }
-                            </p>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-                                <span style={{ textDecoration: 'line-through', color: '#94a3b8' }}>₹{offer.originalPrice}</span>
-                                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#F37021' }}>₹{offer.offerPrice}</span>
-                            </div>
-                            <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Ends: {new Date(offer.endDate).toLocaleDateString()}</p>
-
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                                <button
-                                    onClick={() => handleEdit(offer)}
-                                    className="btn btn-outline"
-                                    style={{ flex: 1, borderColor: '#3b82f6', color: '#3b82f6' }}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(offer._id)}
-                                    className="btn btn-outline"
-                                    style={{ flex: 1, borderColor: 'red', color: 'red' }}
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <p>No special offers found.</p>
-                )}
-            </div>
-
-            <Modal
-                isOpen={modalState.isOpen}
-                onClose={hideModal}
-                title={modalState.title}
-                message={modalState.message}
-                type={modalState.type}
-                confirmText={modalState.confirmText}
-                cancelText={modalState.cancelText}
-                onConfirm={modalState.onConfirm}
-                showCancel={modalState.showCancel}
-            />
+            </FormModal>
         </div>
     );
 }

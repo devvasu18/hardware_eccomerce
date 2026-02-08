@@ -4,7 +4,7 @@ const TallyStatusLog = require('../models/TallyStatusLog');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const { generateSalesVoucherXML } = require('../utils/tallyXmlGenerator');
-const { generateLedgerXML, generateSalesLedgerXML } = require('../utils/tallyLedgerGenerator');
+const { generateLedgerXML, generateSalesLedgerXML, generateTaxLedgerXML } = require('../utils/tallyLedgerGenerator');
 const { generateStockItemXML } = require('../utils/tallyStockItemGenerator');
 const { generateUnitXML } = require('../utils/tallyUnitGenerator');
 
@@ -55,7 +55,7 @@ async function sendToTally(xmlData) {
             // Log Success
             await TallyStatusLog.create({
                 status: 'online',
-                errorMessage: 'Sync Success', // Using errorMessage field for success info to show in existing UI logs
+                errorMessage: 'Sync Success',
                 queueSuccess: 1
             });
             return { success: true, response: responseData, error: null };
@@ -64,6 +64,17 @@ async function sendToTally(xmlData) {
             let errorMsg = 'Tally rejected the voucher';
             const errorMatch = responseData.match(/<LINEERROR>(.*?)<\/LINEERROR>/);
             if (errorMatch) errorMsg = errorMatch[1];
+
+            // Specific check for "Already Exists" to avoid queue loops
+            // Tally errors: "Name already exists", "Duplicate entry", etc.
+            if (errorMsg.toLowerCase().includes('already exists') || errorMsg.toLowerCase().includes('duplicate')) {
+                await TallyStatusLog.create({
+                    status: 'online',
+                    errorMessage: `Ignored Duplicate: ${errorMsg}`,
+                    queueSuccess: 1
+                });
+                return { success: true, response: responseData, error: null, warning: 'Already exists' };
+            }
 
             // Log Failure
             await TallyStatusLog.create({
@@ -235,7 +246,10 @@ async function syncWithHealthCheck({ xmlData, type, relatedId, relatedModel }) {
  */
 async function syncOrderToTally(orderId) {
     try {
-        const order = await Order.findById(orderId).populate('items.product');
+        const order = await Order.findById(orderId).populate({
+            path: 'items.product',
+            populate: { path: 'hsn_code' }
+        });
         if (!order) return { success: false, error: 'Order not found' };
 
         // Prevent duplicate sync if already saved, UNLESS it is a Cancellation update
@@ -263,6 +277,25 @@ async function syncOrderToTally(orderId) {
             xmlData: generateSalesLedgerXML(),
             type: 'Ledger',
             relatedId: 'LEDGER-SALES',
+            relatedModel: 'Ledger'
+        });
+
+        // 2b. Sync Tax Ledgers (CGST, SGST, IGST)
+        const taxLedgers = ['CGST', 'SGST', 'IGST'];
+        for (const tax of taxLedgers) {
+            await syncWithHealthCheck({
+                xmlData: generateTaxLedgerXML(tax, 'Duties & Taxes'),
+                type: 'Ledger',
+                relatedId: `LEDGER-${tax}`,
+                relatedModel: 'Ledger'
+            });
+        }
+
+        // 2c. Sync Round Off Ledger
+        await syncWithHealthCheck({
+            xmlData: generateTaxLedgerXML('Round Off', 'Indirect Expenses'),
+            type: 'Ledger',
+            relatedId: 'LEDGER-ROUNDOFF',
             relatedModel: 'Ledger'
         });
 
@@ -310,11 +343,143 @@ async function syncOrderToTally(orderId) {
     }
 }
 
+/**
+ * Orchestrate the full Stock Entry Sync (Purchase)
+ */
+async function syncStockEntryToTally(stockEntryId) {
+    try {
+        const StockEntry = require('../models/StockEntry');
+        const Party = require('../models/Party');
+        const Product = require('../models/Product');
+        const { generatePurchaseVoucherXML } = require('../utils/tallyPurchaseXmlGenerator');
+
+        const stockEntry = await StockEntry.findById(stockEntryId);
+        if (!stockEntry) return { success: false, error: 'Stock Entry not found' };
+
+        const party = await Party.findById(stockEntry.party_id);
+        if (!party) return { success: false, error: 'Party not found' };
+
+        // Fetch associated ProductStock items
+        const ProductStock = require('../models/ProductStock');
+        const stockItems = await ProductStock.find({ stock_id: stockEntry._id }).populate('product_id');
+
+        // Enhance items with model/variant names for XML generation
+        const enhancedItems = [];
+        for (const item of stockItems) {
+            let modelName = '';
+            let variantName = '';
+
+            if (item.model_id || item.variant_id) {
+                const product = await Product.findById(item.product_id);
+                if (item.model_id) {
+                    const model = product.models.id(item.model_id);
+                    if (model) modelName = model.name;
+                }
+                if (item.variant_id) {
+                    // Search in model variations or root variations
+                    let variant = null;
+                    if (item.model_id) {
+                        const model = product.models.id(item.model_id);
+                        if (model) variant = model.variations.id(item.variant_id);
+                    } else {
+                        variant = product.variations.id(item.variant_id);
+                    }
+                    if (variant) variantName = variant.value;
+                }
+            }
+
+            enhancedItems.push({
+                product: item.product_id,
+                product_name: item.product_id.title,
+                model_name: modelName,
+                variant_name: variantName,
+                qty: item.qty,
+                unit_price: item.unit_price,
+                total: item.total_price
+            });
+        }
+
+        const entryWithItems = { ...stockEntry.toObject(), items: enhancedItems };
+
+        // 1. Sync Units (Assume 'pcs' for now or dynamic)
+        await syncWithHealthCheck({
+            xmlData: generateUnitXML('pcs'),
+            type: 'Unit',
+            relatedId: 'UNIT-pcs',
+            relatedModel: 'Unit'
+        });
+
+        // 2. Sync Purchase Ledgers
+        await syncWithHealthCheck({
+            xmlData: generateTaxLedgerXML('Purchase Account', 'Purchase Accounts'),
+            type: 'Ledger',
+            relatedId: 'LEDGER-PURCHASE',
+            relatedModel: 'Ledger'
+        });
+
+        // 2b. Sync Tax Ledgers
+        const taxLedgers = ['CGST', 'SGST', 'IGST'];
+        for (const tax of taxLedgers) {
+            await syncWithHealthCheck({
+                xmlData: generateTaxLedgerXML(tax, 'Duties & Taxes'),
+                type: 'Ledger',
+                relatedId: `LEDGER-${tax}`,
+                relatedModel: 'Ledger'
+            });
+        }
+
+        // 3. Sync Supplier (Party) Ledger
+        const partyUserLike = {
+            username: party.name,
+            mobile: party.phone_no,
+            address: party.address,
+            gstIn: party.gst_no,
+            tallyLedgerName: `${party.name} - ${party.phone_no || ''}`
+        };
+
+        await syncWithHealthCheck({
+            xmlData: generateLedgerXML(partyUserLike),
+            type: 'Ledger',
+            relatedId: party._id,
+            relatedModel: 'Party'
+        });
+
+        // 4. Sync Stock Items
+        for (const item of enhancedItems) {
+            let uniqueRelatedId = item.product._id.toString();
+            if (item.model_name) uniqueRelatedId += `-${item.model_name}`;
+            if (item.variant_name) uniqueRelatedId += `-${item.variant_name}`;
+
+            await syncWithHealthCheck({
+                xmlData: generateStockItemXML(item.product, item.variant_name, item.model_name),
+                type: 'StockItem',
+                relatedId: uniqueRelatedId,
+                relatedModel: 'Product'
+            });
+        }
+
+        // 5. Sync Purchase Voucher
+        const voucherXML = generatePurchaseVoucherXML(entryWithItems, party);
+
+        return await syncWithHealthCheck({
+            xmlData: voucherXML,
+            type: 'PurchaseVoucher',
+            relatedId: stockEntry._id,
+            relatedModel: 'StockEntry'
+        });
+
+    } catch (error) {
+        console.error('Stock Entry Sync Error:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 module.exports = {
     checkTallyHealth,
     sendToTally,
     processQueue,
     syncWithHealthCheck,
     addToQueue,
-    syncOrderToTally
+    syncOrderToTally,
+    syncStockEntryToTally
 };

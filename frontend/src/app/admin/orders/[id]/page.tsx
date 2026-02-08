@@ -112,7 +112,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
             driverContact: data.driverContact,
             dispatchDate: data.dispatchDate,
             departureTime: data.departureTime,
-            expectedArrival: data.expectedArrival
+            expectedArrival: data.expectedArrival,
+            notes: data.notes
         };
         formData.append('busDetails', JSON.stringify(busDetailsPayload));
 
@@ -287,6 +288,16 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                     </div>
                                 </div>
 
+                            </div>
+
+                            <div className="form-group" style={{ marginTop: '1rem' }}>
+                                <label className="form-label">Comments / Notes</label>
+                                <textarea
+                                    {...register("notes")}
+                                    className="form-input"
+                                    placeholder="Add any additional instructions or details..."
+                                    rows={3}
+                                />
                             </div>
 
                             <div style={{ margin: '1.5rem 0' }}>

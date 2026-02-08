@@ -15,6 +15,8 @@ exports.getAdminProducts = async (req, res) => {
 
         const search = req.query.search || '';
         const status = req.query.status || 'active'; // 'active', 'inactive', 'all'
+        const category = req.query.category;
+        const sub_category = req.query.sub_category;
 
         let query = {};
 
@@ -24,6 +26,12 @@ exports.getAdminProducts = async (req, res) => {
         } else if (status === 'inactive') {
             query.isActive = false;
         }
+
+        // Category Filter
+        if (category) query.category = category;
+
+        // SubCategory Filter
+        if (sub_category) query.sub_category = sub_category;
 
         // Search Filter
         if (search) {
@@ -52,7 +60,7 @@ exports.getAdminProducts = async (req, res) => {
             .populate('category', 'name')
             .populate('sub_category', 'name')
             .populate('brand', 'name')
-            .populate('offer', 'title percentage')
+            .populate('offers', 'title percentage')
             .populate('hsn_code', 'hsn_code gst_rate')
             .sort({ createdAt: -1 })
             .skip(skip)
@@ -79,7 +87,7 @@ exports.getAdminProductById = async (req, res) => {
             .populate('category')
             .populate('sub_category')
             .populate('brand')
-            .populate('offer')
+            .populate('offers')
             .populate('hsn_code');
 
         if (!product) {
@@ -103,7 +111,7 @@ exports.createProduct = async (req, res) => {
 
         const {
             title, slug, subtitle, part_number,
-            category, sub_category, brand, offer,
+            category, sub_category, brand, offers,
             hsn_code, gst_rate,
             description, specifications,
             mrp, selling_price_a, selling_price_b, selling_price_c, delivery_charge,
@@ -121,6 +129,34 @@ exports.createProduct = async (req, res) => {
         const featured_image_2 = getFile('featured_image_2')?.path || req.body.featured_image_2;
         const size_chart = getFile('size_chart')?.path || req.body.size_chart;
         const gallery_images = getFiles('gallery_images').map(f => f.path);
+
+        // Parse Product Images (New Modal System)
+        let parsedImages = [];
+        if (req.body.images) {
+            try {
+                // If coming as a string (JSON)
+                const rawImages = typeof req.body.images === 'string' ? JSON.parse(req.body.images) : req.body.images;
+                if (Array.isArray(rawImages)) {
+                    parsedImages = rawImages.map((img, idx) => {
+                        // Check for new file upload keyed by index
+                        const file = req.files?.find(f => f.fieldname === `product_image_${idx}`);
+                        if (file) {
+                            return { ...img, url: file.path };
+                        }
+                        return img;
+                    });
+                }
+            } catch (e) {
+                console.error('Error parsing product images:', e);
+            }
+        } else if (featured_image) {
+            // Legacy Fallback: If no 'images' array but 'featured_image' exists, create one entry
+            parsedImages.push({ url: featured_image, isMain: true });
+            if (featured_image_2) parsedImages.push({ url: featured_image_2, isMain: false });
+            if (gallery_images.length > 0) {
+                gallery_images.forEach(url => parsedImages.push({ url, isMain: false }));
+            }
+        }
 
         // Parse JSON fields if they come as strings
         let parsedSpecs = specifications;
@@ -143,6 +179,18 @@ exports.createProduct = async (req, res) => {
         if (typeof sub_category === 'string') {
             // If comma separated or single value
             parsedSubCats = [sub_category];
+        }
+
+        let parsedOffers = offers;
+        if (typeof offers === 'string') {
+            // Handle if passed as string (single ID or stringified array)
+            try {
+                parsedOffers = JSON.parse(offers);
+            } catch (e) {
+                // assume comma separated
+                parsedOffers = offers.split(',').map(id => id.trim()).filter(id => id);
+            }
+            if (!Array.isArray(parsedOffers)) parsedOffers = [parsedOffers];
         }
 
         let parsedVariations = [];
@@ -180,7 +228,7 @@ exports.createProduct = async (req, res) => {
 
         const product = new Product({
             title, slug, subtitle, part_number,
-            category, sub_category: parsedSubCats, brand, offer,
+            category, sub_category: parsedSubCats, brand, offers: parsedOffers,
             hsn_code, gst_rate,
             description, specifications: parsedSpecs,
             mrp, selling_price_a, selling_price_b, selling_price_c, delivery_charge,
@@ -190,7 +238,8 @@ exports.createProduct = async (req, res) => {
             meta_title, meta_description, keywords: parsedKeywords,
             isActive, isVisible, isFeatured, isNewArrival, isTopSale, isDailyOffer,
             variations: parsedVariations,
-            models: parsedModels
+            models: parsedModels,
+            images: parsedImages
         });
 
         const createdProduct = await product.save();
@@ -261,6 +310,34 @@ exports.updateProduct = async (req, res) => {
             }
         }
 
+        // Handle Product Images (New Modal System)
+        if (req.body.images) {
+            try {
+                // Parse if string
+                const rawImages = typeof req.body.images === 'string' ? JSON.parse(req.body.images) : req.body.images;
+
+                if (Array.isArray(rawImages)) {
+                    const existingImages = product.images || [];
+
+                    updates.images = rawImages.map((img, idx) => {
+                        const file = req.files?.find(f => f.fieldname === `product_image_${idx}`);
+
+                        // If new file uploaded
+                        if (file) {
+                            // Logic to delete old file? 
+                            // If this index replaced an existing image that had a URL, we might want to delete it.
+                            // But since indices can shift, it's safer not to aggressively delete unless we know ID matches.
+                            // For simplicity, we just set the new URL.
+                            return { ...img, url: file.path };
+                        }
+                        return img;
+                    });
+                }
+            } catch (e) {
+                console.error('Error parsing update product images:', e);
+            }
+        }
+
         // Helper to parse if string
         if (updates.specifications && typeof updates.specifications === 'string') {
             try { updates.specifications = JSON.parse(updates.specifications); } catch (e) { }
@@ -273,6 +350,15 @@ exports.updateProduct = async (req, res) => {
         if (updates.sub_category && typeof updates.sub_category === 'string') {
             // Handle comma separated or single value
             updates.sub_category = updates.sub_category.split(',').map(id => id.trim()).filter(id => id);
+        }
+
+        if (updates.offers && typeof updates.offers === 'string') {
+            try {
+                updates.offers = JSON.parse(updates.offers);
+            } catch (e) {
+                updates.offers = updates.offers.split(',').map(id => id.trim()).filter(id => id);
+            }
+            if (!Array.isArray(updates.offers)) updates.offers = [updates.offers];
         }
 
         // Handle boolean fields from form-data (strings "true"/"false")

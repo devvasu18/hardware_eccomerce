@@ -32,6 +32,7 @@ export default function BrandsSection() {
         <section className="brands-section">
             <div className="container">
                 <div className="brands-container">
+                    <h2 className="brands-title">Our Partner Brands</h2>
 
                     <div className="brands-grid-wrapper">
                         {brands.map((brand, idx) => (

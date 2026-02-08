@@ -502,7 +502,8 @@ exports.updateOrderStatus = async (req, res) => {
                 dispatchDate: parsedBusDetails.dispatchDate,
                 // Handle image if uploaded? Usually file upload middleware handles it
                 // If busPhoto comes as string (url), save it.
-                busPhoto: parsedBusDetails.busPhoto || order.busDetails?.busPhoto
+                busPhoto: parsedBusDetails.busPhoto || order.busDetails?.busPhoto,
+                notes: parsedBusDetails.notes
             };
         }
 

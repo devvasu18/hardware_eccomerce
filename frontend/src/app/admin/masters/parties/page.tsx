@@ -3,7 +3,8 @@
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import api from "../../../utils/api";
-import { FiEdit2, FiTrash2, FiPlus, FiSave, FiX } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiPlus, FiSave } from "react-icons/fi";
+import FormModal from "../../../components/FormModal";
 
 interface Party {
     _id: string;
@@ -18,6 +19,7 @@ export default function PartyMaster() {
     const [parties, setParties] = useState<Party[]>([]);
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const { register, handleSubmit, reset, setValue } = useForm<Party>();
 
@@ -40,15 +42,23 @@ export default function PartyMaster() {
         try {
             if (editingId) {
                 await api.put(`/admin/parties/${editingId}`, data);
-                setEditingId(null);
+                alert('Party updated successfully');
             } else {
                 await api.post('/admin/parties', data);
+                alert('Party created successfully');
             }
-            reset();
+            handleCloseModal();
             fetchParties();
         } catch (error) {
+            console.error(error);
             alert('Operation failed');
         }
+    };
+
+    const handleAdd = () => {
+        setEditingId(null);
+        reset();
+        setIsModalOpen(true);
     };
 
     const startEdit = (party: Party) => {
@@ -58,6 +68,13 @@ export default function PartyMaster() {
         setValue('phone_no', party.phone_no);
         setValue('gst_no', party.gst_no);
         setValue('address', party.address);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setEditingId(null);
+        reset();
     };
 
     const handleDelete = async (id: string) => {
@@ -72,49 +89,14 @@ export default function PartyMaster() {
 
     return (
         <div className="container">
-            <h1 className="page-title">Party Master (Suppliers)</h1>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>Manage suppliers and vendors for stock entry.</p>
-
-            <div className="card">
-                <div className="card-header">
-                    {editingId ? 'Edit Party' : 'Add New Party'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <div>
+                    <h1 className="page-title" style={{ margin: 0 }}>Party Master (Suppliers)</h1>
+                    <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>Manage suppliers and vendors for stock entry.</p>
                 </div>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                    <div className="form-grid">
-                        <div className="form-group">
-                            <label className="form-label">Party Name *</label>
-                            <input {...register("name", { required: true })} className="form-input" placeholder="e.g. ABC Traders" />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">GST No</label>
-                            <input {...register("gst_no")} className="form-input" placeholder="22AAAAA0000A1Z5" />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Phone No</label>
-                            <input {...register("phone_no")} className="form-input" placeholder="+91 98765 43210" />
-                        </div>
-                        <div className="form-group">
-                            <label className="form-label">Email</label>
-                            <input {...register("email")} className="form-input" placeholder="contact@abctraders.com" />
-                        </div>
-                        <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                            <label className="form-label">Address</label>
-                            <textarea {...register("address")} className="form-input" rows={3} placeholder="Full address..."></textarea>
-                        </div>
-                    </div>
-
-                    <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem' }}>
-                        <button type="submit" className="btn btn-primary">
-                            {editingId ? <FiSave /> : <FiPlus />}
-                            {editingId ? 'Update Party' : 'Create Party'}
-                        </button>
-                        {editingId && (
-                            <button type="button" onClick={() => { setEditingId(null); reset(); }} className="btn btn-secondary">
-                                Cancel
-                            </button>
-                        )}
-                    </div>
-                </form>
+                <button onClick={handleAdd} className="btn btn-primary">
+                    <FiPlus /> Add New Party
+                </button>
             </div>
 
             <div className="table-container">
@@ -153,6 +135,46 @@ export default function PartyMaster() {
                     </tbody>
                 </table>
             </div>
+
+            <FormModal
+                isOpen={isModalOpen}
+                onClose={handleCloseModal}
+                title={editingId ? 'Edit Party' : 'Add New Party'}
+            >
+                <form onSubmit={handleSubmit(onSubmit)}>
+                    <div className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div className="form-group">
+                            <label className="form-label">Party Name *</label>
+                            <input {...register("name", { required: true })} className="form-input" placeholder="e.g. ABC Traders" style={{ width: '100%', padding: '0.5rem' }} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">GST No</label>
+                            <input {...register("gst_no")} className="form-input" placeholder="22AAAAA0000A1Z5" style={{ width: '100%', padding: '0.5rem' }} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Phone No</label>
+                            <input {...register("phone_no")} className="form-input" placeholder="+91 98765 43210" style={{ width: '100%', padding: '0.5rem' }} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Email</label>
+                            <input {...register("email")} className="form-input" placeholder="contact@abctraders.com" style={{ width: '100%', padding: '0.5rem' }} />
+                        </div>
+                        <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                            <label className="form-label">Address</label>
+                            <textarea {...register("address")} className="form-input" rows={3} placeholder="Full address..." style={{ width: '100%', padding: '0.5rem' }}></textarea>
+                        </div>
+                    </div>
+
+                    <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                        <button type="button" onClick={handleCloseModal} className="btn" style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', padding: '0.5rem 1rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
+                            {editingId ? 'Update Party' : 'Create Party'}
+                        </button>
+                    </div>
+                </form>
+            </FormModal>
         </div>
     );
 }

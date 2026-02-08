@@ -11,6 +11,12 @@ const productStockSchema = new mongoose.Schema({
         ref: 'Product',
         required: true
     },
+    model_id: {
+        type: mongoose.Schema.Types.ObjectId
+    },
+    variant_id: {
+        type: mongoose.Schema.Types.ObjectId
+    },
     party_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Party',

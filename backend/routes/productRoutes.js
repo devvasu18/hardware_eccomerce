@@ -199,6 +199,7 @@ router.get('/', async (req, res) => {
         const products = await Product.find(query)
             .populate('category', 'name')
             .populate('brand', 'name')
+            .populate('offers', 'title percentage')
             .sort(sortOption)
             .limit(pageSize)
             .skip(pageSize * (pageNum - 1));
@@ -232,7 +233,11 @@ router.get('/', async (req, res) => {
 // Get Single Product
 router.get('/:id', async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id);
+        const product = await Product.findById(req.params.id)
+            .populate('category', 'name')
+            .populate('brand', 'name')
+            .populate('offers')
+            .populate('sub_category', 'name');
         if (!product) {
             return res.status(404).json({ message: "Product not found" });
         }

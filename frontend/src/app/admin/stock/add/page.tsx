@@ -3,8 +3,22 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { useState, useEffect } from "react";
 import api from "../../../utils/api";
-import { FiPlus, FiTrash2, FiSave } from "react-icons/fi";
+import { FiPlus, FiTrash2, FiSave, FiArrowLeft } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+
+interface Variation {
+    _id: string;
+    type: string;
+    value: string;
+    stock: number;
+    price: number;
+}
+
+interface Model {
+    _id: string;
+    name: string;
+    variations: Variation[];
+}
 
 interface Product {
     _id: string;
@@ -13,6 +27,8 @@ interface Product {
     category?: { name: string };
     brand?: { name: string };
     opening_stock: number;
+    models?: Model[];
+    variations?: Variation[];
 }
 
 interface Party {
@@ -28,13 +44,26 @@ export default function AddStockPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [activeRow, setActiveRow] = useState<number | null>(null);
 
+    // Selection Drill-down State
+    const [selectionStage, setSelectionStage] = useState<'product' | 'model' | 'variant'>('product');
+    const [tempSelectedProduct, setTempSelectedProduct] = useState<Product | null>(null);
+    const [tempSelectedModel, setTempSelectedModel] = useState<Model | null>(null);
+
     const { register, control, handleSubmit, watch, setValue } = useForm({
         defaultValues: {
             party_id: "",
             bill_date: new Date().toISOString().split('T')[0],
             cgst: 0,
             sgst: 0,
-            items: [{ product_id: "", product_name: "", qty: 1, unit_price: 0, total: 0 }]
+            items: [{
+                product_id: "",
+                model_id: "",
+                variant_id: "",
+                product_name: "",
+                qty: 1,
+                unit_price: 0,
+                total: 0
+            }]
         }
     });
 
@@ -56,11 +85,13 @@ export default function AddStockPage() {
         const fetchData = async () => {
             const [pRes, prodRes] = await Promise.all([
                 api.get('/admin/parties'),
-                api.get('/admin/products')
+                api.get('/admin/products?limit=1000&status=active')
             ]);
             setParties(pRes.data);
-            setProducts(prodRes.data);
-            setFilteredProducts(prodRes.data);
+            // Handle paginated response { products: [], ... }
+            const productsList = prodRes.data.products || [];
+            setProducts(productsList);
+            setFilteredProducts(productsList);
         };
         fetchData();
     }, []);
@@ -79,18 +110,62 @@ export default function AddStockPage() {
         }
     }, [searchTerm, products]);
 
+    const handleInputClick = (index: number) => {
+        setActiveRow(index);
+        setSelectionStage('product');
+        setTempSelectedProduct(null);
+        setTempSelectedModel(null);
+        setSearchTerm('');
+    };
+
     const selectProduct = (index: number, product: Product) => {
+        // Check for Models or Variations
+        if (product.models && product.models.length > 0) {
+            setTempSelectedProduct(product);
+            setSelectionStage('model');
+            return;
+        }
+        if (product.variations && product.variations.length > 0) {
+            setTempSelectedProduct(product);
+            setSelectionStage('variant');
+            return;
+        }
+
+        // Simple Product
+        finalizeSelection(index, product, null, null);
+    };
+
+    const selectModel = (model: Model) => {
+        setTempSelectedModel(model);
+        setSelectionStage('variant');
+    };
+
+    const finalizeSelection = (index: number, product: Product, model: Model | null, variant: Variation | null) => {
         setValue(`items.${index}.product_id`, product._id);
-        setValue(`items.${index}.product_name`, product.title);
-        setValue(`items.${index}.unit_price`, 0); // Reset price or maybe fetch MRP later?
+        setValue(`items.${index}.model_id`, model?._id || "");
+        setValue(`items.${index}.variant_id`, variant?._id || "");
+
+        let DisplayName = product.title;
+        if (model) DisplayName += ` - ${model.name}`;
+        if (variant) DisplayName += ` - ${variant.value}`;
+
+        setValue(`items.${index}.product_name`, DisplayName);
+        // Do not auto-set price for purchase logic usually, or set to 0
+        setValue(`items.${index}.unit_price`, 0);
+
         setActiveRow(null);
         setSearchTerm('');
-    }
+        setSelectionStage('product');
+        setTempSelectedProduct(null);
+        setTempSelectedModel(null);
+    };
 
     const onSubmit = async (data: any) => {
         try {
             const cleanItems = data.items.map((item: any) => ({
                 product_id: item.product_id,
+                model_id: item.model_id || null, // Ensure explicit null if empty
+                variant_id: item.variant_id || null,
                 qty: Number(item.qty),
                 unit_price: Number(item.unit_price)
             }));
@@ -142,7 +217,7 @@ export default function AddStockPage() {
                 <div className="card" style={{ padding: '0', overflow: 'visible' }}>
                     <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <h3 style={{ fontSize: '1.1rem', margin: 0 }}>Products</h3>
-                        <button type="button" onClick={() => append({ product_id: "", product_name: "", qty: 1, unit_price: 0, total: 0 })} className="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
+                        <button type="button" onClick={() => append({ product_id: "", model_id: "", variant_id: "", product_name: "", qty: 1, unit_price: 0, total: 0 })} className="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
                             <FiPlus /> Add Row
                         </button>
                     </div>
@@ -163,14 +238,13 @@ export default function AddStockPage() {
                                     <tr key={field.id} style={{ verticalAlign: 'top' }}>
                                         <td style={{ position: 'relative', paddingRight: '1rem' }}>
                                             {/* Product Search Widget */}
-                                            <div onClick={() => setActiveRow(index)}>
+                                            <div onClick={() => handleInputClick(index)}>
                                                 <input
                                                     {...register(`items.${index}.product_name` as const, { required: true })}
                                                     className="form-input"
                                                     placeholder="Search Product..."
                                                     autoComplete="off"
                                                     readOnly={activeRow !== index && !!items[index]?.product_id}
-                                                    onClick={() => setActiveRow(index)}
                                                     onChange={(e) => {
                                                         if (activeRow === index) setSearchTerm(e.target.value);
                                                     }}
@@ -193,49 +267,98 @@ export default function AddStockPage() {
                                                     boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
                                                     zIndex: 50
                                                 }}>
-                                                    <div style={{ padding: '0.5rem', background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
-                                                        <input
-                                                            autoFocus
-                                                            placeholder="Type to filter..."
-                                                            style={{
-                                                                width: '100%',
-                                                                padding: '0.5rem',
-                                                                border: '1px solid var(--border)',
-                                                                borderRadius: '4px',
-                                                                fontSize: '0.85rem'
-                                                            }}
-                                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                                        />
-                                                    </div>
-                                                    {filteredProducts.map(p => (
-                                                        <div
-                                                            key={p._id}
-                                                            onClick={() => selectProduct(index, p)}
-                                                            style={{
-                                                                padding: '0.75rem 1rem',
-                                                                cursor: 'pointer',
-                                                                borderBottom: '1px solid #F1F5F9',
-                                                                display: 'flex',
-                                                                justifyContent: 'space-between',
-                                                                alignItems: 'center'
-                                                            }}
-                                                            onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
-                                                            onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
-                                                        >
-                                                            <div>
-                                                                <div style={{ fontWeight: 600, color: 'var(--secondary)' }}>{p.title}</div>
-                                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                                    {p.brand?.name} • Category: {p.category?.name}
+                                                    {/* Drill Down UI */}
+                                                    {selectionStage === 'product' && (
+                                                        <>
+                                                            <div style={{ padding: '0.5rem', background: '#F8FAFC', borderBottom: '1px solid var(--border)' }}>
+                                                                <input
+                                                                    autoFocus
+                                                                    placeholder="Type to filter..."
+                                                                    style={{ width: '100%', padding: '0.5rem', border: '1px solid var(--border)', borderRadius: '4px', fontSize: '0.85rem' }}
+                                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                                />
+                                                            </div>
+                                                            {filteredProducts.map(p => (
+                                                                <div
+                                                                    key={p._id}
+                                                                    onClick={(e) => { e.stopPropagation(); selectProduct(index, p); }}
+                                                                    style={{
+                                                                        padding: '0.75rem 1rem', cursor: 'pointer', borderBottom: '1px solid #F1F5F9',
+                                                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                                                    }}
+                                                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                                                >
+                                                                    <div>
+                                                                        <div style={{ fontWeight: 600, color: 'var(--secondary)' }}>{p.title}</div>
+                                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.brand?.name}</div>
+                                                                    </div>
+                                                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, background: '#EFF6FF', color: '#3B82F6', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                                                                        Stock: {p.opening_stock}
+                                                                    </div>
                                                                 </div>
+                                                            ))}
+                                                            {filteredProducts.length === 0 && (
+                                                                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>No products found.</div>
+                                                            )}
+                                                        </>
+                                                    )}
+
+                                                    {selectionStage === 'model' && tempSelectedProduct && (
+                                                        <div style={{ padding: '0.5rem' }}>
+                                                            <div
+                                                                onClick={(e) => { e.stopPropagation(); setSelectionStage('product'); }}
+                                                                style={{ paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid #eee', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', fontSize: '0.85rem' }}
+                                                            >
+                                                                <FiArrowLeft style={{ marginRight: '5px' }} /> Back to Products
                                                             </div>
-                                                            <div style={{ fontSize: '0.75rem', fontWeight: 600, background: '#EFF6FF', color: '#3B82F6', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
-                                                                Stock: {p.opening_stock}
-                                                            </div>
+                                                            <div style={{ fontWeight: 600, marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>Select Model for {tempSelectedProduct.title}</div>
+                                                            {tempSelectedProduct.models?.map(m => (
+                                                                <div
+                                                                    key={m._id}
+                                                                    onClick={(e) => { e.stopPropagation(); selectModel(m); }}
+                                                                    style={{ padding: '0.75rem', cursor: 'pointer', border: '1px solid #eee', borderRadius: '4px', marginBottom: '0.5rem' }}
+                                                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                                                >
+                                                                    {m.name}
+                                                                </div>
+                                                            ))}
                                                         </div>
-                                                    ))}
-                                                    {filteredProducts.length === 0 && (
-                                                        <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                                            No products found.
+                                                    )}
+
+                                                    {selectionStage === 'variant' && tempSelectedProduct && (
+                                                        <div style={{ padding: '0.5rem' }}>
+                                                            {tempSelectedModel ? (
+                                                                <div
+                                                                    onClick={(e) => { e.stopPropagation(); setSelectionStage('model'); }}
+                                                                    style={{ paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid #eee', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', fontSize: '0.85rem' }}
+                                                                >
+                                                                    <FiArrowLeft style={{ marginRight: '5px' }} /> Back to Models
+                                                                </div>
+                                                            ) : (
+                                                                <div
+                                                                    onClick={(e) => { e.stopPropagation(); setSelectionStage('product'); }}
+                                                                    style={{ paddingBottom: '0.5rem', marginBottom: '0.5rem', borderBottom: '1px solid #eee', cursor: 'pointer', color: 'var(--primary)', display: 'flex', alignItems: 'center', fontSize: '0.85rem' }}
+                                                                >
+                                                                    <FiArrowLeft style={{ marginRight: '5px' }} /> Back to Products
+                                                                </div>
+                                                            )}
+
+                                                            <div style={{ fontWeight: 600, marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>Select Variant</div>
+
+                                                            {(tempSelectedModel ? tempSelectedModel.variations : tempSelectedProduct.variations)?.map(v => (
+                                                                <div
+                                                                    key={v._id}
+                                                                    onClick={(e) => { e.stopPropagation(); finalizeSelection(index, tempSelectedProduct, tempSelectedModel, v); }}
+                                                                    style={{ padding: '0.75rem', cursor: 'pointer', border: '1px solid #eee', borderRadius: '4px', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}
+                                                                    onMouseEnter={(e) => e.currentTarget.style.background = '#F8FAFC'}
+                                                                    onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                                                                >
+                                                                    <span>{v.value}</span>
+                                                                    <span style={{ fontSize: '0.8rem', color: '#666' }}>Stock: {v.stock}</span>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     )}
                                                 </div>

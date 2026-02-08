@@ -43,7 +43,9 @@ interface Product {
     availableSizes?: string[];
     variations?: Variation[];
     models?: Model[];
+
     mrp?: number;
+    offers?: { percentage: number; title: string;[key: string]: any }[];
 }
 
 // ... imports
@@ -307,8 +309,15 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
 
     // Discount Logic
     let finalPrice = basePrice;
+
+    // Offers
+    const offers = product.offers || [];
+    const bestOffer = offers.reduce((prev, current) => (prev.percentage > current.percentage) ? prev : current, { percentage: 0, title: '' });
+
     if (user?.wholesaleDiscount && user.wholesaleDiscount > 0) {
         finalPrice = Math.round(basePrice * (1 - user.wholesaleDiscount / 100));
+    } else if (bestOffer.percentage > 0) {
+        finalPrice = Math.round(basePrice * (1 - bestOffer.percentage / 100));
     }
 
     // Calculate Effective MRP for Display
@@ -433,6 +442,16 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                     </div>
                 </div>
 
+
+                {/* Offer Badge Display */}
+                {bestOffer.percentage > 0 && !user?.wholesaleDiscount && (
+                    <div className="offer-badge-section" style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
+                        <span className="badge-offer" style={{ backgroundColor: '#fff', color: 'var(--success)', border: '1px solid var(--success)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
+                            {bestOffer.title} ({bestOffer.percentage}% OFF Applied)
+                        </span>
+                    </div>
+                )}
+
                 {/* Variation Selector (Flat List Logic) */}
                 {hasVariations && (
                     <div className="variations-container">
@@ -516,7 +535,7 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                 >
                     {isOutOfStock ? 'OUT OF STOCK' : 'ADD TO CART'}
                 </button>
-            </div>
+            </div >
 
             <Modal
                 isOpen={modalState.isOpen}

@@ -1,13 +1,15 @@
 "use client";
 
-import { useForm, useWatch, useFieldArray, SubmitHandler } from "react-hook-form";
+import { useForm, useWatch, useFieldArray, SubmitHandler, Controller } from "react-hook-form";
+import RichTextEditor from "../../components/RichTextEditor";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState, useEffect } from "react";
 import api from "../../utils/api";
-import { FiSave, FiUploadCloud, FiX, FiArrowLeft, FiPlus, FiTrash2, FiBox } from "react-icons/fi";
+import { FiSave, FiUploadCloud, FiX, FiArrowLeft, FiPlus, FiTrash2, FiBox, FiImage, FiCheckCircle, FiEdit2 } from "react-icons/fi";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import FormModal from "../../components/FormModal";
 
 // --- Nested Model Component ---
 function ModelVariationManager({ modelIndex, control, register, errors, watch, VARIATION_SUGGESTIONS }: any) {
@@ -153,7 +155,7 @@ const productSchema = z.object({
     category: z.string().min(1, "Category is required"),
     sub_category: z.string().optional(),
     brand: z.string().optional(),
-    offer: z.string().optional(),
+    offers: z.array(z.string()).optional(),
 
     hsn_code: z.string().optional(),
     gst_rate: z.number().optional(),
@@ -245,8 +247,21 @@ interface ProductFormProps {
     productId?: string;
 }
 
+interface ProductImage {
+    id: string; // temp id
+    url?: string; // existing url
+    file?: File; // new upload
+    altText: string;
+    isMain: boolean;
+}
+
 export default function ProductForm({ productId }: ProductFormProps) {
     const router = useRouter();
+
+    // New Image System State
+    const [productImages, setProductImages] = useState<ProductImage[]>([]);
+    const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+
     const [categories, setCategories] = useState<any[]>([]);
     const [subCategories, setSubCategories] = useState<any[]>([]);
     const [brands, setBrands] = useState<any[]>([]);
@@ -356,7 +371,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         category: categoryId,
                         sub_category: Array.isArray(product.sub_category) ? (product.sub_category[0]?._id || product.sub_category[0]) : (product.sub_category?._id || product.sub_category),
                         brand: product.brand?._id || product.brand,
-                        offer: product.offer?._id || product.offer,
+                        offers: Array.isArray(product.offers) ? product.offers.map((o: any) => o._id || o) : (product.offer ? [product.offer?._id || product.offer] : []),
                         hsn_code: product.hsn_code?._id || product.hsn_code,
                         gst_rate: product.gst_rate,
                         mrp: product.mrp,
@@ -392,26 +407,52 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         setVariationMode('standard');
                     }
 
-                    // Set Previews & Methods
-                    if (product.featured_image) {
-                        const isUrl = product.featured_image.startsWith('http');
-                        setPreviewFeatured(isUrl ? product.featured_image : `http://localhost:5000/${product.featured_image}`);
-                        if (isUrl) {
-                            setFeaturedMethod('link');
-                            setFeaturedLink(product.featured_image);
-                        } else {
-                            setFeaturedMethod('upload');
+                    // Populate Images (New System + Legacy Fallback)
+                    let initialImages: ProductImage[] = [];
+                    if (product.images && product.images.length > 0) {
+                        initialImages = product.images.map((img: any, idx: number) => ({
+                            id: `existing-${idx}`,
+                            url: img.url.startsWith('http') ? img.url : `http://localhost:5000/${img.url}`,
+                            altText: img.altText || '',
+                            isMain: img.isMain || false
+                        }));
+                    } else {
+                        // Legacy Fallback
+                        if (product.featured_image) {
+                            initialImages.push({
+                                id: 'legacy-main',
+                                url: product.featured_image.startsWith('http') ? product.featured_image : `http://localhost:5000/${product.featured_image}`,
+                                altText: '',
+                                isMain: true
+                            });
+                        }
+                        if (product.featured_image_2) {
+                            initialImages.push({
+                                id: 'legacy-hover',
+                                url: product.featured_image_2.startsWith('http') ? product.featured_image_2 : `http://localhost:5000/${product.featured_image_2}`,
+                                altText: '',
+                                isMain: false
+                            });
+                        }
+                        if (product.gallery_images && Array.isArray(product.gallery_images)) {
+                            product.gallery_images.forEach((url: string, idx: number) => {
+                                // Check for duplicates with main
+                                if (url !== product.featured_image && url !== product.featured_image_2) {
+                                    initialImages.push({
+                                        id: `legacy-gall-${idx}`,
+                                        url: url.startsWith('http') ? url : `http://localhost:5000/${url}`,
+                                        altText: '',
+                                        isMain: false
+                                    });
+                                }
+                            });
                         }
                     }
-                    if (product.featured_image_2) {
-                        const isUrl = product.featured_image_2.startsWith('http');
-                        setPreviewFeatured2(isUrl ? product.featured_image_2 : `http://localhost:5000/${product.featured_image_2}`);
-                        if (isUrl) {
-                            setFeaturedMethod2('link');
-                            setFeaturedLink2(product.featured_image_2);
-                        } else {
-                            setFeaturedMethod2('upload');
-                        }
+                    setProductImages(initialImages);
+
+                    // Keep legacy preview states for now just in case (though we won't use them in UI)
+                    if (product.featured_image) {
+                        setPreviewFeatured(product.featured_image.startsWith('http') ? product.featured_image : `http://localhost:5000/${product.featured_image}`);
                     }
                 }
 
@@ -433,19 +474,51 @@ export default function ProductForm({ productId }: ProductFormProps) {
         }
     }, [selectedCategory]);
 
+    // Image Handler Functions
+    const handleAddImageSlot = () => {
+        if (productImages.length >= 5) {
+            alert("Maximum 5 main images allowed.");
+            return;
+        }
+        setProductImages([...productImages, { id: `new-${Date.now()}`, altText: '', isMain: productImages.length === 0 }]);
+    };
+
+    const handleRemoveImageSlot = (index: number) => {
+        const newImages = [...productImages];
+        newImages.splice(index, 1);
+        // Ensure one main image exists if list not empty
+        if (newImages.length > 0 && !newImages.some(img => img.isMain)) {
+            newImages[0].isMain = true;
+        }
+        setProductImages(newImages);
+    };
+
+    const handleImageChange = (index: number, field: keyof ProductImage, value: any) => {
+        const newImages = [...productImages];
+        // @ts-ignore
+        newImages[index] = { ...newImages[index], [field]: value };
+
+        if (field === 'isMain' && value === true) {
+            // Unset others
+            newImages.forEach((img, i) => {
+                if (i !== index) img.isMain = false;
+            });
+        }
+        setProductImages(newImages);
+    };
+
     const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
         setLoading(true);
 
         // --- Custom Image Validation ---
-        let mainImageValid = false;
-        if (featuredMethod === 'upload') {
-            if (featuredImage || (productId && previewFeatured)) mainImageValid = true;
-        } else {
-            if (featuredLink.trim()) mainImageValid = true;
+        const hasMain = productImages.some(img => img.isMain);
+        if (productImages.length === 0) {
+            alert("At least one Product Image is required!");
+            setLoading(false);
+            return;
         }
-
-        if (!mainImageValid) {
-            alert("Main Product Image is required!");
+        if (!hasMain) {
+            alert("Please select one image as Main Image.");
             setLoading(false);
             return;
         }
@@ -602,21 +675,21 @@ export default function ProductForm({ productId }: ProductFormProps) {
             }
 
             // Handle featured image
-            if (featuredMethod === 'upload' && featuredImage) {
-                formData.append('featured_image', featuredImage);
-            } else if (featuredMethod === 'link' && featuredLink.trim()) {
-                formData.append('featured_image', featuredLink.trim());
-            }
+            // Handle Product Images (New Modal System)
+            const imagesMeta = productImages.map((img, idx) => {
+                // Destructure to remove file/id from JSON
+                const { file, id, ...rest } = img;
+                if (file) {
+                    formData.append(`product_image_${idx}`, file);
+                }
+                return rest;
+            });
+            formData.append('images', JSON.stringify(imagesMeta));
 
-            // Handle featured image 2
-            if (featuredMethod2 === 'upload' && featuredImage2) {
-                formData.append('featured_image_2', featuredImage2);
-            } else if (featuredMethod2 === 'link' && featuredLink2.trim()) {
-                formData.append('featured_image_2', featuredLink2.trim());
-            }
-
-            // Handle gallery images
-            galleryImages.forEach(file => formData.append('gallery_images', file));
+            // Legacy Fallback (Optional: strictly speaking not needed if backend handles images array, 
+            // but we might want to ensure 'featured_image' is set if logic fails. 
+            // However, backend pre-save hook handles logic. So we can rely on `images`.
+            // We do NOT send legacy fields to avoid overriding backend sync logic.
 
             if (productId) {
                 await api.put(`/admin/products/${productId}`, formData, {
@@ -734,7 +807,17 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             </div>
                             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                                 <label className="form-label">Description</label>
-                                <textarea {...register("description")} className="form-textarea" style={{ minHeight: '150px' }} placeholder="Detailed product description..."></textarea>
+                                <Controller
+                                    name="description"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <RichTextEditor
+                                            value={field.value}
+                                            onChange={(data) => field.onChange(data)}
+                                            placeholder="Detailed product description..."
+                                        />
+                                    )}
+                                />
                             </div>
                         </div>
                     </div>
@@ -1137,113 +1220,63 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             </select>
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Applied Offer</label>
-                            <select {...register("offer")} className="form-select">
-                                <option value="">-- No Offer --</option>
-                                {offers.map(o => <option key={o._id} value={o._id}>{o.title} ({o.percentage}%)</option>)}
-                            </select>
+                            <label className="form-label">Applied Offers</label>
+                            <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #ddd', padding: '0.5rem', borderRadius: '4px' }}>
+                                {offers.map(o => (
+                                    <label key={o._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem', cursor: 'pointer' }}>
+                                        <input
+                                            type="checkbox"
+                                            value={o._id}
+                                            checked={watch('offers')?.includes(o._id)}
+                                            onChange={(e) => {
+                                                const currentOffers = watch('offers') || [];
+                                                if (e.target.checked) {
+                                                    setValue('offers', [...currentOffers, o._id]);
+                                                } else {
+                                                    setValue('offers', currentOffers.filter((id: string) => id !== o._id));
+                                                }
+                                            }}
+                                        />
+                                        <span>{o.title} ({o.percentage}%)</span>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Media */}
+                    {/* Media - Product Images (New System) */}
                     <div className="card">
-                        <div className="card-header">Product Images</div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {/* Featured 1 */}
-                            <div className="card-sub-header" style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem' }}>Main Image</div>
-                            <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
-                                <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-                                    <input type="radio" checked={featuredMethod === 'upload'} onChange={() => setFeaturedMethod('upload')} /> Upload
-                                </label>
-                                <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-                                    <input type="radio" checked={featuredMethod === 'link'} onChange={() => setFeaturedMethod('link')} /> Link URL
-                                </label>
-                            </div>
-
-                            <div className="upload-box" style={{ height: 'auto', minHeight: '150px', padding: '1rem' }}>
-                                {featuredMethod === 'upload' ? (
-                                    featuredImage ? (
-                                        <div style={{ position: 'relative', width: '100%', height: '150px' }}>
-                                            <Image src={URL.createObjectURL(featuredImage)} alt="Preview" fill style={{ objectFit: 'contain' }} />
-                                            <button onClick={(e) => { e.preventDefault(); setFeaturedImage(null) }} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--danger)', color: 'white', borderRadius: '50%', padding: '2px', border: 'none' }}><FiX /></button>
-                                        </div>
-                                    ) : previewFeatured && previewFeatured.includes('localhost:5000') ? (
-                                        <div style={{ position: 'relative', width: '100%', height: '150px' }}>
-                                            <Image src={previewFeatured} alt="Existing" fill style={{ objectFit: 'contain' }} />
-                                            <button onClick={(e) => { e.preventDefault(); setPreviewFeatured(null) }} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--danger)', color: 'white', borderRadius: '50%', padding: '2px', border: 'none' }}><FiX /></button>
-                                        </div>
-                                    ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                            <FiUploadCloud size={24} style={{ color: 'var(--primary)', marginBottom: '0.5rem' }} />
-                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Click to Upload</span>
-                                            <input type="file" onChange={(e) => e.target.files && setFeaturedImage(e.target.files[0])} />
-                                        </div>
-                                    )
-                                ) : (
-                                    <div style={{ width: '100%' }}>
-                                        <input
-                                            type="text"
-                                            className="form-input"
-                                            placeholder="https://example.com/image.jpg"
-                                            value={featuredLink}
-                                            onChange={(e) => setFeaturedLink(e.target.value)}
+                        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>Product Images</span>
+                            <button
+                                type="button"
+                                onClick={() => setIsImageModalOpen(true)}
+                                className="btn btn-sm btn-secondary"
+                                style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                            >
+                                <FiEdit2 /> Manage Images
+                            </button>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
+                            {productImages.length === 0 ? (
+                                <div style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', padding: '1rem', border: '1px dashed #eee', borderRadius: '8px' }}>
+                                    No images added. Click "Manage Images" to add.
+                                </div>
+                            ) : (
+                                productImages.map((img, idx) => (
+                                    <div key={idx} style={{ position: 'relative', aspectRatio: '1', borderRadius: '4px', overflow: 'hidden', border: img.isMain ? '2px solid var(--primary)' : '1px solid #eee' }}>
+                                        <Image
+                                            src={img.file ? URL.createObjectURL(img.file) : (img.url || '')}
+                                            alt={img.altText}
+                                            fill
+                                            style={{ objectFit: 'cover' }}
                                         />
-                                        {featuredLink && (
-                                            <div style={{ position: 'relative', width: '100%', height: '150px', marginTop: '1rem', border: '1px dashed #eee' }}>
-                                                <Image src={featuredLink} alt="Preview" fill style={{ objectFit: 'contain' }} unoptimized />
-                                            </div>
+                                        {img.isMain && (
+                                            <div style={{ position: 'absolute', top: 0, left: 0, background: 'var(--primary)', color: 'white', padding: '2px 4px', fontSize: '0.6rem', fontWeight: 'bold' }}>MAIN</div>
                                         )}
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Featured 2 */}
-                            <div className="card-sub-header" style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem', marginTop: '1rem' }}>Hover Image</div>
-                            <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
-                                <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-                                    <input type="radio" checked={featuredMethod2 === 'upload'} onChange={() => setFeaturedMethod2('upload')} /> Upload
-                                </label>
-                                <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem' }}>
-                                    <input type="radio" checked={featuredMethod2 === 'link'} onChange={() => setFeaturedMethod2('link')} /> Link URL
-                                </label>
-                            </div>
-
-                            <div className="upload-box" style={{ height: 'auto', minHeight: '120px', padding: '1rem' }}>
-                                {featuredMethod2 === 'upload' ? (
-                                    featuredImage2 ? (
-                                        <div style={{ position: 'relative', width: '100%', height: '120px' }}>
-                                            <Image src={URL.createObjectURL(featuredImage2)} alt="Preview" fill style={{ objectFit: 'contain' }} />
-                                            <button onClick={(e) => { e.preventDefault(); setFeaturedImage2(null) }} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--danger)', color: 'white', borderRadius: '50%', padding: '2px', border: 'none' }}><FiX /></button>
-                                        </div>
-                                    ) : previewFeatured2 && previewFeatured2.includes('localhost:5000') ? (
-                                        <div style={{ position: 'relative', width: '100%', height: '120px' }}>
-                                            <Image src={previewFeatured2} alt="Existing" fill style={{ objectFit: 'contain' }} />
-                                            <button onClick={(e) => { e.preventDefault(); setPreviewFeatured2(null) }} style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--danger)', color: 'white', borderRadius: '50%', padding: '2px', border: 'none' }}><FiX /></button>
-                                        </div>
-                                    ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                            <FiUploadCloud size={20} style={{ color: 'var(--primary)', marginBottom: '0.5rem' }} />
-                                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Click to Upload</span>
-                                            <input type="file" onChange={(e) => e.target.files && setFeaturedImage2(e.target.files[0])} />
-                                        </div>
-                                    )
-                                ) : (
-                                    <div style={{ width: '100%' }}>
-                                        <input
-                                            type="text"
-                                            className="form-input"
-                                            placeholder="https://example.com/hover-image.jpg"
-                                            value={featuredLink2}
-                                            onChange={(e) => setFeaturedLink2(e.target.value)}
-                                        />
-                                        {featuredLink2 && (
-                                            <div style={{ position: 'relative', width: '100%', height: '120px', marginTop: '1rem', border: '1px dashed #eee' }}>
-                                                <Image src={featuredLink2} alt="Preview" fill style={{ objectFit: 'contain' }} unoptimized />
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
+                                ))
+                            )}
                         </div>
                     </div>
 
@@ -1283,6 +1316,93 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
                 </div>
             </div>
-        </div >
+            {/* Image Manager Modal */}
+            <FormModal
+                isOpen={isImageModalOpen}
+                onClose={() => setIsImageModalOpen(false)}
+                title="Manage Product Images (Max 5)"
+                maxWidth="800px"
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button type="button" onClick={handleAddImageSlot} className="btn btn-sm btn-primary" disabled={productImages.length >= 5}>
+                            <FiPlus /> Add Image
+                        </button>
+                    </div>
+
+                    {productImages.map((img, idx) => (
+                        <div key={img.id || idx} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', padding: '1rem', border: '1px solid #eee', borderRadius: '8px', background: '#f9f9f9' }}>
+                            {/* Image Upload/Preview */}
+                            <div style={{ width: '100px', height: '100px', flexShrink: 0, position: 'relative', border: '1px dashed #ccc', borderRadius: '4px', overflow: 'hidden', background: '#fff' }}>
+                                {img.file ? (
+                                    <Image src={URL.createObjectURL(img.file)} alt="Preview" fill style={{ objectFit: 'contain' }} />
+                                ) : img.url ? (
+                                    <Image src={img.url} alt="Existing" fill style={{ objectFit: 'contain' }} />
+                                ) : (
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>
+                                        <FiUploadCloud size={24} />
+                                    </div>
+                                )}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }}
+                                    onChange={(e) => {
+                                        if (e.target.files && e.target.files[0]) {
+                                            handleImageChange(idx, 'file', e.target.files[0]);
+                                        }
+                                    }}
+                                />
+                            </div>
+
+                            {/* Details */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 600 }}>Alt Text (Optional)</label>
+                                    <input
+                                        type="text"
+                                        className="form-input"
+                                        style={{ fontSize: '0.9rem', padding: '0.3rem' }}
+                                        placeholder="Descriptive text for SEO"
+                                        value={img.altText}
+                                        onChange={(e) => handleImageChange(idx, 'altText', e.target.value)}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '0.5rem' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer', fontSize: '0.9rem' }}>
+                                        <input
+                                            type="radio"
+                                            name="mainImageGroup"
+                                            checked={img.isMain}
+                                            onChange={() => handleImageChange(idx, 'isMain', true)}
+                                        />
+                                        <span style={{ fontWeight: img.isMain ? 'bold' : 'normal' }}>Set as Main Image</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Delete */}
+                            <button
+                                type="button"
+                                onClick={() => handleRemoveImageSlot(idx)}
+                                style={{ padding: '0.5rem', color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                                <FiTrash2 size={18} />
+                            </button>
+                        </div>
+                    ))}
+
+                    <div style={{ textAlign: 'right', marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
+                        <button
+                            type="button"
+                            onClick={() => setIsImageModalOpen(false)}
+                            className="btn btn-primary"
+                        >
+                            Done
+                        </button>
+                    </div>
+                </div>
+            </FormModal>
+        </div>
     );
 }

@@ -53,6 +53,8 @@ exports.createStockEntry = async (req, res) => {
             await ProductStock.create({
                 stock_id: savedEntry._id,
                 product_id: item.product_id,
+                model_id: item.model_id || null,
+                variant_id: item.variant_id || null,
                 party_id,
                 stock_type: 'in',
                 qty: item.qty,
@@ -60,13 +62,35 @@ exports.createStockEntry = async (req, res) => {
                 total_price: item.qty * item.unit_price
             });
 
-            // Update Product Cache (Increment Stock)
-            await Product.findByIdAndUpdate(item.product_id, {
-                $inc: { stock: item.qty }
-            });
+            // Update Product Stock
+            if (item.model_id && item.variant_id) {
+                // Update Model Variant Stock
+                await Product.updateOne(
+                    { _id: item.product_id },
+                    { $inc: { "models.$[m].variations.$[v].stock": item.qty } },
+                    { arrayFilters: [{ "m._id": item.model_id }, { "v._id": item.variant_id }] }
+                );
+            } else if (item.variant_id) {
+                // Update Root Variant Stock
+                await Product.updateOne(
+                    { _id: item.product_id, "variations._id": item.variant_id },
+                    { $inc: { "variations.$.stock": item.qty } }
+                );
+            } else {
+                // Update Simple Product Stock (Legacy/Root)
+                await Product.findByIdAndUpdate(item.product_id, {
+                    $inc: { stock: item.qty, opening_stock: item.qty }
+                });
+            }
         });
 
         await Promise.all(productStockPromises);
+
+        // Sync to Tally (Async - Don't block response)
+        const tallyService = require('../services/tallyService');
+        tallyService.syncStockEntryToTally(savedEntry._id).catch(err => {
+            console.error('Tally Sync Error for Stock Entry:', err);
+        });
 
         res.status(201).json(savedEntry);
 

@@ -14,10 +14,13 @@ export interface CartItem {
     variationText?: string; // New
     modelId?: string; // New for model-based variations
     modelName?: string; // New
-    isOnDemand?: boolean;
-    gst_rate?: number;
     requestId?: string;
     approvedLimit?: number;
+    isOnDemand?: boolean;
+    gst_rate?: number;
+    customerContact?: {
+        address?: string;
+    };
 }
 
 interface CartContextType {
@@ -187,7 +190,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         isOnDemand: (!item.requestId && item.product?.isOnDemand) || ((!item.requestId) && typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
                         gst_rate: item.product?.gst_rate,
                         requestId: item.requestId,
-                        approvedLimit: item.approvedLimit
+                        approvedLimit: item.approvedLimit,
+                        customerContact: item.requestId?.customerContact
                     }));
                 setItems(dbItems);
             }

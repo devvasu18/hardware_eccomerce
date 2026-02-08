@@ -28,7 +28,8 @@ const requestSchema = new mongoose.Schema({
 
     customerContact: {
         name: String,
-        mobile: String // Critical for guests
+        mobile: String, // Critical for guests
+        address: String
     }
 
 }, { timestamps: true });

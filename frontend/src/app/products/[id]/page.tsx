@@ -162,7 +162,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                             {product.description && (
                                 <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
                                     <span className="detail-label">Description</span>
-                                    <span className="detail-value">{product.description}</span>
+                                    <div
+                                        className="detail-value ck-content"
+                                        dangerouslySetInnerHTML={{ __html: product.description }}
+                                        style={{ lineHeight: '1.6' }}
+                                    />
                                 </div>
                             )}
                         </div>

@@ -24,7 +24,7 @@ router.get('/', authenticateToken, async (req, res) => {
             {
                 path: 'items.requestId',
                 model: 'ProcurementRequest',
-                select: 'requestedQuantity status'
+                select: 'requestedQuantity status customerContact'
             }
         ]);
 

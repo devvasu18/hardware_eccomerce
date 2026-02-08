@@ -102,7 +102,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                             dispatchDate: bd.dispatchDate,
                             liveStatus: 'On the way', // Default assumption if only order details exist
                             currentLocation: '',
-                            notes: ''
+                            notes: bd.notes || ''
                         });
                     }
                 } catch (err) {
@@ -119,7 +119,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                             dispatchDate: bd.dispatchDate,
                             liveStatus: 'On the way',
                             currentLocation: '',
-                            notes: ''
+                            notes: bd.notes || ''
                         });
                     }
                 }
