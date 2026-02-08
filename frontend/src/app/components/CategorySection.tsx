@@ -12,7 +12,7 @@ import './CategorySection.css';
 export default function CategorySection() {
     const [categories, setCategories] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [itemsPerPage, setItemsPerPage] = useState(3);
+    const [itemsPerPage, setItemsPerPage] = useState(8);
 
     // Fetch Categories
     useEffect(() => {
@@ -30,9 +30,10 @@ export default function CategorySection() {
     // Responsive items per page
     useEffect(() => {
         const handleResize = () => {
-            if (window.innerWidth < 640) setItemsPerPage(1);
-            else if (window.innerWidth < 900) setItemsPerPage(2);
-            else setItemsPerPage(3);
+            if (window.innerWidth < 640) setItemsPerPage(2);
+            else if (window.innerWidth < 900) setItemsPerPage(4);
+            else if (window.innerWidth < 1200) setItemsPerPage(6);
+            else setItemsPerPage(8);
         };
         handleResize();
         window.addEventListener('resize', handleResize);
@@ -83,8 +84,6 @@ export default function CategorySection() {
                                 style={{ flex: `0 0 ${100 / itemsPerPage}%` }}
                             >
                                 <div className="category-card">
-                                    <span className="category-name">{cat.name}</span>
-
                                     <div className="category-image-wrapper">
                                         <div className="category-image-inner">
                                             <Image
@@ -99,6 +98,8 @@ export default function CategorySection() {
                                             />
                                         </div>
                                     </div>
+
+                                    <span className="category-name">{cat.name}</span>
                                 </div>
                             </Link>
                         ))}

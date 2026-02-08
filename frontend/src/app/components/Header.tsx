@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -19,6 +19,9 @@ const Header = () => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const [categories, setCategories] = useState<{ _id: string, name: string, slug: string, showInNav: boolean }[]>([]);
+    const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+    const [lastScrollY, setLastScrollY] = useState(0);
+    const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleSearch = () => {
         if (searchTerm.trim()) {
@@ -66,8 +69,46 @@ const Header = () => {
         fetchCategories();
     }, []);
 
+    // Scroll detection for header visibility
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            // Clear any existing hide timer
+            if (hideTimerRef.current) {
+                clearTimeout(hideTimerRef.current);
+                hideTimerRef.current = null;
+            }
+
+            // Scrolling down - hide header
+            if (currentScrollY > lastScrollY && currentScrollY > 100) {
+                setIsHeaderVisible(false);
+            }
+            // Scrolling up - show header
+            else if (currentScrollY < lastScrollY) {
+                setIsHeaderVisible(true);
+
+                // Set timer to hide after 3 seconds
+                hideTimerRef.current = setTimeout(() => {
+                    setIsHeaderVisible(false);
+                }, 3000);
+            }
+
+            setLastScrollY(currentScrollY);
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (hideTimerRef.current) {
+                clearTimeout(hideTimerRef.current);
+            }
+        };
+    }, [lastScrollY]);
+
     return (
-        <header className="header-container">
+        <header className={`header-container ${isHeaderVisible ? 'header-visible' : 'header-hidden'}`}>
             {/* Top Bar: Logo, Search, Actions */}
             <div className="header-main-bar">
 

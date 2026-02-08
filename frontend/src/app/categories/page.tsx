@@ -51,13 +51,6 @@ export default async function CategoriesPage() {
                                     href={`/products?category=${category.slug}`}
                                     className="category-card"
                                 >
-                                    <div className="category-info">
-                                        <h3 className="category-name">{category.name}</h3>
-                                        <p className="category-count">
-                                            {category.productCount} Products
-                                        </p>
-                                    </div>
-
                                     <div className="category-image-wrapper">
                                         {category.imageUrl ? (
                                             <Image
@@ -70,14 +63,17 @@ export default async function CategoriesPage() {
                                                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                             />
                                         ) : (
-                                            <div style={{ fontSize: '4rem', opacity: 0.5 }}>
+                                            <div style={{ fontSize: '3rem', opacity: 0.5 }}>
                                                 📦
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="category-arrow">
-                                        →
+                                    <div className="category-info">
+                                        <h3 className="category-name">{category.name}</h3>
+                                        <p className="category-count">
+                                            {category.productCount} Products
+                                        </p>
                                     </div>
                                 </Link>
 
