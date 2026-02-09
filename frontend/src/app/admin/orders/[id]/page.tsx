@@ -555,15 +555,45 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                                             />
                                                         )}
                                                     </div>
-                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                        <span style={{ fontWeight: 500 }}>{item.product?.title || 'Unknown Product'}</span>
-                                                        {(item.modelName || item.variationText) && (
-                                                            <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
-                                                                {item.modelName ? `${item.modelName}` : ''}
-                                                                {item.modelName && item.variationText ? ' - ' : ''}
-                                                                {item.variationText}
-                                                            </span>
-                                                        )}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                            <span style={{ fontWeight: 500 }}>{item.product?.title || 'Unknown Product'}</span>
+                                                            {(item.modelName || item.variationText) && (
+                                                                <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+                                                                    {item.modelName ? `${item.modelName}` : ''}
+                                                                    {item.modelName && item.variationText ? ' - ' : ''}
+                                                                    {item.variationText}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                const productId = item.product?._id;
+                                                                if (productId) {
+                                                                    const url = `/products/${productId}?model=${item.modelId || ''}&variant=${item.variationId || ''}`;
+                                                                    window.open(url, '_blank');
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                background: '#3b82f6',
+                                                                color: 'white',
+                                                                border: 'none',
+                                                                borderRadius: '50%',
+                                                                width: '28px',
+                                                                height: '28px',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                flexShrink: 0,
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            title="View Product Configuration"
+                                                            onMouseEnter={(e) => e.currentTarget.style.background = '#2563eb'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.background = '#3b82f6'}
+                                                        >
+                                                            <FiEye size={14} />
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </td>

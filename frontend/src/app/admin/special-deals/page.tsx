@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
 import FormModal from '../../components/FormModal';
+import DataTable from '../../components/DataTable';
 import { useModal } from '../../hooks/useModal';
 import { FiPlus } from 'react-icons/fi';
 
@@ -262,53 +263,61 @@ export default function SpecialDealsManager() {
                 </button>
             </div>
 
-            <div className="grid">
-                {loading ? (
-                    <p>Loading offers...</p>
-                ) : Array.isArray(offers) && offers.length > 0 ? (
-                    offers.map(offer => (
-                        <div key={offer._id} className="card" style={{ position: 'relative', padding: '1.5rem', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                            <span className="badge" style={{ position: 'absolute', top: '10px', right: '10px', background: '#ef4444', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>
-                                {offer.discountPercent}% OFF
-                            </span>
-                            <h4 style={{ margin: '0 0 0.5rem 0', paddingRight: '4rem' }}>{offer.title}</h4>
-                            <p style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.5rem' }}>
-                                Product: {
-                                    offer.productId && typeof offer.productId === 'object'
-                                        ? ((offer.productId as Product).name || (offer.productId as Product).title || 'Unnamed Product')
-                                        : offer.productId
-                                            ? 'Product ID: ' + offer.productId
-                                            : '⚠️ Product Deleted'
-                                }
-                            </p>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-                                <span style={{ textDecoration: 'line-through', color: '#94a3b8' }}>₹{offer.originalPrice}</span>
-                                <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#F37021' }}>₹{offer.offerPrice}</span>
-                            </div>
-                            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>Ends: {new Date(offer.endDate).toLocaleDateString()}</p>
-
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button
-                                    onClick={() => handleEdit(offer)}
-                                    className="btn btn-outline"
-                                    style={{ flex: 1, borderColor: '#3b82f6', color: '#3b82f6', background: 'white', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', border: '1px solid #3b82f6' }}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(offer._id)}
-                                    className="btn btn-outline"
-                                    style={{ flex: 1, borderColor: 'red', color: 'red', background: 'white', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', border: '1px solid red' }}
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <p>No special offers found.</p>
-                )}
-            </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Loading...</div>
+            ) : (
+                <DataTable
+                    title="Active Special Deals"
+                    data={offers}
+                    columns={[
+                        {
+                            header: 'Deal Info',
+                            accessor: (item) => (
+                                <div>
+                                    <div style={{ fontWeight: 600 }}>{item.title}</div>
+                                    <span className="badge badge-success" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>{item.badge}</span>
+                                </div>
+                            ),
+                            sortable: true
+                        },
+                        {
+                            header: 'Product',
+                            accessor: (item) => {
+                                const prodName = item.productId && typeof item.productId === 'object'
+                                    ? ((item.productId as Product).name || (item.productId as Product).title || 'Unnamed Product')
+                                    : (item.productId as string) || 'Unknown Product';
+                                return <div style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={prodName}>{prodName}</div>
+                            },
+                            sortable: false
+                        },
+                        {
+                            header: 'Price',
+                            accessor: (item) => (
+                                <div>
+                                    <div style={{ fontWeight: 700, color: '#F37021' }}>₹{item.offerPrice}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#94a3b8', textDecoration: 'line-through' }}>₹{item.originalPrice}</div>
+                                </div>
+                            ),
+                            sortable: true
+                        },
+                        { header: 'Discount', accessor: (item) => <span style={{ fontWeight: 600, color: '#16a34a' }}>{item.discountPercent}% OFF</span>, sortable: true },
+                        {
+                            header: 'Validity',
+                            accessor: (item) => (
+                                <div style={{ fontSize: '0.85rem' }}>
+                                    <div>Start: {new Date(item.startDate).toLocaleDateString()}</div>
+                                    <div>End: {new Date(item.endDate).toLocaleDateString()}</div>
+                                </div>
+                            ),
+                            sortable: true
+                        }
+                    ]}
+                    searchKeys={['title', 'badge']}
+                    onEdit={handleEdit}
+                    onDelete={(item) => handleDelete(item._id)}
+                    itemsPerPage={10}
+                />
+            )}
 
             <Modal
                 isOpen={modalState.isOpen}
