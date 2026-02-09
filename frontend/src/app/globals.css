@@ -116,8 +116,16 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   font-size: 15px;
+
   overflow-x: hidden;
 }
+
+@media (max-width: 1024px) {
+  body {
+    padding-bottom: 70px;
+  }
+}
+
 
 /* Premium Page Sections */
 main {
@@ -802,6 +810,65 @@ button {
   box-shadow: var(--shadow-sm);
 }
 
+/* ========================================
+   🛒 PRODUCTS PAGE STYLES
+   ======================================== */
+
+.products-page-layout {
+  display: flex;
+  gap: 3rem;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.products-hero {
+  background-color: #F8FAFC;
+  border-bottom: 1px solid #E2E8F0;
+  padding: 3rem 0;
+}
+
+@media (max-width: 1024px) {
+  .products-page-layout {
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: stretch;
+  }
+
+  .products-hero {
+    padding: 2rem 0;
+  }
+
+  .products-content-container {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+  }
+}
+
+.products-content-container {
+  max-width: 1400px !important;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  flex: 1;
+}
+
+
+
+.products-empty-state {
+  padding: 4rem;
+  text-align: center;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #E2E8F0;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .products-empty-state {
+    padding: 2rem;
+  }
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -913,5 +980,30 @@ button {
 
   h3 {
     font-size: 1.5rem;
+  }
+}
+
+/* Fix product card footer on small mobile screens */
+@media (max-width: 480px) {
+  .product-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .product-price {
+    align-items: flex-end;
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  .product-action {
+    width: 100%;
+  }
+
+  .btn-card-action {
+    display: flex;
+    justify-content: center;
+    width: 100%;
   }
 }

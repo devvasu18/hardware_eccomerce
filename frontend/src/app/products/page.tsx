@@ -83,9 +83,10 @@ export default async function ProductsPage({ searchParams }: Props) {
             <Header />
 
             {/* Hero Section */}
-            <div style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', padding: '3rem 0 3rem' }}>
+            {/* Hero Section */}
+            <div className="products-hero">
                 <div className="container">
-                    <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', color: '#0F172A' }}>
+                    <h1 style={{ marginBottom: '1rem', color: '#0F172A' }}>
                         {keyword ? `Search Results: "${keyword}"` : (brand ? `Brand: ${brand}` : (category ? `Category: ${category}` : 'Industrial Auto Parts'))}
                     </h1>
                     <p style={{ fontSize: '1.1rem', color: '#64748B', maxWidth: '600px' }}>
@@ -97,8 +98,8 @@ export default async function ProductsPage({ searchParams }: Props) {
             </div>
 
             {/* Content Section */}
-            <div className="container" style={{ padding: '3rem 0rem', maxWidth: '1400px', margin: '0 auto', flex: 1 }}>
-                <div style={{ display: 'flex', gap: '3rem', alignItems: 'flex-start' }}>
+            <div className="container products-content-container">
+                <div className="products-page-layout">
 
                     {/* Sidebar Filters */}
                     <ProductFilters initialCategories={categories} initialBrands={brands} />
@@ -106,7 +107,7 @@ export default async function ProductsPage({ searchParams }: Props) {
                     {/* Product Grid */}
                     <section style={{ flex: 1 }}>
                         {products.length === 0 ? (
-                            <div style={{ padding: '4rem', textAlign: 'center', background: '#fff', borderRadius: '12px', border: '1px solid #E2E8F0', maxWidth: '600px', margin: '0 auto' }}>
+                            <div className="products-empty-state">
                                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
                                 <h3 style={{ color: '#0F172A', marginBottom: '0.5rem' }}>No products found</h3>
                                 <p style={{ color: '#64748B', marginBottom: '1.5rem' }}>We couldn't find any products matching your filters.</p>

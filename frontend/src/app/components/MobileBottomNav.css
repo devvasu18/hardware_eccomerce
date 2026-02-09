@@ -1,0 +1,61 @@
+/* MobileBottomNav.css */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    z-index: 9999;
+    padding: 0.5rem 0;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+    /* Soft shadow like product cards */
+}
+
+/* Show only on small screens (mobile/tablet) */
+@media (max-width: 1024px) {
+    .mobile-bottom-nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }
+}
+
+.nav-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #64748b;
+    /* text-muted */
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.5rem;
+    flex: 1;
+    transition: all 0.2s ease;
+    border-radius: 12px;
+}
+
+.nav-link:hover {
+    color: #F37021;
+    /* primary */
+    background: rgba(243, 112, 33, 0.05);
+}
+
+.nav-link.active {
+    color: #F37021;
+    /* primary */
+    font-weight: 600;
+}
+
+.nav-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+    transition: transform 0.2s ease;
+}
+
+.nav-link.active .nav-icon {
+    transform: translateY(-2px);
+}

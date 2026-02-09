@@ -13,6 +13,8 @@ import { WishlistProvider } from '@/context/WishlistContext';
 import CartSidebar from './components/CartSidebar';
 import WishlistSidebar from './components/WishlistSidebar';
 
+import MobileBottomNav from './components/MobileBottomNav';
+
 export default function RootLayout({
     children,
 }: {
@@ -27,6 +29,7 @@ export default function RootLayout({
                             {children}
                             <CartSidebar />
                             <WishlistSidebar />
+                            <MobileBottomNav />
                         </WishlistProvider>
                     </CartProvider>
                 </AuthProvider>
