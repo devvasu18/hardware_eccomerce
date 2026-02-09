@@ -353,7 +353,7 @@ export default function RequestsPage() {
             {/* Child Modal View */}
             {activeCustomer && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ background: 'white', width: '90%', maxWidth: '1000px', height: '85vh', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
+                    <div style={{ background: 'white', width: '95%', maxWidth: '1400px', height: '90vh', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
                         {/* Modal Header */}
                         <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
                             <div>
@@ -444,7 +444,7 @@ export default function RequestsPage() {
                                                             style={{ width: '18px', height: '18px', cursor: 'pointer' }}
                                                         />
                                                     )}
-                                                    <span className="badge" style={{ background: '#f1f5f9' }}>{req.createdAt.split('T')[0]}</span>
+                                                    <span className="badge" style={{ background: '#f1f5f9' }}>{new Date(req.createdAt).toLocaleString()}</span>
                                                 </div>
                                                 <span style={{
                                                     fontWeight: 600,
@@ -478,15 +478,15 @@ export default function RequestsPage() {
                                                 <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 576 512" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M572.52 241.4C518.29 135.59 410.93 64 288 64S57.68 135.64 3.48 241.41a32.35 32.35 0 0 0 0 29.19C57.71 376.41 165.07 448 288 448s230.32-71.64 284.52-177.41a32.35 32.35 0 0 0 0-29.19zM288 400a144 144 0 1 1 144-144 143.93 143.93 0 0 1-144 144zm0-240a95.31 95.31 0 0 0-25.31 3.79 47.85 47.85 0 0 1-66.9 66.9A95.78 95.78 0 1 0 288 160z"></path></svg>
                                             </button>
 
-                                            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', alignItems: 'center' }}>
                                                 <img
                                                     src={req.product.featured_image}
                                                     alt={req.product.title}
-                                                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e2e8f0' }}
+                                                    style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                                                 />
                                                 <div>
-                                                    <h3 style={{ fontSize: '1.2rem', margin: 0 }}>{req.product.title}</h3>
-                                                    {specText && <p style={{ margin: '0.25rem 0 0 0', color: '#F37021', fontWeight: 600, fontSize: '0.9rem' }}>{specText}</p>}
+                                                    <h3 style={{ fontSize: '1.4rem', margin: 0 }}>{req.product.title}</h3>
+                                                    {specText && <p style={{ margin: '0.25rem 0 0 0', color: '#F37021', fontWeight: 600, fontSize: '1.1rem' }}>{specText}</p>}
                                                 </div>
                                             </div>
 
@@ -494,7 +494,7 @@ export default function RequestsPage() {
                                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                                                     <div>Req Qty: <strong>{req.requestedQuantity}</strong></div>
                                                     <div>Base: <strong>₹{typeof req.declaredBasePrice === 'number' ? req.declaredBasePrice : (req.product.selling_price_a || req.product.mrp || req.product.basePrice)}</strong></div>
-                                                    <div>Stock: {req.product.stock}</div>
+
                                                 </div>
                                                 {req.customerContact?.address && (
                                                     <div style={{ marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', fontSize: '0.85rem' }}>

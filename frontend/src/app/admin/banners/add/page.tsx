@@ -6,6 +6,8 @@ import api from "../../../utils/api";
 import { useRouter } from "next/navigation";
 import { FiSave, FiUploadCloud, FiX } from "react-icons/fi";
 import Image from "next/image";
+import Modal from "../../../components/Modal";
+import { useModal } from "../../../hooks/useModal";
 
 interface Offer {
     _id: string;
@@ -24,6 +26,8 @@ export default function AddBannerPage() {
     const { register, handleSubmit, watch, setValue } = useForm();
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [linkType, setLinkType] = useState<'offer' | 'products'>('offer');
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -116,17 +120,29 @@ export default function AddBannerPage() {
             await api.post('/banners', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('Banner created!');
-            router.push('/admin/banners');
+            showSuccess('Banner created!', 'Success', {
+                onConfirm: () => router.push('/admin/banners')
+            });
         } catch (error) {
             console.error(error);
-            alert('Failed to create banner');
+            showError('Failed to create banner');
             setIsSubmitting(false);
         }
     };
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <h1 className="page-title">Add New Banner</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} className="form-grid" style={{ alignItems: 'start' }}>

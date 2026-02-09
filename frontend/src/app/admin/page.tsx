@@ -120,7 +120,7 @@ export default function AdminDashboard() {
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={revenueData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="_id" tick={{ fontSize: 12 }} />
+                                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                                 <YAxis tick={{ fontSize: 12 }} />
                                 <Tooltip
                                     formatter={(value: number) => [`₹${value}`, 'Sales']}

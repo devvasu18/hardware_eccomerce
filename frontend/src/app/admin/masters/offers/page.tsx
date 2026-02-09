@@ -6,6 +6,9 @@ import api from "../../../utils/api";
 import { FiEdit2, FiTrash2, FiPlus, FiUploadCloud } from "react-icons/fi";
 import Image from "next/image";
 import FormModal from "../../../components/FormModal";
+import DataTable from "../../../components/DataTable";
+import Modal from "../../../components/Modal";
+import { useModal } from "../../../hooks/useModal";
 
 interface Offer {
     _id: string;
@@ -21,6 +24,8 @@ export default function OfferMaster() {
     const [image, setImage] = useState<File | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<{ title: string; slug: string; percentage: number }>();
     const title = watch('title');
@@ -58,12 +63,12 @@ export default function OfferMaster() {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
-            alert('Offer Created Successfully');
+            showSuccess('Offer Created Successfully');
             handleCloseModal();
             fetchOffers();
         } catch (error) {
             console.error(error);
-            alert('Operation failed');
+            showError('Operation failed');
         }
     };
 
@@ -82,17 +87,40 @@ export default function OfferMaster() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this Offer?')) return;
-        try {
-            await api.delete(`/admin/offers/${id}`);
-            fetchOffers();
-        } catch (error) {
-            alert('Delete failed');
-        }
+        showModal(
+            'Delete Offer',
+            'Delete this Offer?',
+            'warning',
+            {
+                showCancel: true,
+                confirmText: "Yes, Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        await api.delete(`/admin/offers/${id}`);
+                        fetchOffers();
+                        showSuccess("Offer deleted successfully");
+                    } catch (error) {
+                        showError('Delete failed');
+                    }
+                }
+            }
+        );
     };
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h1 className="page-title" style={{ margin: 0 }}>Offers & Discounts</h1>
                 <button onClick={handleAdd} className="btn btn-primary">
@@ -100,51 +128,45 @@ export default function OfferMaster() {
                 </button>
             </div>
 
-            <div className="table-container">
-                <div className="table-header">Active Offers</div>
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Banner</th>
-                            <th>Title</th>
-                            <th>Percentage</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {offers.map(off => (
-                            <tr key={off._id}>
-                                <td>
-                                    <div className="img-preview" style={{ width: '80px', height: '45px', position: 'relative' }}>
-                                        {off.banner_image ? (
-                                            <Image
-                                                src={off.banner_image.startsWith('http') ? off.banner_image : `/api/${off.banner_image}`}
-                                                alt={off.title}
-                                                fill
-                                                style={{ objectFit: 'cover', borderRadius: '4px' }}
-                                            />
-                                        ) : (
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ccc', fontSize: '0.75rem', background: '#f3f4f6', borderRadius: '4px' }}>N/A</div>
-                                        )}
-                                    </div>
-                                </td>
-                                <td>{off.title}</td>
-                                <td style={{ color: 'var(--success)', fontWeight: 'bold' }}>{off.percentage}%</td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <button onClick={() => handleDelete(off._id)} className="btn-icon" style={{ color: 'var(--danger)' }}>
-                                        <FiTrash2 />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                        {offers.length === 0 && !loading && (
-                            <tr>
-                                <td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>No offers found.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Loading...</div>
+            ) : (
+                <DataTable
+                    title="Active Offers"
+                    data={offers}
+                    columns={[
+                        {
+                            header: 'Banner',
+                            accessor: (item) => (
+                                <div className="img-preview" style={{ width: '80px', height: '45px', position: 'relative', overflow: 'hidden', borderRadius: '4px', background: '#f3f4f6' }}>
+                                    {item.banner_image ? (
+                                        <Image
+                                            src={item.banner_image.startsWith('http') ? item.banner_image : `/api/${item.banner_image}`}
+                                            alt={item.title}
+                                            fill
+                                            style={{ objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ccc', fontSize: '0.75rem' }}>N/A</span>
+                                    )}
+                                </div>
+                            ),
+                            sortable: false
+                        },
+                        { header: 'Title', accessor: 'title', sortable: true, className: "font-medium" },
+                        {
+                            header: 'Percentage',
+                            accessor: (item) => (
+                                <span style={{ color: '#16a34a', fontWeight: 'bold' }}>{item.percentage}% OFF</span>
+                            ),
+                            sortable: true
+                        }
+                    ]}
+                    searchKeys={['title', 'slug']}
+                    onDelete={(item) => handleDelete(item._id)}
+                    itemsPerPage={10}
+                />
+            )}
 
             <FormModal
                 isOpen={isModalOpen}

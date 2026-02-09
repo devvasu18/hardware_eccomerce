@@ -108,10 +108,21 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             }
         }
 
-        // 2. Fallback: Lowest Price Logic
-        let bestPrice = Infinity;
-        let bestModel: Model | null = null;
-        let bestVar: Variation | null = null;
+        // 2. Fallback: Lowest Price Logic (Prioritizing In-Stock)
+        let bestInStockOption: { model: Model | null; variant: Variation | null; price: number } = { model: null, variant: null, price: Infinity };
+        let bestOutStockOption: { model: Model | null; variant: Variation | null; price: number } = { model: null, variant: null, price: Infinity };
+
+        const processOption = (model: Model | null, variant: Variation | null, price: number, stock: number) => {
+            if (stock > 0) {
+                if (price < bestInStockOption.price) {
+                    bestInStockOption = { model, variant, price };
+                }
+            } else {
+                if (price < bestOutStockOption.price) {
+                    bestOutStockOption = { model, variant, price };
+                }
+            }
+        };
 
         const hasModelsLocal = product.models && product.models.length > 0;
 
@@ -119,25 +130,19 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             product.models?.forEach(m => {
                 if (m.isActive === false) return;
 
-                // If model has variations, we usually MUST pick a variation. 
-                // So we check variations.
-                // If model has NO variations, we check model base price.
                 const mVars = m.variations?.filter(v => v.isActive !== false) || [];
 
                 if (mVars.length > 0) {
                     mVars.forEach(v => {
-                        if (v.price && v.price < bestPrice) {
-                            bestPrice = v.price;
-                            bestModel = m;
-                            bestVar = v;
+                        if (v.price) {
+                            processOption(m, v, v.price, v.stock || 0);
                         }
                     });
                 } else {
                     // Start checking model base price if no variations
-                    if (m.selling_price_a && m.selling_price_a < bestPrice) {
-                        bestPrice = m.selling_price_a;
-                        bestModel = m;
-                        bestVar = null;
+                    if (m.selling_price_a) {
+                        // Assuming 0 stock for model base if no variations are present (based on stock calc logic)
+                        processOption(m, null, m.selling_price_a, 0);
                     }
                 }
             });
@@ -145,12 +150,16 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             // No models, check global variations
             const pVars = product.variations?.filter(v => v.isActive !== false) || [];
             pVars.forEach(v => {
-                if (v.price && v.price < bestPrice) {
-                    bestPrice = v.price;
-                    bestVar = v;
+                if (v.price) {
+                    processOption(null, v, v.price, v.stock || 0);
                 }
             });
         }
+
+        const selectedOption = bestInStockOption.price !== Infinity ? bestInStockOption : bestOutStockOption;
+        let bestPrice = selectedOption.price;
+        let bestModel = selectedOption.model;
+        let bestVar = selectedOption.variant;
 
         // Apply Selection
         if (bestPrice !== Infinity) {
@@ -194,20 +203,37 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
     const handleModelSelect = (model: Model) => {
         setSelectedModel(model);
 
-        // Auto-select lowest priced variation in the selected model
+        // Auto-select lowest priced IN STOCK variation in the selected model
         let bestVar: Variation | null = null;
-        let minPrice = Infinity;
+
+        let minPriceInStock = Infinity;
+        let bestVarInStock: Variation | null = null;
+        let minPriceOutStock = Infinity;
+        let bestVarOutStock: Variation | null = null;
 
         // Filter active variations
         const activeVariations = model.variations?.filter(v => v.isActive !== false) || [];
 
         if (activeVariations.length > 0) {
             activeVariations.forEach(v => {
-                if (v.price < minPrice) {
-                    minPrice = v.price;
-                    bestVar = v;
+                const price = v.price;
+                const inStock = (v.stock || 0) > 0;
+
+                if (inStock) {
+                    if (price < minPriceInStock) {
+                        minPriceInStock = price;
+                        bestVarInStock = v;
+                    }
+                } else {
+                    if (price < minPriceOutStock) {
+                        minPriceOutStock = price;
+                        bestVarOutStock = v;
+                    }
                 }
             });
+
+            // Prioritize In Stock
+            bestVar = bestVarInStock || bestVarOutStock;
         }
 
         if (bestVar) {
@@ -386,7 +412,7 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             modelId: selectedModel?._id,
             modelName: selectedModel?.name,
             variationText: variationText, // For Tally
-            isOnDemand: isStrictlyOnDemand || (stock < quantity)
+            isOnDemand: (isStrictlyOnDemand && stock < 1) || (stock < quantity)
         });
         showSuccess(`Added ${quantity} x ${cartItemName} to cart!`, 'Added to Cart');
     };
@@ -533,7 +559,7 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                     disabled={isOutOfStock}
                     style={isOutOfStock ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                 >
-                    {isOutOfStock ? 'OUT OF STOCK' : 'ADD TO CART'}
+                    {isOutOfStock ? 'OUT OF STOCK' : (isStrictlyOnDemand ? (stock < 1 ? 'SUBMIT REQUEST' : 'PLACE ORDER') : 'ADD TO CART')}
                 </button>
             </div >
 

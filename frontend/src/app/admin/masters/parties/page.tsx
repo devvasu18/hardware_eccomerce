@@ -4,7 +4,10 @@ import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { FiEdit2, FiTrash2, FiPlus, FiSave } from "react-icons/fi";
+import DataTable from "../../../components/DataTable";
 import FormModal from "../../../components/FormModal";
+import Modal from "../../../components/Modal";
+import { useModal } from "../../../hooks/useModal";
 
 interface Party {
     _id: string;
@@ -20,6 +23,8 @@ export default function PartyMaster() {
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     const { register, handleSubmit, reset, setValue } = useForm<Party>();
 
@@ -42,16 +47,16 @@ export default function PartyMaster() {
         try {
             if (editingId) {
                 await api.put(`/admin/parties/${editingId}`, data);
-                alert('Party updated successfully');
+                showSuccess('Updated successfully');
             } else {
                 await api.post('/admin/parties', data);
-                alert('Party created successfully');
+                showSuccess('Created successfully');
             }
             handleCloseModal();
             fetchParties();
         } catch (error) {
             console.error(error);
-            alert('Operation failed');
+            showError('Operation failed');
         }
     };
 
@@ -78,17 +83,40 @@ export default function PartyMaster() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this Party?')) return;
-        try {
-            await api.delete(`/admin/parties/${id}`);
-            fetchParties();
-        } catch (error) {
-            alert('Delete failed');
-        }
+        showModal(
+            'Delete Party',
+            'Delete this Party?',
+            'warning',
+            {
+                showCancel: true,
+                confirmText: "Yes, Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        await api.delete(`/admin/parties/${id}`);
+                        fetchParties();
+                        showSuccess("Deleted successfully");
+                    } catch (error) {
+                        showError('Delete failed');
+                    }
+                }
+            }
+        );
     };
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div>
                     <h1 className="page-title" style={{ margin: 0 }}>Party Master (Suppliers)</h1>
@@ -99,42 +127,32 @@ export default function PartyMaster() {
                 </button>
             </div>
 
-            <div className="table-container">
-                <div className="table-header">Registered Parties</div>
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Contact</th>
-                            <th>GST</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {parties.map(party => (
-                            <tr key={party._id}>
-                                <td style={{ fontWeight: 500 }}>{party.name}</td>
-                                <td>
-                                    <div style={{ fontSize: '0.9rem' }}>{party.phone_no}</div>
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{party.email}</div>
-                                </td>
-                                <td>{party.gst_no || '-'}</td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                        <button onClick={() => startEdit(party)} className="btn-icon" style={{ color: 'var(--info)' }}><FiEdit2 /></button>
-                                        <button onClick={() => handleDelete(party._id)} className="btn-icon" style={{ color: 'var(--danger)' }}><FiTrash2 /></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {parties.length === 0 && !loading && (
-                            <tr>
-                                <td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No parties found.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Loading...</div>
+            ) : (
+                <DataTable
+                    title="Registered Parties"
+                    data={parties}
+                    columns={[
+                        { header: 'Name', accessor: 'name', sortable: true, className: "font-medium" },
+                        {
+                            header: 'Contact',
+                            accessor: (item) => (
+                                <div>
+                                    <div style={{ fontSize: '0.9rem' }}>{item.phone_no}</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.email}</div>
+                                </div>
+                            ),
+                            sortable: false
+                        },
+                        { header: 'GST', accessor: (item) => item.gst_no || '-', sortable: true }
+                    ]}
+                    searchKeys={['name', 'gst_no', 'phone_no', 'email']}
+                    onEdit={startEdit}
+                    onDelete={(item) => handleDelete(item._id)}
+                    itemsPerPage={10}
+                />
+            )}
 
             <FormModal
                 isOpen={isModalOpen}

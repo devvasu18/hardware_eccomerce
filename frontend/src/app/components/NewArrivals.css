@@ -95,21 +95,108 @@
     right: -24px;
 }
 
+/* ========================================
+   📱 RESPONSIVE DESIGN - MOBILE FIRST
+   ======================================== */
+
 .slider-item {
-    flex: 0 0 280px;
-    /* Mobile default */
+    flex: 0 0 260px;
+    /* Base for mobile */
 }
 
-@media (min-width: 768px) {
-    .slider-item {
-        flex: 0 0 calc(50% - 1.5rem);
-        /* 2 items */
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
+    .new-arrivals-section {
+        padding: 2rem 0;
+    }
+
+    .new-arrivals-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .new-arrivals-title {
+        font-size: 1.75rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .new-arrivals-subtitle {
+        font-size: 0.95rem;
+    }
+
+    .view-all-btn {
+        padding: 0.6rem 1.25rem;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
+    .slider-track-wrapper {
+        gap: 1rem;
+        padding: 0.5rem 0.25rem;
+    }
+
+    .slider-arrow {
+        width: 36px;
+        height: 36px;
+        font-size: 0.9rem;
+    }
+
+    /* Hide arrows on mobile if touch scroll implies content */
+    .slider-arrow {
+        display: none;
     }
 }
 
-@media (min-width: 1024px) {
+/* Large Mobile (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+    .new-arrivals-section {
+        padding: 2.5rem 0;
+    }
+
+    .slider-item {
+        flex: 0 0 280px;
+    }
+
+    .slider-arrow {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Tablets (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .slider-item {
+        flex: 0 0 calc(50% - 1rem);
+        /* 2 items visible */
+    }
+}
+
+/* Small Laptops (1025px - 1366px) */
+@media (min-width: 1025px) and (max-width: 1366px) {
+    .slider-item {
+        flex: 0 0 calc(33.333% - 1rem);
+        /* 3 items visible */
+    }
+}
+
+/* Large Desktops (1367px+) */
+@media (min-width: 1367px) {
     .slider-item {
         flex: 0 0 calc(25% - 1.125rem);
-        /* 4 items */
+        /* 4 items visible */
+    }
+}
+
+/* Touch improvements */
+@media (max-width: 1024px) {
+    .slider-track-wrapper {
+        -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+    }
+
+    .slider-item {
+        scroll-snap-align: start;
     }
 }

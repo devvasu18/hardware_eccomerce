@@ -158,3 +158,24 @@ exports.getProductLedger = async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch ledger', error: error.message });
     }
 };
+
+// @desc    Manually Sync Stock Entry to Tally
+// @route   POST /api/admin/stock/:id/sync
+// @access  Admin
+exports.syncStockEntry = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tallyService = require('../services/tallyService');
+
+        const result = await tallyService.syncStockEntryToTally(id);
+
+        if (result.success) {
+            res.json({ message: 'Sync initiated successfully', queued: result.queued });
+        } else {
+            res.status(400).json({ message: result.error || 'Sync failed' });
+        }
+    } catch (error) {
+        console.error('Stock Sync Error:', error);
+        res.status(500).json({ message: 'Failed to sync stock entry', error: error.message });
+    }
+};

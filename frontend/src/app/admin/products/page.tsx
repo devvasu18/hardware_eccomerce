@@ -5,6 +5,8 @@ import api from "../../utils/api";
 import Link from "next/link";
 import Image from "next/image";
 import { FiEdit2, FiTrash2, FiPlus, FiEye, FiSearch, FiRefreshCw, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import Modal from "../../components/Modal";
+import { useModal } from "../../hooks/useModal";
 
 interface Product {
     _id: string;
@@ -52,6 +54,8 @@ export default function ProductList() {
     const [subCategories, setSubCategories] = useState<{ _id: string, name: string }[]>([]);
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedSubCategory, setSelectedSubCategory] = useState('');
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     // Debounce search
     useEffect(() => {
@@ -133,33 +137,66 @@ export default function ProductList() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("Are you sure you want to deactivate this product?")) return;
-        try {
-            await api.delete(`/admin/products/${id}`);
-            fetchProducts(); // Refetch to update list and counts
-            alert("Product deactivated successfully");
-        } catch (error) {
-            console.error(error);
-            alert("Failed to deactivate product");
-        }
+        showModal(
+            "Deactivate Product",
+            "Are you sure you want to deactivate this product?",
+            "warning",
+            {
+                showCancel: true,
+                confirmText: "Yes, Deactivate",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        await api.delete(`/admin/products/${id}`);
+                        fetchProducts(); // Refetch to update list and counts
+                        showSuccess("Product deactivated successfully");
+                    } catch (error) {
+                        console.error(error);
+                        showError("Failed to deactivate product");
+                    }
+                }
+            }
+        );
     };
 
     const handleRestore = async (id: string) => {
-        if (!confirm("Are you sure you want to restore this product?")) return;
-        try {
-            await api.put(`/admin/products/${id}`, { isActive: true });
-            fetchProducts(); // Refetch
-            alert("Product restored successfully");
-        } catch (error) {
-            console.error(error);
-            alert("Failed to restore product");
-        }
+        showModal(
+            "Restore Product",
+            "Are you sure you want to restore this product?",
+            "warning",
+            {
+                showCancel: true,
+                confirmText: "Yes, Restore",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        await api.put(`/admin/products/${id}`, { isActive: true });
+                        fetchProducts(); // Refetch
+                        showSuccess("Product restored successfully");
+                    } catch (error) {
+                        console.error(error);
+                        showError("Failed to restore product");
+                    }
+                }
+            }
+        );
     };
 
 
 
     return (
         <div className="container" style={{ maxWidth: '100%' }}>
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h1 className="page-title">Product Manager</h1>
@@ -306,7 +343,7 @@ export default function ProductList() {
 
                             return (
                                 <tr key={product._id} style={{ opacity: product.isActive === false ? 0.7 : 1 }}>
-                                    <td style={{ padding: '1rem' }}>
+                                    <td style={{ padding: '1rem' }} data-label="Product">
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                             <div className="img-preview">
                                                 {product.featured_image ? (
@@ -328,11 +365,11 @@ export default function ProductList() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="Category & Brand">
                                         <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{product.category?.name || 'Uncategorized'}</div>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{product.brand?.name}</div>
                                     </td>
-                                    <td style={{ textAlign: 'right' }}>
+                                    <td style={{ textAlign: 'right' }} data-label="Pricing">
                                         <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
                                             {isStartingPrice && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block', marginBottom: '-4px' }}>Starting at</span>}
                                             ₹{displayPrice}
@@ -344,14 +381,14 @@ export default function ProductList() {
                                             <div style={{ fontSize: '0.7rem', color: '#9CA3AF', textDecoration: 'line-through' }}>MRP: ₹{displayMRP}</div>
                                         )}
                                     </td>
-                                    <td style={{ textAlign: 'center' }}>
+                                    <td style={{ textAlign: 'center' }} data-label="Stock">
                                         <span className={`badge ${product.opening_stock < 10 ? 'badge-warning' : 'badge-success'}`}
                                             style={product.opening_stock < 10 ? { background: '#FEF2F2', color: '#DC2626' } : {}}
                                         >
                                             {product.opening_stock}
                                         </span>
                                     </td>
-                                    <td style={{ textAlign: 'right' }}>
+                                    <td style={{ textAlign: 'right' }} data-label="Actions">
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                                             <Link href={`/products/${product._id}`} target="_blank" className="btn-icon">
                                                 <FiEye />

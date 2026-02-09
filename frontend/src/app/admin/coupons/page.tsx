@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import api from "../../utils/api";
 import Link from "next/link";
 import { FiPlus, FiEdit2, FiTrash2, FiTag } from "react-icons/fi";
+import DataTable from "../../components/DataTable";
+import Modal from "../../components/Modal";
+import { useModal } from "../../hooks/useModal";
 
 interface Coupon {
     _id: string;
@@ -18,6 +21,8 @@ interface Coupon {
 export default function CouponList() {
     const [coupons, setCoupons] = useState<Coupon[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     useEffect(() => {
         fetchCoupons();
@@ -35,13 +40,25 @@ export default function CouponList() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this coupon?')) return;
-        try {
-            await api.delete(`/coupons/${id}`);
-            setCoupons(prev => prev.filter(c => c._id !== id));
-        } catch (error) {
-            alert('Failed to delete coupon');
-        }
+        showModal(
+            'Delete Coupon',
+            'Delete this coupon?',
+            'warning',
+            {
+                showCancel: true,
+                confirmText: "Yes, Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        await api.delete(`/coupons/${id}`);
+                        setCoupons(prev => prev.filter(c => c._id !== id));
+                        showSuccess("Coupon deleted successfully");
+                    } catch (error) {
+                        showError('Failed to delete coupon');
+                    }
+                }
+            }
+        );
     };
 
     const toggleStatus = async (id: string, currentStatus: boolean) => {
@@ -49,14 +66,26 @@ export default function CouponList() {
             // Optimistic update
             setCoupons(prev => prev.map(c => c._id === id ? { ...c, status: !currentStatus } : c));
             await api.put(`/coupons/${id}`, { status: !currentStatus });
+            showSuccess('Status updated');
         } catch (error) {
-            alert('Failed to update status');
+            showError('Failed to update status');
             fetchCoupons(); // Revert on error
         }
     }
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title">Coupon Manager</h1>
@@ -67,62 +96,53 @@ export default function CouponList() {
                 </Link>
             </div>
 
-            <div className="table-container">
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Code</th>
-                            <th>Discount</th>
-                            <th>Description</th>
-                            <th>Used</th>
-                            <th>Status</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {coupons.map(coupon => (
-                            <tr key={coupon._id}>
-                                <td>
-                                    <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--primary)', letterSpacing: '1px' }}>
-                                        {coupon.code}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span className="badge badge-warning">
-                                        {coupon.discount_type === 'Percentage' ? `${coupon.discount_value}% OFF` : `₹${coupon.discount_value} OFF`}
-                                    </span>
-                                </td>
-                                <td>{coupon.description}</td>
-                                <td>{coupon.usage_count} times</td>
-                                <td>
-                                    <button
-                                        onClick={() => toggleStatus(coupon._id, coupon.status)}
-                                        className={`badge ${coupon.status ? 'badge-success' : 'badge-warning'}`}
-                                        style={{ border: 'none', cursor: 'pointer', opacity: coupon.status ? 1 : 0.7 }}
-                                    >
-                                        {coupon.status ? 'Active' : 'Inactive'}
-                                    </button>
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                        <Link href={`/admin/coupons/${coupon._id}/edit`} className="btn-icon" style={{ color: 'var(--info)' }}>
-                                            <FiEdit2 />
-                                        </Link>
-                                        <button onClick={() => handleDelete(coupon._id)} className="btn-icon" style={{ color: 'var(--danger)' }}>
-                                            <FiTrash2 />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {coupons.length === 0 && !loading && (
-                            <tr>
-                                <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No coupons found.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Loading...</div>
+            ) : (
+                <DataTable
+                    title="Active Coupons"
+                    data={coupons}
+                    columns={[
+                        {
+                            header: 'Code',
+                            accessor: (item) => (
+                                <div style={{ fontWeight: 700, fontSize: '1rem', color: '#F37021', letterSpacing: '1px' }}>
+                                    {item.code}
+                                </div>
+                            ),
+                            sortable: true
+                        },
+                        {
+                            header: 'Discount',
+                            accessor: (item) => (
+                                <span className="badge badge-warning">
+                                    {item.discount_type === 'Percentage' ? `${item.discount_value}% OFF` : `₹${item.discount_value} OFF`}
+                                </span>
+                            ),
+                            sortable: true
+                        },
+                        { header: 'Description', accessor: 'description', sortable: false },
+                        { header: 'Used', accessor: (item) => `${item.usage_count} times`, sortable: true },
+                        {
+                            header: 'Status',
+                            accessor: (item) => (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); toggleStatus(item._id, item.status); }}
+                                    className={`badge ${item.status ? 'badge-success' : 'badge-warning'}`}
+                                    style={{ border: 'none', cursor: 'pointer', opacity: item.status ? 1 : 0.7 }}
+                                >
+                                    {item.status ? 'Active' : 'Inactive'}
+                                </button>
+                            ),
+                            sortable: true
+                        }
+                    ]}
+                    searchKeys={['code', 'description']}
+                    onEdit={(item) => window.location.href = `/admin/coupons/${item._id}/edit`}
+                    onDelete={(item) => handleDelete(item._id)}
+                    itemsPerPage={10}
+                />
+            )}
         </div>
     );
 }

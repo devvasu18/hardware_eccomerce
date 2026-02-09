@@ -246,7 +246,9 @@ export default function CheckoutPage() {
                         quantity: i.quantity,
                         size: i.size,
                         variationId: i.variationId,
-                        variationText: i.variationText
+                        variationText: i.variationText,
+                        modelId: i.modelId,
+                        modelName: i.modelName
                     })),
                     shippingAddress: finalAddressString,
                     billingAddress: finalAddressString,

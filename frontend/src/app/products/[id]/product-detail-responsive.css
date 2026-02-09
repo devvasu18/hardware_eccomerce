@@ -1,0 +1,283 @@
+/* ========================================
+   📱 PRODUCT DETAIL PAGE - RESPONSIVE
+   Mobile-First Design
+   ======================================== */
+
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
+    .product-detail-container {
+        padding: 1rem 0.75rem 2rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.7rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .product-detail-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .main-image {
+        min-height: 280px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .discount-badge {
+        width: 50px;
+        height: 50px;
+        font-size: 0.9rem;
+        top: 0.5rem;
+        left: 0.5rem;
+    }
+
+    .thumbnails {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+
+    .thumbnail {
+        padding: 0.5rem;
+    }
+
+    .product-name {
+        font-size: 1.5rem;
+    }
+
+    .product-meta {
+        font-size: 0.7rem;
+        flex-wrap: wrap;
+    }
+
+    .price-current {
+        font-size: 1.5rem;
+    }
+
+    .price-original {
+        font-size: 1.25rem;
+    }
+
+    /* Size selector - stack vertically on very small screens */
+    .size-options {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .size-btn {
+        min-width: 45px;
+        height: 36px;
+        font-size: 0.8rem;
+    }
+
+    /* Quantity controls */
+    .qty-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.1rem;
+    }
+
+    .qty-input {
+        width: 70px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    /* Add to cart button */
+    .btn-add-to-cart {
+        padding: 1rem;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+    }
+
+    /* Tabs */
+    .tabs-header {
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .tabs-header::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tab-btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .tab-content {
+        padding: 1rem;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .detail-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    /* Related products */
+    .related-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .related-product-image {
+        height: 180px;
+    }
+}
+
+/* Large Mobile (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+    .product-detail-container {
+        padding: 1.5rem 1rem 3rem;
+    }
+
+    .breadcrumb {
+        font-size: 0.72rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .product-detail-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .main-image {
+        min-height: 350px;
+        padding: 1.5rem;
+    }
+
+    .thumbnails {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+    }
+
+    .product-name {
+        font-size: 1.75rem;
+    }
+
+    .size-options {
+        flex-wrap: wrap;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .related-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .related-product-image {
+        height: 200px;
+    }
+}
+
+/* Tablets (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .product-detail-container {
+        padding: 2rem 1.5rem 4rem;
+    }
+
+    .product-detail-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+    }
+
+    .main-image {
+        min-height: 400px;
+    }
+
+    .thumbnails {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .product-name {
+        font-size: 1.85rem;
+    }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .related-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .tab-content {
+        padding: 1.5rem;
+    }
+}
+
+/* Small Laptops (1025px - 1366px) */
+@media (min-width: 1025px) and (max-width: 1366px) {
+    .product-detail-grid {
+        gap: 3.5rem;
+    }
+
+    .related-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Touch-friendly improvements for all mobile/tablet */
+@media (max-width: 1024px) {
+
+    /* Larger tap targets */
+    .size-btn,
+    .qty-btn,
+    .tab-btn,
+    .btn-add-to-cart {
+        min-height: 44px;
+    }
+
+    /* Better spacing for touch */
+    .product-action-section {
+        gap: 2rem;
+    }
+
+    /* Sticky add to cart on mobile */
+    .btn-add-to-cart {
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Procurement form */
+    .procurement-form {
+        padding: 1.25rem;
+    }
+
+    .form-inputs {
+        gap: 0.75rem;
+    }
+
+    .form-input {
+        padding: 0.875rem;
+        font-size: 1rem;
+    }
+}
+
+/* Landscape mode adjustments for mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .main-image {
+        min-height: 250px;
+    }
+
+    .product-detail-grid {
+        gap: 1.5rem;
+    }
+}

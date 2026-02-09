@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext'; // Import AuthContext
 import { useCart } from '../../context/CartContext'; // Import CartContext
 import { useWishlist } from '../../context/WishlistContext'; // Import WishlistContext
@@ -13,20 +13,54 @@ const Header = () => {
     const { user, logout } = useAuth();
     const { cartCount, openCart } = useCart();
     const router = useRouter();
+    const pathname = usePathname();
     const { wishlistCount, openWishlist } = useWishlist();
     const [searchTerm, setSearchTerm] = useState('');
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const [categories, setCategories] = useState<{ _id: string, name: string, slug: string, showInNav: boolean }[]>([]);
-    const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-    const [lastScrollY, setLastScrollY] = useState(0);
-    const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [mobileSearchTerm, setMobileSearchTerm] = useState('');
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setIsMobileMenuOpen(false);
+    }, [pathname]);
+
+    const [isVisible, setIsVisible] = useState(true);
+    const lastScrollY = useRef(0);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+
+            if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+                setIsVisible(false);
+            } else {
+                setIsVisible(true);
+            }
+
+            lastScrollY.current = currentScrollY;
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     const handleSearch = () => {
         if (searchTerm.trim()) {
             router.push(`/products?keyword=${encodeURIComponent(searchTerm.trim())}`);
             setIsSearchFocused(false);
+        }
+    };
+
+    const handleMobileSearch = () => {
+        if (mobileSearchTerm.trim()) {
+            router.push(`/products?keyword=${encodeURIComponent(mobileSearchTerm.trim())}`);
+            setIsMobileMenuOpen(false);
+            setMobileSearchTerm('');
         }
     };
 
@@ -69,46 +103,10 @@ const Header = () => {
         fetchCategories();
     }, []);
 
-    // Scroll detection for header visibility
-    useEffect(() => {
-        const handleScroll = () => {
-            const currentScrollY = window.scrollY;
 
-            // Clear any existing hide timer
-            if (hideTimerRef.current) {
-                clearTimeout(hideTimerRef.current);
-                hideTimerRef.current = null;
-            }
-
-            // Scrolling down - hide header
-            if (currentScrollY > lastScrollY && currentScrollY > 100) {
-                setIsHeaderVisible(false);
-            }
-            // Scrolling up - show header
-            else if (currentScrollY < lastScrollY) {
-                setIsHeaderVisible(true);
-
-                // Set timer to hide after 3 seconds
-                hideTimerRef.current = setTimeout(() => {
-                    setIsHeaderVisible(false);
-                }, 3000);
-            }
-
-            setLastScrollY(currentScrollY);
-        };
-
-        window.addEventListener('scroll', handleScroll, { passive: true });
-
-        return () => {
-            window.removeEventListener('scroll', handleScroll);
-            if (hideTimerRef.current) {
-                clearTimeout(hideTimerRef.current);
-            }
-        };
-    }, [lastScrollY]);
 
     return (
-        <header className={`header-container ${isHeaderVisible ? 'header-visible' : 'header-hidden'}`}>
+        <header className={`header-container ${isVisible ? 'header-visible' : 'header-hidden'}`}>
             {/* Top Bar: Logo, Search, Actions */}
             <div className="header-main-bar">
 
@@ -118,6 +116,17 @@ const Header = () => {
                         Selfmade
                     </Link>
                 </div>
+
+                {/* Hamburger Menu for Mobile/Tablet */}
+                <button
+                    className={`hamburger-menu ${isMobileMenuOpen ? 'open' : ''}`}
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    aria-label="Toggle menu"
+                >
+                    <span className="hamburger-line"></span>
+                    <span className="hamburger-line"></span>
+                    <span className="hamburger-line"></span>
+                </button>
 
                 {/* Center: Search Input */}
                 <div className="header-search-area">
@@ -227,9 +236,13 @@ const Header = () => {
                                     <div className="user-dropdown">
                                         <div className="dropdown-item-text">Signed in as <br /><strong>{user.username}</strong></div>
                                         <div className="dropdown-divider"></div>
-                                        <Link href="/profile" className="dropdown-item">My Profile</Link>
-                                        <Link href="/orders" className="dropdown-item">My Orders</Link>
-                                        {user.role === 'admin' && (
+                                        {user.role !== 'admin' && user.role !== 'super_admin' && (
+                                            <>
+                                                <Link href="/profile" className="dropdown-item">My Profile</Link>
+                                                <Link href="/orders" className="dropdown-item">My Orders</Link>
+                                            </>
+                                        )}
+                                        {(user.role === 'admin' || user.role === 'super_admin') && (
                                             <Link href="/admin" className="dropdown-item">Admin Dashboard</Link>
                                         )}
                                         <div className="dropdown-divider"></div>
@@ -306,6 +319,47 @@ const Header = () => {
                     ) : (
                         <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Loading categories...</span>
                     )}
+                </div>
+            </div>
+
+            {/* Mobile Navigation Menu */}
+            <div className={`mobile-nav-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
+            <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
+                <div className="mobile-nav-header">
+                    <span className="mobile-nav-logo">Selfmade</span>
+                    <button className="mobile-nav-close" onClick={() => setIsMobileMenuOpen(false)}>×</button>
+                </div>
+                <nav className="mobile-nav-links">
+                    {categories.map((category) => (
+                        <Link
+                            key={category._id}
+                            href={`/products?category=${category.slug}`}
+                            className="mobile-nav-link"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        >
+                            {category.name}
+                        </Link>
+                    ))}
+                </nav>
+            </div>
+
+            {/* Mobile Search Bar */}
+            <div className="mobile-search-container">
+                <div className="mobile-search-wrapper">
+                    <input
+                        type="text"
+                        className="mobile-search-input"
+                        placeholder="Search products..."
+                        value={mobileSearchTerm}
+                        onChange={(e) => setMobileSearchTerm(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleMobileSearch()}
+                    />
+                    <button className="mobile-search-btn" onClick={handleMobileSearch}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
                 </div>
             </div>
         </header>

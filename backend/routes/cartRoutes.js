@@ -197,7 +197,7 @@ router.post('/add', authenticateToken, async (req, res) => {
         console.log('Cart saved. Populating...');
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations'
         });
         console.log('Cart populated.');
 
@@ -312,7 +312,7 @@ router.patch('/update', authenticateToken, async (req, res) => {
         await cart.save();
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations'
         });
 
         const validItems = cart.items.filter(item => item.product);
@@ -353,7 +353,7 @@ router.delete('/remove', authenticateToken, async (req, res) => {
         await cart.save();
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations'
         });
 
         const validItems = cart.items.filter(item => item.product);
@@ -465,7 +465,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
         await cart.save();
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations'
         });
 
         const validItems = cart.items.filter(item => item.product);

@@ -53,8 +53,8 @@ const generateLedgerXML = (user) => {
   const estimatedState = user.state || (user.address && (user.address.toLowerCase().includes('maharashtra') ? 'Maharashtra' : 'Gujarat')) || 'Gujarat';
   const tallyState = getStateName(estimatedState);
 
-  // Defaulting to Sundry Debtors for customers
-  const parentGroup = "Sundry Debtors";
+  // Defaulting to Sundry Debtors for customers, but allow override (e.g. Sundry Creditors for Suppliers)
+  const parentGroup = user.tallyParentGroup || "Sundry Debtors";
 
   const xml = `
 <ENVELOPE>
@@ -129,6 +129,36 @@ const generateSalesLedgerXML = () => {
   </ENVELOPE>`;
 };
 
+const generatePurchaseLedgerXML = () => {
+  return `
+    <ENVELOPE>
+      <HEADER>
+        <TALLYREQUEST>Import Data</TALLYREQUEST>
+      </HEADER>
+      <BODY>
+        <IMPORTDATA>
+          <REQUESTDESC>
+            <REPORTNAME>All Masters</REPORTNAME>
+          </REQUESTDESC>
+          <REQUESTDATA>
+            <TALLYMESSAGE xmlns:UDF="TallyUDF">
+               <LEDGER NAME="Purchase Account" ACTION="Create">
+                  <NAME.LIST>
+                    <NAME>Purchase Account</NAME>
+                  </NAME.LIST>
+                  <PARENT>Purchase Accounts</PARENT>
+                  <OPENINGBALANCE>0</OPENINGBALANCE>
+                  <ISBILLWISEON>No</ISBILLWISEON>
+                  <AFFECTSSTOCK>Yes</AFFECTSSTOCK>
+                  <ISGSTAPPLICABLE>Yes</ISGSTAPPLICABLE>
+               </LEDGER>
+            </TALLYMESSAGE>
+          </REQUESTDATA>
+        </IMPORTDATA>
+      </BODY>
+    </ENVELOPE>`;
+};
+
 const generateTaxLedgerXML = (ledgerName, parentGroup = "Duties & Taxes") => {
   return `
   <ENVELOPE>
@@ -146,7 +176,7 @@ const generateTaxLedgerXML = (ledgerName, parentGroup = "Duties & Taxes") => {
                 <NAME.LIST>
                   <NAME>${ledgerName}</NAME>
                 </NAME.LIST>
-                <PARENT>${parentGroup}</PARENT>
+                <PARENT>${escapeXml(parentGroup)}</PARENT>
                 <OPENINGBALANCE>0</OPENINGBALANCE>
                 <ISBILLWISEON>No</ISBILLWISEON>
                 <AFFECTSSTOCK>No</AFFECTSSTOCK>
@@ -158,4 +188,4 @@ const generateTaxLedgerXML = (ledgerName, parentGroup = "Duties & Taxes") => {
   </ENVELOPE>`;
 };
 
-module.exports = { generateLedgerXML, generateSalesLedgerXML, generateTaxLedgerXML };
+module.exports = { generateLedgerXML, generateSalesLedgerXML, generateTaxLedgerXML, generatePurchaseLedgerXML };

@@ -42,6 +42,37 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+// Helper to check stock status and determine OnDemand mode
+const resolveIsOnDemand = (product: any, item: any) => {
+    if (!product) return false;
+    if (item.requestId) return false; // Already approved request is just an order item
+
+    let stock = product.stock || 0;
+
+    // Check Model Stock
+    if (item.modelId && product.models) {
+        const model = product.models.find((m: any) => m._id === item.modelId);
+        if (model) {
+            if (item.variationId && model.variations) {
+                const variant = model.variations.find((v: any) => v._id === item.variationId);
+                if (variant) stock = variant.stock || 0;
+            }
+            // If model has no variations, maybe use model base stock? 
+            // For now, if no variant logic, fallback to root stock or 0 if strictly model based.
+        }
+    }
+    // Check Global Variation Stock
+    else if (item.variationId && product.variations) {
+        const variant = product.variations.find((v: any) => v._id === item.variationId);
+        if (variant) stock = variant.stock || 0;
+    }
+
+    const isStrictlyOnDemand = product.isOnDemand;
+
+    // Logic: Request Mode if Strictly OnDemand AND Out of Stock, OR Requested > Stock
+    return (isStrictlyOnDemand && stock < 1) || (stock < item.quantity);
+};
+
 export function CartProvider({ children }: { children: ReactNode }) {
     const { user, registerLoginCallback } = useAuth();
     const [items, setItems] = useState<CartItem[]>([]);
@@ -118,6 +149,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                                         gallery_images?: string[];
                                         isOnDemand?: boolean;
                                         gst_rate?: number;
+                                        models?: any[];
+                                        variations?: any[];
                                     }
 
                                     const productsMap = new Map<string, ProductData>((Array.isArray(data) ? data : data.products || []).map((p: ProductData) => [p._id, p]));
@@ -132,7 +165,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                                             name: product.title,
                                             price: product.discountedPrice || product.basePrice || product.mrp || 0,
                                             image: product.featured_image || product.gallery_images?.[0] || '',
-                                            isOnDemand: product.isOnDemand,
+                                            // Calculate dynamic IsOnDemand based on stock
+                                            isOnDemand: resolveIsOnDemand(product, item),
                                             gst_rate: product.gst_rate
                                         };
                                     });
@@ -187,7 +221,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         variationText: item.variationText,
                         modelId: item.modelId,
                         modelName: item.modelName,
-                        isOnDemand: (!item.requestId && item.product?.isOnDemand) || ((!item.requestId) && typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
+                        isOnDemand: resolveIsOnDemand(item.product, item),
                         gst_rate: item.product?.gst_rate,
                         requestId: item.requestId,
                         approvedLimit: item.approvedLimit,
@@ -242,7 +276,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         variationText: item.variationText,
                         modelId: item.modelId,
                         modelName: item.modelName,
-                        isOnDemand: (!item.requestId && item.product?.isOnDemand) || ((!item.requestId) && typeof item.product?.stock === 'number' && item.quantity > item.product.stock),
+                        isOnDemand: resolveIsOnDemand(item.product, item),
                         gst_rate: item.product?.gst_rate,
                         requestId: item.requestId,
                         approvedLimit: item.approvedLimit

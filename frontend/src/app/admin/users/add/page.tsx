@@ -5,21 +5,25 @@ import api from "../../../utils/api";
 import { useRouter } from "next/navigation";
 import { FiSave } from "react-icons/fi";
 import { useState } from "react";
+import Modal from "../../../components/Modal";
+import { useModal } from "../../../hooks/useModal";
 
 export default function AddUserPage() {
     const router = useRouter();
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [loading, setLoading] = useState(false);
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     const onSubmit = async (data: any) => {
         setLoading(true);
         try {
             await api.post('/users', data);
-            alert('User created successfully!');
-            router.push('/admin/users');
+            showSuccess('User created successfully!', 'Success', {
+                onConfirm: () => router.push('/admin/users')
+            });
         } catch (error: any) {
             console.error(error);
-            alert(error.response?.data?.message || 'Failed to create user');
+            showError(error.response?.data?.message || 'Failed to create user');
         } finally {
             setLoading(false);
         }
@@ -27,6 +31,17 @@ export default function AddUserPage() {
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <h1 className="page-title">Register New User</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} style={{ maxWidth: '600px' }}>

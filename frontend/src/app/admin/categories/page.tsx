@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Modal from '../../components/Modal';
 import FormModal from '../../components/FormModal';
+import api from '../../utils/api';
+import DataTable from '../../components/DataTable';
 import { useModal } from '../../hooks/useModal';
 import { FiPlus } from 'react-icons/fi';
 
@@ -36,7 +38,8 @@ export default function CategoryManager() {
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
     const { modalState, hideModal, showSuccess, showError, showModal } = useModal();
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    // Removed direct token usage as api utility handles it
+    // const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
     useEffect(() => {
         fetchCategories();
@@ -44,11 +47,9 @@ export default function CategoryManager() {
 
     const fetchCategories = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/categories', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await res.json();
-            setCategories(data);
+            // Changed to use api utility and admin route
+            const res = await api.get('/admin/categories');
+            setCategories(res.data);
             setLoading(false);
         } catch (error) {
             console.error(error);
@@ -104,31 +105,20 @@ export default function CategoryManager() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const url = editId
-                ? `http://localhost:5000/api/categories/${editId}`
-                : 'http://localhost:5000/api/categories';
-            const method = editId ? 'PUT' : 'POST';
-
-            const res = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(formData)
-            });
-
-            if (res.ok) {
-                resetForm();
-                fetchCategories();
-                showSuccess(editId ? 'Category updated successfully!' : 'Category created successfully!');
-                setIsFormModalOpen(false);
+            if (editId) {
+                await api.put(`/admin/categories/${editId}`, formData);
+                showSuccess('Category updated successfully!');
             } else {
-                const err = await res.json();
-                showError(err.message || 'Failed to create category');
+                await api.post('/admin/categories', formData);
+                showSuccess('Category created successfully!');
             }
-        } catch (error) {
-            showError('Failed to create category. Please try again.');
+
+            resetForm();
+            fetchCategories();
+            setIsFormModalOpen(false);
+        } catch (error: any) {
+            const msg = error.response?.data?.message || 'Operation failed';
+            showError(msg);
         }
     };
 
@@ -142,19 +132,12 @@ export default function CategoryManager() {
                 confirmText: 'Delete',
                 onConfirm: async () => {
                     try {
-                        const res = await fetch(`http://localhost:5000/api/categories/${id}`, {
-                            method: 'DELETE',
-                            headers: { 'Authorization': `Bearer ${token}` }
-                        });
-
-                        if (res.ok) {
-                            fetchCategories();
-                            showSuccess('Category deleted successfully!');
-                        } else {
-                            showError('Failed to delete category');
-                        }
-                    } catch (error) {
-                        showError('Failed to delete category. Please try again.');
+                        await api.delete(`/admin/categories/${id}`);
+                        fetchCategories();
+                        showSuccess('Category deleted successfully!');
+                    } catch (error: any) {
+                        const msg = error.response?.data?.message || 'Failed to delete category';
+                        showError(msg);
                     }
                 }
             }
@@ -186,50 +169,60 @@ export default function CategoryManager() {
                 </button>
             </div>
 
-            <div className="grid">
-                {loading ? (
-                    <p>Loading categories...</p>
-                ) : Array.isArray(categories) && categories.length > 0 ? (
-                    categories.map(cat => (
-                        <div key={cat._id} className="card" style={{ position: 'relative', overflow: 'hidden', padding: '1rem', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
-                            <div style={{
-                                height: '100px',
-                                background: cat.gradient || '#f1f5f9',
-                                color: 'white',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: '4px',
-                                marginBottom: '1rem',
-                                position: 'relative'
-                            }}>
-                                <img src={cat.imageUrl} alt={cat.name} style={{ height: '80%', objectFit: 'contain', zIndex: 1 }} />
-                            </div>
-                            <h4 style={{ margin: '0 0 0.5rem 0' }}>{cat.name}</h4>
-                            <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.5rem 0' }}>{cat.slug}</p>
-                            <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>{cat.productCount} Products</p>
-
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
-                                <button
-                                    onClick={() => handleEdit(cat)}
-                                    className="btn btn-outline"
-                                    style={{ flex: 1, borderColor: '#3b82f6', color: '#3b82f6', background: 'white', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', border: '1px solid #3b82f6' }}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(cat._id)}
-                                    className="btn btn-outline"
-                                    style={{ flex: 1, borderColor: 'red', color: 'red', background: 'white', padding: '0.5rem', borderRadius: '4px', cursor: 'pointer', border: '1px solid red' }}
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <p>No categories found.</p>
-                )}
+            <div style={{ marginTop: '2rem' }}>
+                <DataTable
+                    title="All Categories"
+                    data={categories}
+                    loading={loading}
+                    columns={[
+                        {
+                            header: 'Image',
+                            accessor: (item) => (
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '6px',
+                                    background: item.gradient || '#f1f5f9',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    overflow: 'hidden'
+                                }}>
+                                    {item.imageUrl && <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                </div>
+                            ),
+                            sortable: false
+                        },
+                        { header: 'Name', accessor: 'name', sortable: true, className: "font-semibold" },
+                        { header: 'Slug', accessor: 'slug', sortable: true, className: "text-muted" },
+                        {
+                            header: 'Products',
+                            accessor: (item) => <span className="badge" style={{ background: '#eff6ff', color: '#3b82f6' }}>{item.productCount}</span>,
+                            sortable: true
+                        },
+                        { header: 'Order', accessor: 'displayOrder', sortable: true },
+                        {
+                            header: 'In Nav',
+                            accessor: (item) => (
+                                <span style={{
+                                    color: item.showInNav ? '#16a34a' : '#94a3b8',
+                                    background: item.showInNav ? '#dcfce7' : '#f1f5f9',
+                                    padding: '0.2rem 0.6rem',
+                                    borderRadius: '9999px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600
+                                }}>
+                                    {item.showInNav ? 'Visible' : 'Hidden'}
+                                </span>
+                            ),
+                            sortable: true
+                        }
+                    ]}
+                    searchKeys={['name', 'slug']}
+                    onEdit={handleEdit}
+                    onDelete={(item) => handleDelete(item._id)}
+                    itemsPerPage={10}
+                />
             </div>
 
             <Modal

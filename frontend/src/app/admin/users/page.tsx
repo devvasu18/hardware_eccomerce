@@ -5,6 +5,8 @@ import api from "../../utils/api";
 import Link from "next/link";
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiEye } from "react-icons/fi";
 import Image from "next/image";
+import Modal from "../../components/Modal";
+import { useModal } from "../../hooks/useModal";
 
 interface User {
     _id: string;
@@ -23,6 +25,8 @@ export default function UserList() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
+
     useEffect(() => {
         fetchUsers();
     }, [page, searchTerm]);
@@ -40,17 +44,40 @@ export default function UserList() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure? This will delete the user but preserve their order history.')) return;
-        try {
-            await api.delete(`/users/${id}`);
-            fetchUsers();
-        } catch (error) {
-            alert('Failed to delete user');
-        }
+        showModal(
+            'Delete User',
+            'Are you sure? This will delete the user but preserve their order history.',
+            'warning',
+            {
+                showCancel: true,
+                confirmText: "Yes, Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        await api.delete(`/users/${id}`);
+                        fetchUsers();
+                        showSuccess("User deleted successfully");
+                    } catch (error) {
+                        showError('Failed to delete user');
+                    }
+                }
+            }
+        );
     };
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title">User Management</h1>

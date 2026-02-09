@@ -5,6 +5,8 @@ import api from "../../../../utils/api";
 import { useRouter } from "next/navigation";
 import { FiSave } from "react-icons/fi";
 import { useState, useEffect } from "react";
+import Modal from "../../../../components/Modal";
+import { useModal } from "../../../../hooks/useModal";
 
 export default function EditCouponPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -24,6 +26,7 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
     });
 
     const discountType = watch("discount_type");
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     useEffect(() => {
         params.then(p => {
@@ -76,11 +79,12 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
             await api.put(`/coupons/${couponId}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('Coupon updated!');
-            router.push('/admin/coupons');
+            showSuccess('Coupon updated!', 'Success', {
+                onConfirm: () => router.push('/admin/coupons')
+            });
         } catch (error: any) {
             console.error(error);
-            alert(error.response?.data?.message || 'Failed to update coupon');
+            showError(error.response?.data?.message || 'Failed to update coupon');
         }
     };
 
@@ -88,6 +92,17 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <h1 className="page-title">Edit Coupon</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} style={{ maxWidth: '800px' }}>

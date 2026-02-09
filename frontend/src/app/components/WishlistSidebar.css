@@ -342,3 +342,61 @@
         font-size: 0.9rem;
     }
 }
+
+/* ========================================
+   ?? RESPONSIVE DESIGN - MOBILE FIRST
+   ======================================== */
+
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
+    .wishlist-sidebar {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .wishlist-sidebar-header {
+        padding: 1rem;
+    }
+
+    .wishlist-sidebar-title {
+        font-size: 1.1rem;
+    }
+
+    .wishlist-sidebar-content {
+        padding: 1rem;
+    }
+
+    .wishlist-item {
+        gap: 0.75rem;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .wishlist-item-image {
+        width: 70px;
+        height: 70px;
+    }
+
+    .wishlist-item-name {
+        font-size: 0.9rem;
+    }
+}
+
+/* Large Mobile (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+    .wishlist-sidebar {
+        max-width: 90%;
+        width: 400px;
+    }
+}
+
+/* Touch improvements */
+@media (max-width: 1024px) {
+    .close-wishlist-btn,
+    .remove-wishlist-btn,
+    .add-to-cart-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+

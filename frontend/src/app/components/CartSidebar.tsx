@@ -47,7 +47,7 @@ const CartSidebar = () => {
                         </div>
                     ) : (
                         items.map((item) => (
-                            <div key={`${item.productId}-${item.size || 'def'}`} className="sidebar-cart-item">
+                            <div key={`${item.productId}-${item.modelId || 'nm'}-${item.variationId || item.size || 'def'}`} className="sidebar-cart-item">
                                 <div className="cart-item-image">
                                     {item.image ? (
                                         <img src={item.image} alt={item.name} />

@@ -243,3 +243,234 @@
 body.loading-active {
     overflow: hidden;
 }
+
+/* ========================================
+   📱 RESPONSIVE DESIGN - MOBILE FIRST
+   ======================================== */
+
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
+    .checkout-container {
+        padding: 1.5rem 0;
+    }
+
+    .checkout-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .back-btn {
+        font-size: 0.9rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .checkout-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .checkout-section {
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .form-group {
+        margin-bottom: 0.75rem;
+    }
+
+    .form-label {
+        font-size: 0.9rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .form-input {
+        padding: 0.875rem;
+        font-size: 1rem;
+        border-radius: 8px;
+    }
+
+    /* Address cards - stack content */
+    .address-card {
+        padding: 0.875rem;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .address-street {
+        font-size: 0.95rem;
+    }
+
+    .address-meta {
+        font-size: 0.85rem;
+    }
+
+    /* Address grid - single column */
+    .address-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    /* Summary - make sticky on mobile */
+    .summary-sticky {
+        position: sticky;
+        top: 70px;
+        background: white;
+        padding: 1rem;
+        border-radius: 12px;
+        box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .summary-header {
+        font-size: 0.85rem;
+    }
+
+    .summary-item {
+        font-size: 0.85rem;
+    }
+
+    .grand-total {
+        font-size: 1.1rem;
+        padding-top: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .submit-btn {
+        padding: 1rem;
+        font-size: 1rem;
+        border-radius: 12px;
+        min-height: 50px;
+    }
+
+    .terms-text {
+        font-size: 0.75rem;
+        margin-top: 0.75rem;
+    }
+
+    .request-tag {
+        font-size: 0.7rem;
+    }
+}
+
+/* Large Mobile (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+    .checkout-container {
+        padding: 2rem 0;
+    }
+
+    .checkout-grid {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+    }
+
+    .form-input {
+        padding: 0.875rem;
+        font-size: 0.95rem;
+    }
+
+    .address-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .summary-sticky {
+        position: sticky;
+        top: 75px;
+    }
+
+    .submit-btn {
+        font-size: 1.05rem;
+    }
+}
+
+/* Tablets (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .checkout-container {
+        padding: 3rem 0;
+    }
+
+    .checkout-grid {
+        grid-template-columns: 1fr;
+        gap: 2.5rem;
+    }
+
+    .address-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .summary-sticky {
+        position: sticky;
+        top: 80px;
+    }
+}
+
+/* Small Laptops (1025px - 1366px) */
+@media (min-width: 1025px) and (max-width: 1366px) {
+    .checkout-grid {
+        grid-template-columns: 1.8fr 1fr;
+        gap: 2.5rem;
+    }
+}
+
+/* Touch-friendly improvements */
+@media (max-width: 1024px) {
+
+    /* Larger tap targets */
+    .form-input,
+    .save-address-btn,
+    .submit-btn,
+    .address-card {
+        min-height: 44px;
+    }
+
+    .add-new-address-label {
+        padding: 0.75rem 0;
+        font-size: 0.95rem;
+    }
+
+    .save-address-btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.95rem;
+    }
+
+    /* Better spacing */
+    .address-list {
+        gap: 1rem;
+    }
+
+    /* Loading overlay - better on mobile */
+    .loading-overlay {
+        backdrop-filter: blur(8px);
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* Landscape mode for mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .checkout-container {
+        padding: 1rem 0;
+    }
+
+    .summary-sticky {
+        position: relative;
+        top: 0;
+    }
+}
+
+/* Prevent horizontal scroll */
+@media (max-width: 1024px) {
+
+    .checkout-container,
+    .checkout-grid,
+    .address-grid,
+    .form-group {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+}

@@ -5,6 +5,9 @@ import { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { FiEdit2, FiTrash2, FiPlus, FiX, FiUploadCloud } from "react-icons/fi";
 import Image from "next/image";
+import DataTable from "../../../components/DataTable";
+import Modal from "../../../components/Modal";
+import { useModal } from "../../../hooks/useModal";
 
 interface Brand {
     _id: string;
@@ -22,7 +25,8 @@ export default function BrandMaster() {
     const { register, handleSubmit, reset, setValue, watch } = useForm<{ name: string; slug: string }>();
     const name = watch('name');
 
-    const [showModal, setShowModal] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const { modalState, showModal: showConfirmModal, hideModal: hideConfirmModal, showSuccess, showError } = useModal();
 
     useEffect(() => {
         fetchBrands();
@@ -49,7 +53,7 @@ export default function BrandMaster() {
         setEditingId(null);
         setLogo(null);
         reset({ name: '', slug: '' });
-        setShowModal(true);
+        setIsFormOpen(true);
     };
 
     const handleEdit = (brand: Brand) => {
@@ -57,7 +61,7 @@ export default function BrandMaster() {
         setLogo(null);
         setValue('name', brand.name);
         setValue('slug', brand.slug);
-        setShowModal(true);
+        setIsFormOpen(true);
     };
 
     const onSubmit = async (data: { name: string; slug: string }) => {
@@ -76,27 +80,50 @@ export default function BrandMaster() {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
             }
-            setShowModal(false);
+            setIsFormOpen(false);
             reset();
             setLogo(null);
             fetchBrands();
         } catch (error) {
-            alert('Operation failed');
+            showError('Operation failed');
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this Brand?')) return;
-        try {
-            await api.delete(`/admin/brands/${id}`);
-            fetchBrands();
-        } catch (error) {
-            alert('Delete failed');
-        }
+        showConfirmModal(
+            'Delete Brand',
+            'Delete this Brand?',
+            'warning',
+            {
+                showCancel: true,
+                confirmText: "Yes, Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        await api.delete(`/admin/brands/${id}`);
+                        fetchBrands();
+                        showSuccess("Brand deleted successfully");
+                    } catch (error) {
+                        showError('Delete failed');
+                    }
+                }
+            }
+        );
     };
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideConfirmModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
                     <h1 className="page-title">Brand Management</h1>
@@ -107,57 +134,44 @@ export default function BrandMaster() {
                 </button>
             </div>
 
-            <div className="table-container">
-                <div className="table-header">All Brands</div>
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>Logo</th>
-                            <th>Brand Name</th>
-                            <th>Slug</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {brands.map(brand => (
-                            <tr key={brand._id}>
-                                <td style={{ width: '80px' }}>
-                                    <div className="img-preview">
-                                        {brand.logo_image ? (
-                                            <Image
-                                                src={brand.logo_image.startsWith('http') ? brand.logo_image : `/${brand.logo_image}`}
-                                                alt={brand.name}
-                                                fill
-                                                unoptimized
-                                            />
-                                        ) : (
-                                            <div style={{ padding: '10px', textAlign: 'center', color: '#ccc', fontWeight: 800 }}>{brand.name[0]}</div>
-                                        )}
-                                    </div>
-                                </td>
-                                <td style={{ fontWeight: 600 }}>{brand.name}</td>
-                                <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{brand.slug}</td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <button onClick={() => handleEdit(brand)} className="btn-icon" style={{ color: 'var(--primary)', marginRight: '1rem' }}>
-                                        <FiEdit2 />
-                                    </button>
-                                    <button onClick={() => handleDelete(brand._id)} className="btn-icon" style={{ color: 'var(--danger)' }}>
-                                        <FiTrash2 />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                        {brands.length === 0 && !loading && (
-                            <tr>
-                                <td colSpan={4} style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>No brands found.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Loading...</div>
+            ) : (
+                <DataTable
+                    title="All Brands"
+                    data={brands}
+                    columns={[
+                        {
+                            header: 'Logo',
+                            accessor: (item) => (
+                                <div className="img-preview" style={{ width: '40px', height: '40px', position: 'relative', overflow: 'hidden', borderRadius: '4px', border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    {item.logo_image ? (
+                                        <Image
+                                            src={item.logo_image.startsWith('http') ? item.logo_image : `/${item.logo_image}`}
+                                            alt={item.name}
+                                            fill
+                                            unoptimized
+                                            style={{ objectFit: 'contain' }}
+                                        />
+                                    ) : (
+                                        <div style={{ color: '#ccc', fontWeight: 800 }}>{item.name[0]}</div>
+                                    )}
+                                </div>
+                            ),
+                            sortable: false
+                        },
+                        { header: 'Brand Name', accessor: 'name', sortable: true, className: "font-semibold" },
+                        { header: 'Slug', accessor: 'slug', sortable: true, className: "text-muted font-mono" }
+                    ]}
+                    searchKeys={['name', 'slug']}
+                    onEdit={handleEdit}
+                    onDelete={(item) => handleDelete(item._id)}
+                    itemsPerPage={10}
+                />
+            )}
 
             {/* Edit/Add Modal */}
-            {showModal && (
+            {isFormOpen && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                     backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
@@ -166,7 +180,7 @@ export default function BrandMaster() {
                     <div className="card" style={{ width: '100%', maxWidth: '500px', margin: '20px' }}>
                         <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span>{editingId ? 'Edit Brand' : 'Add New Brand'}</span>
-                            <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>
+                            <button onClick={() => setIsFormOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>
                                 <FiX />
                             </button>
                         </div>
@@ -210,7 +224,7 @@ export default function BrandMaster() {
                                 </div>
                             </div>
                             <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                                <button type="button" onClick={() => setShowModal(false)} className="btn" style={{ background: '#f1f5f9' }}>Cancel</button>
+                                <button type="button" onClick={() => setIsFormOpen(false)} className="btn" style={{ background: '#f1f5f9' }}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">
                                     {editingId ? 'Update Brand' : 'Create Brand'}
                                 </button>

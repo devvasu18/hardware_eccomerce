@@ -10,6 +10,8 @@ import { FiSave, FiUploadCloud, FiX, FiArrowLeft, FiPlus, FiTrash2, FiBox, FiIma
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import FormModal from "../../components/FormModal";
+import Modal from "../../components/Modal";
+import { useModal } from "../../hooks/useModal";
 
 // --- Nested Model Component ---
 function ModelVariationManager({ modelIndex, control, register, errors, watch, VARIATION_SUGGESTIONS }: any) {
@@ -257,6 +259,7 @@ interface ProductImage {
 
 export default function ProductForm({ productId }: ProductFormProps) {
     const router = useRouter();
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     // New Image System State
     const [productImages, setProductImages] = useState<ProductImage[]>([]);
@@ -477,7 +480,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
     // Image Handler Functions
     const handleAddImageSlot = () => {
         if (productImages.length >= 5) {
-            alert("Maximum 5 main images allowed.");
+            showError("Maximum 5 main images allowed.");
             return;
         }
         setProductImages([...productImages, { id: `new-${Date.now()}`, altText: '', isMain: productImages.length === 0 }]);
@@ -513,12 +516,12 @@ export default function ProductForm({ productId }: ProductFormProps) {
         // --- Custom Image Validation ---
         const hasMain = productImages.some(img => img.isMain);
         if (productImages.length === 0) {
-            alert("At least one Product Image is required!");
+            showError("At least one Product Image is required!");
             setLoading(false);
             return;
         }
         if (!hasMain) {
-            alert("Please select one image as Main Image.");
+            showError("Please select one image as Main Image.");
             setLoading(false);
             return;
         }
@@ -564,7 +567,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
         }
 
         if (hasImageError) {
-            alert("Please upload images for all models and variations (marked in red).");
+            showError("Please upload images for all models and variations (marked in red).");
             setLoading(false);
             return;
         }
@@ -604,7 +607,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                 // Manual validation for standard mode since Zod is now optional for flexibility
                 setLoading(false);
                 setError("mrp", { type: "manual", message: "MRP is required" });
-                alert("Please fix the errors in the form (MRP is missing)");
+                showError("Please fix the errors in the form (MRP is missing)");
                 return;
             } else {
                 // For standard mode, just ensure stock matches opening_stock
@@ -695,12 +698,12 @@ export default function ProductForm({ productId }: ProductFormProps) {
                 await api.put(`/admin/products/${productId}`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                alert('Product Updated Successfully!');
+                showSuccess('Product Updated Successfully!');
             } else {
                 await api.post('/admin/products', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                alert('Product Created Successfully!');
+                showSuccess('Product Created Successfully!');
             }
             router.push('/admin/products');
         } catch (err: any) {
@@ -722,7 +725,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                 msg += ": " + details;
             }
 
-            alert('Error saving product: ' + msg);
+            showError('Error saving product: ' + msg);
         } finally {
             setLoading(false);
         }
@@ -771,7 +774,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                 <button
                     onClick={handleSubmit(onSubmit, (errors) => {
                         console.error(errors);
-                        alert("Please fill in all required fields marked in red.");
+                        showError("Please fill in all required fields marked in red.");
                     })}
                     disabled={loading}
                     className="btn btn-primary"
@@ -1227,7 +1230,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                         <input
                                             type="checkbox"
                                             value={o._id}
-                                            checked={watch('offers')?.includes(o._id)}
+                                            checked={watch('offers')?.includes(o._id) || false}
                                             onChange={(e) => {
                                                 const currentOffers = watch('offers') || [];
                                                 if (e.target.checked) {
@@ -1402,7 +1405,20 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         </button>
                     </div>
                 </div>
+
             </FormModal>
+
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
         </div>
     );
 }

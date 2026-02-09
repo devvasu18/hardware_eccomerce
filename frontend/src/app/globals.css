@@ -4,6 +4,7 @@
    ======================================== */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+@import url('./responsive-utilities.css');
 
 :root {
   /* 🎨 BRAND COLORS - INDUSTRIAL ORANGE */
@@ -79,6 +80,18 @@
   --warning-light: #fef3c7;
   --info: #3b82f6;
   --info-light: #dbeafe;
+
+  /* 📱 RESPONSIVE BREAKPOINTS */
+  --breakpoint-xs: 320px;
+  /* Small mobile */
+  --breakpoint-sm: 481px;
+  /* Large mobile */
+  --breakpoint-md: 768px;
+  /* Tablets */
+  --breakpoint-lg: 1025px;
+  /* Small laptops */
+  --breakpoint-xl: 1367px;
+  /* Large desktops */
 }
 
 /* ========================================
@@ -188,7 +201,26 @@ button {
 .container {
   max-width: 1280px;
   margin: 0 auto;
-  padding: var(--space-xl);
+  padding: 1rem;
+  width: 100%;
+}
+
+@media (min-width: 481px) {
+  .container {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 2rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  .container {
+    padding: var(--space-xl);
+  }
 }
 
 .page-header {
@@ -444,7 +476,48 @@ button {
   height: 100%;
   object-fit: contain;
   padding: 1.5rem;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, opacity 0.5s ease;
+  animation: fadeInImage 0.5s ease-in-out;
+}
+
+@keyframes fadeInImage {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* Carousel Indicators */
+.carousel-indicators {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 8;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.carousel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #d1d5db;
+  transition: all 0.3s ease;
+}
+
+.carousel-dot.active {
+  background: var(--primary);
+  width: 20px;
+  border-radius: 10px;
 }
 
 .product-card:hover .product-card-image-container img {

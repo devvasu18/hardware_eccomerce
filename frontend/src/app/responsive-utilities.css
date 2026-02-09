@@ -1,0 +1,477 @@
+/* ========================================
+   📱 GLOBAL RESPONSIVE UTILITIES
+   Mobile-First Design System
+   ======================================== */
+
+/* ========================================
+   🎴 RESPONSIVE PRODUCT GRID
+   ======================================== */
+
+/* Mobile First - 1 column */
+.products-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    width: 100%;
+}
+
+/* Large Mobile - 2 columns */
+@media (min-width: 481px) {
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+}
+
+/* Tablets - 2-3 columns */
+@media (min-width: 768px) {
+    .products-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+/* Small Laptops - 3 columns */
+@media (min-width: 1025px) {
+    .products-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-xl);
+    }
+}
+
+/* Large Desktops - 4 columns */
+@media (min-width: 1367px) {
+    .products-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: var(--space-xl);
+    }
+}
+
+/* ========================================
+   📝 RESPONSIVE FORMS
+   ======================================== */
+
+/* Mobile First - Single column */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+/* Tablets and up - 2 columns */
+@media (min-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-lg);
+    }
+}
+
+/* Touch-friendly form inputs */
+@media (max-width: 1024px) {
+
+    .form-input,
+    .form-select,
+    .form-textarea,
+    button,
+    .btn {
+        min-height: 44px;
+        font-size: 1rem;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+        padding: 0.875rem 1rem;
+    }
+}
+
+/* ========================================
+   🎯 RESPONSIVE BUTTONS
+   ======================================== */
+
+/* Stack buttons on mobile */
+@media (max-width: 480px) {
+
+    .button-group,
+    .hero-buttons,
+    .action-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .button-group>*,
+    .hero-buttons>*,
+    .action-buttons>* {
+        width: 100%;
+    }
+}
+
+/* ========================================
+   📊 RESPONSIVE TABLES
+   ======================================== */
+
+/* Mobile & Tablet - Scrollable */
+@media (max-width: 1024px) {
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .data-table {
+        min-width: 800px;
+        /* Force min width to trigger scroll */
+        white-space: nowrap;
+    }
+
+    /* Optional: Sticky first column for better context */
+    .data-table th:first-child,
+    .data-table td:first-child {
+        position: sticky;
+        left: 0;
+        background: white;
+        z-index: 1;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    }
+}
+
+/* ========================================
+   🎨 RESPONSIVE CARDS
+   ======================================== */
+
+@media (max-width: 480px) {
+    .card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 12px;
+    }
+
+    .card-header {
+        font-size: 1.1rem;
+        margin-bottom: 0.75rem;
+    }
+}
+
+/* ========================================
+   🖼️ RESPONSIVE IMAGES
+   ======================================== */
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.responsive-image {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+/* Prevent image distortion */
+.product-image,
+.gallery-image,
+.banner-image {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+}
+
+/* ========================================
+   📱 RESPONSIVE SIDEBARS
+   ======================================== */
+
+/* Cart and Wishlist Sidebars */
+@media (max-width: 480px) {
+
+    .cart-sidebar,
+    .wishlist-sidebar {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+
+    .cart-sidebar,
+    .wishlist-sidebar {
+        width: 90% !important;
+        max-width: 400px !important;
+    }
+}
+
+/* ========================================
+   🎭 RESPONSIVE MODALS
+   ======================================== */
+
+@media (max-width: 480px) {
+    .modal-content {
+        width: 95%;
+        max-width: 95%;
+        margin: 1rem;
+        padding: 1.25rem;
+        border-radius: 12px;
+    }
+
+    .modal-header {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+    .modal-content {
+        width: 90%;
+        max-width: 500px;
+        padding: 1.5rem;
+    }
+}
+
+/* ========================================
+   📏 RESPONSIVE SPACING
+   ======================================== */
+
+/* Reduce spacing on mobile */
+@media (max-width: 480px) {
+    section {
+        padding: 2rem 0;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .page-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .page-title {
+        font-size: 1.75rem;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+    section {
+        padding: 2.5rem 0;
+    }
+
+    .section-title {
+        font-size: 1.75rem;
+        margin-bottom: 1.25rem;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+    section {
+        padding: 3rem 0;
+    }
+
+    .section-title {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* ========================================
+   🎯 RESPONSIVE TYPOGRAPHY
+   ======================================== */
+
+/* Adjust font sizes for mobile */
+@media (max-width: 480px) {
+    html {
+        font-size: 14px;
+    }
+
+    h1 {
+        font-size: 1.75rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    h3 {
+        font-size: 1.25rem;
+    }
+
+    h4 {
+        font-size: 1.1rem;
+    }
+
+    p {
+        font-size: 0.95rem;
+    }
+}
+
+@media (min-width: 481px) and (max-width: 767px) {
+    html {
+        font-size: 15px;
+    }
+}
+
+/* ========================================
+   🔧 UTILITY CLASSES
+   ======================================== */
+
+/* Hide on mobile */
+.hide-mobile {
+    display: none !important;
+}
+
+@media (min-width: 768px) {
+    .hide-mobile {
+        display: block !important;
+    }
+}
+
+/* Show only on mobile */
+.show-mobile {
+    display: block !important;
+}
+
+@media (min-width: 768px) {
+    .show-mobile {
+        display: none !important;
+    }
+}
+
+/* Hide on tablet */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .hide-tablet {
+        display: none !important;
+    }
+}
+
+/* Show only on tablet */
+.show-tablet {
+    display: none !important;
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+    .show-tablet {
+        display: block !important;
+    }
+}
+
+/* Hide on desktop */
+@media (min-width: 1025px) {
+    .hide-desktop {
+        display: none !important;
+    }
+}
+
+/* ========================================
+   🚫 PREVENT HORIZONTAL SCROLL
+   ======================================== */
+
+html,
+body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* ========================================
+   ✋ TOUCH-FRIENDLY INTERACTIONS
+   ======================================== */
+
+@media (max-width: 1024px) {
+
+    /* Larger tap targets */
+    a,
+    button,
+    input[type="checkbox"],
+    input[type="radio"],
+    select {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Better touch scrolling */
+    .scrollable {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Prevent text selection on tap */
+    .no-select {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    /* Remove tap highlight */
+    * {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+/* ========================================
+   🌐 LANDSCAPE MODE ADJUSTMENTS
+   ======================================== */
+
+@media (max-height: 500px) and (orientation: landscape) {
+
+    .hero-slider,
+    .banner-section {
+        height: 80vh;
+    }
+
+    .modal-content {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    header {
+        position: sticky;
+        top: 0;
+    }
+}
+
+/* ========================================
+   📐 ASPECT RATIO UTILITIES
+   ======================================== */
+
+.aspect-square {
+    aspect-ratio: 1 / 1;
+}
+
+.aspect-video {
+    aspect-ratio: 16 / 9;
+}
+
+.aspect-portrait {
+    aspect-ratio: 3 / 4;
+}
+
+/* ========================================
+   🎨 RESPONSIVE GRID UTILITIES
+   ======================================== */
+
+.grid-auto-fit {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+@media (max-width: 480px) {
+    .grid-auto-fit {
+        grid-template-columns: 1fr;
+    }
+}
+
+.grid-auto-fill {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+@media (max-width: 480px) {
+    .grid-auto-fill {
+        grid-template-columns: 1fr;
+    }
+}

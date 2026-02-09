@@ -6,6 +6,9 @@ import api from "../../../utils/api";
 import { FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
 import Image from "next/image";
 import FormModal from "../../../components/FormModal";
+import DataTable from "../../../components/DataTable";
+import Modal from "../../../components/Modal";
+import { useModal } from "../../../hooks/useModal";
 
 interface Category {
     _id: string;
@@ -28,6 +31,8 @@ export default function SubCategoryMaster() {
     const [image, setImage] = useState<File | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<{ name: string; slug: string; category_id: string }>();
     const name = watch('name');
@@ -75,19 +80,19 @@ export default function SubCategoryMaster() {
                 await api.put(`/admin/sub-categories/${editingId}`, formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                alert('Updated successfully');
+                showSuccess('Updated successfully');
             } else {
                 await api.post('/admin/sub-categories', formData, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                alert('Created successfully');
+                showSuccess('Created successfully');
             }
 
             handleCloseModal();
             fetchSubCategories();
         } catch (error) {
             console.error(error);
-            alert('Operation failed');
+            showError('Operation failed');
         }
     };
 
@@ -119,17 +124,40 @@ export default function SubCategoryMaster() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this Sub-Category?')) return;
-        try {
-            await api.delete(`/admin/sub-categories/${id}`);
-            fetchSubCategories();
-        } catch (error) {
-            alert('Delete failed');
-        }
+        showModal(
+            'Delete Sub-Category',
+            'Delete this Sub-Category?',
+            'warning',
+            {
+                showCancel: true,
+                confirmText: "Yes, Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        await api.delete(`/admin/sub-categories/${id}`);
+                        fetchSubCategories();
+                        showSuccess("Deleted successfully");
+                    } catch (error) {
+                        showError('Delete failed');
+                    }
+                }
+            }
+        );
     };
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h1 className="page-title" style={{ margin: 0 }}>Sub-Category Manager</h1>
                 <button onClick={handleAdd} className="btn btn-primary">
@@ -137,55 +165,57 @@ export default function SubCategoryMaster() {
                 </button>
             </div>
 
-            <div className="table-container">
-                <div className="table-header">Sub-Category List</div>
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th style={{ width: '80px' }}>Image</th>
-                            <th>Name</th>
-                            <th>Parent Category</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {subCategories.map(sc => (
-                            <tr key={sc._id}>
-                                <td>
-                                    <div className="img-preview">
-                                        {sc.image ? (
-                                            <Image
-                                                src={sc.image.startsWith('http') ? sc.image : `/api/${sc.image}`}
-                                                alt={sc.name}
-                                                fill
-                                            />
-                                        ) : (
-                                            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ccc' }}>N/A</span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div style={{ fontWeight: 600 }}>{sc.name}</div>
-                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{sc.slug}</div>
-                                </td>
-                                <td>
-                                    <span className="badge badge-warning" style={{ background: '#EFF6FF', color: '#1D4ED8' }}>
-                                        {sc.category_id?.name || 'Unknown'}
-                                    </span>
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <button onClick={() => handleEdit(sc)} className="btn-icon" style={{ color: 'var(--primary)', marginRight: '0.5rem' }}>
-                                        <FiEdit2 />
-                                    </button>
-                                    <button onClick={() => handleDelete(sc._id)} className="btn-icon" style={{ color: 'var(--danger)' }}>
-                                        <FiTrash2 />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Loading...</div>
+            ) : (
+                <DataTable
+                    title="Sub-Category List"
+                    data={subCategories}
+                    columns={[
+                        {
+                            header: 'Image',
+                            accessor: (item) => (
+                                <div className="img-preview" style={{ width: '50px', height: '50px', position: 'relative', overflow: 'hidden', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                                    {item.image ? (
+                                        <Image
+                                            src={item.image.startsWith('http') ? item.image : `/api/${item.image}`}
+                                            alt={item.name}
+                                            fill
+                                            style={{ objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ccc', fontSize: '0.75rem' }}>N/A</span>
+                                    )}
+                                </div>
+                            ),
+                            sortable: false
+                        },
+                        {
+                            header: 'Name',
+                            accessor: (item) => (
+                                <div>
+                                    <div style={{ fontWeight: 600 }}>{item.name}</div>
+                                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{item.slug}</div>
+                                </div>
+                            ),
+                            sortable: true
+                        },
+                        {
+                            header: 'Parent Category',
+                            accessor: (item) => (
+                                <span className="badge badge-warning" style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                    {item.category_id?.name || 'Unknown'}
+                                </span>
+                            ),
+                            sortable: true
+                        }
+                    ]}
+                    searchKeys={['name', 'slug']}
+                    onEdit={handleEdit}
+                    onDelete={(item) => handleDelete(item._id)}
+                    itemsPerPage={10}
+                />
+            )}
 
             <FormModal
                 isOpen={isModalOpen}

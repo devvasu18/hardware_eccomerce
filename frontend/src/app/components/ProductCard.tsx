@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import ProductImage from './ProductImage';
@@ -34,6 +34,29 @@ export default function ProductCard({ product }: { product: Product }) {
     const { user } = useAuth();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+    // Extract all available images
+    const allImages = product.gallery_images && product.gallery_images.length > 0
+        ? product.gallery_images
+        : product.images && product.images.length > 0
+            ? product.images
+            : product.featured_image
+                ? [product.featured_image]
+                : [];
+
+    // Auto-slide images every 2 seconds
+    useEffect(() => {
+        if (allImages.length <= 1) return; // Don't slide if only one image
+
+        const interval = setInterval(() => {
+            setCurrentImageIndex((prevIndex) =>
+                prevIndex === allImages.length - 1 ? 0 : prevIndex + 1
+            );
+        }, 2000); // 2 seconds
+
+        return () => clearInterval(interval); // Cleanup on unmount
+    }, [allImages.length]);
 
     // --- Improved Pricing Logic ---
     const allPrices: number[] = [];
@@ -144,15 +167,27 @@ export default function ProductCard({ product }: { product: Product }) {
     return (
         <Link href={`/products/${product._id}`} className="product-card">
             <div className="product-card-image-container">
-                {(product.featured_image || (product.gallery_images && product.gallery_images.length > 0) || (product.images && product.images.length > 0)) ? (
+                {allImages.length > 0 ? (
                     <ProductImage
-                        src={product.featured_image || product.gallery_images?.[0] || product.images?.[0] || ''}
+                        src={allImages[currentImageIndex]}
                         alt={product.title || product.name || 'Product'}
                         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     />
                 ) : (
                     <div className="no-image-placeholder">
                         No Image
+                    </div>
+                )}
+
+                {/* Carousel Indicators */}
+                {allImages.length > 1 && (
+                    <div className="carousel-indicators">
+                        {allImages.map((_, index) => (
+                            <div
+                                key={index}
+                                className={`carousel-dot ${index === currentImageIndex ? 'active' : ''}`}
+                            />
+                        ))}
                     </div>
                 )}
 

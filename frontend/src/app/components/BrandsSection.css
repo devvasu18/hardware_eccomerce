@@ -107,24 +107,21 @@
     box-shadow: 0 6px 20px rgba(243, 112, 33, 0.3);
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-    .brands-grid-wrapper {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 1rem;
+/* ========================================
+   📱 RESPONSIVE DESIGN - MOBILE FIRST
+   ======================================== */
+
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
+    .brands-section {
+        padding: 2rem 0;
     }
 
-    .brand-hexagon {
-        min-height: 120px;
-        padding: 1.5rem 1rem;
+    .brands-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
     }
 
-    .brand-logo-wrapper {
-        height: 70px;
-    }
-}
-
-@media (max-width: 600px) {
     .brands-grid-wrapper {
         grid-template-columns: repeat(2, 1fr);
         gap: 0.75rem;
@@ -132,10 +129,51 @@
 
     .brand-hexagon {
         min-height: 100px;
-        padding: 1.25rem 0.875rem;
+        padding: 1rem;
+    }
+
+    .brand-logo-wrapper {
+        height: 50px;
+    }
+
+    .brands-view-all-btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.85rem;
+    }
+}
+
+/* Large Mobile (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+    .brands-section {
+        padding: 2.5rem 0;
+    }
+
+    .brands-grid-wrapper {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+    }
+
+    .brand-hexagon {
+        min-height: 120px;
+        padding: 1.25rem;
     }
 
     .brand-logo-wrapper {
         height: 60px;
+    }
+}
+
+/* Tablets (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .brands-grid-wrapper {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.25rem;
+    }
+}
+
+/* Desktop (1025px+) */
+@media (min-width: 1025px) {
+    .brands-grid-wrapper {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     }
 }

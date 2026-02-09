@@ -123,7 +123,7 @@ export default async function ProductsPage({ searchParams }: Props) {
                                         <ProductCard key={item._id} product={{
                                             ...item,
                                             category: item.category
-                                                ? (typeof item.category === 'object' ? item.category.name : (item.category.length > 10 ? 'Auto Part' : item.category))
+                                                ? (typeof item.category === 'object' && item.category !== null ? item.category.name : (String(item.category).length > 10 ? 'Auto Part' : item.category))
                                                 : 'Uncategorized'
                                         }} />
                                     ))}

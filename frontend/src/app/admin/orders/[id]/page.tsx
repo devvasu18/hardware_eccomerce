@@ -6,6 +6,8 @@ import api from "../../../utils/api";
 import Image from "next/image";
 import { FiArrowLeft, FiPrinter, FiCheckCircle, FiXCircle, FiTruck, FiInfo, FiUploadCloud, FiPackage, FiMapPin, FiClock, FiCalendar, FiEye } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import Modal from "../../../components/Modal";
+import { useModal } from "../../../hooks/useModal";
 
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
@@ -16,6 +18,8 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     // Action State
     const [processing, setProcessing] = useState(false);
     const [cancelReason, setCancelReason] = useState("");
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     // Bus Modal State
     const [showBusModal, setShowBusModal] = useState(false);
@@ -56,30 +60,54 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     }
 
     const updateStatus = async (newStatus: string, extraData?: any) => {
-        if (!extraData && !confirm(`Update status to ${newStatus}?`)) return;
-        setProcessing(true);
-        try {
-            let payload = { status: newStatus, ...extraData };
+        const performUpdate = async () => {
+            setProcessing(true);
+            try {
+                let payload = { status: newStatus, ...extraData };
 
-            if (extraData instanceof FormData) {
-                extraData.append('status', newStatus);
-                await api.put(`/orders/${id}/status`, extraData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-            } else {
-                await api.put(`/orders/${id}/status`, payload);
+                if (extraData instanceof FormData) {
+                    extraData.append('status', newStatus);
+                    await api.put(`/orders/${id}/status`, extraData, {
+                        headers: { 'Content-Type': 'multipart/form-data' }
+                    });
+                } else {
+                    await api.put(`/orders/${id}/status`, payload);
+                }
+
+                fetchOrder(id!);
+                showSuccess('Status updated successfully');
+                setShowBusModal(false);
+                setBusPhotoPreview(null);
+                reset();
+            } catch (error) {
+                showError('Failed to update status');
+                console.error(error);
+            } finally {
+                setProcessing(false);
             }
+        };
 
-            fetchOrder(id!);
-            alert('Status updated successfully');
-            setShowBusModal(false);
-            setBusPhotoPreview(null);
-            reset();
-        } catch (error) {
-            alert('Failed to update status');
-            console.error(error);
-        } finally {
-            setProcessing(false);
+        if (extraData) {
+            // For Bus Assignment, Modal is already shown (the form), so we don't need another confirmation modal on top of "Confirm Assignment" button click?
+            // But updateStatus is called by onBusSubmit.
+            // Usually submit button implies confirmation. So maybe no modal needed if extraData follows.
+            // The old code: if (!extraData && !confirm(...)) return;
+            // So if extraData WAS present, it DID NOT confirm.
+            // So here we just run it.
+            await performUpdate();
+        } else {
+            // Confirmation for quick actions
+            showModal(
+                'Update Status',
+                `Update status to ${newStatus}?`,
+                'info',
+                {
+                    showCancel: true,
+                    confirmText: "Yes, Update",
+                    cancelText: "Cancel",
+                    onConfirm: performUpdate
+                }
+            );
         }
     };
 
@@ -95,12 +123,12 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
             const now = new Date();
 
             if (arrivalDateTime <= now) {
-                alert("Expected Arrival time cannot be in the past.");
+                showError("Expected Arrival time cannot be in the past.");
                 return;
             }
 
             if (arrivalDateTime <= departureDateTime) {
-                alert("Expected Arrival time must be after the Departure time.");
+                showError("Expected Arrival time must be after the Departure time.");
                 return;
             }
         }
@@ -125,19 +153,31 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
     };
 
     const handleCancel = async () => {
-        if (!cancelReason) return alert('Please provide a reason');
-        if (!confirm('Are you surely wanting to Cancel this order?')) return;
-        setProcessing(true);
-        try {
-            await api.post(`/orders/${id}/cancel`, { reason: cancelReason });
-            fetchOrder(id!);
-            alert('Order Cancelled');
-            setCancelReason("");
-        } catch (error) {
-            alert('Failed to cancel order');
-        } finally {
-            setProcessing(false);
-        }
+        if (!cancelReason) return showError('Please provide a reason');
+
+        showModal(
+            'Cancel Order',
+            'Are you surely wanting to Cancel this order?',
+            'warning',
+            {
+                showCancel: true,
+                confirmText: "Yes, Cancel Order",
+                cancelText: "No, Keep Order",
+                onConfirm: async () => {
+                    setProcessing(true);
+                    try {
+                        await api.post(`/orders/${id}/cancel`, { reason: cancelReason });
+                        fetchOrder(id!);
+                        showSuccess('Order Cancelled');
+                        setCancelReason("");
+                    } catch (error) {
+                        showError('Failed to cancel order');
+                    } finally {
+                        setProcessing(false);
+                    }
+                }
+            }
+        );
     };
 
     // --- Components ---
@@ -193,6 +233,17 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
 
     return (
         <div className="container" style={{ paddingBottom: '4rem', position: 'relative' }}>
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
 
             {/* --- Bus Details Modal (Fixed Overlay) --- */}
             {showBusModal && (
@@ -494,10 +545,26 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                         <tr key={item._id}>
                                             <td>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                    <div style={{ width: '40px', height: '40px', position: 'relative', border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
-                                                        {item.product?.image && <Image src={`http://localhost:5000/${item.product.image}`} fill style={{ objectFit: 'contain' }} alt="prod" />}
+                                                    <div style={{ width: '40px', height: '40px', position: 'relative', border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden', flexShrink: 0 }}>
+                                                        {(item.product?.featured_image || item.product?.gallery_images?.[0]) && (
+                                                            <Image
+                                                                src={item.product.featured_image || item.product.gallery_images[0]}
+                                                                fill
+                                                                style={{ objectFit: 'contain' }}
+                                                                alt="prod"
+                                                            />
+                                                        )}
                                                     </div>
-                                                    <span style={{ fontWeight: 500 }}>{item.product?.title || 'Unknown Product'}</span>
+                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                        <span style={{ fontWeight: 500 }}>{item.product?.title || 'Unknown Product'}</span>
+                                                        {(item.modelName || item.variationText) && (
+                                                            <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
+                                                                {item.modelName ? `${item.modelName}` : ''}
+                                                                {item.modelName && item.variationText ? ' - ' : ''}
+                                                                {item.variationText}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td style={{ textAlign: 'right' }}>₹{item.priceAtBooking}</td>

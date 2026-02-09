@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import api from "../../utils/api";
 import { FiRefreshCw, FiCheckCircle, FiXCircle, FiMoreHorizontal, FiDollarSign, FiFilter, FiAlertCircle } from "react-icons/fi";
+import Modal from "../../components/Modal";
+import { useModal } from "../../hooks/useModal";
 
 export default function RefundList() {
     const [refunds, setRefunds] = useState<any[]>([]);
@@ -10,6 +12,8 @@ export default function RefundList() {
     const [filter, setFilter] = useState('');
     const [selectedRefund, setSelectedRefund] = useState<any>(null);
     const [processing, setProcessing] = useState(false);
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     // Action Form
     const [adminNote, setAdminNote] = useState('');
@@ -31,22 +35,33 @@ export default function RefundList() {
     };
 
     const handleAction = async (status: string) => {
-        if (!confirm(`Are you sure you want to ${status} this request?`)) return;
-        setProcessing(true);
-        try {
-            await api.put(`/refunds/${selectedRefund._id}/status`, {
-                status,
-                adminNote,
-                stockAdjustment
-            });
-            alert(`Refund ${status} successfully`);
-            setSelectedRefund(null);
-            fetchRefunds();
-        } catch (error) {
-            alert('Action failed');
-        } finally {
-            setProcessing(false);
-        }
+        showModal(
+            'Process Refund',
+            `Are you sure you want to ${status} this request?`,
+            'warning',
+            {
+                showCancel: true,
+                confirmText: `Yes, ${status}`,
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    setProcessing(true);
+                    try {
+                        await api.put(`/refunds/${selectedRefund._id}/status`, {
+                            status,
+                            adminNote,
+                            stockAdjustment
+                        });
+                        showSuccess(`Refund ${status} successfully`);
+                        setSelectedRefund(null);
+                        fetchRefunds();
+                    } catch (error) {
+                        showError('Action failed');
+                    } finally {
+                        setProcessing(false);
+                    }
+                }
+            }
+        );
     };
 
     const openModal = (refund: any) => {
@@ -67,6 +82,17 @@ export default function RefundList() {
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             {/* Modal */}
             {selectedRefund && (
                 <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

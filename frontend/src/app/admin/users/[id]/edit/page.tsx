@@ -5,11 +5,14 @@ import { useForm } from "react-hook-form";
 import api from "../../../../utils/api";
 import { useRouter } from "next/navigation";
 import { FiSave } from "react-icons/fi";
+import Modal from "../../../../components/Modal";
+import { useModal } from "../../../../hooks/useModal";
 
 export default function EditUserPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
     const { register, handleSubmit, setValue } = useForm();
     const [userId, setUserId] = useState<string | null>(null);
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     useEffect(() => {
         params.then(p => {
@@ -40,10 +43,11 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
             if (!data.password) delete data.password;
 
             await api.put(`/users/${userId}`, data);
-            alert('User updated!');
-            router.push('/admin/users');
+            showSuccess('User updated!', 'Success', {
+                onConfirm: () => router.push('/admin/users')
+            });
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Update failed');
+            showError(error.response?.data?.message || 'Update failed');
         }
     };
 
@@ -51,6 +55,17 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <h1 className="page-title">Edit User</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} style={{ maxWidth: '600px' }}>

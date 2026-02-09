@@ -5,6 +5,9 @@ import { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
 import FormModal from "../../../components/FormModal";
+import DataTable from "../../../components/DataTable";
+import Modal from "../../../components/Modal";
+import { useModal } from "../../../hooks/useModal";
 
 interface HSN {
     _id: string;
@@ -17,6 +20,8 @@ export default function HSNMaster() {
     const [loading, setLoading] = useState(true);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     const { register, handleSubmit, reset, setValue } = useForm<{ hsn_code: string; gst_rate: number }>();
 
@@ -39,16 +44,16 @@ export default function HSNMaster() {
         try {
             if (editingId) {
                 await api.put(`/admin/hsn/${editingId}`, data);
-                alert('HSN Updated successfully');
+                showSuccess('Updated successfully');
             } else {
                 await api.post('/admin/hsn', data);
-                alert('HSN Created successfully');
+                showSuccess('Created successfully');
             }
             handleCloseModal();
             fetchHSNs();
         } catch (error) {
             console.error(error);
-            alert('Operation failed');
+            showError('Operation failed');
         }
     };
 
@@ -72,17 +77,40 @@ export default function HSNMaster() {
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this HSN Code?')) return;
-        try {
-            await api.delete(`/admin/hsn/${id}`);
-            fetchHSNs();
-        } catch (error) {
-            alert('Delete failed');
-        }
+        showModal(
+            'Delete HSN Code',
+            'Delete this HSN Code?',
+            'warning',
+            {
+                showCancel: true,
+                confirmText: "Yes, Delete",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        await api.delete(`/admin/hsn/${id}`);
+                        fetchHSNs();
+                        showSuccess("Deleted successfully");
+                    } catch (error) {
+                        showError('Delete failed');
+                    }
+                }
+            }
+        );
     };
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div>
                     <h1 className="page-title" style={{ margin: 0 }}>HSN Code Management</h1>
@@ -93,39 +121,30 @@ export default function HSNMaster() {
                 </button>
             </div>
 
-            <div className="table-container">
-                <div className="table-header">Existing HSN Codes</div>
-                <table className="data-table">
-                    <thead>
-                        <tr>
-                            <th>HSN Code</th>
-                            <th>GST Rate</th>
-                            <th style={{ textAlign: 'right' }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {hsns.map(hsn => (
-                            <tr key={hsn._id}>
-                                <td style={{ fontWeight: 500 }}>{hsn.hsn_code}</td>
-                                <td>
-                                    <span className="badge badge-success">{hsn.gst_rate}% GST</span>
-                                </td>
-                                <td style={{ textAlign: 'right' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                        <button onClick={() => startEdit(hsn)} className="btn-icon" style={{ color: 'var(--info)' }}><FiEdit2 /></button>
-                                        <button onClick={() => handleDelete(hsn._id)} className="btn-icon" style={{ color: 'var(--danger)' }}><FiTrash2 /></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                        {hsns.length === 0 && !loading && (
-                            <tr>
-                                <td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>No records found.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Loading...</div>
+            ) : (
+                <DataTable
+                    title="Existing HSN Codes"
+                    data={hsns}
+                    columns={[
+                        { header: 'HSN Code', accessor: 'hsn_code', sortable: true, className: "font-medium" },
+                        {
+                            header: 'GST Rate',
+                            accessor: (item) => (
+                                <span className="badge badge-success" style={{ background: '#dcfce7', color: '#166534', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: 600 }}>
+                                    {item.gst_rate}% GST
+                                </span>
+                            ),
+                            sortable: true
+                        }
+                    ]}
+                    searchKeys={['hsn_code']}
+                    onEdit={startEdit}
+                    onDelete={(item) => handleDelete(item._id)}
+                    itemsPerPage={10}
+                />
+            )}
 
             <FormModal
                 isOpen={isModalOpen}

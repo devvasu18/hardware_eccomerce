@@ -4,7 +4,7 @@ const TallyStatusLog = require('../models/TallyStatusLog');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const { generateSalesVoucherXML } = require('../utils/tallyXmlGenerator');
-const { generateLedgerXML, generateSalesLedgerXML, generateTaxLedgerXML } = require('../utils/tallyLedgerGenerator');
+const { generateLedgerXML, generateSalesLedgerXML, generateTaxLedgerXML, generatePurchaseLedgerXML } = require('../utils/tallyLedgerGenerator');
 const { generateStockItemXML } = require('../utils/tallyStockItemGenerator');
 const { generateUnitXML } = require('../utils/tallyUnitGenerator');
 
@@ -113,6 +113,13 @@ async function processQueueItem(queueItem) {
                     tallyStatus: 'saved',
                     tallyErrorLog: ''
                 });
+            } else if (queueItem.relatedModel === 'StockEntry') {
+                // Determine model dynamically to avoid circular deps if possible or use require
+                const StockEntry = require('../models/StockEntry');
+                await StockEntry.findByIdAndUpdate(queueItem.relatedId, {
+                    tallyStatus: 'saved',
+                    tallyErrorLog: ''
+                });
             }
 
             return true;
@@ -125,6 +132,12 @@ async function processQueueItem(queueItem) {
                 // Update Order if failed permanently
                 if (queueItem.relatedModel === 'Order') {
                     await Order.findByIdAndUpdate(queueItem.relatedId, {
+                        tallyStatus: 'failed',
+                        tallyErrorLog: `Queue Failed: ${result.error}`
+                    });
+                } else if (queueItem.relatedModel === 'StockEntry') {
+                    const StockEntry = require('../models/StockEntry');
+                    await StockEntry.findByIdAndUpdate(queueItem.relatedId, {
                         tallyStatus: 'failed',
                         tallyErrorLog: `Queue Failed: ${result.error}`
                     });
@@ -199,9 +212,15 @@ async function syncWithHealthCheck({ xmlData, type, relatedId, relatedModel }) {
         if (!health.online) {
             await addToQueue({ payload: xmlData, type, relatedId, relatedModel });
 
-            // Mark order as queued
+            // Mark order/stock as queued
             if (relatedModel === 'Order') {
                 await Order.findByIdAndUpdate(relatedId, {
+                    tallyStatus: 'queued',
+                    tallyErrorLog: 'Tally Offline - Queued'
+                });
+            } else if (relatedModel === 'StockEntry') {
+                const StockEntry = require('../models/StockEntry');
+                await StockEntry.findByIdAndUpdate(relatedId, {
                     tallyStatus: 'queued',
                     tallyErrorLog: 'Tally Offline - Queued'
                 });
@@ -219,6 +238,12 @@ async function syncWithHealthCheck({ xmlData, type, relatedId, relatedModel }) {
                     tallyStatus: 'saved',
                     tallyErrorLog: ''
                 });
+            } else if (relatedModel === 'StockEntry') {
+                const StockEntry = require('../models/StockEntry');
+                await StockEntry.findByIdAndUpdate(relatedId, {
+                    tallyStatus: 'saved',
+                    tallyErrorLog: ''
+                });
             }
             return { success: true, queued: false };
         } else {
@@ -228,6 +253,12 @@ async function syncWithHealthCheck({ xmlData, type, relatedId, relatedModel }) {
             if (relatedModel === 'Order') {
                 await Order.findByIdAndUpdate(relatedId, {
                     tallyStatus: 'queued', // Use queued instead of failed so it retries
+                    tallyErrorLog: `Sync Failed: ${result.error}. Retrying via queue.`
+                });
+            } else if (relatedModel === 'StockEntry') {
+                const StockEntry = require('../models/StockEntry');
+                await StockEntry.findByIdAndUpdate(relatedId, {
+                    tallyStatus: 'queued',
                     tallyErrorLog: `Sync Failed: ${result.error}. Retrying via queue.`
                 });
             }
@@ -370,7 +401,7 @@ async function syncStockEntryToTally(stockEntryId) {
             let variantName = '';
 
             if (item.model_id || item.variant_id) {
-                const product = await Product.findById(item.product_id);
+                const product = item.product_id;
                 if (item.model_id) {
                     const model = product.models.id(item.model_id);
                     if (model) modelName = model.name;
@@ -411,7 +442,7 @@ async function syncStockEntryToTally(stockEntryId) {
 
         // 2. Sync Purchase Ledgers
         await syncWithHealthCheck({
-            xmlData: generateTaxLedgerXML('Purchase Account', 'Purchase Accounts'),
+            xmlData: generatePurchaseLedgerXML(),
             type: 'Ledger',
             relatedId: 'LEDGER-PURCHASE',
             relatedModel: 'Ledger'
@@ -434,7 +465,8 @@ async function syncStockEntryToTally(stockEntryId) {
             mobile: party.phone_no,
             address: party.address,
             gstIn: party.gst_no,
-            tallyLedgerName: `${party.name} - ${party.phone_no || ''}`
+            tallyLedgerName: party.phone_no ? `${party.name} - ${party.phone_no}` : party.name,
+            tallyParentGroup: 'Sundry Creditors'
         };
 
         await syncWithHealthCheck({

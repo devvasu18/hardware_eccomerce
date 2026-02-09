@@ -5,6 +5,8 @@ import { useState, useEffect } from "react";
 import api from "../../../utils/api";
 import { FiPlus, FiTrash2, FiSave, FiArrowLeft } from "react-icons/fi";
 import { useRouter } from "next/navigation";
+import Modal from "../../../components/Modal";
+import { useModal } from "../../../hooks/useModal";
 
 interface Variation {
     _id: string;
@@ -48,6 +50,8 @@ export default function AddStockPage() {
     const [selectionStage, setSelectionStage] = useState<'product' | 'model' | 'variant'>('product');
     const [tempSelectedProduct, setTempSelectedProduct] = useState<Product | null>(null);
     const [tempSelectedModel, setTempSelectedModel] = useState<Model | null>(null);
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     const { register, control, handleSubmit, watch, setValue } = useForm({
         defaultValues: {
@@ -179,16 +183,28 @@ export default function AddStockPage() {
             };
 
             await api.post('/admin/stock', payload);
-            alert('Stock Entry Created Successfully!');
-            router.push('/admin/stock');
+            showSuccess('Stock Entry Created Successfully!', 'Success', {
+                onConfirm: () => router.push('/admin/stock')
+            });
         } catch (error) {
             console.error(error);
-            alert('Failed to create stock entry');
+            showError('Failed to create stock entry');
         }
     };
 
     return (
         <div className="container" style={{ maxWidth: '100%', paddingBottom: '6rem' }}>
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <h1 className="page-title">New Stock Entry</h1>
 
             <form onSubmit={handleSubmit(onSubmit)}>

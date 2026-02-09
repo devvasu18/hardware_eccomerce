@@ -267,3 +267,105 @@
 .view-cart-link:hover {
     color: #334155;
 }
+
+/* ========================================
+   ?? RESPONSIVE DESIGN - MOBILE FIRST
+   ======================================== */
+
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
+    .cart-sidebar {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .cart-sidebar-header {
+        padding: 1rem;
+    }
+
+    .cart-sidebar-title {
+        font-size: 1.1rem;
+    }
+
+    .cart-sidebar-content {
+        padding: 1rem;
+    }
+
+    .sidebar-cart-item {
+        gap: 0.75rem;
+        padding-bottom: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .cart-item-image {
+        width: 70px;
+        height: 70px;
+    }
+
+    .cart-item-name {
+        font-size: 0.9rem;
+    }
+
+    .cart-item-meta {
+        font-size: 0.8rem;
+    }
+
+    .quantity-controls {
+        height: 36px;
+    }
+
+    .qty-btn {
+        width: 36px;
+        min-height: 36px;
+    }
+
+    .cart-sidebar-footer {
+        padding: 1rem;
+    }
+
+    .cart-summary-row {
+        font-size: 0.9rem;
+    }
+
+    .cart-total-row {
+        font-size: 1.15rem;
+    }
+
+    .checkout-btn {
+        padding: 0.875rem;
+        font-size: 0.95rem;
+        min-height: 50px;
+    }
+}
+
+/* Large Mobile (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+    .cart-sidebar {
+        max-width: 90%;
+        width: 400px;
+    }
+
+    .cart-sidebar-header,
+    .cart-sidebar-content,
+    .cart-sidebar-footer {
+        padding: 1.25rem;
+    }
+}
+
+/* Touch improvements for mobile/tablet */
+@media (max-width: 1024px) {
+    .qty-btn,
+    .close-cart-btn,
+    .remove-item-btn {
+        min-width: 44px;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cart-sidebar-content {
+        -webkit-overflow-scrolling: touch;
+    }
+}
+

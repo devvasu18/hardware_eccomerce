@@ -11,7 +11,7 @@ const tallySyncQueueSchema = new mongoose.Schema({
         required: true
     },
     relatedId: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: mongoose.Schema.Types.Mixed, // Can be ObjectId or String (e.g. LEDGER-CGST)
         required: true
     },
     relatedModel: {
@@ -53,9 +53,8 @@ const tallySyncQueueSchema = new mongoose.Schema({
     }
 });
 
-tallySyncQueueSchema.pre('save', function (next) {
+tallySyncQueueSchema.pre('save', async function () {
     this.updatedAt = Date.now();
-    next();
 });
 
 tallySyncQueueSchema.index({ status: 1, createdAt: -1 });

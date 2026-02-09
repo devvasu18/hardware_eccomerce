@@ -13,13 +13,25 @@ interface Order {
     createdAt: string;
 }
 
+interface StockEntry {
+    _id: string;
+    invoice_no: string;
+    bill_date: string;
+    final_bill_amount: number;
+    tallyStatus: string;
+    tallyErrorLog?: string;
+}
+
 export default function TallySyncPage() {
     const [orders, setOrders] = useState<Order[]>([]);
+    const [stockEntries, setStockEntries] = useState<StockEntry[]>([]);
+    const [activeTab, setActiveTab] = useState<'orders' | 'stock'>('orders');
     const [loading, setLoading] = useState(false);
     const { modalState, hideModal, showSuccess, showError } = useModal();
 
     useEffect(() => {
         fetchOrders();
+        fetchStock();
     }, []);
 
     const fetchOrders = async () => {
@@ -43,11 +55,29 @@ export default function TallySyncPage() {
         }
     };
 
+    const fetchStock = async () => {
+        const token = localStorage.getItem('token');
+        const res = await fetch('http://localhost:5000/api/admin/stock', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const data = await res.json();
+            setStockEntries(Array.isArray(data) ? data : []);
+        }
+    };
+
     const handleSync = async (id: string) => {
         setLoading(true);
         try {
-            const res = await fetch(`http://localhost:5000/api/tally/sales/${id}`, {
-                method: 'POST'
+            const url = activeTab === 'orders'
+                ? `http://localhost:5000/api/tally/sales/${id}`
+                : `http://localhost:5000/api/admin/stock/${id}/sync`;
+
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
             });
             const data = await res.json();
 
@@ -55,12 +85,13 @@ export default function TallySyncPage() {
                 if (data.queued) {
                     showSuccess('Tally is offline. Order added to sync queue and will process automatically.');
                 } else {
-                    showSuccess('Order has been successfully synced to Tally!');
+                    showSuccess(`${activeTab === 'orders' ? 'Order' : 'Stock Entry'} has been successfully synced to Tally!`);
                 }
             } else {
                 showError(`Sync failed: ${data.message || 'Unknown error occurred'}`);
             }
             fetchOrders(); // Refresh status
+            fetchStock();
         } catch (e) {
             showError('Network error. Please check your connection and try again.');
         } finally {
@@ -68,8 +99,12 @@ export default function TallySyncPage() {
         }
     };
 
-    // Filter only orders that are NOT synced yet or failed
-    const pendingSync = orders.filter(o => o.tallyStatus !== 'saved' && o.status !== 'Cancelled');
+    // Filter only orders/stock that are NOT synced yet or failed
+    const pendingOrders = orders.filter(o => o.tallyStatus !== 'saved' && o.status !== 'Cancelled');
+    const pendingStock = stockEntries.filter(s => s.tallyStatus !== 'saved');
+
+    const pendingCount = pendingOrders.length + pendingStock.length;
+    const syncedCount = (orders.length - pendingOrders.length) + (stockEntries.length - pendingStock.length);
 
     return (
         <div>
@@ -77,62 +112,118 @@ export default function TallySyncPage() {
 
             <div className="grid" style={{ marginBottom: '2rem' }}>
                 <div className="card">
-                    <h3>Pending Sync</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 700 }}>{pendingSync.length}</p>
+                    <h3>Pending Sync (Total)</h3>
+                    <p style={{ fontSize: '2rem', fontWeight: 700 }}>{pendingCount}</p>
                 </div>
                 <div className="card">
                     <h3>Total Synced</h3>
-                    <p style={{ fontSize: '2rem', fontWeight: 700, color: '#10b981' }}>{orders.length - pendingSync.length}</p>
+                    <p style={{ fontSize: '2rem', fontWeight: 700, color: '#10b981' }}>{syncedCount}</p>
                 </div>
             </div>
 
+            <div style={{ marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', display: 'flex', gap: '1rem' }}>
+                <button
+                    onClick={() => setActiveTab('orders')}
+                    style={{
+                        padding: '1rem',
+                        borderBottom: activeTab === 'orders' ? '2px solid var(--primary)' : 'none',
+                        color: activeTab === 'orders' ? 'var(--primary)' : 'inherit',
+                        fontWeight: activeTab === 'orders' ? 600 : 400
+                    }}
+                >
+                    Sales Orders ({orders.length})
+                </button>
+                <button
+                    onClick={() => setActiveTab('stock')}
+                    style={{
+                        padding: '1rem',
+                        borderBottom: activeTab === 'stock' ? '2px solid var(--primary)' : 'none',
+                        color: activeTab === 'stock' ? 'var(--primary)' : 'inherit',
+                        fontWeight: activeTab === 'stock' ? 600 : 400
+                    }}
+                >
+                    Stock Entries ({stockEntries.length})
+                </button>
+            </div>
+
             <div style={{ background: 'white', borderRadius: '8px', overflow: 'hidden', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.1)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                    <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                        <tr>
-                            <th style={{ padding: '1rem' }}>Order ID</th>
-                            <th style={{ padding: '1rem' }}>Date</th>
-                            <th style={{ padding: '1rem' }}>Amount</th>
-                            <th style={{ padding: '1rem' }}>Tally Status</th>
-                            <th style={{ padding: '1rem' }}>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {orders.map(order => (
-                            <tr key={order._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={{ padding: '1rem' }}>{order._id.slice(-6).toUpperCase()}</td>
-                                <td style={{ padding: '1rem' }}>{order.createdAt.split('T')[0]}</td>
-                                <td style={{ padding: '1rem' }}>₹{order.totalAmount}</td>
-                                <td style={{ padding: '1rem' }}>
-                                    {order.tallyStatus === 'saved' ? (
-                                        <span className="badge" style={{ background: '#ecfdf5', color: '#065f46' }}>✓ Synced</span>
-                                    ) : order.tallyStatus === 'queued' ? (
-                                        <span className="badge" style={{ background: '#fff7ed', color: '#c2410c' }}>⏳ Queued</span>
-                                    ) : order.tallyStatus === 'failed' ? (
-                                        <div>
-                                            <span className="badge" style={{ background: '#fef2f2', color: '#991b1b' }}>Failed</span>
-                                            <p style={{ fontSize: '0.7rem', color: '#ef4444', maxWidth: '200px', marginTop: '0.25rem' }}>{order.tallyErrorLog?.slice(0, 50)}...</p>
-                                        </div>
-                                    ) : (
-                                        <span className="badge" style={{ background: '#e2e8f0', color: '#64748B' }}>Pending</span>
-                                    )}
-                                </td>
-                                <td style={{ padding: '1rem' }}>
-                                    {order.tallyStatus !== 'saved' && order.status !== 'Cancelled' && (
-                                        <button
-                                            onClick={() => handleSync(order._id)}
-                                            disabled={loading}
-                                            className="btn btn-outline"
-                                            style={{ borderColor: '#F37021', color: '#F37021', padding: '0.5rem', fontSize: '0.8rem' }}
-                                        >
-                                            {loading ? 'Syncing...' : 'Push to Tally'}
-                                        </button>
-                                    )}
-                                </td>
+                {activeTab === 'orders' ? (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                            <tr>
+                                <th style={{ padding: '1rem' }}>Order ID</th>
+                                <th style={{ padding: '1rem' }}>Date</th>
+                                <th style={{ padding: '1rem' }}>Amount</th>
+                                <th style={{ padding: '1rem' }}>Tally Status</th>
+                                <th style={{ padding: '1rem' }}>Action</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {orders.map(order => (
+                                <tr key={order._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                    <td style={{ padding: '1rem' }}>
+                                        {order._id.slice(-6).toUpperCase()}
+                                        {order.status === 'Cancelled' && <span style={{ fontSize: '0.7em', color: 'red', marginLeft: '5px' }}>(CN)</span>}
+                                    </td>
+                                    <td style={{ padding: '1rem' }}>{order.createdAt.split('T')[0]}</td>
+                                    <td style={{ padding: '1rem' }}>₹{order.totalAmount}</td>
+                                    <td style={{ padding: '1rem' }}>
+                                        <StatusBadge status={order.tallyStatus} error={order.tallyErrorLog} />
+                                    </td>
+                                    <td style={{ padding: '1rem' }}>
+                                        {order.tallyStatus !== 'saved' && order.status !== 'Cancelled' && (
+                                            <button
+                                                onClick={() => handleSync(order._id)}
+                                                disabled={loading}
+                                                className="btn btn-outline"
+                                                style={{ borderColor: '#F37021', color: '#F37021', padding: '0.5rem', fontSize: '0.8rem' }}
+                                            >
+                                                {loading ? '...' : 'Push'}
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                        <thead style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                            <tr>
+                                <th style={{ padding: '1rem' }}>Invoice No</th>
+                                <th style={{ padding: '1rem' }}>Date</th>
+                                <th style={{ padding: '1rem' }}>Amount</th>
+                                <th style={{ padding: '1rem' }}>Tally Status</th>
+                                <th style={{ padding: '1rem' }}>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {stockEntries.map(entry => (
+                                <tr key={entry._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                    <td style={{ padding: '1rem', fontFamily: 'monospace' }}>{entry.invoice_no}</td>
+                                    <td style={{ padding: '1rem' }}>{apiDate(entry.bill_date)}</td>
+                                    <td style={{ padding: '1rem' }}>₹{entry.final_bill_amount}</td>
+                                    <td style={{ padding: '1rem' }}>
+                                        <StatusBadge status={entry.tallyStatus} error={entry.tallyErrorLog} />
+                                    </td>
+                                    <td style={{ padding: '1rem' }}>
+                                        {entry.tallyStatus !== 'saved' && (
+                                            <button
+                                                onClick={() => handleSync(entry._id)}
+                                                disabled={loading}
+                                                className="btn btn-outline"
+                                                style={{ borderColor: '#F37021', color: '#F37021', padding: '0.5rem', fontSize: '0.8rem' }}
+                                            >
+                                                {loading ? '...' : 'Push'}
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                )}
+
             </div>
 
             {/* --- NEW SECTION: Status Logs --- */}
@@ -212,4 +303,27 @@ function StatusLogsTable() {
             </table>
         </div>
     );
+}
+
+function StatusBadge({ status, error }: { status: string, error?: string }) {
+    if (status === 'saved') {
+        return <span className="badge" style={{ background: '#ecfdf5', color: '#065f46' }}>✓ Synced</span>;
+    }
+    if (status === 'queued') {
+        return <span className="badge" style={{ background: '#fff7ed', color: '#c2410c' }}>⏳ Queued</span>;
+    }
+    if (status === 'failed') {
+        return (
+            <div>
+                <span className="badge" style={{ background: '#fef2f2', color: '#991b1b' }}>Failed</span>
+                {error && <p style={{ fontSize: '0.7rem', color: '#ef4444', maxWidth: '200px', marginTop: '0.25rem' }}>{error.slice(0, 50)}...</p>}
+            </div>
+        );
+    }
+    return <span className="badge" style={{ background: '#e2e8f0', color: '#64748B' }}>Pending</span>;
+}
+
+function apiDate(dateStr: string) {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString();
 }

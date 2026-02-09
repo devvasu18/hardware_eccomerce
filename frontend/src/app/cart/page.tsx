@@ -47,7 +47,7 @@ export default function CartPage() {
                     {/* Cart Items */}
                     <div className="card">
                         {items.map((item) => (
-                            <div key={`${item.productId}-${item.size || 'default'}`} style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                            <div key={`${item.productId}-${item.modelId || 'nm'}-${item.variationId || item.size || 'default'}`} style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', marginBottom: '1rem' }}>
                                 <div
                                     style={{ width: '80px', height: '80px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer' }}
                                     onClick={() => setZoomedImage(item.image)}

@@ -30,6 +30,16 @@ const stockEntrySchema = new mongoose.Schema({
     sgst: {
         type: Number,
         default: 0
+    },
+    // Tally Sync Status
+    tallyStatus: {
+        type: String,
+        enum: ['pending', 'queued', 'saved', 'failed'],
+        default: 'pending'
+    },
+    tallyErrorLog: {
+        type: String,
+        default: ''
     }
 }, { timestamps: true });
 

@@ -6,6 +6,8 @@ import api from "../../../../utils/api";
 import { useRouter } from "next/navigation";
 import { FiSave, FiUploadCloud, FiX, FiTrash2 } from "react-icons/fi";
 import Image from "next/image";
+import Modal from "../../../../components/Modal";
+import { useModal } from "../../../../hooks/useModal";
 
 interface Banner {
     _id: string;
@@ -41,6 +43,8 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
     const [bannerId, setBannerId] = useState<string | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [linkType, setLinkType] = useState<'offer' | 'products'>('offer');
+
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     // Data
     const [offers, setOffers] = useState<Offer[]>([]);
@@ -146,13 +150,25 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
 
     // Special Feature: Remove Product from Banner Live
     const removeProduct = async (prodId: string) => {
-        if (!confirm('Remove this product from the banner immediately?')) return;
-        try {
-            await api.delete(`/banners/${bannerId}/products/${prodId}`);
-            setLinkedProducts(prev => prev.filter(p => p._id !== prodId));
-        } catch (error) {
-            alert('Failed to remove product');
-        }
+        showModal(
+            'Remove Product',
+            'Remove this product from the banner immediately?',
+            'warning',
+            {
+                showCancel: true,
+                confirmText: "Yes, Remove",
+                cancelText: "Cancel",
+                onConfirm: async () => {
+                    try {
+                        await api.delete(`/banners/${bannerId}/products/${prodId}`);
+                        setLinkedProducts(prev => prev.filter(p => p._id !== prodId));
+                        showSuccess("Product removed successfully");
+                    } catch (error) {
+                        showError('Failed to remove product');
+                    }
+                }
+            }
+        );
     };
 
     const onSubmit = async (data: any) => {
@@ -196,11 +212,12 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
             await api.put(`/banners/${bannerId}`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('Banner updated!');
-            router.push('/admin/banners');
+            showSuccess('Banner updated!', 'Success', {
+                onConfirm: () => router.push('/admin/banners')
+            });
         } catch (error: any) {
             console.error(error);
-            alert(error.response?.data?.message || 'Failed to update banner');
+            showError(error.response?.data?.message || 'Failed to update banner');
         }
     };
 
@@ -208,6 +225,17 @@ export default function EditBannerPage({ params }: { params: Promise<{ id: strin
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <h1 className="page-title">Edit Banner</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} className="form-grid" style={{ alignItems: 'start' }}>

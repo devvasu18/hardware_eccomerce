@@ -5,6 +5,8 @@ import api from "../../../utils/api";
 import { useRouter } from "next/navigation";
 import { FiSave, FiTag } from "react-icons/fi";
 import { useState } from "react";
+import Modal from "../../../components/Modal";
+import { useModal } from "../../../hooks/useModal";
 
 export default function AddCouponPage() {
     const router = useRouter();
@@ -22,7 +24,10 @@ export default function AddCouponPage() {
         }
     });
 
+
+
     const discountType = watch("discount_type");
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
     const onSubmit = async (data: any) => {
         const formData = new FormData();
@@ -39,11 +44,12 @@ export default function AddCouponPage() {
             await api.post('/coupons', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
-            alert('Coupon created!');
-            router.push('/admin/coupons');
+            showSuccess('Coupon created!', 'Success', {
+                onConfirm: () => router.push('/admin/coupons')
+            });
         } catch (error: any) {
             console.error(error);
-            alert(error.response?.data?.message || 'Failed to create coupon');
+            showError(error.response?.data?.message || 'Failed to create coupon');
         }
     };
 

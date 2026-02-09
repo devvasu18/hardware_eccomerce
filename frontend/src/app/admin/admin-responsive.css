@@ -1,0 +1,65 @@
+/* ========================================
+   📱 RESPONSIVE ADMIN LAYOUT
+   ======================================== */
+
+.admin-layout-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    background: #f1f5f9;
+}
+
+.admin-main-content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+/* sidebar styles */
+.admin-sidebar {
+    transition: width 0.3s ease;
+    background: #0F172A;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .admin-main-content {
+        padding: 1rem;
+    }
+
+    /* Auto-collapse sidebar on mobile logic handled via state often, 
+       but we can enforce some styles here if classes are used */
+
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 1rem;
+    }
+
+    .page-header>div {
+        width: 100%;
+    }
+
+    .page-header .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-main-content {
+        padding: 0.75rem;
+    }
+}

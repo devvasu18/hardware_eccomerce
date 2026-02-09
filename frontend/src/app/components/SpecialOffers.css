@@ -460,18 +460,28 @@
     left: 100%;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
+/* ========================================
+   📱 RESPONSIVE DESIGN - MOBILE FIRST
+   ======================================== */
+
+.deal-card {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Small Mobile (320px - 480px) */
+@media (max-width: 480px) {
     .special-offers {
-        padding: 4rem 0;
+        padding: 3rem 0;
     }
 
     .offers-title {
-        font-size: 2rem;
+        font-size: 1.75rem;
     }
 
     .offers-subtitle {
-        font-size: 1rem;
+        font-size: 0.95rem;
     }
 
     .deals-grid {
@@ -479,16 +489,90 @@
         gap: 1.5rem;
     }
 
-    .deal-content {
-        padding: 1.5rem;
+    .deal-image-container {
+        height: 140px;
+        /* Reduced specific to mobile */
     }
 
     .discount-circle {
-        width: 70px;
-        height: 70px;
+        width: 50px;
+        height: 50px;
     }
 
     .discount-percent {
-        font-size: 1.5rem;
+        font-size: 1.25rem;
+    }
+
+    .deal-content {
+        padding: 1rem;
+    }
+
+    .deal-product-name {
+        font-size: 1rem;
+    }
+
+    .deal-cta {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+
+    .view-all-deals-btn {
+        width: 100%;
+        justify-content: center;
+        margin-top: 1rem;
+    }
+}
+
+/* Large Mobile (481px - 767px) */
+@media (min-width: 481px) and (max-width: 767px) {
+    .deals-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .deal-image-container {
+        height: 140px;
+    }
+
+    .discount-circle {
+        width: 60px;
+        height: 60px;
+    }
+}
+
+/* Tablets (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .deals-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
+    }
+
+    .deal-image-container {
+        height: 150px;
+    }
+}
+
+/* Small Laptops (1025px - 1366px) */
+@media (min-width: 1025px) and (max-width: 1366px) {
+    .deals-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+/* Large Desktops (1367px+) */
+@media (min-width: 1367px) {
+    .deals-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1.5rem;
+    }
+}
+
+/* Touch improvements */
+@media (max-width: 1024px) {
+
+    .deal-cta,
+    .view-all-deals-btn {
+        min-height: 44px;
     }
 }

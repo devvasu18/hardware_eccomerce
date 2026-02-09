@@ -4,6 +4,7 @@ import AdminSidebar from '@/app/admin/components/AdminSidebar';
 import { useAuth } from '@/context/AuthContext';
 import NotFound from '@/app/not-found';
 import { useEffect, useState } from 'react';
+import './admin-responsive.css';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
@@ -36,11 +37,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', background: '#f1f5f9' }}>
+        <div className="admin-layout-container">
             <AdminSidebar />
 
-            {/* Main Content */}
-            <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
+            {/* MainContent */}
+            <main className="admin-main-content">
                 {children}
             </main>
         </div>

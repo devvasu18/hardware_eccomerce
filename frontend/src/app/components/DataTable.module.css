@@ -1,0 +1,208 @@
+.container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    margin-top: 1.5rem;
+}
+
+.header {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #ffffff;
+    gap: 1rem;
+}
+
+.controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.searchContainer {
+    position: relative;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.search {
+    padding: 0.6rem 1rem 0.6rem 2.25rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    width: 250px;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+    color: #334155;
+}
+
+.search:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.select {
+    padding: 0.6rem 2rem 0.6rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #334155;
+    background-color: white;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+}
+
+.select:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table th {
+    background-color: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    text-align: left;
+    padding: 1rem 1.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.table td {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    font-size: 0.875rem;
+    vertical-align: middle;
+}
+
+.table tr:last-child td {
+    border-bottom: none;
+}
+
+.table tr {
+    transition: background-color 0.15s ease;
+}
+
+.table tr:hover {
+    background-color: #f8fafc;
+}
+
+.actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.btnIcon {
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btnEdit {
+    color: #3b82f6;
+    background-color: rgba(59, 130, 246, 0.05);
+}
+
+.btnEdit:hover {
+    background-color: rgba(59, 130, 246, 0.15);
+}
+
+.btnDelete {
+    color: #ef4444;
+    background-color: rgba(239, 68, 68, 0.05);
+}
+
+.btnDelete:hover {
+    background-color: rgba(239, 68, 68, 0.15);
+}
+
+.pagination {
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e2e8f0;
+    background-color: #fafafa;
+}
+
+.pageInfo {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.pageButtons {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.pageBtn {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pageBtn:hover:not(:disabled) {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.pageBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pageBtn.active {
+    background: #6366f1;
+    color: white;
+    border-color: #6366f1;
+}
+
+.emptyState {
+    padding: 4rem 2rem;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.875rem;
+}

@@ -39,6 +39,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'new-ella-demo-07.myshopify.com',
+      },
     ],
   },
   async rewrites() {
