@@ -19,7 +19,22 @@ app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" } // Allow serving images from /uploads
 }));
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: function (origin, callback) {
+        const allowedOrigins = [
+            process.env.FRONTEND_URL,
+            'http://localhost:3000',
+            'http://127.0.0.1:3000'
+        ].filter(Boolean);
+
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json({ limit: '10MB' })); // Body limit
@@ -48,13 +63,32 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const logger = require('./utils/logger');
 const { startTallyHealthCheckJob } = require('./jobs/tallyHealthCheckJob');
+const { cleanupStuckMessages, cleanupStuckEmails, getQueueHealth, getEmailQueueHealth } = require('./utils/queueCleanup');
 
 // Database Connection
 mongoose.connect(process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/hardware_system')
-    .then(() => logger.info('MongoDB Connected'))
+    .then(async () => {
+        logger.info('MongoDB Connected');
+
+        // Cleanup stuck messages/emails from previous server crash
+        try {
+            await cleanupStuckMessages();
+            await cleanupStuckEmails();
+
+            const waHealth = await getQueueHealth();
+            const emailHealth = await getEmailQueueHealth();
+
+            if (waHealth) logger.info('[WhatsApp Queue Health]', waHealth);
+            if (emailHealth) logger.info('[Email Queue Health]', emailHealth);
+
+        } catch (error) {
+            logger.error('[Startup] Queue cleanup failed:', error);
+        }
+    })
     .catch(err => logger.error('MongoDB Connection Check Error:', err));
 
 // Routes
+app.use('/api/public', require('./routes/publicRoutes')); // Publicly available data
 app.use('/api/products', require('./routes/productRoutes'));
 app.use('/api/admin/products', require('./routes/adminProductRoutes')); // Admin Product Management
 app.use('/api/admin', require('./routes/adminMasterRoutes')); // HSN, Categories, Brands, Offers (mounted at /api/admin/hsn, etc)
@@ -93,9 +127,19 @@ app.use('/api/admin/analytics', require('./routes/analyticsRoutes')); // Admin A
 const runStockCleanup = require('./jobs/stockCleanup');
 
 // Initialize Cron Jobs
-// Initialize Cron Jobs
 runStockCleanup();
 startTallyHealthCheckJob();
+
+// Start Workers
+const whatsappWorker = require('./whatsappWorker');
+whatsappWorker.start().catch(err => logger.error('WhatsApp Worker Error:', err));
+
+const emailWorker = require('./emailWorker');
+emailWorker.start().catch(err => logger.error('Email Worker Error:', err));
+
+app.use('/api/whatsapp', require('./routes/whatsappRoutes')); // WhatsApp Automation Routes
+app.use('/api/email', require('./routes/emailRoutes')); // Email Monitoring Routes
+app.use('/api/admin/settings', require('./routes/settingsRoutes')); // System Settings
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {

@@ -30,7 +30,12 @@ const userSchema = new mongoose.Schema({
     tallyLedgerName: { type: String }, // To map to Tally Ledger
     resetPasswordToken: String,
     resetPasswordExpire: Date,
-    isActive: { type: Boolean, default: true }
+    isActive: { type: Boolean, default: true },
+    passwordHistory: [{
+        password: { type: String, required: true },
+        changedAt: { type: Date, default: Date.now }
+    }],
+    passwordChangedAt: Date
 }, { timestamps: true });
 
 // Indexes for performance

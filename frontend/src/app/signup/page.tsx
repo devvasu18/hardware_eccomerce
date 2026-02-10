@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { getSystemSettings } from '../utils/systemSettings';
 
 export default function SignupPage() {
     const [formData, setFormData] = useState({
@@ -16,6 +18,17 @@ export default function SignupPage() {
     const [error, setError] = useState('');
     const { login } = useAuth();
     const router = useRouter();
+    const [companyName, setCompanyName] = useState('Hardware');
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            const settings = await getSystemSettings();
+            if (settings && settings.companyName) {
+                setCompanyName(settings.companyName);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -47,7 +60,7 @@ export default function SignupPage() {
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'linear-gradient(135deg, #0F172A 0%, #1e293b 100%)' }}>
             <div className="card" style={{ width: '100%', maxWidth: '450px', padding: '2rem', background: 'white', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-                <h1 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.5rem', color: '#1E293B', fontWeight: 700 }}>Join Selfmade Hardware</h1>
+                <h1 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.5rem', color: '#1E293B', fontWeight: 700 }}>Join {companyName}</h1>
 
                 {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</div>}
 

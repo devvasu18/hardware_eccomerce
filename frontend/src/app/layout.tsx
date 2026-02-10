@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-    title: 'Chamunda Industrial | Premium Hardware Marketplace',
+    title: 'Hardware Marketplace | Premium Quality Industrial Parts',
     description: 'Industrial-grade mechanical parts and hardware e-commerce platform.',
 };
 

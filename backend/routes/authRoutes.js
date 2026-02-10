@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const crypto = require('crypto');
 const sendEmail = require('../utils/sendEmail');
+const sendWhatsApp = require('../utils/sendWhatsApp');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -191,10 +192,17 @@ router.get('/me', async (req, res) => {
 // @access  Public
 router.post('/forgotpassword', authLimiter, async (req, res) => {
     try {
-        const user = await User.findOne({ email: req.body.email });
+        const { email, mobile } = req.body;
+        let user;
+
+        if (email) {
+            user = await User.findOne({ email });
+        } else if (mobile) {
+            user = await User.findOne({ mobile });
+        }
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found with this email' });
+            return res.status(404).json({ success: false, message: 'No account found with these credentials.' });
         }
 
         // Get reset token
@@ -205,35 +213,28 @@ router.post('/forgotpassword', authLimiter, async (req, res) => {
         // Create reset URL
         const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
 
-        const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
-
         try {
-            await sendEmail({
-                email: user.email,
-                subject: 'Password Reset Token',
-                message,
-                html: `<h1>Passowrd Reset</h1><p>Click details below to reset password:</p><a href="${resetUrl}">Reset Password</a>`
-            });
-
-            res.status(200).json({ success: true, data: 'Email sent' });
-        } catch (err) {
-            user.resetPasswordToken = undefined;
-            user.resetPasswordExpire = undefined;
-            await user.save({ validateBeforeSave: false });
-            return res.status(500).json({ message: 'Email could not be sent' });
+            const { sendPasswordResetRequestNotification } = require('../utils/authNotifications');
+            await sendPasswordResetRequestNotification(user, resetUrl);
+            res.status(200).json({ success: true, data: 'If an account exists, a reset link has been sent.' });
+        } catch (notifErr) {
+            console.error('[Auth] Error sending reset link:', notifErr);
+            // Even if notification fails, we return success to prevent user enumeration
+            res.status(200).json({ success: true, data: 'If an account exists, a reset link has been sent.' });
         }
 
     } catch (err) {
-        res.status(500).json({ message: 'Server Error', error: err.message });
+        console.error("Forgot Password Error:", err);
+        // Even on error, return success to avoid enumeration
+        res.status(500).json({ message: 'Server Error' });
     }
 });
 
-// @desc    Reset Password
-// @route   PUT /api/auth/resetpassword/:resettoken
+// @desc    Check Reset Token Validity
+// @route   GET /api/auth/resetpassword/:resettoken/check
 // @access  Public
-router.put('/resetpassword/:resettoken', authLimiter, async (req, res) => {
+router.get('/resetpassword/:resettoken/check', async (req, res) => {
     try {
-        // Get hashed token
         const resetPasswordToken = crypto
             .createHash('sha256')
             .update(req.params.resettoken)
@@ -245,17 +246,126 @@ router.put('/resetpassword/:resettoken', authLimiter, async (req, res) => {
         });
 
         if (!user) {
+            return res.status(404).json({ valid: false, message: 'Invalid or expired token' });
+        }
+
+        res.status(200).json({ valid: true });
+    } catch (err) {
+        res.status(500).json({ valid: false, message: 'Server Error' });
+    }
+});
+
+// @desc    Reset Password
+// @route   PUT /api/auth/resetpassword/:resettoken
+// @access  Public
+router.put('/resetpassword/:resettoken', authLimiter, [
+    body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters long')
+
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ message: errors.array()[0].msg, errors: errors.array() });
+    }
+
+    try {
+        // Get hashed token
+        const resetPasswordToken = crypto
+            .createHash('sha256')
+            .update(req.params.resettoken)
+            .digest('hex');
+
+        const user = await User.findOne({
+            resetPasswordToken,
+            resetPasswordExpire: { $gt: Date.now() }
+        }).select('+password +passwordHistory');
+
+        if (!user) {
             return res.status(400).json({ message: 'Invalid token' });
         }
 
+        const newPassword = req.body.password;
+
+        // Prevent reuse of last 5 passwords
+        if (user.passwordHistory && user.passwordHistory.length > 0) {
+            for (let history of user.passwordHistory) {
+                const isMatch = await bcrypt.compare(newPassword, history.password);
+                if (isMatch) {
+                    return res.status(400).json({ message: 'New password cannot be the same as your recent passwords.' });
+                }
+            }
+        }
+
+        // Add current password to history
+        if (!user.passwordHistory) user.passwordHistory = [];
+        // user.password is the old hashed password (because we selected +password)
+        if (user.password) {
+            user.passwordHistory.unshift({ password: user.password, changedAt: Date.now() });
+        }
+        if (user.passwordHistory.length > 5) {
+            user.passwordHistory = user.passwordHistory.slice(0, 5);
+        }
+
         // Set new password
-        user.password = req.body.password;
+        user.password = newPassword;
         user.resetPasswordToken = undefined;
         user.resetPasswordExpire = undefined;
+        user.passwordChangedAt = Date.now();
 
         await user.save();
 
         const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+
+        // Send Confirmation Notification (Disabled)
+        /*
+        try {
+            const confirmMsg = `Hello ${user.username},\n\nYour password has been successfully reset. If you did not perform this action, please contact support immediately.`;
+
+            if (user.email) {
+                // Background send (no await)
+                sendEmail({
+                    email: user.email,
+                    subject: 'Password Reset Successful',
+                    message: confirmMsg,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                            <h2 style="color: #10B981;">Password Changed</h2>
+                            <p>Hello <strong>${user.username}</strong>,</p>
+                            <p>Your password has been successfully reset.</p>
+                            <div style="margin-top: 20px; padding: 15px; background-color: #fee2e2; border-radius: 5px;">
+                                <p style="color: #ef4444; font-weight: bold; margin: 0;">If you did not perform this action, please contact support immediately.</p>
+                            </div>
+                        </div>
+                    `
+                }).catch(err => console.error('Reset Confirm Email Error:', err));
+            }
+
+            if (user.mobile) {
+                sendWhatsApp(user.mobile, `*Security Alert: Password Changed*\n\nHello ${user.username},\n\nYour password has been successfully reset.\n\nIf you did not do this, please contact support immediately.`).catch(err => console.error('Reset Confirm WA Error:', err));
+            }
+        } catch (error) {
+            console.error('Notification Error:', error);
+        }
+        */
+
+        // Send Password Reset Success Notification (Dynamic)
+        try {
+            const { sendPasswordResetSuccessNotification } = require('../utils/authNotifications');
+            const SystemSettings = require('../models/SystemSettings');
+
+            const settings = await SystemSettings.findById('system_settings');
+
+            if (settings?.passwordResetNotificationsEnabled) {
+                await sendPasswordResetSuccessNotification({
+                    username: user.username,
+                    email: user.email,
+                    mobile: user.mobile
+                });
+                console.log('[Auth] Password reset success notification sent');
+            }
+        } catch (notifError) {
+            console.error('[Auth] Password reset notification error:', notifError);
+            // Don't fail the password reset if notification fails
+        }
 
         res.status(200).json({ success: true, token, message: 'Password updated successfully' });
 
@@ -266,6 +376,98 @@ router.put('/resetpassword/:resettoken', authLimiter, async (req, res) => {
 
 const { protect } = require('../middleware/authMiddleware');
 const BlacklistedToken = require('../models/BlacklistedToken');
+const { logAction } = require('../utils/auditLogger');
+
+// @desc    Change Password
+// @route   POST /api/auth/change-password
+// @access  Private
+router.post('/change-password', protect, authLimiter, [
+    body('currentPassword').notEmpty().withMessage('Current password is required'),
+    body('newPassword').isLength({ min: 8 }).withMessage('New password must be at least 8 characters long'),
+    body('confirmPassword').custom((value, { req }) => {
+        if (value !== req.body.newPassword) {
+            throw new Error('Password confirmation does not match password');
+        }
+        return true;
+    })
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ message: errors.array()[0].msg, errors: errors.array() });
+    }
+
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.user._id).select('+password');
+
+        if (!(await user.matchPassword(currentPassword))) {
+            return res.status(400).json({ message: 'Incorrect current password' });
+        }
+
+        // Prevent reuse of last 5 passwords
+        if (user.passwordHistory && user.passwordHistory.length > 0) {
+            for (let history of user.passwordHistory) {
+                const isMatch = await bcrypt.compare(newPassword, history.password);
+                if (isMatch) {
+                    return res.status(400).json({ message: 'New password cannot be the same as your recent passwords.' });
+                }
+            }
+        }
+
+        // Add current password to history
+        // user.password is already hashed
+        if (!user.passwordHistory) user.passwordHistory = [];
+        user.passwordHistory.unshift({ password: user.password, changedAt: Date.now() });
+        if (user.passwordHistory.length > 5) {
+            user.passwordHistory = user.passwordHistory.slice(0, 5); // Keep last 5
+        }
+
+        user.password = newPassword; // Will be hashed by pre-save hook
+        user.passwordChangedAt = Date.now();
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpire = undefined;
+        await user.save();
+
+        // Issue new token for current session
+        const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+
+        await logAction({ action: 'CHANGE_PASSWORD', req, targetResource: 'User', targetId: user._id, details: { changedAt: user.passwordChangedAt } });
+
+        // Send Confirmation Notification (Disabled)
+        /*
+        try {
+            const confirmMsg = `Hello ${user.username},\n\nYour password has been changed successfully. If you did not perform this action, please contact support immediately.`;
+
+            if (user.email) {
+                sendEmail({
+                    email: user.email,
+                    subject: 'Password Changed Successfully',
+                    message: confirmMsg,
+                    html: `
+                        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                            <h2 style="color: #10B981;">Password Updated</h2>
+                            <p>Hello <strong>${user.username}</strong>,</p>
+                            <p>Your password has been successfully changed.</p>
+                            <p style="color: #ef4444; font-weight: bold; margin-top: 20px;">If you did not perform this action, please contact support immediately.</p>
+                        </div>
+                    `
+                }).catch(err => console.error('ChangePwd Email Error:', err));
+            }
+
+            if (user.mobile) {
+                sendWhatsApp(user.mobile, `*Security Alert: Password Changed*\n\nHello ${user.username},\n\nYour password has been successfully updated.\n\nIf you did not do this, please contact support immediately.`).catch(err => console.error('ChangePwd WA Error:', err));
+            }
+        } catch (error) {
+            console.error('ChangePwd Notification Error:', error);
+        }
+        */
+
+        res.json({ success: true, message: 'Password changed successfully', token });
+
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error', error: err.message });
+    }
+});
 
 // @desc    Update User Profile
 // @route   PUT /api/auth/profile

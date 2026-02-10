@@ -4,6 +4,8 @@ const Product = require('../models/Product');
 const User = require('../models/User');
 const tallyService = require('../services/tallyService');
 const { logAction } = require('../utils/auditLogger');
+const { checkLowStockAlert } = require('../utils/inventoryNotifications');
+
 
 // @desc    Create a new order
 // @route   POST /api/orders/create
@@ -155,6 +157,10 @@ exports.createOrder = async (req, res) => {
                     message: `Insufficient stock for ${product.title}. Stock update failed.`
                 });
             }
+
+            // Fire and forget Low Stock Check
+            checkLowStockAlert(updatedProduct, item);
+
 
             // Track for potential rollback
             processedItems.push({

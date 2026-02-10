@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import Link from "next/link";
 import Image from "next/image";
-import { FiEdit2, FiTrash2, FiPlus, FiEye, FiSearch, FiRefreshCw, FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiPlus, FiEye, FiSearch, FiRefreshCw, FiChevronLeft, FiChevronRight, FiUpload, FiDownload } from "react-icons/fi";
 import Modal from "../../components/Modal";
 import { useModal } from "../../hooks/useModal";
 
@@ -182,7 +182,45 @@ export default function ProductList() {
         );
     };
 
+    const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
+        const formData = new FormData();
+        formData.append('file', file);
+
+        showModal(
+            "Importing Products",
+            "Please wait while we process your file...",
+            "info"
+        );
+
+        try {
+            const res = await api.post('/admin/products/bulk-import', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (res.data.success) {
+                showSuccess(res.data.message);
+                fetchProducts();
+            } else {
+                showError(res.data.message);
+            }
+        } catch (error: any) {
+            console.error("Bulk import failed", error);
+            showError(error.response?.data?.message || "Failed to import products");
+        }
+    };
+
+    const downloadSample = () => {
+        const csvContent = "title,mrp,selling_price_a,stock,part_number,category_name,brand_name,description\nSample Tool,1000,850,50,T001,Power Tools,Bosch,A high quality power tool";
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'sample_products.csv';
+        a.click();
+    };
 
     return (
         <div className="container" style={{ maxWidth: '100%' }}>
@@ -203,6 +241,23 @@ export default function ProductList() {
                     <p style={{ color: 'var(--text-muted)' }}>Manage inventory, pricing, and specifications.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button
+                        onClick={downloadSample}
+                        className="btn btn-outline"
+                        title="Download CSV Sample"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                    >
+                        <FiDownload /> Sample
+                    </button>
+                    <label className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                        <FiUpload /> Import CSV
+                        <input
+                            type="file"
+                            accept=".csv"
+                            onChange={handleImport}
+                            style={{ display: 'none' }}
+                        />
+                    </label>
                     <Link href="/admin/products/add" className="btn btn-primary">
                         <FiPlus /> Add New Product
                     </Link>

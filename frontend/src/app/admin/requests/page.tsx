@@ -352,15 +352,15 @@ export default function RequestsPage() {
 
             {/* Child Modal View */}
             {activeCustomer && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingLeft: '220px' }}>
                     <div style={{ background: 'white', width: '95%', maxWidth: '1400px', height: '90vh', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
                         {/* Modal Header */}
-                        <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
-                            <div>
+                        <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f8fafc', position: 'relative' }}>
+                            <div style={{ textAlign: 'center' }}>
                                 <h2 style={{ fontSize: '1.5rem', margin: 0 }}>{activeCustomer.name}</h2>
                                 <p style={{ margin: '0.25rem 0 0 0', color: '#64748B' }}>{activeCustomer.mobile}</p>
                             </div>
-                            <button onClick={() => setViewCustomerKey(null)} style={{ background: 'none', border: 'none', fontSize: '2rem', cursor: 'pointer', color: '#64748B' }}>×</button>
+                            <button onClick={() => setViewCustomerKey(null)} style={{ position: 'absolute', right: '1.5rem', background: 'none', border: 'none', fontSize: '2rem', cursor: 'pointer', color: '#64748B' }}>×</button>
                         </div>
 
                         {/* Controls Toolbar */}
@@ -411,7 +411,7 @@ export default function RequestsPage() {
 
                         {/* Scrolling List */}
                         <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', background: '#f1f5f9' }}>
-                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', alignItems: 'center', justifyContent: 'center' }}>
                                 <input
                                     type="checkbox"
                                     id="selectAll"
@@ -432,9 +432,17 @@ export default function RequestsPage() {
                                                 (req.status === 'Rejected' || req.status === 'Cancelled' ? '4px solid #ef4444' : '4px solid #10b981'),
                                             position: 'relative',
                                             display: 'flex',
-                                            flexDirection: 'column'
+                                            flexDirection: 'column',
+                                            paddingTop: '2.5rem' // Added padding for the absolute eye button if needed, but centering helps
                                         }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem', width: '100%' }}>
+                                                <span style={{
+                                                    fontWeight: 600,
+                                                    color: isPending ? '#b45309' : (req.status === 'Approved' ? '#065f46' : '#991b1b'),
+                                                    marginBottom: '0.5rem'
+                                                }}>
+                                                    {req.status}
+                                                </span>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                     {isPending && (
                                                         <input
@@ -446,13 +454,6 @@ export default function RequestsPage() {
                                                     )}
                                                     <span className="badge" style={{ background: '#f1f5f9' }}>{new Date(req.createdAt).toLocaleString()}</span>
                                                 </div>
-                                                <span style={{
-                                                    fontWeight: 600,
-                                                    color: isPending ? '#b45309' : (req.status === 'Approved' ? '#065f46' : '#991b1b'),
-                                                    marginRight: '2.5rem'
-                                                }}>
-                                                    {req.status}
-                                                </span>
                                             </div>
 
                                             {/* Eye Button */}
@@ -478,11 +479,11 @@ export default function RequestsPage() {
                                                 <svg stroke="currentColor" fill="currentColor" strokeWidth="0" viewBox="0 0 576 512" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M572.52 241.4C518.29 135.59 410.93 64 288 64S57.68 135.64 3.48 241.41a32.35 32.35 0 0 0 0 29.19C57.71 376.41 165.07 448 288 448s230.32-71.64 284.52-177.41a32.35 32.35 0 0 0 0-29.19zM288 400a144 144 0 1 1 144-144 143.93 143.93 0 0 1-144 144zm0-240a95.31 95.31 0 0 0-25.31 3.79 47.85 47.85 0 0 1-66.9 66.9A95.78 95.78 0 1 0 288 160z"></path></svg>
                                             </button>
 
-                                            <div style={{ display: 'flex', gap: '1.5rem', marginBottom: '1.5rem', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem', alignItems: 'center', textAlign: 'center' }}>
                                                 <img
                                                     src={req.product.featured_image}
                                                     alt={req.product.title}
-                                                    style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                                                    style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #e2e8f0' }}
                                                 />
                                                 <div>
                                                     <h3 style={{ fontSize: '1.4rem', margin: 0 }}>{req.product.title}</h3>
@@ -490,11 +491,10 @@ export default function RequestsPage() {
                                                 </div>
                                             </div>
 
-                                            <div style={{ marginBottom: '1rem', color: '#64748B', fontSize: '0.95rem' }}>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                            <div style={{ marginBottom: '1rem', color: '#64748B', fontSize: '0.95rem', textAlign: 'center' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
                                                     <div>Req Qty: <strong>{req.requestedQuantity}</strong></div>
                                                     <div>Base: <strong>₹{typeof req.declaredBasePrice === 'number' ? req.declaredBasePrice : (req.product.selling_price_a || req.product.mrp || req.product.basePrice)}</strong></div>
-
                                                 </div>
                                                 {req.customerContact?.address && (
                                                     <div style={{ marginTop: '0.5rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.5rem', fontSize: '0.85rem' }}>

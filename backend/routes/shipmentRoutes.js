@@ -263,4 +263,80 @@ router.delete('/:shipmentId', authenticateToken, isAdmin, async (req, res) => {
     }
 });
 
+// @desc    Get shipment details by time-bound token (PUBLIC)
+// @route   GET /api/shipment/track/:token
+// @access  Public (but time-limited)
+router.get('/track/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+
+        // Decode token
+        const decoded = Buffer.from(token, 'base64').toString('utf-8');
+        const [orderId, timestamp] = decoded.split(':');
+
+        if (!orderId || !timestamp) {
+            return res.status(400).json({ message: 'Invalid tracking link' });
+        }
+
+        // Check if link has expired (7 days by default)
+        const SystemSettings = require('../models/SystemSettings');
+        const settings = await SystemSettings.findById('system_settings');
+        const expiryDays = settings?.shipmentAssetExpiryDays || 7;
+        const linkAge = Date.now() - parseInt(timestamp);
+        const maxAge = expiryDays * 24 * 60 * 60 * 1000;
+
+        if (linkAge > maxAge) {
+            return res.status(410).json({ message: 'This shipment tracking link has expired' });
+        }
+
+        // Fetch order
+        const order = await Order.findById(orderId).populate('items.product');
+
+        if (!order) {
+            return res.status(404).json({ message: 'Shipment not found' });
+        }
+
+        // Check if order has been assigned to bus
+        if (order.status !== 'Assigned to Bus' && order.status !== 'Delivered') {
+            return res.status(400).json({ message: 'Shipment details not yet available' });
+        }
+
+        // Calculate expiry date
+        const expiryDate = new Date(parseInt(timestamp) + maxAge);
+
+        // Prepare response
+        const shipmentData = {
+            orderNumber: order.invoiceNumber || order._id.toString(),
+            busNumber: order.busDetails?.busNumber || 'N/A',
+            driverContact: order.busDetails?.driverContact || 'N/A',
+            departureTime: order.busDetails?.departureTime
+                ? new Date(order.busDetails.departureTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+                : 'TBD',
+            departureDate: order.busDetails?.departureTime
+                ? new Date(order.busDetails.departureTime).toLocaleDateString('en-IN')
+                : 'TBD',
+            arrivalTime: order.busDetails?.expectedArrival
+                ? new Date(order.busDetails.expectedArrival).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+                : 'TBD',
+            arrivalDate: order.busDetails?.expectedArrival
+                ? new Date(order.busDetails.expectedArrival).toLocaleDateString('en-IN')
+                : 'TBD',
+            busPhoto: order.busDetails?.busPhoto || null,
+            items: order.items.map(item => ({
+                name: item.productTitle,
+                model: item.modelName || 'N/A',
+                variant: item.variationText || 'Standard',
+                quantity: item.quantity
+            })),
+            expiryDate: expiryDate.toLocaleDateString('en-IN')
+        };
+
+        res.json(shipmentData);
+
+    } catch (error) {
+        console.error('Shipment tracking error:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 module.exports = router;

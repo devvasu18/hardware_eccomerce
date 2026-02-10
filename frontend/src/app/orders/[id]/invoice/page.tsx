@@ -1,9 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getSystemSettings } from '../../../utils/systemSettings';
 
 export default function InvoicePage({ params }: { params: { id: string } }) {
     const [order, setOrder] = useState<any>(null);
+    const [companyName, setCompanyName] = useState('Hardware Store');
+    const [companyAddress, setCompanyAddress] = useState('');
+    const [companyGstNumber, setCompanyGstNumber] = useState('');
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            const settings = await getSystemSettings();
+            if (settings) {
+                if (settings.companyName) setCompanyName(settings.companyName);
+                if (settings.companyAddress) setCompanyAddress(settings.companyAddress);
+                if (settings.companyGstNumber) setCompanyGstNumber(settings.companyGstNumber);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     useEffect(() => {
         fetch(`http://localhost:5000/api/orders/${params.id}`)
@@ -30,9 +46,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #000', paddingBottom: '1rem', marginBottom: '1rem' }}>
                 <div>
                     <h1 style={{ margin: 0, textTransform: 'uppercase', fontSize: '1.5rem', letterSpacing: '1px' }}>Tax Invoice</h1>
-                    <p style={{ margin: '0.5rem 0 0 0', fontWeight: 'bold' }}>Selfmade Industrial Systems</p>
-                    <p style={{ margin: 0, fontSize: '0.9rem' }}>123, GIDC Industrial Estate, Vapi, Gujarat - 396195</p>
-                    <p style={{ margin: 0, fontSize: '0.9rem' }}>GSTIN: 24ABCDE1234F1Z5</p>
+                    <p style={{ margin: '0.5rem 0 0 0', fontWeight: 'bold' }}>{companyName}</p>
+                    <p style={{ margin: 0, fontSize: '0.9rem' }}>{companyAddress}</p>
+                    {companyGstNumber && <p style={{ margin: 0, fontSize: '0.9rem' }}>GSTIN: {companyGstNumber}</p>}
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <p style={{ margin: 0, fontSize: '1.2rem' }}><strong>Original Copy</strong></p>

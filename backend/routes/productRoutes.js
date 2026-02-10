@@ -3,6 +3,8 @@ const router = express.Router();
 const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/authMiddleware');
 const { logAction } = require('../utils/auditLogger');
+const { advancedSearch, getRecommendations } = require('../utils/searchSmart');
+
 
 // Create Product
 router.post('/', protect, admin, async (req, res) => {
@@ -136,15 +138,22 @@ router.get('/', async (req, res) => {
             }
         }
 
-        // 2. Keyword Search (Title, Description, Keywords, Part Number)
+        // 2. Keyword Search (Advanced Fuzzy Search)
         if (keyword) {
-            const searchRegex = { $regex: keyword, $options: 'i' };
-            query.$or = [
-                { title: searchRegex },
-                { description: searchRegex },
-                { keywords: searchRegex },
-                { part_number: searchRegex }
-            ];
+            const { products: searchProducts, count: searchCount } = await advancedSearch(keyword, { limit, page });
+
+            // If we are doing a keyword search, we override the normal fetch logic
+            // to preserve the relevance ranking provided by Advanced Search.
+            if (req.query.page) {
+                return res.json({
+                    products: searchProducts,
+                    page: Number(page),
+                    pages: Math.ceil(searchCount / limit),
+                    count: searchCount
+                });
+            } else {
+                return res.json(searchProducts);
+            }
         }
 
         // 3. Price Filter (Using selling_price_a as the main price)
@@ -152,6 +161,12 @@ router.get('/', async (req, res) => {
             query.selling_price_a = {};
             if (minPrice) query.selling_price_a.$gte = Number(minPrice);
             if (maxPrice) query.selling_price_a.$lte = Number(maxPrice);
+        }
+
+        // 4. Availability Filter
+        if (req.query.inStock === 'true') {
+            query.stock = { $gt: 0 };
+            query.isOnDemand = { $ne: true }; // On-demand are technically always "available" but often handled separately
         }
 
         // 4. Brand Filter
@@ -194,6 +209,7 @@ router.get('/', async (req, res) => {
         if (sort === 'price_asc') sortOption = { selling_price_a: 1 };
         if (sort === 'price_desc') sortOption = { selling_price_a: -1 };
         if (sort === 'name_asc') sortOption = { title: 1 };
+        if (sort === 'newest') sortOption = { createdAt: -1 };
 
         const count = await Product.countDocuments(query);
         const products = await Product.find(query)
@@ -255,6 +271,18 @@ router.put('/:id', protect, admin, async (req, res) => {
         res.json(updatedProduct);
     } catch (err) {
         res.status(500).json({ message: 'Failed to update product', error: err.message });
+    }
+});
+
+// Get Recommendations for a product
+// @route   GET /api/products/:id/recommendations
+router.get('/:id/recommendations', async (req, res) => {
+    try {
+        const limit = req.query.limit ? parseInt(req.query.limit) : 4;
+        const recommendations = await getRecommendations(req.params.id, limit);
+        res.json(recommendations);
+    } catch (err) {
+        res.status(500).json({ message: "Failed to fetch recommendations", error: err.message });
     }
 });
 

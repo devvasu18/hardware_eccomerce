@@ -1,6 +1,8 @@
 const Product = require('../models/Product');
 const Brand = require('../models/Brand');
 const Category = require('../models/Category');
+const fs = require('fs');
+const csv = require('csv-parser');
 const { deleteFile } = require('../utils/fileHandler');
 const { logAction } = require('../utils/auditLogger');
 
@@ -504,4 +506,95 @@ exports.deleteProduct = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: 'Error deleting product', error: error.message });
     }
+};
+
+// @desc    Bulk Import Products from CSV
+// @route   POST /api/admin/products/bulk-import
+// @access  Admin
+exports.bulkImportProducts = async (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ message: 'Please upload a CSV file' });
+    }
+
+    const file = req.files[0];
+    const results = [];
+    const errors = [];
+    let successCount = 0;
+
+    fs.createReadStream(file.path)
+        .pipe(csv())
+        .on('data', (data) => results.push(data))
+        .on('end', async () => {
+            try {
+                for (let i = 0; i < results.length; i++) {
+                    const row = results[i];
+                    try {
+                        // Basic validation
+                        if (!row.title || !row.mrp) {
+                            errors.push({ row: i + 1, message: 'Missing required fields (title, mrp)' });
+                            continue;
+                        }
+
+                        // Check if product exists by part_number or title
+                        let product = null;
+                        if (row.part_number) {
+                            product = await Product.findOne({ part_number: row.part_number });
+                        } else {
+                            product = await Product.findOne({ title: row.title });
+                        }
+
+                        const productData = {
+                            title: row.title,
+                            slug: row.slug || row.title.toLowerCase().split(' ').join('-'),
+                            subtitle: row.subtitle,
+                            part_number: row.part_number,
+                            mrp: Number(row.mrp),
+                            selling_price_a: Number(row.selling_price_a || row.mrp),
+                            stock: Number(row.stock || 0),
+                            description: row.description,
+                            isActive: true,
+                            isVisible: true
+                        };
+
+                        // Look up Category and Brand if names are provided
+                        if (row.category_name) {
+                            const cat = await Category.findOne({ name: new RegExp(`^${row.category_name}$`, 'i') });
+                            if (cat) productData.category = cat._id;
+                        }
+
+                        if (row.brand_name) {
+                            const brand = await Brand.findOne({ name: new RegExp(`^${row.brand_name}$`, 'i') });
+                            if (brand) productData.brand = brand._id;
+                        }
+
+                        if (product) {
+                            // Update existing
+                            Object.assign(product, productData);
+                            await product.save();
+                        } else {
+                            // Create new
+                            const newProduct = new Product(productData);
+                            await newProduct.save();
+                        }
+                        successCount++;
+                    } catch (err) {
+                        errors.push({ row: i + 1, message: err.message });
+                    }
+                }
+
+                // Cleanup file
+                deleteFile(file.path);
+
+                await logAction({ action: 'BULK_IMPORT_PRODUCTS', req, details: { count: successCount, errorCount: errors.length } });
+
+                res.json({
+                    success: true,
+                    message: `Import completed. ${successCount} products processed.`,
+                    errors: errors.length > 0 ? errors : undefined
+                });
+            } catch (err) {
+                console.error('Bulk import error:', err);
+                res.status(500).json({ message: 'Error processing CSV', error: err.message });
+            }
+        });
 };

@@ -5,7 +5,14 @@ const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 const { body, validationResult } = require('express-validator'); // Import validator
-const { createProduct, updateProduct, deleteProduct, getAdminProducts, getAdminProductById } = require('../controllers/productController');
+const {
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    getAdminProducts,
+    getAdminProductById,
+    bulkImportProducts
+} = require('../controllers/productController');
 
 // Validation Middleware for Product
 const validateProduct = [
@@ -74,6 +81,7 @@ router.get('/:id', protect, admin, getAdminProductById);
 router.post('/', protect, admin, productUploads, validateProduct, createProduct); // Added validateProduct
 router.put('/:id', protect, admin, productUploads, validateProduct, updateProduct); // Added validateProduct
 router.delete('/:id', protect, admin, deleteProduct);
+router.post('/bulk-import', protect, admin, productUploads, bulkImportProducts);
 
 // Quick Stock Update
 router.patch('/:id/stock', protect, admin, async (req, res) => {

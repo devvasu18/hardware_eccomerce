@@ -42,6 +42,10 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
     const [localSearch, setLocalSearch] = useState(currentKeyword || '');
     const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
+    const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
+    const [inStock, setInStock] = useState(searchParams.get('inStock') === 'true');
+    const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'newest');
 
     // Use props directly
     const categories = initialCategories;
@@ -75,10 +79,10 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
         fetchSubcategories();
     }, [currentCategory]);
 
-    const updateFilter = (type: 'category' | 'subcategory' | 'brand' | 'keyword', value: string | null) => {
+    const updateFilter = (type: string, value: string | null) => {
         const params = new URLSearchParams(searchParams.toString());
 
-        if (value) {
+        if (value !== null && value !== '') {
             params.set(type, value);
         } else {
             params.delete(type);
@@ -127,6 +131,88 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                         />
                         <button type="submit" className="refine-btn">Go</button>
                     </form>
+                </div>
+
+                {/* Sort By */}
+                <div className="filter-group">
+                    <h4>Sort By</h4>
+                    <select
+                        className="filter-select"
+                        value={sortBy}
+                        onChange={(e) => {
+                            setSortBy(e.target.value);
+                            updateFilter('sort', e.target.value);
+                        }}
+                    >
+                        <option value="newest">Newest First</option>
+                        <option value="price_asc">Price: Low to High</option>
+                        <option value="price_desc">Price: High to Low</option>
+                        <option value="name_asc">Name: A-Z</option>
+                    </select>
+                </div>
+
+                {/* Availability */}
+                <div className="filter-group">
+                    <h4>Availability</h4>
+                    <div
+                        className="availability-toggle"
+                        onClick={() => {
+                            const newValue = !inStock;
+                            setInStock(newValue);
+                            updateFilter('inStock', newValue ? 'true' : null);
+                        }}
+                    >
+                        <span className="toggle-label">In Stock Only</span>
+                        <div className={`toggle-switch ${inStock ? 'on' : ''}`}>
+                            <div className="toggle-knob"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Price Range */}
+                <div className="filter-group">
+                    <h4>Price Range</h4>
+                    <div className="price-range-container">
+                        <div className="price-inputs">
+                            <div className="price-input-field">
+                                <label>Min</label>
+                                <input
+                                    type="number"
+                                    value={minPrice}
+                                    onChange={(e) => setMinPrice(e.target.value)}
+                                    onBlur={() => updateFilter('minPrice', minPrice)}
+                                    placeholder="0"
+                                />
+                            </div>
+                            <span className="price-separator">-</span>
+                            <div className="price-input-field">
+                                <label>Max</label>
+                                <input
+                                    type="number"
+                                    value={maxPrice}
+                                    onChange={(e) => setMaxPrice(e.target.value)}
+                                    onBlur={() => updateFilter('maxPrice', maxPrice)}
+                                    placeholder="50000"
+                                />
+                            </div>
+                        </div>
+                        {/* Simple range slider for visual feedback */}
+                        <div className="price-slider-wrapper">
+                            <input
+                                type="range"
+                                min="0"
+                                max="50000"
+                                step="100"
+                                value={maxPrice || 50000}
+                                onChange={(e) => {
+                                    setMaxPrice(e.target.value);
+                                }}
+                                onMouseUp={() => updateFilter('maxPrice', maxPrice)}
+                                onTouchEnd={() => updateFilter('maxPrice', maxPrice)}
+                                className="range-slider"
+                            />
+                        </div>
+                    </div>
                 </div>
 
                 {/* 2. Categories */}

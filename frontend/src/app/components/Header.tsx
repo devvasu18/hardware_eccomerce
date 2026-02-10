@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext'; // Import AuthContext
 import { useCart } from '../../context/CartContext'; // Import CartContext
 import { useWishlist } from '../../context/WishlistContext'; // Import WishlistContext
+import { getSystemSettings } from '../utils/systemSettings';
 import './Header.css';
 
 const Header = () => {
@@ -23,6 +24,7 @@ const Header = () => {
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [mobileSearchTerm, setMobileSearchTerm] = useState('');
+    const [companyName, setCompanyName] = useState('Hardware Store');
 
     // Close mobile menu on route change
     useEffect(() => {
@@ -103,6 +105,16 @@ const Header = () => {
         fetchCategories();
     }, []);
 
+    useEffect(() => {
+        const fetchSettings = async () => {
+            const settings = await getSystemSettings();
+            if (settings && settings.companyName) {
+                setCompanyName(settings.companyName);
+            }
+        };
+        fetchSettings();
+    }, []);
+
 
 
     return (
@@ -113,7 +125,7 @@ const Header = () => {
                 {/* Left: Brand Logo */}
                 <div className="header-logo-area">
                     <Link href="/" className="logo-text">
-                        Selfmade
+                        {companyName}
                     </Link>
                 </div>
 
@@ -240,6 +252,7 @@ const Header = () => {
                                             <>
                                                 <Link href="/profile" className="dropdown-item">My Profile</Link>
                                                 <Link href="/orders" className="dropdown-item">My Orders</Link>
+                                                <Link href="/change-password" className="dropdown-item">Change Password</Link>
                                             </>
                                         )}
                                         {(user.role === 'admin' || user.role === 'super_admin') && (
@@ -326,7 +339,7 @@ const Header = () => {
             <div className={`mobile-nav-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
             <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
                 <div className="mobile-nav-header">
-                    <span className="mobile-nav-logo">Selfmade</span>
+                    <span className="mobile-nav-logo">{companyName}</span>
                     <button className="mobile-nav-close" onClick={() => setIsMobileMenuOpen(false)}>×</button>
                 </div>
                 <nav className="mobile-nav-links">

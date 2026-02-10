@@ -19,6 +19,7 @@ import {
     FiShield,
     FiImage
 } from 'react-icons/fi';
+import { getSystemSettings } from '../../utils/systemSettings';
 
 interface MenuItem {
     label: string;
@@ -37,6 +38,7 @@ export default function AdminSidebar() {
         'Stock Manager': false,
         'System Settings': false
     });
+    const [companyName, setCompanyName] = useState('ADMIN');
 
     const isActive = (path: string) => {
         if (path === '/admin') {
@@ -103,8 +105,22 @@ export default function AdminSidebar() {
             icon: <FiSettings />,
             roles: ['super_admin'],
             children: [
-                { label: 'System Logs', path: '/admin/logs', roles: ['super_admin'] }
+                { label: 'System Settings', path: '/admin/settings/system', roles: ['super_admin'] },
+                { label: 'System Logs', path: '/admin/logs', roles: ['super_admin'] },
+                { label: 'WhatsApp Integration', path: '/admin/settings/whatsapp', roles: ['super_admin'] }
 
+            ]
+        },
+
+        {
+            label: 'Business Intelligence',
+            path: '#',
+            icon: <FiPieChart />,
+            roles: ['super_admin', 'ops_admin'],
+            children: [
+                { label: 'Strategic Overview', path: '/admin/analytics/intelligence', roles: ['super_admin'] },
+                { label: 'Product Analytics', path: '/admin/analytics/products', roles: ['super_admin'] },
+                { label: 'Customer Insights', path: '/admin/analytics/customers', roles: ['super_admin'] }
             ]
         },
 
@@ -115,10 +131,21 @@ export default function AdminSidebar() {
     useEffect(() => {
         menuItems.forEach(item => {
             if (item.children && item.children.some(child => isActive(child.path))) {
-                setExpandedMenus(prev => ({ ...prev, [item.label]: true }));
             }
         });
     }, [pathname]);
+
+    useEffect(() => {
+        const fetchSettings = async () => {
+            const settings = await getSystemSettings();
+            if (settings && settings.companyName) {
+                // Take first word or full name but uppercase
+                const name = settings.companyName.split(' ')[0].toUpperCase();
+                setCompanyName(name);
+            }
+        };
+        fetchSettings();
+    }, []);
 
     // TEMPORARY: Show all items for everyone for easier testing
     const filteredMenu = menuItems;
@@ -139,7 +166,7 @@ export default function AdminSidebar() {
             overflow: 'hidden' // Contain scroll
         }}>
             <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #334155', flexShrink: 0 }}>
-                {!collapsed && <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F37021', letterSpacing: '1px' }}>CHAMUNDA</span>}
+                {!collapsed && <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F37021', letterSpacing: '1px' }}>{companyName}</span>}
                 <button onClick={() => setCollapsed(!collapsed)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}>
                     {collapsed ? '☰' : '◀'}
                 </button>

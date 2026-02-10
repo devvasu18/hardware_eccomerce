@@ -111,9 +111,9 @@ export default function WhyChooseUs() {
             <div className="container">
                 <div className="section-header-center">
                     <span className="section-badge">Why Choose Us</span>
-                    <h2 className="section-title-center">Your Trusted Auto Parts Partner</h2>
+                    <h2 className="section-title-center">Your Trusted Hardware Partner</h2>
                     <p className="section-description">
-                        We combine quality products, competitive pricing, and exceptional service to power your automotive needs
+                        We combine quality products, competitive pricing, and exceptional service to power your industrial and home needs
                     </p>
                 </div>
 

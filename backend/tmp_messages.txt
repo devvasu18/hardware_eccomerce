@@ -1,0 +1,71 @@
+Hello Vasu 🚍
+
+Your order from *SelfMadeV* is now on the way!
+
+🧾 Order ID: INV-SHIP-777
+🚌 Bus No: GJ-05-XY-1234
+👤 Driver: 9876543210 (Rajesh)
+🕒 Departure: 06:21 pm (10/2/2026)
+🕘 Arrival: 10:21 pm (10/2/2026)
+
+🔗 Shipment Details:
+http://localhost:3000/shipment/Njk4YjBkYjdjYmMwNGFkZTE1ZGQ5YmViOjE3NzA3MjA2OTUxMjI=
+(Images expire in 7 days)
+
+📞 Support: +91 1234567890
+
+Thank you for shopping with us 🙏
+---
+Hello Vasu,
+
+Your order with *SelfMadeV* is partially confirmed ✅
+
+📦 Paid items will be delivered soon.
+
+🕒 On-Demand Items:
+
+• Industrial Drill (ID-400 / Heavy Duty)
+
+
+⏳ For on-demand items, our team will contact you within *48 hours*.
+
+📞 Support: +91 1234567890
+
+Thank you 🙏
+---
+Hello Vasu,
+
+Your on-demand product request has been received by *SelfMadeV* 📩
+
+📦 Requested Items:
+
+• Custom Sheet Metal (SM-X / 2mm Thick)
+
+
+⏳ Our team will connect with you within *48 hours*.
+
+For assistance:
+📞 +91 1234567890
+
+Thank you 🙏
+---
+Hello Vasu 👋
+
+Your order has been successfully placed with *SelfMadeV* ✅
+
+🧾 Order ID: INV-TEST-001
+
+📦 Items Ordered:
+
+• Premium Hammer (PH-200 / Steel Head)
+
+
+• Safety Goggles (SG-50 / Clear)
+
+
+🚚 We will deliver your order soon.
+
+For any help, contact us:
+📞 +91 1234567890
+
+Thank you for choosing SelfMadeV 🙏

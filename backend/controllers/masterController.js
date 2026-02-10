@@ -93,6 +93,44 @@ exports.createCategory = async (req, res) => {
     } catch (error) { res.status(400).json({ error: error.message }); }
 };
 
+exports.updateCategory = async (req, res) => {
+    try {
+        const { name, slug, description, displayOrder, showInNav, isActive } = req.body;
+        const updateData = { name, slug, description, displayOrder, showInNav, isActive };
+
+        // Handle showInNav check (handling both boolean and string "true" from multipart)
+        const isShowInNav = showInNav === true || showInNav === 'true';
+
+        if (isShowInNav) {
+            const count = await Category.countDocuments({ showInNav: true, _id: { $ne: req.params.id } });
+            if (count >= 10) {
+                return res.status(400).json({ message: 'Navigation limit reached (max 10). Uncheck "Show in Navigation".' });
+            }
+        }
+
+        // Handle Image Update
+        if (req.file) {
+            updateData.image = req.file.path.replace(/\\/g, '/');
+            // Delete old image
+            const oldCategory = await Category.findById(req.params.id);
+            if (oldCategory && oldCategory.image) {
+                deleteFile(oldCategory.image);
+            }
+        }
+
+        const category = await Category.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+        if (!category) return res.status(404).json({ message: 'Category not found' });
+
+        await logAction({ action: 'UPDATE_CATEGORY', req, targetResource: 'Category', targetId: category._id, details: { name, slug } });
+        res.json(category);
+    } catch (error) { res.status(400).json({ error: error.message }); }
+};
+
 exports.deleteCategory = async (req, res) => {
     try {
         const category = await Category.findById(req.params.id);

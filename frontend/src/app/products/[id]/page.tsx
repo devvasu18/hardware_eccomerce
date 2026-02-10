@@ -52,23 +52,19 @@ async function getProduct(id: string): Promise<Product | null> {
     }
 }
 
-async function getRelatedProducts(category: string, currentId: string): Promise<Product[]> {
+async function getRelatedProducts(productId: string): Promise<Product[]> {
     try {
-        const res = await fetch(`http://localhost:5000/api/products?category=${encodeURIComponent(category)}`, { cache: 'no-store' });
+        const res = await fetch(`http://localhost:5000/api/products/${productId}/recommendations?limit=4`, { cache: 'no-store' });
         if (!res.ok) return [];
         const productsRaw = await res.json();
-        const productsArray = Array.isArray(productsRaw) ? productsRaw : (productsRaw.products || []);
 
-        return productsArray
-            .filter((p: any) => p._id !== currentId)
-            .map((p: any) => ({
-                ...p,
-                basePrice: p.mrp || p.basePrice,
-                discountedPrice: p.selling_price_a || p.discountedPrice,
-                title: p.title || p.name,
-                name: p.title || p.name
-            }))
-            .slice(0, 3);
+        return productsRaw.map((p: any) => ({
+            ...p,
+            basePrice: p.mrp || p.basePrice,
+            discountedPrice: p.selling_price_a || p.discountedPrice,
+            title: p.title || p.name,
+            name: p.title || p.name
+        }));
     } catch (e) {
         return [];
     }
@@ -90,7 +86,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     const categoryName = typeof product.category === 'object' && product.category !== null ? product.category.name : String(product.category);
     const brandName = typeof product.brand === 'object' && product.brand !== null ? product.brand.name : String(product.brand || '');
 
-    const relatedProducts = await getRelatedProducts(categoryName, product._id);
+    const relatedProducts = await getRelatedProducts(product._id);
     const discountPercentage = product.discountedPrice && product.discountedPrice < product.basePrice
         ? Math.round(((product.basePrice - product.discountedPrice) / product.basePrice) * 100)
         : 0;

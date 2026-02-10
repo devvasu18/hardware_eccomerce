@@ -167,6 +167,118 @@
     font-weight: 600;
 }
 
+/* Price Range */
+.price-range-container {
+    padding: 0.5rem 0.25rem;
+}
+
+.price-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.price-input-field {
+    width: 100%;
+}
+
+.price-input-field label {
+    display: block;
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+    font-weight: 600;
+}
+
+.price-input-field input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    color: #0f172a;
+}
+
+.price-separator {
+    margin-top: 1rem;
+    color: #cbd5e1;
+}
+
+.price-slider-wrapper {
+    margin: 1.5rem 0;
+}
+
+.range-slider {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    outline: none;
+    accent-color: #F37021;
+}
+
+/* Sort & Toggle */
+.filter-select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    color: #0f172a;
+    background: #f8fafc;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.filter-select:focus {
+    border-color: #F37021;
+    background: #fff;
+}
+
+.availability-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    cursor: pointer;
+}
+
+.toggle-label {
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: #cbd5e1;
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.3s;
+}
+
+.toggle-switch.on {
+    background: #10B981;
+}
+
+.toggle-knob {
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: left 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-switch.on .toggle-knob {
+    left: 23px;
+}
+
 /* Mobile Toggle */
 .mobile-filter-toggle {
     display: none;

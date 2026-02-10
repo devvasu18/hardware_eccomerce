@@ -92,6 +92,19 @@ const orderSchema = new mongoose.Schema({
     tallyVoucherNumber: { type: String },
     tallyErrorLog: { type: String },
 
+    // Notification Tracking
+    notifications: {
+        orderConfirmationSent: { type: Boolean, default: false },
+        orderConfirmationSentAt: { type: Date },
+        shipmentDispatchSent: { type: Boolean, default: false },
+        shipmentDispatchSentAt: { type: Date },
+        notificationErrors: [{
+            type: { type: String }, // 'email' or 'whatsapp'
+            error: String,
+            timestamp: { type: Date, default: Date.now }
+        }]
+    }
+
 }, { timestamps: true });
 
 // Indexes for high-performance order lookups

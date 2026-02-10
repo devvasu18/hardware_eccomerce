@@ -1,4 +1,5 @@
 import Header from '@/app/components/Header';
+import Footer from '@/app/components/Footer';
 import ProductCard from '@/app/components/ProductCard';
 
 interface Product {
@@ -57,11 +58,7 @@ export default async function NewArrivalsPage() {
                 )}
             </section>
 
-            <footer style={{ marginTop: 'auto', borderTop: '1px solid var(--border)', padding: '4rem 0' }}>
-                <div className="container" style={{ textAlign: 'center', opacity: 0.8 }}>
-                    <p>&copy; 2026 Selfmade Industrial Systems. All rights reserved.</p>
-                </div>
-            </footer>
+            <Footer />
         </main>
     );
 }
