@@ -1,4 +1,5 @@
 const axios = require('axios');
+const crypto = require('crypto');
 const TallySyncQueue = require('../models/TallySyncQueue');
 const TallyStatusLog = require('../models/TallyStatusLog');
 const Order = require('../models/Order');
@@ -120,6 +121,12 @@ async function processQueueItem(queueItem) {
                     tallyStatus: 'saved',
                     tallyErrorLog: ''
                 });
+            } else if (queueItem.relatedModel === 'ProcurementRequest') {
+                const ProcurementRequest = require('../models/ProcurementRequest');
+                await ProcurementRequest.findByIdAndUpdate(queueItem.relatedId, {
+                    tallyStatus: 'saved',
+                    tallyErrorLog: ''
+                });
             }
 
             return true;
@@ -138,6 +145,12 @@ async function processQueueItem(queueItem) {
                 } else if (queueItem.relatedModel === 'StockEntry') {
                     const StockEntry = require('../models/StockEntry');
                     await StockEntry.findByIdAndUpdate(queueItem.relatedId, {
+                        tallyStatus: 'failed',
+                        tallyErrorLog: `Queue Failed: ${result.error}`
+                    });
+                } else if (queueItem.relatedModel === 'ProcurementRequest') {
+                    const ProcurementRequest = require('../models/ProcurementRequest');
+                    await ProcurementRequest.findByIdAndUpdate(queueItem.relatedId, {
                         tallyStatus: 'failed',
                         tallyErrorLog: `Queue Failed: ${result.error}`
                     });
@@ -187,10 +200,20 @@ async function processQueue() {
 }
 
 /**
- * Add item to queue
+ * Add item to queue with Idempotency
  */
-async function addToQueue({ payload, type, relatedId, relatedModel }) {
-    // Check if duplicate pending
+async function addToQueue({ payload, type, relatedId, relatedModel, isOnDemand = false }) {
+    // Generate Hash
+    const payloadHash = crypto.createHash('sha256').update(payload).digest('hex');
+
+    // Check if duplicate hash exists (Idempotency)
+    const existingHash = await TallySyncQueue.findOne({ payloadHash });
+    if (existingHash) {
+        console.log(`[Tally Sync] Ignored duplicate payload for ${relatedModel} ${relatedId}`);
+        return existingHash;
+    }
+
+    // Check if duplicate pending by ID (Double safety)
     const existing = await TallySyncQueue.findOne({
         relatedId, relatedModel, status: { $in: ['pending', 'processing'] }
     });
@@ -198,7 +221,7 @@ async function addToQueue({ payload, type, relatedId, relatedModel }) {
     if (existing) return existing;
 
     return await TallySyncQueue.create({
-        payload, type, relatedId, relatedModel, status: 'pending'
+        payload, payloadHash, type, relatedId, relatedModel, isOnDemand, status: 'pending'
     });
 }
 
@@ -224,6 +247,12 @@ async function syncWithHealthCheck({ xmlData, type, relatedId, relatedModel }) {
                     tallyStatus: 'queued',
                     tallyErrorLog: 'Tally Offline - Queued'
                 });
+            } else if (relatedModel === 'ProcurementRequest') {
+                const ProcurementRequest = require('../models/ProcurementRequest');
+                await ProcurementRequest.findByIdAndUpdate(relatedId, {
+                    tallyStatus: 'queued',
+                    tallyErrorLog: 'Tally Offline - Queued'
+                });
             }
 
             return { success: false, queued: true, error: 'Tally offline - queued' };
@@ -244,6 +273,12 @@ async function syncWithHealthCheck({ xmlData, type, relatedId, relatedModel }) {
                     tallyStatus: 'saved',
                     tallyErrorLog: ''
                 });
+            } else if (relatedModel === 'ProcurementRequest') {
+                const ProcurementRequest = require('../models/ProcurementRequest');
+                await ProcurementRequest.findByIdAndUpdate(relatedId, {
+                    tallyStatus: 'saved',
+                    tallyErrorLog: ''
+                });
             }
             return { success: true, queued: false };
         } else {
@@ -258,6 +293,12 @@ async function syncWithHealthCheck({ xmlData, type, relatedId, relatedModel }) {
             } else if (relatedModel === 'StockEntry') {
                 const StockEntry = require('../models/StockEntry');
                 await StockEntry.findByIdAndUpdate(relatedId, {
+                    tallyStatus: 'queued',
+                    tallyErrorLog: `Sync Failed: ${result.error}. Retrying via queue.`
+                });
+            } else if (relatedModel === 'ProcurementRequest') {
+                const ProcurementRequest = require('../models/ProcurementRequest');
+                await ProcurementRequest.findByIdAndUpdate(relatedId, {
                     tallyStatus: 'queued',
                     tallyErrorLog: `Sync Failed: ${result.error}. Retrying via queue.`
                 });
@@ -297,7 +338,7 @@ async function syncOrderToTally(orderId) {
         for (const unit of uniqueUnits) {
             await syncWithHealthCheck({
                 xmlData: generateUnitXML(unit),
-                type: 'Unit',
+                type: 'Other', // Mapped to 'Other' as Unit is not a primary entity in our new enum
                 relatedId: `UNIT-${unit}`,
                 relatedModel: 'Unit'
             });
@@ -306,7 +347,7 @@ async function syncOrderToTally(orderId) {
         // 2. Sync Sales Ledger
         await syncWithHealthCheck({
             xmlData: generateSalesLedgerXML(),
-            type: 'Ledger',
+            type: 'Other',
             relatedId: 'LEDGER-SALES',
             relatedModel: 'Ledger'
         });
@@ -316,7 +357,7 @@ async function syncOrderToTally(orderId) {
         for (const tax of taxLedgers) {
             await syncWithHealthCheck({
                 xmlData: generateTaxLedgerXML(tax, 'Duties & Taxes'),
-                type: 'Ledger',
+                type: 'Other',
                 relatedId: `LEDGER-${tax}`,
                 relatedModel: 'Ledger'
             });
@@ -325,7 +366,7 @@ async function syncOrderToTally(orderId) {
         // 2c. Sync Round Off Ledger
         await syncWithHealthCheck({
             xmlData: generateTaxLedgerXML('Round Off', 'Indirect Expenses'),
-            type: 'Ledger',
+            type: 'Other',
             relatedId: 'LEDGER-ROUNDOFF',
             relatedModel: 'Ledger'
         });
@@ -333,7 +374,7 @@ async function syncOrderToTally(orderId) {
         // 3. Sync Customer Ledger
         await syncWithHealthCheck({
             xmlData: generateLedgerXML(user),
-            type: 'Ledger',
+            type: 'Customer',
             relatedId: user._id,
             relatedModel: 'User'
         });
@@ -349,7 +390,7 @@ async function syncOrderToTally(orderId) {
 
                 await syncWithHealthCheck({
                     xmlData: generateStockItemXML(item.product, item.variationText, item.modelName),
-                    type: 'StockItem',
+                    type: 'Product',
                     relatedId: uniqueRelatedId,
                     relatedModel: 'Product'
                 });
@@ -363,7 +404,7 @@ async function syncOrderToTally(orderId) {
 
         return await syncWithHealthCheck({
             xmlData: voucherXML,
-            type: 'SalesVoucher',
+            type: 'Order',
             relatedId: order._id,
             relatedModel: 'Order'
         });
@@ -435,7 +476,7 @@ async function syncStockEntryToTally(stockEntryId) {
         // 1. Sync Units (Assume 'pcs' for now or dynamic)
         await syncWithHealthCheck({
             xmlData: generateUnitXML('pcs'),
-            type: 'Unit',
+            type: 'Other',
             relatedId: 'UNIT-pcs',
             relatedModel: 'Unit'
         });
@@ -443,7 +484,7 @@ async function syncStockEntryToTally(stockEntryId) {
         // 2. Sync Purchase Ledgers
         await syncWithHealthCheck({
             xmlData: generatePurchaseLedgerXML(),
-            type: 'Ledger',
+            type: 'Other',
             relatedId: 'LEDGER-PURCHASE',
             relatedModel: 'Ledger'
         });
@@ -453,7 +494,7 @@ async function syncStockEntryToTally(stockEntryId) {
         for (const tax of taxLedgers) {
             await syncWithHealthCheck({
                 xmlData: generateTaxLedgerXML(tax, 'Duties & Taxes'),
-                type: 'Ledger',
+                type: 'Other',
                 relatedId: `LEDGER-${tax}`,
                 relatedModel: 'Ledger'
             });
@@ -471,7 +512,7 @@ async function syncStockEntryToTally(stockEntryId) {
 
         await syncWithHealthCheck({
             xmlData: generateLedgerXML(partyUserLike),
-            type: 'Ledger',
+            type: 'Customer', // Technically supplier but sharing same enum/model often
             relatedId: party._id,
             relatedModel: 'Party'
         });
@@ -484,7 +525,7 @@ async function syncStockEntryToTally(stockEntryId) {
 
             await syncWithHealthCheck({
                 xmlData: generateStockItemXML(item.product, item.variant_name, item.model_name),
-                type: 'StockItem',
+                type: 'Product',
                 relatedId: uniqueRelatedId,
                 relatedModel: 'Product'
             });
@@ -495,7 +536,7 @@ async function syncStockEntryToTally(stockEntryId) {
 
         return await syncWithHealthCheck({
             xmlData: voucherXML,
-            type: 'PurchaseVoucher',
+            type: 'StockEntry',
             relatedId: stockEntry._id,
             relatedModel: 'StockEntry'
         });
@@ -506,6 +547,153 @@ async function syncStockEntryToTally(stockEntryId) {
     }
 }
 
+/**
+ * Sync On-Demand Request (Memorandum)
+ */
+async function syncOnDemandToTally(requestId) {
+    try {
+        const ProcurementRequest = require('../models/ProcurementRequest');
+        const Product = require('../models/Product');
+        const { generateMemorandumVoucherXML } = require('../utils/tallyMemorandumXmlGenerator');
+
+        const request = await ProcurementRequest.findById(requestId);
+        if (!request) return { success: false, error: 'Request not found' };
+
+        const product = await Product.findById(request.product);
+        if (!product) return { success: false, error: 'Product not found' };
+
+        // 1. Sync Customer Ledger (if name exists, else generic)
+        if (request.customerContact && request.customerContact.name) {
+            const contact = request.customerContact;
+            const partyUserLike = {
+                username: contact.name,
+                mobile: contact.mobile,
+                address: contact.address,
+                tallyLedgerName: `${contact.name} - ${contact.mobile}`,
+                tallyParentGroup: 'Sundry Debtors' // Treat as potential customer
+            };
+
+            await syncWithHealthCheck({
+                xmlData: generateLedgerXML(partyUserLike),
+                type: 'Customer',
+                relatedId: `GUEST-${contact.mobile}`, // Pseudo-ID
+                relatedModel: 'User'
+            });
+        }
+
+        // 2. Sync Stock Item (Product)
+        let uniqueRelatedId = product._id.toString();
+        if (request.modelName) uniqueRelatedId += `-${request.modelName}`;
+        if (request.variationText) uniqueRelatedId += `-${request.variationText.replace(/\s+/g, '-')}`;
+
+        await syncWithHealthCheck({
+            xmlData: generateStockItemXML(product, request.variationText, request.modelName),
+            type: 'Product',
+            relatedId: uniqueRelatedId,
+            relatedModel: 'Product'
+        });
+
+        // 3. Sync Memorandum Voucher
+        const voucherXML = generateMemorandumVoucherXML(request, product);
+
+        return await syncWithHealthCheck({
+            xmlData: voucherXML,
+            type: 'OnDemand',
+            relatedId: request._id,
+            relatedModel: 'ProcurementRequest'
+        });
+
+    } catch (error) {
+        console.error('OnDemand Sync Error:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * Fetch Real-Time Stock Balance for a Single Item from Tally
+ * Uses a targeted TDL query
+ * @param {string} tallyItemName - The exact item name in Tally
+ */
+async function getRealTimeTallyStock(tallyItemName) {
+    if (!tallyItemName) return null;
+
+    const requestXML = `
+    <ENVELOPE>
+        <HEADER>
+            <TALLYREQUEST>Export Data</TALLYREQUEST>
+        </HEADER>
+        <BODY>
+            <DESC>
+                <STATICVARIABLES>
+                    <SVEXPORTFORMAT>$$SysName:XML</SVEXPORTFORMAT>
+                </STATICVARIABLES>
+                <TDL>
+                    <TDLMESSAGE>
+                        <REPORT NAME="OneItemStock" ISMODIFY="No" ISFIXED="No" ISINITIALIZE="No" ISOPTION="No" ISINTERNAL="No">
+                            <FORMS>OneItemStockForm</FORMS>
+                        </REPORT>
+                        <FORM NAME="OneItemStockForm">
+                            <TOPPARTS>OneItemStockPart</TOPPARTS>
+                        </FORM>
+                        <PART NAME="OneItemStockPart">
+                            <TOPLINES>OneItemStockLine</TOPLINES>
+                            <REPEAT>OneItemStockLine : Stock Item</REPEAT>
+                            <SCROLLED>Vertical</SCROLLED>
+                        </PART>
+                        <LINE NAME="OneItemStockLine">
+                            <LEFTFIELDS>Name Field</LEFTFIELDS>
+                            <RIGHTFIELDS>Closing Balance Field</RIGHTFIELDS>
+                        </LINE>
+                        <FIELD NAME="Name Field">
+                            <SET>$Name</SET>
+                        </FIELD>
+                        <FIELD NAME="Closing Balance Field">
+                            <SET>$ClosingBalance</SET>
+                        </FIELD>
+                        
+                        <COLLECTION NAME="Stock Item">
+                            <TYPE>Stock Item</TYPE>
+                            <FILTERS>FilterByName</FILTERS>
+                        </COLLECTION>
+                        
+                         <SYSTEM TYPE="Formulae" NAME="FilterByName">
+                             $Name = "${tallyItemName}"
+                         </SYSTEM>
+                    </TDLMESSAGE>
+                </TDL>
+            </DESC>
+        </BODY>
+    </ENVELOPE>`;
+
+    try {
+        const response = await axios.post(TALLY_URL, requestXML, {
+            headers: { 'Content-Type': 'text/xml' },
+            timeout: 2000 // Fast Timeout (2s)
+        });
+
+        // Parse Response
+        const xml2js = require('xml2js');
+        const parser = new xml2js.Parser({ explicitArray: false, ignoreAttrs: false });
+        const result = await parser.parseStringPromise(response.data);
+
+        // Navigate
+        const stockItem = result['ENVELOPE']?.['BODY']?.['DATA']?.['TALLYMESSAGE']?.['STOCKITEM'];
+
+        if (stockItem) {
+            const closingBalanceStr = stockItem['CLOSINGBALANCE'];
+            let quantity = parseFloat(closingBalanceStr?.split(' ')[0] || 0);
+            if (isNaN(quantity)) quantity = 0;
+            return quantity;
+        }
+
+        return null; // Item not found or zero
+
+    } catch (error) {
+        // console.error('RealTime Stock Check Error:', error.message);
+        return null; // Fail Open (assume stock exists or rely on local)
+    }
+}
+
 module.exports = {
     checkTallyHealth,
     sendToTally,
@@ -513,5 +701,7 @@ module.exports = {
     syncWithHealthCheck,
     addToQueue,
     syncOrderToTally,
-    syncStockEntryToTally
+    syncStockEntryToTally,
+    syncOnDemandToTally,
+    getRealTimeTallyStock
 };

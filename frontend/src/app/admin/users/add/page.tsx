@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import api from "../../../utils/api";
 import { useRouter } from "next/navigation";
 import { FiSave } from "react-icons/fi";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useState } from "react";
 import Modal from "../../../components/Modal";
 import { useModal } from "../../../hooks/useModal";
@@ -13,6 +14,7 @@ export default function AddUserPage() {
     const { register, handleSubmit, formState: { errors } } = useForm();
     const [loading, setLoading] = useState(false);
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
+    const [showPassword, setShowPassword] = useState(false);
 
     const onSubmit = async (data: any) => {
         setLoading(true);
@@ -68,7 +70,31 @@ export default function AddUserPage() {
 
                         <div className="form-group">
                             <label className="form-label">Password *</label>
-                            <input type="password" {...register("password", { required: "Password is required", minLength: 6 })} className="form-input" placeholder="******" />
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    {...register("password", { required: "Password is required", minLength: 6 })}
+                                    className="form-input"
+                                    style={{ paddingRight: '2.5rem' }}
+                                    placeholder="******"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '10px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        color: '#64748B'
+                                    }}
+                                >
+                                    {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                                </button>
+                            </div>
                             {errors.password && <span style={{ color: 'red', fontSize: '0.8rem' }}>Min 6 characters</span>}
                         </div>
 

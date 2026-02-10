@@ -5,9 +5,14 @@ const tallySyncQueueSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    payloadHash: {
+        type: String,
+        required: true,
+        unique: true
+    },
     type: {
         type: String,
-        enum: ['SalesVoucher', 'PurchaseVoucher', 'Ledger', 'StockItem', 'Other'],
+        enum: ['Order', 'StockEntry', 'OnDemand', 'Customer', 'Product', 'Other'], // Mapped to Entity Type
         required: true
     },
     relatedId: {
@@ -22,6 +27,10 @@ const tallySyncQueueSchema = new mongoose.Schema({
         type: String,
         enum: ['pending', 'processing', 'synced', 'failed'],
         default: 'pending'
+    },
+    isOnDemand: {
+        type: Boolean,
+        default: false
     },
     retryCount: {
         type: Number,
@@ -57,7 +66,8 @@ tallySyncQueueSchema.pre('save', async function () {
     this.updatedAt = Date.now();
 });
 
-tallySyncQueueSchema.index({ status: 1, createdAt: -1 });
+tallySyncQueueSchema.index({ status: 1, createdAt: 1 }); // FIFO
 tallySyncQueueSchema.index({ relatedId: 1, relatedModel: 1 });
+tallySyncQueueSchema.index({ payloadHash: 1 }, { unique: true });
 
 module.exports = mongoose.model('TallySyncQueue', tallySyncQueueSchema);

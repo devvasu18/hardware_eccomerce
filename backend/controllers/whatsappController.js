@@ -1,5 +1,6 @@
 const MessageQueue = require('../models/MessageQueue');
 const whatsappManager = require('../services/whatsappSessionManager');
+const whatsappWorker = require('../whatsappWorker');
 
 // @desc    Get Session Status
 // @route   GET /api/whatsapp/status/:sessionId
@@ -73,8 +74,14 @@ exports.restartSession = async (req, res) => {
         const { sessionId } = req.params;
         await whatsappManager.deleteSession(sessionId); // Clean old/corrupted session
 
+        // Reset worker attempts so it can start fresh
+        whatsappWorker.resetSessionAttempts(sessionId);
+
         // Trigger async start - don't await full connection as it takes time
         whatsappManager.startSession(sessionId).catch(err => console.error('Restart failed', err));
+
+        // Also manually trigger worker init to restart the loop if it was stopped
+        whatsappWorker.initSession(sessionId).catch(err => console.error('Worker init failed', err));
 
         res.json({ message: `Session ${sessionId} restart initiated`, status: 'initializing' });
     } catch (error) {

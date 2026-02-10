@@ -528,4 +528,119 @@ router.post('/logout', protect, async (req, res) => {
     }
 });
 
+
+// @desc    Request Mobile Change (sends email)
+// @route   POST /api/auth/request-mobile-change
+// @access  Private
+router.post('/request-mobile-change', protect, authLimiter, async (req, res) => {
+    const { password } = req.body;
+
+    if (!password) {
+        return res.status(400).json({ message: 'Password is required' });
+    }
+
+    try {
+        const user = await User.findById(req.user._id).select('+password');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Check if email is set
+        if (!user.email) {
+            return res.status(400).json({ message: 'Email is not set for this account. Please add an email address first.' });
+        }
+
+        // Verify password
+        const isMatch = await user.matchPassword(password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Incorrect password' });
+        }
+
+        // Generate token
+        const changeToken = user.getMobileChangeToken();
+        await user.save({ validateBeforeSave: false });
+
+        // Create change URL
+        const changeUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/change-mobile/${changeToken}`;
+
+        // Send Email
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'Mobile Number Change Request',
+                message: `You requested to change your mobile number. Please click the link below to proceed:\n\n${changeUrl}\n\nThis link will expire in 10 minutes.`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                        <h2 style="color: #3b82f6;">Change Mobile Number</h2>
+                        <p>Hello <strong>${user.username}</strong>,</p>
+                        <p>You requested to change your registered mobile number.</p>
+                        <p>Please click the button below to proceed. This link is valid for 10 minutes.</p>
+                        <a href="${changeUrl}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 5px; margin-top: 10px;">Change Mobile Number</a>
+                        <p style="margin-top: 20px; font-size: 0.9em; color: #666;">If you did not request this, please ignore this email and your mobile number will remain unchanged.</p>
+                    </div>
+                `
+            });
+
+            res.status(200).json({ success: true, message: `Verification link sent to ${user.email}` });
+        } catch (emailErr) {
+            console.error('Email send error:', emailErr);
+            user.mobileChangeToken = undefined;
+            user.mobileChangeExpire = undefined;
+            await user.save({ validateBeforeSave: false });
+            return res.status(500).json({ message: 'Email could not be sent' });
+        }
+
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error', error: err.message });
+    }
+});
+
+// @desc    Change Mobile Number via Token
+// @route   PUT /api/auth/change-mobile/:token
+// @access  Public
+router.put('/change-mobile/:token', authLimiter, [
+    body('newMobile').matches(/^[0-9]{10}$/).withMessage('Mobile number must be 10 digits')
+], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ message: errors.array()[0].msg });
+    }
+
+    try {
+        const mobileChangeToken = crypto
+            .createHash('sha256')
+            .update(req.params.token)
+            .digest('hex');
+
+        const user = await User.findOne({
+            mobileChangeToken,
+            mobileChangeExpire: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired token' });
+        }
+
+        const { newMobile } = req.body;
+
+        // Check if new mobile is already taken
+        const existingUser = await User.findOne({ mobile: newMobile });
+        if (existingUser) {
+            return res.status(400).json({ message: 'This mobile number is already in use by another account' });
+        }
+
+        user.mobile = newMobile;
+        user.mobileChangeToken = undefined;
+        user.mobileChangeExpire = undefined;
+        await user.save();
+
+        res.status(200).json({ success: true, message: 'Mobile number updated successfully. Please login again.' });
+
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error', error: err.message });
+    }
+});
+
 module.exports = router;
+

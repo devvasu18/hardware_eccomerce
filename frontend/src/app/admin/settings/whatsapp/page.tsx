@@ -56,6 +56,7 @@ const SessionManager = ({ sessionId, title }: { sessionId: string, title: string
             case 'qr_ready': return '#F59E0B'; // Orange
             case 'initializing': return '#3B82F6'; // Blue
             case 'error_duplicate_number': return '#EF4444'; // Red
+            case 'max_retries_reached': return '#DC2626'; // Red
             default: return '#EF4444'; // Red
         }
     };
@@ -88,6 +89,7 @@ const SessionManager = ({ sessionId, title }: { sessionId: string, title: string
             case 'waitForLogin': return 'Waiting for Login';
             case 'waitChat': return 'Waiting for Chat';
             case 'successChat': return 'Success Chat';
+            case 'max_retries_reached': return 'Stopped (Max Attempts)';
             default: return status?.replace(/([A-Z])/g, ' $1').trim() || 'Unknown';
         }
     };
@@ -167,6 +169,20 @@ const SessionManager = ({ sessionId, title }: { sessionId: string, title: string
 
                                 <button onClick={restartSession} style={{ width: 'fit-content', marginTop: '0.5rem', padding: '0.3rem 0.8rem', background: '#DC2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem' }}>
                                     Reset to Try Again
+                                </button>
+                            </div>
+                        ) : status === 'max_retries_reached' ? (
+                            <div style={{ padding: '0.8rem', background: '#FEF2F2', color: '#B91C1C', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <FiAlertCircle size={18} />
+                                    <strong>Connection Stopped</strong>
+                                </div>
+                                <span style={{ fontSize: '0.85rem' }}>
+                                    Max retry attempts (3) reached. System stopped to prevent loops.
+                                </span>
+
+                                <button onClick={restartSession} style={{ width: 'fit-content', marginTop: '0.5rem', padding: '0.4rem 1rem', background: '#DC2626', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <FiRefreshCw /> Generate QR Scanner
                                 </button>
                             </div>
                         ) : (

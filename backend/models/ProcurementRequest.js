@@ -30,7 +30,16 @@ const requestSchema = new mongoose.Schema({
         name: String,
         mobile: String, // Critical for guests
         address: String
-    }
+    },
+
+    // Tally Sync Status
+    tallyStatus: {
+        type: String,
+        enum: ['pending', 'queued', 'saved', 'failed'],
+        default: 'pending'
+    },
+    tallyErrorLog: { type: String, default: '' },
+    tallyVoucherId: { type: String } // Optional: Store Tally's Voucher ID/Reference
 
 }, { timestamps: true });
 

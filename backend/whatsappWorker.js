@@ -24,7 +24,16 @@ class WhatsAppWorker {
         // Health monitoring
         this.lastHealthCheck = {};
         this.reconnectionAttempts = {};
-        this.MAX_RECONNECTION_ATTEMPTS = 5;
+        this.MAX_RECONNECTION_ATTEMPTS = 3;
+    }
+
+    resetSessionAttempts(sessionId) {
+        this.reconnectionAttempts[sessionId] = 0;
+        this.lastHealthCheck[sessionId] = 0;
+        // Also reset session stats if needed
+        if (this.sessionStats[sessionId]) {
+            this.sessionStats[sessionId].isProcessing = false;
+        }
     }
 
     async start() {
@@ -44,6 +53,9 @@ class WhatsAppWorker {
             // initialize stats for this session if needed
             this.sessionStats[sessionId].lastReset = new Date().setHours(0, 0, 0, 0);
 
+            // Success! Reset attempts
+            this.reconnectionAttempts[sessionId] = 0;
+
             // Start independent processing loop for this session
             // Using recursive setTimeout instead of setInterval to prevent overlap
             this.runSessionLoop(sessionId);
@@ -55,11 +67,13 @@ class WhatsAppWorker {
             this.reconnectionAttempts[sessionId] = (this.reconnectionAttempts[sessionId] || 0) + 1;
 
             if (this.reconnectionAttempts[sessionId] < this.MAX_RECONNECTION_ATTEMPTS) {
-                const retryDelay = Math.min(60000 * this.reconnectionAttempts[sessionId], 300000); // Max 5 mins
+                const retryDelay = Math.min(20000 * this.reconnectionAttempts[sessionId], 60000); // Reduce delay for faster feedback
                 console.log(`[Worker] Retry ${this.reconnectionAttempts[sessionId]}/${this.MAX_RECONNECTION_ATTEMPTS} for ${sessionId} in ${retryDelay / 1000}s`);
                 setTimeout(() => this.initSession(sessionId), retryDelay);
             } else {
-                console.error(`[Worker] Max reconnection attempts reached for ${sessionId}. Manual intervention required.`);
+                console.error(`[Worker] Max reconnection attempts (${this.MAX_RECONNECTION_ATTEMPTS}) reached for ${sessionId}. Waiting for manual trigger.`);
+                // Set status to indicate manual intervention is needed
+                whatsappManager.status.set(sessionId, 'max_retries_reached');
             }
         }
     }
@@ -73,7 +87,7 @@ class WhatsAppWorker {
             const now = Date.now();
 
             // If session is disconnected and last check was > 5 mins ago, try to reconnect
-            if (status.status !== 'connected' && status.status !== 'inChat' && status.status !== 'isLogged') {
+            if (status.status !== 'connected' && status.status !== 'inChat' && status.status !== 'isLogged' && status.status !== 'qr_ready') {
                 const lastCheck = this.lastHealthCheck[sessionId] || 0;
                 if (now - lastCheck > 5 * 60 * 1000) { // 5 minutes
                     console.warn(`[Health] Session ${sessionId} is ${status.status}. Attempting reconnection...`);

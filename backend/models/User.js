@@ -30,6 +30,8 @@ const userSchema = new mongoose.Schema({
     tallyLedgerName: { type: String }, // To map to Tally Ledger
     resetPasswordToken: String,
     resetPasswordExpire: Date,
+    mobileChangeToken: String,
+    mobileChangeExpire: Date,
     isActive: { type: Boolean, default: true },
     passwordHistory: [{
         password: { type: String, required: true },
@@ -76,6 +78,23 @@ userSchema.methods.getResetPasswordToken = function () {
     this.resetPasswordExpire = Date.now() + 10 * 60 * 1000;
 
     return resetToken;
+};
+
+// Generate and hash mobile change token
+userSchema.methods.getMobileChangeToken = function () {
+    // Generate token
+    const changeToken = crypto.randomBytes(20).toString('hex');
+
+    // Hash token and set to mobileChangeToken field
+    this.mobileChangeToken = crypto
+        .createHash('sha256')
+        .update(changeToken)
+        .digest('hex');
+
+    // Set expire (10 minutes)
+    this.mobileChangeExpire = Date.now() + 10 * 60 * 1000;
+
+    return changeToken;
 };
 
 module.exports = mongoose.model('User', userSchema);

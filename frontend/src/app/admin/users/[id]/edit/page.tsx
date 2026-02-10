@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import api from "../../../../utils/api";
 import { useRouter } from "next/navigation";
 import { FiSave } from "react-icons/fi";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import Modal from "../../../../components/Modal";
 import { useModal } from "../../../../hooks/useModal";
 
@@ -13,6 +14,7 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
     const { register, handleSubmit, setValue } = useForm();
     const [userId, setUserId] = useState<string | null>(null);
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
+    const [showPassword, setShowPassword] = useState(false);
 
     useEffect(() => {
         params.then(p => {
@@ -101,7 +103,31 @@ export default function EditUserPage({ params }: { params: Promise<{ id: string 
 
                         <div className="form-group">
                             <label className="form-label">Reset Password (Optional)</label>
-                            <input type="password" {...register("password")} className="form-input" placeholder="Leave blank to keep current" />
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    {...register("password")}
+                                    className="form-input"
+                                    style={{ paddingRight: '2.5rem' }}
+                                    placeholder="Leave blank to keep current"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    style={{
+                                        position: 'absolute',
+                                        right: '10px',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        color: '#64748B'
+                                    }}
+                                >
+                                    {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                                </button>
+                            </div>
                         </div>
 
                         <div className="form-group" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '8px' }}>

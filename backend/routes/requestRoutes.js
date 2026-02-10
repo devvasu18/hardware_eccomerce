@@ -6,6 +6,7 @@ const { protect, admin } = require('../middleware/authMiddleware');
 
 const jwt = require('jsonwebtoken'); // Ensure jwt is available
 const Cart = require('../models/Cart');
+const tallyService = require('../services/tallyService'); // Import Tally Service
 
 // Submit a Request (Hybrid Logic)
 router.post('/', async (req, res) => {
@@ -63,6 +64,16 @@ router.post('/', async (req, res) => {
         });
 
         const savedRequest = await newRequest.save();
+
+        // Async Tally Sync (Non-blocking)
+        tallyService.syncOnDemandToTally(savedRequest._id)
+            .then(result => {
+                if (!result.success && !result.queued) {
+                    console.error('Failed to sync Request to Tally:', result.error);
+                }
+            })
+            .catch(err => console.error('Tally Sync Trigger Error:', err));
+
         res.status(201).json({ success: true, message: 'Request submitted successfully', id: savedRequest._id });
 
     } catch (err) {

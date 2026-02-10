@@ -109,6 +109,34 @@ exports.createOrder = async (req, res) => {
                 if (variant) availableStock = variant.stock;
             }
 
+            // --- REAL TIME TALLY CHECK (Anti-Overselling Fix) ---
+            if (!product.isOnDemand) {
+                // Construct Tally Name
+                let tallyName = product.title;
+                if (item.modelName) tallyName += ` (${item.modelName})`;
+                if (item.variationText) tallyName += ` (${item.variationText})`;
+                if (product.part_number) tallyName = product.part_number; // Override if part number used
+
+                const tallyStock = await tallyService.getRealTimeTallyStock(tallyName);
+                if (tallyStock !== null) {
+                    // Tally is online and returned stock. 
+                    // Tally Stock IS the source of truth for Physical Sales.
+                    // But Tally Stock might NOT include pending Web Orders.
+                    // So Effective Available = Tally Stock - (Other Pending Web Orders for this item)
+                    // But calculation is complex efficiently. 
+                    // However, if Tally Stock < Item Quantity, we DEFINITELY can't fulfill.
+
+                    if (tallyStock < item.quantity) {
+                        await rollbackStock(processedItems);
+                        return res.status(400).json({
+                            success: false,
+                            message: `Stock Mismatch! Tally only has ${tallyStock} units of ${product.title}. Update pending.`
+                        });
+                    }
+                }
+            }
+            // ----------------------------------------------------
+
             // 2. ATOMIC DECREMENT: Check local stock first to fail fast, then db atomic
             if (!product.isOnDemand && availableStock < item.quantity) {
                 await rollbackStock(processedItems);
