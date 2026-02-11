@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
-const HomeLayout = require('./models/HomeLayout');
+const PageLayout = require('./models/PageLayout');
 
 dotenv.config();
 
@@ -10,19 +10,19 @@ const seedLayout = async () => {
         console.log('MongoDB Connected for seeding layout');
 
         // Clear existing layout
-        await HomeLayout.deleteMany({});
+        await PageLayout.deleteMany({});
 
         const initialLayout = [
-            { componentType: 'HERO_SLIDER', order: 1, isActive: true },
-            { componentType: 'CATEGORIES', order: 2, isActive: true },
-            { componentType: 'BRANDS', order: 3, isActive: true },
-            { componentType: 'FEATURED_PRODUCTS', order: 4, isActive: true },
-            { componentType: 'NEW_ARRIVALS', order: 5, isActive: true },
-            { componentType: 'SPECIAL_OFFERS', order: 6, isActive: true },
-            { componentType: 'WHY_CHOOSE_US', order: 7, isActive: true }
+            { componentType: 'HERO_SLIDER', order: 1, isActive: true, pageSlug: 'home' },
+            { componentType: 'CATEGORIES', order: 2, isActive: true, pageSlug: 'home' },
+            { componentType: 'BRANDS', order: 3, isActive: true, pageSlug: 'home' },
+            { componentType: 'FEATURED_PRODUCTS', order: 4, isActive: true, pageSlug: 'home' },
+            { componentType: 'NEW_ARRIVALS', order: 5, isActive: true, pageSlug: 'home' },
+            { componentType: 'SPECIAL_OFFERS', order: 6, isActive: true, pageSlug: 'home' },
+            { componentType: 'WHY_CHOOSE_US', order: 7, isActive: true, pageSlug: 'home' }
         ];
 
-        await HomeLayout.insertMany(initialLayout);
+        await PageLayout.insertMany(initialLayout);
         console.log('Initial Home Layout Seeded Successfully!');
         process.exit();
     } catch (error) {

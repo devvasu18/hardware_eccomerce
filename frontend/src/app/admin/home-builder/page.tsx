@@ -31,12 +31,12 @@ const COMPONENT_TYPES = [
     { type: 'FEATURED_PRODUCTS', name: 'Featured Products Grid', icon: '⭐' },
     { type: 'NEW_ARRIVALS', name: 'New Arrivals Slider', icon: '🆕' },
     { type: 'SPECIAL_OFFERS', name: 'Special Offers & Deals', icon: '🏷️' },
-    { type: 'WHY_CHOOSE_US', name: 'Why Choose Us / Trust Badges', icon: '🛡️' },
+    { type: 'WHY_CHOOSE_US', name: 'Why Choose Us / Trust Badges', icon: '�️' },
     { type: 'CATEGORY_PRODUCTS', name: 'Category Product Listing', icon: '📦' },
     { type: 'FLASH_SALE', name: 'Flash Sale Countdown', icon: '⚡' },
     { type: 'RECENTLY_VIEWED', name: 'Recently Viewed Products', icon: '👁️' },
-    { type: 'RECOMMENDED', name: 'AI Recommended For You', icon: '🤖' },
-    { type: 'DEAL_OF_THE_DAY', name: 'Deal of the Day', icon: '📅' },
+    { type: 'RECOMMENDED', name: 'AI Recommended For You', icon: '�' },
+    { type: 'DEAL_OF_THE_DAY', name: 'Deal of the Day', icon: '�' },
     { type: 'TESTIMONIALS', name: 'Customer Testimonials', icon: '💬' },
 ];
 

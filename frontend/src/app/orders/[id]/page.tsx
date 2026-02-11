@@ -50,13 +50,12 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
     const [loading, setLoading] = useState(true);
 
     // Refund Modal State
-    // Refund Modal State
     const [showRefundModal, setShowRefundModal] = useState(false);
-    const [refundItem, setRefundItem] = useState<{ id: string, name: string, price: number } | null>(null);
+    const [refundItem, setRefundItem] = useState<{ id: string, name: string, unitPrice: number, quantity: number } | null>(null);
     const [refundLoading, setRefundLoading] = useState(false);
     const [viewImage, setViewImage] = useState<string | null>(null);
 
-    const { modalState, showSuccess, showError, hideModal } = useModal();
+    const { modalState, showModal, showSuccess, showError, hideModal } = useModal();
 
     useEffect(() => {
         fetchOrderDetails();
@@ -107,21 +106,6 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                     }
                 } catch (err) {
                     console.log('Error fetching shipment:', err);
-                    // Same fallback if fetch fails completely
-                    if (orderData.order.busDetails && orderData.order.busDetails.busNumber) {
-                        const bd = orderData.order.busDetails;
-                        setShipment({
-                            busNumber: bd.busNumber,
-                            busPhotoUrl: bd.busPhoto ? (bd.busPhoto.startsWith('http') || bd.busPhoto.startsWith('/') ? bd.busPhoto : `/${bd.busPhoto}`) : '',
-                            driverContact: bd.driverContact,
-                            departureTime: bd.departureTime,
-                            expectedArrival: bd.expectedArrival,
-                            dispatchDate: bd.dispatchDate,
-                            liveStatus: 'On the way',
-                            currentLocation: '',
-                            notes: bd.notes || ''
-                        });
-                    }
                 }
             }
         } catch (err) {
@@ -134,8 +118,9 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
     const handleRefundClick = (item: any) => {
         setRefundItem({
             id: item.product._id,
-            name: item.product.name,
-            price: item.totalWithTax || (item.price * item.quantity)
+            name: item.product.productTitle || item.product.title || item.product.name,
+            unitPrice: item.priceAtBooking,
+            quantity: item.quantity - (item.quantityReturned || 0)
         });
         setShowRefundModal(true);
     };
@@ -155,7 +140,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                 body: JSON.stringify({
                     orderId: order._id,
                     productId: refundItem.id,
-                    amount: refundItem.price,
+                    amount: data.amount,
+                    quantity: data.quantity,
                     reason: data.reason,
                     description: data.description,
                     bankDetails: data.bankDetails
@@ -175,6 +161,90 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
         } finally {
             setRefundLoading(false);
         }
+    };
+
+    const cancelOrder = async (reason: string) => {
+        if (!order) return;
+        setRefundLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`http://localhost:5000/api/orders/${order._id}/cancel-my-order`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ reason })
+            });
+
+            const result = await res.json();
+            if (res.ok) {
+                showSuccess('Your order has been cancelled successfully.', 'Order Cancelled');
+                fetchOrderDetails();
+            } else {
+                showError(result.message || 'Failed to cancel order');
+            }
+        } catch (error) {
+            showError('Network error. Please try again.');
+        } finally {
+            setRefundLoading(false);
+        }
+    };
+
+    const cancelItem = async (itemId: string, productName: string) => {
+        if (!order) return;
+
+        showModal(
+            'Cancel Item',
+            `Are you sure you want to cancel ${productName} from your order?`,
+            'warning',
+            {
+                showCancel: true,
+                confirmText: 'Yes, Cancel Item',
+                onConfirm: async () => {
+                    setRefundLoading(true);
+                    try {
+                        const token = localStorage.getItem('token');
+                        const res = await fetch(`http://localhost:5000/api/orders/${order._id}/cancel-item/${itemId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+
+                        const result = await res.json();
+                        if (res.ok) {
+                            showSuccess('Item has been removed from your order.', 'Item Cancelled');
+                            fetchOrderDetails();
+                        } else {
+                            showError(result.message || 'Failed to cancel item');
+                        }
+                    } catch (error) {
+                        showError('Network error. Please try again.');
+                    } finally {
+                        setRefundLoading(false);
+                    }
+                }
+            }
+        );
+    };
+
+    const handleCancelOrderClick = () => {
+        showModal(
+            'Confirm Cancellation',
+            'Are you sure you want to cancel this entire order?',
+            'warning',
+            {
+                showCancel: true,
+                confirmText: 'Yes, Cancel Order',
+                onConfirm: () => {
+                    // Reason is not strictly required but we can ask for it if we had a prompt
+                    // For now, call with a default reason
+                    cancelOrder('Cancelled by user');
+                }
+            }
+        );
     };
 
     const getStatusIcon = (status: string) => {
@@ -204,6 +274,14 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
         const statusIndex = statusOrder.indexOf(status);
         const currentIndex = statusOrder.indexOf(currentStatus);
         return statusIndex <= currentIndex;
+    };
+
+    const isReturnWindowValid = (createdAt: string, windowDays: number = 7) => {
+        const bookingDate = new Date(createdAt);
+        const now = new Date();
+        const diffTime = Math.abs(now.getTime() - bookingDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays <= windowDays;
     };
 
     const formatDate = (dateString: string) => {
@@ -295,6 +373,26 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                         Order #{order.invoiceNumber || order._id.slice(-8).toUpperCase()}
                     </p>
                 </div>
+
+                {/* Cancellation Alert if applicable */}
+                {order.status === 'Order Placed' && order.items.every((item: any) => item.product?.isCancellable !== false) && (
+                    <div className="card" style={{ marginBottom: '2rem', borderLeft: '4px solid #ef4444', backgroundColor: '#fef2f2' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#991b1b', marginBottom: '0.25rem' }}>Need to cancel?</h3>
+                                <p style={{ fontSize: '0.9rem', color: '#b91c1c' }}>You can cancel your order before it gets packed.</p>
+                            </div>
+                            <button
+                                onClick={handleCancelOrderClick}
+                                className="btn btn-outline"
+                                style={{ borderColor: '#ef4444', color: '#ef4444' }}
+                                disabled={refundLoading}
+                            >
+                                {refundLoading ? 'Processing...' : 'Cancel Entire Order'}
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Progress Tracker */}
                 <div className="card" style={{ marginBottom: '2rem', padding: '2rem' }}>
@@ -526,29 +624,65 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                 ₹{item.totalWithTax?.toLocaleString('en-IN')}
                                             </div>
 
-                                            {/* Return Button Condition */}
-                                            {order.status === 'Delivered' && (
-                                                <button
-                                                    onClick={() => handleRefundClick(item)}
-                                                    style={{
-                                                        fontSize: '0.8rem',
-                                                        color: '#ef4444',
-                                                        background: 'transparent',
-                                                        border: '1px solid #ef4444',
-                                                        borderRadius: '4px',
-                                                        padding: '2px 8px',
-                                                        cursor: 'pointer'
-                                                    }}
-                                                    onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = '#fef2f2';
-                                                    }}
-                                                    onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'transparent';
-                                                    }}
-                                                >
-                                                    Return Item
-                                                </button>
+                                            {/* Item Status Badge */}
+                                            {item.status && item.status !== 'Active' && (
+                                                <div style={{
+                                                    fontSize: '0.75rem',
+                                                    padding: '2px 8px',
+                                                    borderRadius: '4px',
+                                                    background: item.status === 'Cancelled' ? '#fee2e2' : '#fef3c7',
+                                                    color: item.status === 'Cancelled' ? '#991b1b' : '#92400e',
+                                                    fontWeight: 600,
+                                                    marginBottom: '0.5rem',
+                                                    display: 'inline-block'
+                                                }}>
+                                                    {item.status}
+                                                </div>
                                             )}
+
+                                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                                                {/* Cancel Item Button */}
+                                                {order.status === 'Order Placed' && item.status === 'Active' && item.product?.isCancellable !== false && (
+                                                    <button
+                                                        onClick={() => cancelItem(item._id, item.productTitle)}
+                                                        style={{
+                                                            fontSize: '0.75rem',
+                                                            color: '#64748b',
+                                                            background: 'transparent',
+                                                            border: '1px solid #e2e8f0',
+                                                            borderRadius: '4px',
+                                                            padding: '2px 8px',
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                )}
+
+                                                {/* Return Button Condition */}
+                                                {order.status === 'Delivered' &&
+                                                    item.status === 'Active' &&
+                                                    item.product?.isReturnable !== false &&
+                                                    isReturnWindowValid(order.createdAt, item.product?.returnWindow) && (
+                                                        <button
+                                                            onClick={() => handleRefundClick(item)}
+                                                            style={{
+                                                                fontSize: '0.8rem',
+                                                                color: '#ef4444',
+                                                                background: 'transparent',
+                                                                border: '1px solid #fecaca',
+                                                                borderRadius: '4px',
+                                                                padding: '4px 12px',
+                                                                cursor: 'pointer',
+                                                                fontWeight: 600
+                                                            }}
+                                                            onMouseEnter={(e) => (e.currentTarget.style.background = '#fef2f2')}
+                                                            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                                        >
+                                                            Return Item
+                                                        </button>
+                                                    )}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -857,6 +991,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                         onClose={() => setShowRefundModal(false)}
                         onSubmit={submitRefundRequest}
                         itemName={refundItem.name}
+                        maxQuantity={refundItem.quantity}
+                        itemPrice={refundItem.unitPrice}
                         orderPaymentMethod={order.paymentMethod}
                         loading={refundLoading}
                     />

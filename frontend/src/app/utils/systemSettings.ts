@@ -38,7 +38,9 @@ export async function getSystemSettings() {
             companyWebsite: '',
             supportEmail: 'support@example.com',
             supportContactNumber: '+91 1234567890',
-            whatsappSupportNumber: '+91 1234567890'
+            whatsappSupportNumber: '+91 1234567890',
+            onlinePaymentEnabled: true,
+            codEnabled: false
         };
     }
 }

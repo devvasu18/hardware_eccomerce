@@ -1,9 +1,9 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import api from "../../../utils/api";
-import { FiEdit2, FiTrash2, FiPlus } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiPlus, FiDownload } from "react-icons/fi";
 import Image from "next/image";
 import FormModal from "../../../components/FormModal";
 import DataTable from "../../../components/DataTable";
@@ -31,6 +31,7 @@ export default function SubCategoryMaster() {
     const [image, setImage] = useState<File | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
@@ -47,6 +48,14 @@ export default function SubCategoryMaster() {
             setValue('slug', name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
         }
     }, [name, editingId, setValue]);
+
+    const filteredSubCategories = useMemo(() => {
+        if (selectedCategory === 'all') return subCategories;
+        return subCategories.filter(sc => {
+            const catId = typeof sc.category_id === 'string' ? sc.category_id : sc.category_id?._id;
+            return catId === selectedCategory;
+        });
+    }, [subCategories, selectedCategory]);
 
     const fetchSubCategories = async () => {
         try {
@@ -145,6 +154,26 @@ export default function SubCategoryMaster() {
         );
     };
 
+    const handleExport = async (format: 'csv' | 'excel') => {
+        try {
+            const res = await api.get('/admin/sub-categories/export', {
+                params: { format },
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `sub_categories_${new Date().toISOString().split('T')[0]}.${format === 'excel' ? 'xlsx' : 'csv'}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error("Export failed", error);
+            showError("Failed to export sub-categories");
+        }
+    };
+
     return (
         <div className="container">
             <Modal
@@ -158,11 +187,47 @@ export default function SubCategoryMaster() {
                 onConfirm={modalState.onConfirm}
                 showCancel={modalState.showCancel}
             />
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h1 className="page-title" style={{ margin: 0 }}>Sub-Category Manager</h1>
-                <button onClick={handleAdd} className="btn btn-primary">
-                    <FiPlus /> Add New Sub-Category
-                </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                    <h1 className="page-title" style={{ margin: 0 }}>Sub-Category Manager</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '0.9rem', color: '#64748b', whiteSpace: 'nowrap' }}>Filter by Category:</span>
+                        <select
+                            className="form-select"
+                            style={{ padding: '0.4rem 2rem 0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value)}
+                        >
+                            <option value="all">All Categories</option>
+                            {categories.map(cat => (
+                                <option key={cat._id} value={cat._id}>{cat.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div className="btn-group" style={{ display: 'flex', gap: '0.2rem' }}>
+                        <button
+                            onClick={() => handleExport('csv')}
+                            className="btn btn-outline"
+                            title="Export as CSV"
+                            style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        >
+                            <FiDownload /> CSV
+                        </button>
+                        <button
+                            onClick={() => handleExport('excel')}
+                            className="btn btn-outline"
+                            title="Export as Excel"
+                            style={{ padding: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        >
+                            <FiDownload /> Excel
+                        </button>
+                    </div>
+                    <button onClick={handleAdd} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FiPlus /> Add Sub-Category
+                    </button>
+                </div>
             </div>
 
             {loading ? (
@@ -170,7 +235,7 @@ export default function SubCategoryMaster() {
             ) : (
                 <DataTable
                     title="Sub-Category List"
-                    data={subCategories}
+                    data={filteredSubCategories}
                     columns={[
                         {
                             header: 'Image',

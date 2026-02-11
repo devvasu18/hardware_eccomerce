@@ -468,7 +468,7 @@ exports.getOrderById = async (req, res) => {
     try {
         const order = await Order.findById(req.params.id)
             .populate('user', 'username email mobile image')
-            .populate('items.product', 'title featured_image');
+            .populate('items.product', 'title featured_image isCancellable isReturnable returnWindow');
 
         if (!order) return res.status(404).json({ message: 'Order not found' });
 
@@ -651,6 +651,10 @@ exports.cancelOrder = async (req, res) => {
         }
 
         order.status = 'Cancelled';
+        // Mark all items as Cancelled
+        order.items.forEach(item => {
+            item.status = 'Cancelled';
+        });
         await order.save();
 
         // Restore Stock & Sales Count
@@ -699,6 +703,187 @@ exports.cancelOrder = async (req, res) => {
         await logAction({ action: 'CANCEL_ORDER', req, targetResource: 'Order', targetId: order._id, details: { reason: req.body.reason } });
 
         res.json({ message: 'Order cancelled successfully' });
+    } catch (error) {
+        res.status(500).json({ message: 'Cancellation failed', error: error.message });
+    }
+};
+
+// @desc    User Cancel Own Order
+// @route   POST /api/orders/:id/cancel-my-order
+// @access  Private (Owner only)
+exports.cancelMyOrder = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id).populate('items.product', 'isCancellable');
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        // Authorization Check
+        if (order.user?.toString() !== req.user._id.toString()) {
+            return res.status(401).json({ message: 'Not authorized to cancel this order' });
+        }
+
+        // Check if all products in the order are cancellable
+        const nonCancellable = order.items.find(item => item.product?.isCancellable === false);
+        if (nonCancellable) {
+            return res.status(400).json({ message: 'This order contains items that cannot be cancelled. Please contact support.' });
+        }
+
+        // Status Check: Can only cancel if Placed
+        if (order.status !== 'Order Placed') {
+            return res.status(400).json({ message: `Order cannot be cancelled at this stage: ${order.status}. Please contact support.` });
+        }
+
+        order.status = 'Cancelled';
+        order.items.forEach(item => {
+            item.status = 'Cancelled';
+        });
+        await order.save();
+
+        // Restore Stock & Sales Count
+        for (const item of order.items) {
+            // Restore Sales Count
+            await Product.findByIdAndUpdate(item.product, { $inc: { salesCount: -item.quantity } });
+
+            if (item.modelId) {
+                if (item.variationId) {
+                    await Product.findOneAndUpdate(
+                        { _id: item.product, 'models._id': item.modelId },
+                        { $inc: { 'models.$[m].variations.$[v].stock': item.quantity } },
+                        { arrayFilters: [{ 'm._id': item.modelId }, { 'v._id': item.variationId }] }
+                    );
+                }
+            } else if (item.variationId) {
+                await Product.findOneAndUpdate(
+                    { _id: item.product, 'variations._id': item.variationId },
+                    { $inc: { 'variations.$.stock': item.quantity } }
+                );
+            } else {
+                await Product.findByIdAndUpdate(item.product, {
+                    $inc: { stock: item.quantity }
+                });
+            }
+        }
+
+        await StatusLog.create({
+            order: order._id,
+            status: 'Cancelled',
+            updatedBy: req.user._id,
+            updatedByName: req.user.username,
+            updatedByRole: 'user',
+            notes: req.body.reason || 'Order cancelled by user'
+        });
+
+        // Tally Sync: Push Cancellation
+        if (order.tallyStatus === 'saved') {
+            tallyService.syncOrderToTally(order._id)
+                .then(result => console.log(`Auto-Sync User Cancel Tally [${order._id}]:`, result.success ? 'Success' : result.error))
+                .catch(err => console.error('Auto-Sync User Cancel Tally Failed:', err));
+        }
+
+        await logAction({ action: 'USER_CANCEL_ORDER', req, targetResource: 'Order', targetId: order._id, details: { reason: req.body.reason } });
+
+        res.json({ message: 'Order cancelled successfully', status: 'Cancelled' });
+    } catch (error) {
+        res.status(500).json({ message: 'Cancellation failed', error: error.message });
+    }
+};
+
+// @desc    Cancel Specific Item in Order
+// @route   POST /api/orders/:id/cancel-item/:itemId
+// @access  Private
+exports.cancelOrderItem = async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id).populate('items.product', 'isCancellable');
+        if (!order) return res.status(404).json({ message: 'Order not found' });
+
+        // Authorization Change: Admin can always cancel, User can only cancel if Placed
+        const isOwner = order.user?.toString() === req.user._id.toString();
+        const isAdmin = req.user.role === 'admin';
+
+        if (!isOwner && !isAdmin) {
+            return res.status(401).json({ message: 'Not authorized' });
+        }
+
+        const itemIndex = order.items.findIndex(item => item._id.toString() === req.params.itemId);
+        if (itemIndex === -1) return res.status(404).json({ message: 'Item not found in order' });
+
+        const item = order.items[itemIndex];
+
+        // Check product settings if User
+        if (!isAdmin && item.product?.isCancellable === false) {
+            return res.status(400).json({ message: 'This item is not eligible for cancellation.' });
+        }
+
+        if (order.status !== 'Order Placed' && !isAdmin) {
+            return res.status(400).json({ message: 'Cannot cancel items after order is processed. Please contact support.' });
+        }
+
+        if (order.status === 'Cancelled') {
+            return res.status(400).json({ message: 'Full order already cancelled' });
+        }
+
+        // item is already defined above from previously moved block
+        if (item.status === 'Cancelled') {
+            return res.status(400).json({ message: 'Item already cancelled' });
+        }
+
+        // Update Item Status
+        item.status = 'Cancelled';
+
+        // Check if all items are now cancelled
+        const allCancelled = order.items.every(i => i.status === 'Cancelled');
+        if (allCancelled) {
+            order.status = 'Cancelled';
+        }
+
+        await order.save();
+
+        // Restore Stock & Sales Count for this item
+        await Product.findByIdAndUpdate(item.product, { $inc: { salesCount: -item.quantity } });
+
+        if (item.modelId) {
+            if (item.variationId) {
+                await Product.findOneAndUpdate(
+                    { _id: item.product, 'models._id': item.modelId },
+                    { $inc: { 'models.$[m].variations.$[v].stock': item.quantity } },
+                    { arrayFilters: [{ 'm._id': item.modelId }, { 'v._id': item.variationId }] }
+                );
+            }
+        } else if (item.variationId) {
+            await Product.findOneAndUpdate(
+                { _id: item.product, 'variations._id': item.variationId },
+                { $inc: { 'variations.$.stock': item.quantity } }
+            );
+        } else {
+            await Product.findByIdAndUpdate(item.product, {
+                $inc: { stock: item.quantity }
+            });
+        }
+
+        await StatusLog.create({
+            order: order._id,
+            status: allCancelled ? 'Cancelled' : order.status,
+            updatedBy: req.user._id,
+            updatedByName: req.user.username,
+            updatedByRole: req.user.role,
+            notes: `Item Cancelled: ${item.productTitle}. ${req.body.reason || ''}`
+        });
+
+        // Tally Sync: Push Update (Note: This currently pushes whole order, which is fine for Alter/Credit Note)
+        if (order.tallyStatus === 'saved') {
+            tallyService.syncOrderToTally(order._id)
+                .then(result => console.log(`Auto-Sync Partial Cancel Tally [${order._id}]:`, result.success ? 'Success' : result.error))
+                .catch(err => console.error('Auto-Sync Partial Cancel Tally Failed:', err));
+        }
+
+        await logAction({
+            action: 'CANCEL_ORDER_ITEM',
+            req,
+            targetResource: 'Order',
+            targetId: order._id,
+            details: { itemId: req.params.itemId, product: item.productTitle, reason: req.body.reason }
+        });
+
+        res.json({ message: 'Item cancelled successfully', order });
     } catch (error) {
         res.status(500).json({ message: 'Cancellation failed', error: error.message });
     }

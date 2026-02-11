@@ -45,14 +45,21 @@ const generateSalesVoucherXML = (order, user, isCancellation = false) => {
   let runningTotal = 0;
 
   let inventoryEntries = '';
-  order.items.forEach(item => {
-    const itemValue = item.priceAtBooking * item.quantity;
+  // For cancellation, only include items that ARE cancelled/returned
+  const itemsToProcess = isCancellation
+    ? order.items.filter(item => item.status === 'Cancelled' || item.status === 'Returned' || item.status === 'Refunded')
+    : order.items;
+
+  itemsToProcess.forEach(item => {
+    // For partial quantity returned, use that. Otherwise use full quantity if whole item cancelled.
+    const qty = (isCancellation && item.quantityReturned > 0) ? item.quantityReturned : item.quantity;
+    const itemValue = item.priceAtBooking * qty;
     runningTotal += itemValue;
 
     const unit = item.product ? (item.product.unit || 'pcs') : 'pcs';
 
     // Construct Variation-Aware Item Name for Tally
-    let itemNameComp = item.product ? item.product.title : 'Deleted-Product-' + item._id;
+    let itemNameComp = item.productTitle || (item.product ? item.product.title : 'Deleted-Product-' + item._id);
     if (item.modelName) {
       itemNameComp += ` (${item.modelName})`;
     }
@@ -68,14 +75,14 @@ const generateSalesVoucherXML = (order, user, isCancellation = false) => {
             <ISDEEMEDPOSITIVE>${isCancellation ? "Yes" : "No"}</ISDEEMEDPOSITIVE>
             <RATE>${item.priceAtBooking}/${unit}</RATE>
             <AMOUNT>${isCancellation ? "" : "-"}${itemValue}</AMOUNT>
-            <ACTUALQTY>${item.quantity} ${unit}</ACTUALQTY>
-            <BILLEDQTY>${item.quantity} ${unit}</BILLEDQTY>
+            <ACTUALQTY>${qty} ${unit}</ACTUALQTY>
+            <BILLEDQTY>${qty} ${unit}</BILLEDQTY>
              <BATCHALLOCATIONS.LIST>
                 <GODOWNNAME>Main Location</GODOWNNAME>
                 <BATCHNAME>Primary Batch</BATCHNAME>
                 <AMOUNT>${isCancellation ? "" : "-"}${itemValue}</AMOUNT>
-                <ACTUALQTY>${item.quantity} ${unit}</ACTUALQTY>
-                <BILLEDQTY>${item.quantity} ${unit}</BILLEDQTY>
+                <ACTUALQTY>${qty} ${unit}</ACTUALQTY>
+                <BILLEDQTY>${qty} ${unit}</BILLEDQTY>
              </BATCHALLOCATIONS.LIST>
              
              <!-- TAX ALLOCATION PER ITEM (Standard Tally Practice) -->
@@ -138,13 +145,13 @@ const generateSalesVoucherXML = (order, user, isCancellation = false) => {
               <LEDGERENTRIES.LIST>
                 <LEDGERNAME>${ledgerName}</LEDGERNAME>
                 <ISDEEMEDPOSITIVE>${isCancellation ? "No" : "Yes"}</ISDEEMEDPOSITIVE>
-                <AMOUNT>${isCancellation ? "" : "-"}${order.totalAmount}</AMOUNT>
+                <AMOUNT>${isCancellation ? "" : "-"}${isCancellation ? runningTotal : order.totalAmount}</AMOUNT>
                 
                 <!-- BILL WISE DETAILS (Auto-Settlement) -->
                 <BILLALLOCATIONS.LIST>
                     <NAME>${order.invoiceNumber || order._id}</NAME>
                     <BILLTYPE>${isCancellation ? 'Agst Ref' : 'New Ref'}</BILLTYPE>
-                    <AMOUNT>${isCancellation ? "" : "-"}${order.totalAmount}</AMOUNT>
+                    <AMOUNT>${isCancellation ? "" : "-"}${isCancellation ? runningTotal : order.totalAmount}</AMOUNT>
                 </BILLALLOCATIONS.LIST>
               </LEDGERENTRIES.LIST>
 

@@ -37,12 +37,15 @@ router.put('/system', protect, admin, async (req, res) => {
             whatsappNotificationsEnabled,
             passwordResetNotificationsEnabled,
             whatsappIntegrationEnabled,
+            tallyIntegrationEnabled,
             shipmentAssetExpiryDays,
             onDemandResponseTime,
             companyAddress,
             companyGstNumber,
             lowStockThreshold,
-            lowStockAlertsEnabled
+            lowStockAlertsEnabled,
+            onlinePaymentEnabled,
+            codEnabled
         } = req.body;
 
         let settings = await SystemSettings.findById('system_settings');
@@ -61,12 +64,15 @@ router.put('/system', protect, admin, async (req, res) => {
         if (whatsappNotificationsEnabled !== undefined) settings.whatsappNotificationsEnabled = whatsappNotificationsEnabled;
         if (passwordResetNotificationsEnabled !== undefined) settings.passwordResetNotificationsEnabled = passwordResetNotificationsEnabled;
         if (whatsappIntegrationEnabled !== undefined) settings.whatsappIntegrationEnabled = whatsappIntegrationEnabled;
+        if (tallyIntegrationEnabled !== undefined) settings.tallyIntegrationEnabled = tallyIntegrationEnabled;
         if (shipmentAssetExpiryDays !== undefined) settings.shipmentAssetExpiryDays = shipmentAssetExpiryDays;
         if (onDemandResponseTime !== undefined) settings.onDemandResponseTime = onDemandResponseTime;
         if (companyAddress !== undefined) settings.companyAddress = companyAddress;
         if (companyGstNumber !== undefined) settings.companyGstNumber = companyGstNumber;
         if (lowStockThreshold !== undefined) settings.lowStockThreshold = lowStockThreshold;
         if (lowStockAlertsEnabled !== undefined) settings.lowStockAlertsEnabled = lowStockAlertsEnabled;
+        if (onlinePaymentEnabled !== undefined) settings.onlinePaymentEnabled = onlinePaymentEnabled;
+        if (codEnabled !== undefined) settings.codEnabled = codEnabled;
 
         await settings.save();
 

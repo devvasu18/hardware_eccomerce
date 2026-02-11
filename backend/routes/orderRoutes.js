@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createOrder, getOrders, getOrderById, updateOrderStatus, cancelOrder, getMyOrders } = require('../controllers/orderController');
+const { createOrder, getOrders, getOrderById, updateOrderStatus, cancelOrder, getMyOrders, cancelMyOrder, cancelOrderItem } = require('../controllers/orderController');
 const { protect, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -30,5 +30,7 @@ router.get('/:id', protect, getOrderById);
 // "busPhoto" is the field name we expect in frontend
 router.put('/:id/status', protect, admin, upload.single('busPhoto'), updateOrderStatus);
 router.post('/:id/cancel', protect, admin, cancelOrder);
+router.post('/:id/cancel-my-order', protect, cancelMyOrder);
+router.post('/:id/cancel-item/:itemId', protect, cancelOrderItem);
 
 module.exports = router;

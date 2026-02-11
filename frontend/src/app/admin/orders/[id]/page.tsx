@@ -152,6 +152,30 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
         updateStatus('Assigned to Bus', formData);
     };
 
+    const handleCancelItem = async (itemId: string, productName: string) => {
+        showModal(
+            'Cancel Item',
+            `Are you sure you want to cancel "${productName}" from this order? This will restore its stock.`,
+            'warning',
+            {
+                showCancel: true,
+                confirmText: "Yes, Cancel Item",
+                onConfirm: async () => {
+                    setProcessing(true);
+                    try {
+                        await api.post(`/orders/${id}/cancel-item/${itemId}`, { reason: 'Cancelled by admin' });
+                        fetchOrder(id!);
+                        showSuccess('Item Cancelled');
+                    } catch (error) {
+                        showError('Failed to cancel item');
+                    } finally {
+                        setProcessing(false);
+                    }
+                }
+            }
+        );
+    };
+
     const handleCancel = async () => {
         if (!cancelReason) return showError('Please provide a reason');
 
@@ -537,7 +561,9 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                         <th>Product</th>
                                         <th style={{ textAlign: 'right' }}>Price</th>
                                         <th style={{ textAlign: 'center' }}>Qty</th>
+                                        <th style={{ textAlign: 'center' }}>Status</th>
                                         <th style={{ textAlign: 'right' }}>Total</th>
+                                        <th style={{ textAlign: 'center' }} className="no-print">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -599,7 +625,43 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                             </td>
                                             <td style={{ textAlign: 'right' }}>₹{item.priceAtBooking}</td>
                                             <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                {item.status && item.status !== 'Active' ? (
+                                                    <span style={{
+                                                        fontSize: '0.75rem',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '12px',
+                                                        background: item.status === 'Cancelled' ? '#FEE2E2' : '#FEF3C7',
+                                                        color: item.status === 'Cancelled' ? '#991B1B' : '#92400E',
+                                                        fontWeight: 600
+                                                    }}>
+                                                        {item.status}
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 600 }}>Active</span>
+                                                )}
+                                            </td>
                                             <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{item.totalWithTax || (item.priceAtBooking * item.quantity)}</td>
+                                            <td style={{ textAlign: 'center' }} className="no-print">
+                                                {item.status === 'Active' && order.status !== 'Cancelled' && order.items.length > 1 && (
+                                                    <button
+                                                        onClick={() => handleCancelItem(item._id, item.product?.title || 'Product')}
+                                                        style={{
+                                                            background: 'none',
+                                                            border: '1px solid #FECACA',
+                                                            color: '#EF4444',
+                                                            padding: '2px 8px',
+                                                            borderRadius: '4px',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.75rem'
+                                                        }}
+                                                        onMouseEnter={e => e.currentTarget.style.background = '#FEF2F2'}
+                                                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                )}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>

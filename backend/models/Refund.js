@@ -26,6 +26,10 @@ const refundSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    quantity: {
+        type: Number,
+        default: 1
+    },
     refundPercentage: {
         type: Number
     },

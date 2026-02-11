@@ -6,6 +6,8 @@ const Brand = require('../models/Brand');
 const Product = require('../models/Product');
 const { deleteFile } = require('../utils/fileHandler');
 const { logAction } = require('../utils/auditLogger');
+const { Parser } = require('json2csv');
+const ExcelJS = require('exceljs');
 
 // --- HSN Codes ---
 exports.getHSNs = async (req, res) => {
@@ -306,3 +308,85 @@ exports.getStats = async (req, res) => {
         });
     } catch (error) { res.status(500).json({ error: error.message }); }
 }
+
+exports.exportCategories = async (req, res) => {
+    try {
+        const format = req.query.format || 'csv';
+        const categories = await Category.find().sort({ displayOrder: 1 });
+
+        const data = categories.map(c => ({
+            ID: c._id.toString(),
+            Name: c.name,
+            Slug: c.slug,
+            Description: c.description || '',
+            DisplayOrder: c.displayOrder || 0,
+            ShowInNav: c.showInNav ? 'Yes' : 'No',
+            Status: c.isActive !== false ? 'Active' : 'Inactive'
+        }));
+
+        if (format === 'excel') {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Categories');
+            worksheet.columns = [
+                { header: 'ID', key: 'ID', width: 25 },
+                { header: 'Name', key: 'Name', width: 25 },
+                { header: 'Slug', key: 'Slug', width: 25 },
+                { header: 'Description', key: 'Description', width: 40 },
+                { header: 'Display Order', key: 'DisplayOrder', width: 15 },
+                { header: 'Show In Nav', key: 'ShowInNav', width: 15 },
+                { header: 'Status', key: 'Status', width: 15 }
+            ];
+            worksheet.addRows(data);
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', 'attachment; filename=categories.xlsx');
+            return workbook.xlsx.write(res).then(() => res.status(200).end());
+        } else {
+            const fields = ['ID', 'Name', 'Slug', 'Description', 'DisplayOrder', 'ShowInNav', 'Status'];
+            const json2csvParser = new Parser({ fields });
+            const csv = json2csvParser.parse(data);
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename=categories.csv');
+            return res.status(200).send(csv);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+exports.exportSubCategories = async (req, res) => {
+    try {
+        const format = req.query.format || 'csv';
+        const subCategories = await SubCategory.find().populate('category_id', 'name');
+
+        const data = subCategories.map(sc => ({
+            ID: sc._id.toString(),
+            Category: sc.category_id?.name || 'N/A',
+            Name: sc.name,
+            Slug: sc.slug
+        }));
+
+        if (format === 'excel') {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('SubCategories');
+            worksheet.columns = [
+                { header: 'ID', key: 'ID', width: 25 },
+                { header: 'Parent Category', key: 'Category', width: 25 },
+                { header: 'Name', key: 'Name', width: 25 },
+                { header: 'Slug', key: 'Slug', width: 25 }
+            ];
+            worksheet.addRows(data);
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', 'attachment; filename=sub_categories.xlsx');
+            return workbook.xlsx.write(res).then(() => res.status(200).end());
+        } else {
+            const fields = ['ID', 'Category', 'Name', 'Slug'];
+            const json2csvParser = new Parser({ fields });
+            const csv = json2csvParser.parse(data);
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename=sub_categories.csv');
+            return res.status(200).send(csv);
+        }
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};

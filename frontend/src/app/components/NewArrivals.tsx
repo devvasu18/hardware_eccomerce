@@ -16,7 +16,7 @@ interface Product {
     isOnDemand: boolean;
 }
 
-export default function NewArrivals() {
+export default function NewArrivals({ config }: { config?: any }) {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -51,8 +51,8 @@ export default function NewArrivals() {
         <section className="container new-arrivals-section" style={{ overflow: 'visible' }}>
             <div className="new-arrivals-header">
                 <div>
-                    <h2 className="new-arrivals-title">New Arrivals</h2>
-                    <p className="new-arrivals-subtitle">Check out our latest industrial hardware and tools</p>
+                    <h2 className="new-arrivals-title">{config?.title || 'New Arrivals'}</h2>
+                    <p className="new-arrivals-subtitle">{config?.subtitle || 'Check out our latest industrial hardware and tools'}</p>
                 </div>
                 <Link href="/new-arrivals" className="view-all-btn">
                     View All &rarr;

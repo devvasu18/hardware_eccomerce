@@ -8,6 +8,7 @@ const { generateSalesVoucherXML } = require('../utils/tallyXmlGenerator');
 const { generateLedgerXML, generateSalesLedgerXML, generateTaxLedgerXML, generatePurchaseLedgerXML } = require('../utils/tallyLedgerGenerator');
 const { generateStockItemXML } = require('../utils/tallyStockItemGenerator');
 const { generateUnitXML } = require('../utils/tallyUnitGenerator');
+const SystemSettings = require('../models/SystemSettings');
 
 // Use env var or default to localhost:9000
 const TALLY_URL = process.env.TALLY_URL || 'http://localhost:9000/';
@@ -176,6 +177,12 @@ async function processQueueItem(queueItem) {
  */
 async function processQueue() {
     try {
+        const settings = await SystemSettings.findById('system_settings');
+        if (settings && settings.tallyIntegrationEnabled === false) {
+            console.log('[Tally Sync] Processing skipped - Integration is disabled in settings');
+            return { processed: 0, success: 0, failed: 0 };
+        }
+
         const pendingItems = await TallySyncQueue.find({ status: 'pending' })
             .sort({ createdAt: 1 })
             .limit(50);
@@ -230,6 +237,12 @@ async function addToQueue({ payload, type, relatedId, relatedModel, isOnDemand =
  */
 async function syncWithHealthCheck({ xmlData, type, relatedId, relatedModel }) {
     try {
+        const settings = await SystemSettings.findById('system_settings');
+        if (settings && settings.tallyIntegrationEnabled === false) {
+            console.log(`[Tally Sync] Sync skipped for ${relatedModel} ${relatedId} - Integration is disabled`);
+            return { success: false, error: 'Tally integration is disabled' };
+        }
+
         const health = await checkTallyHealth();
 
         if (!health.online) {

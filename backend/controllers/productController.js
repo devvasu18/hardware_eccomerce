@@ -5,6 +5,8 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const { deleteFile } = require('../utils/fileHandler');
 const { logAction } = require('../utils/auditLogger');
+const { Parser } = require('json2csv');
+const ExcelJS = require('exceljs');
 
 // @desc    Get all products (Admin)
 // @route   GET /api/admin/products
@@ -597,4 +599,96 @@ exports.bulkImportProducts = async (req, res) => {
                 res.status(500).json({ message: 'Error processing CSV', error: err.message });
             }
         });
+};
+
+// @desc    Export Products
+// @route   GET /api/admin/products/export
+// @access  Admin
+exports.exportProducts = async (req, res) => {
+    try {
+        const format = req.query.format || 'csv';
+        const search = req.query.search || '';
+        const status = req.query.status || 'all';
+        const category = req.query.category;
+        const sub_category = req.query.sub_category;
+
+        let query = {};
+        if (status === 'active') query.isActive = { $ne: false };
+        else if (status === 'inactive') query.isActive = false;
+
+        if (category) query.category = category;
+        if (sub_category) query.sub_category = sub_category;
+
+        if (search) {
+            const searchRegex = { $regex: search, $options: 'i' };
+            const brands = await Brand.find({ name: searchRegex }).select('_id');
+            const categories = await Category.find({ name: searchRegex }).select('_id');
+            const brandIds = brands.map(b => b._id);
+            const categoryIds = categories.map(c => c._id);
+            query.$or = [
+                { title: searchRegex },
+                { slug: searchRegex },
+                { part_number: searchRegex },
+                { brand: { $in: brandIds } },
+                { category: { $in: categoryIds } }
+            ];
+        }
+
+        const products = await Product.find(query)
+            .populate('category', 'name')
+            .populate('sub_category', 'name')
+            .populate('brand', 'name')
+            .sort({ createdAt: -1 });
+
+        const data = products.map(p => ({
+            ID: p._id.toString(),
+            Title: p.title,
+            Slug: p.slug,
+            PartNumber: p.part_number || '',
+            Category: p.category?.name || '',
+            SubCategory: p.sub_category?.map(sc => sc.name).join(', ') || '',
+            Brand: p.brand?.name || '',
+            MRP: p.mrp,
+            PriceA: p.selling_price_a,
+            PriceB: p.selling_price_b,
+            PriceC: p.selling_price_c,
+            Stock: p.opening_stock,
+            Status: p.isActive ? 'Active' : 'Inactive'
+        }));
+
+        if (format === 'excel') {
+            const workbook = new ExcelJS.Workbook();
+            const worksheet = workbook.addWorksheet('Products');
+            worksheet.columns = [
+                { header: 'ID', key: 'ID', width: 25 },
+                { header: 'Title', key: 'Title', width: 40 },
+                { header: 'Slug', key: 'Slug', width: 30 },
+                { header: 'Part Number', key: 'PartNumber', width: 15 },
+                { header: 'Category', key: 'Category', width: 20 },
+                { header: 'Sub Category', key: 'SubCategory', width: 20 },
+                { header: 'Brand', key: 'Brand', width: 20 },
+                { header: 'MRP', key: 'MRP', width: 10 },
+                { header: 'Price A', key: 'PriceA', width: 10 },
+                { header: 'Price B', key: 'PriceB', width: 10 },
+                { header: 'Price C', key: 'PriceC', width: 10 },
+                { header: 'Stock', key: 'Stock', width: 10 },
+                { header: 'Status', key: 'Status', width: 10 }
+            ];
+            worksheet.addRows(data);
+
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', 'attachment; filename=products.xlsx');
+            return workbook.xlsx.write(res).then(() => res.status(200).end());
+        } else {
+            const fields = ['ID', 'Title', 'Slug', 'PartNumber', 'Category', 'SubCategory', 'Brand', 'MRP', 'PriceA', 'PriceB', 'PriceC', 'Stock', 'Status'];
+            const json2csvParser = new Parser({ fields });
+            const csv = json2csvParser.parse(data);
+            res.setHeader('Content-Type', 'text/csv');
+            res.setHeader('Content-Disposition', 'attachment; filename=products.csv');
+            return res.status(200).send(csv);
+        }
+    } catch (error) {
+        console.error('Export products error:', error);
+        res.status(500).json({ message: 'Failed to export products', error: error.message });
+    }
 };

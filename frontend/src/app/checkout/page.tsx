@@ -6,7 +6,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Modal from '@/app/components/Modal';
 import { useModal } from '@/app/hooks/useModal';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft, FaCreditCard, FaMoneyBillWave } from 'react-icons/fa';
+import { getSystemSettings } from '@/app/utils/systemSettings';
 import './checkout.css';
 
 const INDIAN_STATES = [
@@ -103,16 +104,41 @@ export default function CheckoutPage() {
     }, [selectedAddressId, savedAddresses, newAddress, isNewAddress]);
 
     const [paymentMethod, setPaymentMethod] = useState<'COD' | 'Online'>('Online');
+    const [paymentSettings, setPaymentSettings] = useState({ onlinePaymentEnabled: true, codEnabled: false });
     const [loading, setLoading] = useState(false);
 
     const { modalState, hideModal, showError, showWarning, showSuccess } = useModal();
 
+    useEffect(() => {
+        const fetchPaymentSettings = async () => {
+            const settings = await getSystemSettings();
+            setPaymentSettings({
+                onlinePaymentEnabled: settings.onlinePaymentEnabled,
+                codEnabled: settings.codEnabled
+            });
+
+            // Handle default selection and restrictions
+            if (!settings.onlinePaymentEnabled && settings.codEnabled) {
+                setPaymentMethod('COD');
+            } else if (settings.onlinePaymentEnabled && !settings.codEnabled) {
+                setPaymentMethod('Online');
+            } else if (!settings.onlinePaymentEnabled && !settings.codEnabled) {
+                // If both disabled, maybe allow Online as fallback or show error
+                // For now, keep as is but UI will handle it
+            }
+        };
+        fetchPaymentSettings();
+    }, []);
+
     const submitButtonText = useMemo(() => {
         if (loading) return 'Processing...';
         if (availableItems.length > 0 && requestItems.length > 0) return `Place Order & Submit Request`;
-        if (availableItems.length > 0) return `Place Order (${paymentMethod})`;
+        if (availableItems.length > 0) {
+            if (!paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled) return 'Payment Methods Unavailable';
+            return `Place Order (${paymentMethod})`;
+        }
         return 'Submit Request (No Payment Required)';
-    }, [loading, availableItems.length, requestItems.length, paymentMethod]);
+    }, [loading, availableItems.length, requestItems.length, paymentMethod, paymentSettings]);
 
     useEffect(() => {
         if (!cartLoading && items.length === 0 && !orderPlaced) {
@@ -573,8 +599,60 @@ export default function CheckoutPage() {
                         )}
                     </div>
 
-                    {/* Payment Method - Hidden (Default: Online) */}
-                    {availableItems.length > 0 && (
+                    {/* Payment Method - Dynamic Selection */}
+                    {availableItems.length > 0 && (paymentSettings.onlinePaymentEnabled || paymentSettings.codEnabled) && (
+                        <div className="card checkout-section">
+                            <h3 className="section-title">Payment Method</h3>
+
+                            <div className="payment-options">
+                                {paymentSettings.onlinePaymentEnabled && (
+                                    <label className={`payment-card ${paymentMethod === 'Online' ? 'selected' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="paymentMethod"
+                                            value="Online"
+                                            checked={paymentMethod === 'Online'}
+                                            onChange={() => setPaymentMethod('Online')}
+                                        />
+                                        <div className="payment-icon">
+                                            <FaCreditCard size={20} />
+                                        </div>
+                                        <div className="payment-info">
+                                            <div className="payment-name">Online Payment</div>
+                                            <div className="payment-desc">Pay securely via Cards, UPI, or NetBanking</div>
+                                        </div>
+                                    </label>
+                                )}
+
+                                {paymentSettings.codEnabled && (
+                                    <label className={`payment-card ${paymentMethod === 'COD' ? 'selected' : ''}`}>
+                                        <input
+                                            type="radio"
+                                            name="paymentMethod"
+                                            value="COD"
+                                            checked={paymentMethod === 'COD'}
+                                            onChange={() => setPaymentMethod('COD')}
+                                        />
+                                        <div className="payment-icon">
+                                            <FaMoneyBillWave size={20} />
+                                        </div>
+                                        <div className="payment-info">
+                                            <div className="payment-name">Cash on Delivery (COD)</div>
+                                            <div className="payment-desc">Pay when you receive your order</div>
+                                        </div>
+                                    </label>
+                                )}
+                            </div>
+
+                            {!paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled && (
+                                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                                    No payment methods are currently available. Please contact support.
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {availableItems.length > 0 && !paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled && (
                         <div className="hidden">
                             <input type="hidden" value={paymentMethod} />
                         </div>
@@ -654,7 +732,7 @@ export default function CheckoutPage() {
 
                         <button
                             onClick={handlePlaceOrder}
-                            disabled={loading}
+                            disabled={loading || (availableItems.length > 0 && !paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled)}
                             className="btn btn-primary submit-btn"
                         >
                             {submitButtonText}

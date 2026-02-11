@@ -48,6 +48,10 @@ const systemSettingsSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    tallyIntegrationEnabled: {
+        type: Boolean,
+        default: true
+    },
 
     // WhatsApp Multi-Channel Settings
     whatsappPrimarySession: {
@@ -79,6 +83,16 @@ const systemSettingsSchema = new mongoose.Schema({
     onDemandResponseTime: {
         type: String,
         default: '48 hours'
+    },
+
+    // Payment Settings
+    onlinePaymentEnabled: {
+        type: Boolean,
+        default: true
+    },
+    codEnabled: {
+        type: Boolean,
+        default: false
     },
 
     // Single Document Pattern (Only one settings document)

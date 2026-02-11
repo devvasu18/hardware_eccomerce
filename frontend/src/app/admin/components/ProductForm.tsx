@@ -187,6 +187,10 @@ const productSchema = z.object({
     isDailyOffer: z.boolean().default(false),
     isVisible: z.boolean().default(true),
     isOnDemand: z.boolean().default(false),
+    isCancellable: z.boolean().default(true),
+    isReturnable: z.boolean().default(true),
+    deliveryTime: z.string().optional(),
+    returnWindow: z.coerce.number().default(7),
 
     // Variations
     variations: z.array(z.object({
@@ -288,6 +292,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
     const [loading, setLoading] = useState(false);
     const [variationMode, setVariationMode] = useState<'standard' | 'standalone' | 'models'>('standard');
+    const [imageError, setImageError] = useState(false);
 
     const {
         register,
@@ -304,7 +309,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
             gst_rate: 18,
             delivery_charge: 0,
             opening_stock: 0,
-            low_stock_threshold: 5
+            low_stock_threshold: 5,
+            isCancellable: true,
+            isReturnable: true,
+            deliveryTime: '3-5 business days',
+            returnWindow: 7
         }
     });
 
@@ -397,6 +406,10 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         isDailyOffer: product.isDailyOffer || false,
                         isVisible: product.isVisible !== false, // Default true if undefined
                         isOnDemand: product.isOnDemand || false,
+                        isCancellable: product.isCancellable !== false,
+                        isReturnable: product.isReturnable !== false,
+                        deliveryTime: product.deliveryTime || '3-5 business days',
+                        returnWindow: product.returnWindow || 7,
                         variations: product.variations || [],
                         models: product.models || []
                     });
@@ -512,11 +525,14 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
     const onSubmit: SubmitHandler<ProductFormData> = async (data) => {
         setLoading(true);
+        setImageError(false);
 
         // --- Custom Image Validation ---
         const hasMain = productImages.some(img => img.isMain);
         if (productImages.length === 0) {
             showError("At least one Product Image is required!");
+            setImageError(true);
+            document.getElementById('media-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setLoading(false);
             return;
         }
@@ -567,7 +583,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
         }
 
         if (hasImageError) {
-            showError("Please upload images for all models and variations (marked in red).");
+            showError("Please upload images for all models and variations (marked in red or in the Image Manager).");
+            setImageError(true);
             setLoading(false);
             return;
         }
@@ -607,7 +624,13 @@ export default function ProductForm({ productId }: ProductFormProps) {
                 // Manual validation for standard mode since Zod is now optional for flexibility
                 setLoading(false);
                 setError("mrp", { type: "manual", message: "MRP is required" });
-                showError("Please fix the errors in the form (MRP is missing)");
+                showError("Please fill in all required fields: MRP");
+
+                const element = document.getElementsByName("mrp")[0] || document.querySelector('[name="mrp"]');
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    (element as any).focus?.();
+                }
                 return;
             } else {
                 // For standard mode, just ensure stock matches opening_stock
@@ -773,8 +796,65 @@ export default function ProductForm({ productId }: ProductFormProps) {
                 </button>
                 <button
                     onClick={handleSubmit(onSubmit, (errors) => {
-                        console.error(errors);
-                        showError("Please fill in all required fields marked in red.");
+                        console.error("Form Validation Errors:", errors);
+
+                        const getErrorPaths = (obj: any, prefix = ''): string[] => {
+                            return Object.keys(obj).reduce((acc: string[], key: string) => {
+                                const path = prefix ? `${prefix}.${key}` : key;
+                                // @ts-ignore
+                                if (obj[key]?.message) {
+                                    acc.push(path);
+                                } else if (typeof obj[key] === 'object' && obj[key] !== null) {
+                                    acc.push(...getErrorPaths(obj[key], path));
+                                }
+                                return acc;
+                            }, []);
+                        };
+
+                        const errorPaths = getErrorPaths(errors);
+                        const labels: Record<string, string> = {
+                            title: 'Product Title',
+                            slug: 'Slug',
+                            category: 'Category',
+                            mrp: 'MRP',
+                            selling_price_a: 'Selling Price',
+                        };
+
+                        const missing = errorPaths.map(path => {
+                            if (labels[path]) return labels[path];
+                            if (path.includes('models')) {
+                                const match = path.match(/models\.(\d+)\.name/);
+                                if (match) return `Model Name (Model ${parseInt(match[1]) + 1})`;
+                                const vMatch = path.match(/models\.(\d+)\.variations\.(\d+)\.(value|price)/);
+                                if (vMatch) return `Model Variation ${vMatch[3]} (Model ${parseInt(vMatch[1]) + 1})`;
+                            }
+                            if (path.includes('variations')) {
+                                const match = path.match(/variations\.(\d+)\.(value|price)/);
+                                if (match) return `Variation ${match[2]} (Line ${parseInt(match[1]) + 1})`;
+                            }
+                            return path;
+                        });
+
+                        const uniqueMissing = Array.from(new Set(missing));
+                        const msg = uniqueMissing.length > 0
+                            ? `Please fill in all required fields: ${uniqueMissing.join(', ')}`
+                            : "Please fill in all required fields marked in red.";
+
+                        showError(msg);
+
+                        if (errorPaths.length > 0) {
+                            const firstPath = errorPaths[0];
+                            const element = document.getElementsByName(firstPath)[0];
+                            if (element) {
+                                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                (element as any).focus?.();
+                            } else {
+                                const sel = document.querySelector(`[name="${firstPath}"]`);
+                                if (sel) {
+                                    sel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            }
+                        }
                     })}
                     disabled={loading}
                     className="btn btn-primary"
@@ -793,12 +873,12 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         <div className="form-grid">
                             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                                 <label className="form-label">Product Title *</label>
-                                <input {...register("title")} className="form-input" placeholder="e.g. Heavy Duty Drill" />
+                                <input {...register("title")} className="form-input" placeholder="e.g. Heavy Duty Drill" style={{ borderColor: errors.title ? 'var(--danger)' : undefined }} />
                                 {errors.title && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.title.message as string}</span>}
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Slug</label>
-                                <input {...register("slug")} className="form-input" />
+                                <input {...register("slug")} className="form-input" style={{ borderColor: errors.slug ? 'var(--danger)' : undefined }} />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Part Number</label>
@@ -1042,7 +1122,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                                             {...register(`variations.${index}.value`)}
                                                                             className="form-input"
                                                                             placeholder="Value"
-                                                                            style={{ fontSize: '0.85rem', padding: '0.3rem' }}
+                                                                            style={{
+                                                                                fontSize: '0.85rem',
+                                                                                padding: '0.3rem',
+                                                                                borderColor: errors.variations?.[index]?.value ? 'var(--danger)' : undefined
+                                                                            }}
                                                                             list={`suggestions-${index}`}
                                                                         />
                                                                         <datalist id={`suggestions-${index}`}>
@@ -1194,6 +1278,28 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 'normal' }}>Never shows as out of stock</span>
                                 </span>
                             </label>
+                            <label className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                <input type="checkbox" {...register("isCancellable")} className="form-checkbox" />
+                                <span>Can be Cancelled (User)</span>
+                            </label>
+                            <label className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                <input type="checkbox" {...register("isReturnable")} className="form-checkbox" />
+                                <span>Can be Returned (User)</span>
+                            </label>
+                        </div>
+
+                        <div style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
+                            <div className="form-grid">
+                                <div className="form-group">
+                                    <label className="form-label">Delivery Estimate</label>
+                                    <input type="text" {...register("deliveryTime")} className="form-input" placeholder="e.g. 3-5 business days" />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Return Window (Days)</label>
+                                    <input type="number" {...register("returnWindow")} className="form-input" placeholder="7" />
+                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Days after purchase to allow returns</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1202,7 +1308,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         <div className="card-header">Classification</div>
                         <div className="form-group" style={{ marginBottom: '1rem' }}>
                             <label className="form-label">Category *</label>
-                            <select {...register("category")} className="form-select">
+                            <select {...register("category")} className="form-select" style={{ borderColor: errors.category ? 'var(--danger)' : undefined }}>
                                 <option value="">-- Select Category --</option>
                                 {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                             </select>
@@ -1248,14 +1354,26 @@ export default function ProductForm({ productId }: ProductFormProps) {
                     </div>
 
                     {/* Media - Product Images (New System) */}
-                    <div className="card">
+                    <div className="card" id="media-section">
                         <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <span>Product Images</span>
                             <button
                                 type="button"
-                                onClick={() => setIsImageModalOpen(true)}
+                                onClick={() => {
+                                    setIsImageModalOpen(true);
+                                    setImageError(false);
+                                }}
                                 className="btn btn-sm btn-secondary"
-                                style={{ fontSize: '0.8rem', padding: '0.3rem 0.6rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                                style={{
+                                    fontSize: '0.8rem',
+                                    padding: '0.3rem 0.6rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.3rem',
+                                    borderColor: imageError ? 'var(--danger)' : undefined,
+                                    borderWidth: imageError ? '2px' : '1px',
+                                    color: imageError ? 'var(--danger)' : undefined
+                                }}
                             >
                                 <FiEdit2 /> Manage Images
                             </button>

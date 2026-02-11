@@ -27,6 +27,7 @@ const orderSchema = new mongoose.Schema({
         productTitle: { type: String }, // Snapshot for history
         productImage: { type: String }, // Snapshot for history
         quantity: { type: Number, required: true },
+        quantityReturned: { type: Number, default: 0 }, // Track partial returns
         priceAtBooking: { type: Number, required: true },
         variationId: { type: mongoose.Schema.Types.ObjectId },
         variationText: { type: String }, // Stored snapshot: "Color: Red"
@@ -36,6 +37,11 @@ const orderSchema = new mongoose.Schema({
         sgst: { type: Number },
         igst: { type: Number }, // If interstate
         totalWithTax: { type: Number },
+        status: {
+            type: String,
+            enum: ['Active', 'Cancelled', 'Returned', 'Refunded'],
+            default: 'Active'
+        },
         requestId: { type: mongoose.Schema.Types.ObjectId, ref: 'ProcurementRequest' } // Link to original request
     }],
     totalAmount: { type: Number, required: true },

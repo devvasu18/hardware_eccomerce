@@ -100,6 +100,10 @@ const productSchema = new mongoose.Schema({
     isTopSale: { type: Boolean, default: false },
     isDailyOffer: { type: Boolean, default: false },
     isOnDemand: { type: Boolean, default: false }, // Made-to-order products that never show as out of stock
+    isCancellable: { type: Boolean, default: true },
+    isReturnable: { type: Boolean, default: true },
+    deliveryTime: { type: String, default: '3-5 business days' },
+    returnWindow: { type: Number, default: 7 }, // Days within which return/refund is allowed
 
     // Metrics
     views: { type: Number, default: 0 },

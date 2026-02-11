@@ -35,7 +35,7 @@ exports.getRefunds = async (req, res) => {
 // @access  Private
 exports.requestRefund = async (req, res) => {
     try {
-        const { orderId, productId, amount, reason, description, images, bankDetails } = req.body;
+        const { orderId, productId, amount, quantity, reason, description, images, bankDetails } = req.body;
 
         const order = await Order.findById(orderId);
         if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -51,11 +51,33 @@ exports.requestRefund = async (req, res) => {
             return res.status(400).json({ message: 'Refund request already pending or processed' });
         }
 
+        // Check if product is returnable
+        if (productId) {
+            const product = await Product.findById(productId);
+            if (!product) return res.status(404).json({ message: 'Product not found' });
+
+            if (product.isReturnable === false) {
+                return res.status(400).json({ message: 'This product is not eligible for returns/refunds.' });
+            }
+
+            // Check Return Window
+            const windowDays = product.returnWindow || 7;
+            const bookingDate = new Date(order.createdAt);
+            const now = new Date();
+            const diffTime = Math.abs(now.getTime() - bookingDate.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (diffDays > windowDays) {
+                return res.status(400).json({ message: `The return window for this product (${windowDays} days) has expired.` });
+            }
+        }
+
         const refund = await Refund.create({
             order: orderId,
             user: req.user._id,
-            product: productId || null, // If null, full order
+            product: productId || null,
             amount,
+            quantity: quantity || 1,
             reason,
             description,
             images,
@@ -89,17 +111,36 @@ exports.updateRefundStatus = async (req, res) => {
         refund.adminNote = adminNote;
         refund.processedBy = req.user._id;
 
-        if (status === 'Approved') {
+        if (status === 'Approved' || status === 'Processed') {
             // -- Mock Gateway Call --
             if (refund.gateway === 'Razorpay' || refund.gateway === 'Stripe') {
                 // Call Payment Gateway API here
                 // const gatewayRes = await refundMoney(refund.amount, ...);
-                refund.refundTransactionId = 'ref_gw_' + Date.now();
-                refund.status = 'Processed'; // Auto process if gateway success
+                if (status === 'Approved') { // Prevent double status set if already Processed
+                    refund.refundTransactionId = 'ref_gw_' + Date.now();
+                    refund.status = 'Processed';
+                }
             } else if (refund.gateway === 'COD' || refund.gateway === 'Bank Transfer') {
                 // For COD, admin manually transfers. Status stays Approved or moves to Processed if admin confirms transfer now.
                 // Let's assume 'Approved' means "Ready for Payout", and admin marks "Processed" when money sent.
                 // If the UI sends 'Processed', we assume money is sent.
+            }
+
+            // -- Update Order Item Status --
+            if (refund.order && refund.product) {
+                await Order.findOneAndUpdate(
+                    { _id: refund.order, 'items.product': refund.product },
+                    {
+                        $set: { 'items.$.status': 'Refunded' },
+                        $inc: { 'items.$.quantityReturned': refund.quantity || 0 }
+                    }
+                );
+            } else if (refund.order && !refund.product) {
+                // Full order refund
+                await Order.findByIdAndUpdate(refund.order, {
+                    paymentStatus: 'Refunded',
+                    status: 'Cancelled'
+                });
             }
 
             // -- Stock Adjustment --

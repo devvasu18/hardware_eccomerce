@@ -18,16 +18,17 @@ interface Product {
 
 interface FeaturedProductsProps {
     products: Product[];
+    config?: any;
 }
 
-export default function FeaturedProducts({ products }: FeaturedProductsProps) {
+export default function FeaturedProducts({ products, config }: FeaturedProductsProps) {
     return (
         <section className="featured-section">
             <div className="container">
                 <div className="featured-header">
                     <div className="featured-title-group">
-                        <h2 className="featured-title">Featured Products</h2>
-                        <p className="featured-subtitle">Handpicked selections from our premium collection</p>
+                        <h2 className="featured-title">{config?.title || 'Featured Products'}</h2>
+                        <p className="featured-subtitle">{config?.subtitle || 'Handpicked selections from our premium collection'}</p>
                     </div>
                     <Link href="/products" className="featured-view-all">
                         View All Products

@@ -22,6 +22,7 @@ interface Product {
     warranty?: string;
     material?: string;
     countryOfOrigin?: string;
+    deliveryTime?: string;
     variations?: any[];
     models?: any[];
     offers?: { percentage: number; title: string;[key: string]: any }[];
@@ -229,7 +230,7 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
 
                 <div className="delivery-estimate">
                     <h4>DELIVERY ESTIMATE</h4>
-                    <p>Standard delivery: 3-5 business days</p>
+                    <p>{product.deliveryTime || 'Standard delivery: 3-5 business days'}</p>
                     <p>Express delivery available at checkout</p>
                 </div>
             </div>

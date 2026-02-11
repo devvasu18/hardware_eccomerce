@@ -9,7 +9,7 @@ import './CategorySection.css';
 
 
 
-export default function CategorySection() {
+export default function CategorySection({ config }: { config?: any }) {
     const [categories, setCategories] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -60,8 +60,8 @@ export default function CategorySection() {
             <div className="container">
                 <div className="category-header">
                     <div>
-                        <h2 className="category-title">Browse Categories</h2>
-                        <p className="category-subtitle">Find exactly what you need from our wide range of categories</p>
+                        <h2 className="category-title">{config?.title || 'Browse Categories'}</h2>
+                        <p className="category-subtitle">{config?.subtitle || 'Find exactly what you need from our wide range of categories'}</p>
                     </div>
                     <Link href="/categories" className="view-all-btns">
                         <span>View All Categories</span>

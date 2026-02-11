@@ -22,7 +22,9 @@ router.get('/settings', async (req, res) => {
             supportContactNumber: settings.supportContactNumber,
             whatsappSupportNumber: settings.whatsappSupportNumber,
             companyAddress: settings.companyAddress,
-            companyGstNumber: settings.companyGstNumber
+            companyGstNumber: settings.companyGstNumber,
+            onlinePaymentEnabled: settings.onlinePaymentEnabled,
+            codEnabled: settings.codEnabled
         };
 
         res.json(publicSettings);

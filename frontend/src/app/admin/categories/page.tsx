@@ -6,7 +6,7 @@ import FormModal from '../../components/FormModal';
 import api from '../../utils/api';
 import DataTable from '../../components/DataTable';
 import { useModal } from '../../hooks/useModal';
-import { FiPlus, FiGrid } from 'react-icons/fi';
+import { FiPlus, FiGrid, FiDownload } from 'react-icons/fi';
 import ReorderModal from './ReorderModal';
 
 interface Category {
@@ -152,11 +152,74 @@ export default function CategoryManager() {
         );
     };
 
+    const handleExport = async (format: 'csv' | 'excel') => {
+        try {
+            const res = await api.get('/admin/categories/export', {
+                params: { format },
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `categories_${new Date().toISOString().split('T')[0]}.${format === 'excel' ? 'xlsx' : 'csv'}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error("Export failed", error);
+            showError("Failed to export categories");
+        }
+    };
+
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h1 style={{ marginBottom: 0 }}>Category Management</h1>
                 <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div className="btn-group" style={{ display: 'flex', gap: '0.2rem' }}>
+                        <button
+                            onClick={() => handleExport('csv')}
+                            className="btn"
+                            style={{
+                                background: 'white',
+                                border: '2px solid #e2e8f0',
+                                padding: '0.75rem 1rem',
+                                borderRadius: '6px',
+                                color: '#475569',
+                                fontWeight: 600,
+                                fontSize: '1rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <FiDownload /> CSV
+                        </button>
+                        <button
+                            onClick={() => handleExport('excel')}
+                            className="btn"
+                            style={{
+                                background: 'white',
+                                border: '2px solid #e2e8f0',
+                                padding: '0.75rem 1rem',
+                                borderRadius: '6px',
+                                color: '#475569',
+                                fontWeight: 600,
+                                fontSize: '1rem',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                        >
+                            <FiDownload /> Excel
+                        </button>
+                    </div>
+
+                    <div style={{ borderLeft: '1px solid #eee', margin: '0 0.5rem' }}></div>
+
                     <button
                         onClick={() => setIsReorderModalOpen(true)}
                         className="btn"
@@ -177,7 +240,7 @@ export default function CategoryManager() {
                         onMouseOver={(e) => e.currentTarget.style.borderColor = '#cbd5e1'}
                         onMouseOut={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
                     >
-                        <FiGrid /> Reorder Categories
+                        <FiGrid /> Reorder
                     </button>
                     <button
                         onClick={startAdd}
@@ -196,7 +259,7 @@ export default function CategoryManager() {
                             gap: '0.5rem'
                         }}
                     >
-                        <FiPlus /> Add New Category
+                        <FiPlus /> Add Category
                     </button>
                 </div>
             </div>

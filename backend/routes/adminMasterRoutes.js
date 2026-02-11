@@ -21,6 +21,7 @@ router.delete('/offers/:id', protect, admin, masterController.deleteOffer);
 
 // Categories
 router.get('/categories', protect, admin, masterController.getCategories);
+router.get('/categories/export', protect, admin, masterController.exportCategories);
 router.post('/categories', protect, admin, upload.single('image'), masterController.createCategory);
 router.post('/categories/reorder', protect, admin, masterController.reorderCategories);
 router.put('/categories/:id', protect, admin, upload.single('image'), masterController.updateCategory);
@@ -28,6 +29,7 @@ router.delete('/categories/:id', protect, admin, masterController.deleteCategory
 
 // Sub-Categories
 router.get('/sub-categories', protect, admin, masterController.getSubCategories);
+router.get('/sub-categories/export', protect, admin, masterController.exportSubCategories);
 router.post('/sub-categories', protect, admin, upload.single('image'), masterController.createSubCategory);
 router.put('/sub-categories/:id', protect, admin, upload.single('image'), masterController.updateSubCategory);
 router.delete('/sub-categories/:id', protect, admin, masterController.deleteSubCategory);

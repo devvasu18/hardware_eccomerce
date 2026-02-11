@@ -1,34 +1,40 @@
-const HomeLayout = require('../models/HomeLayout');
+const PageLayout = require('../models/PageLayout');
 
 // Get active layout for public frontend
 exports.getActiveLayout = async (req, res) => {
     try {
-        const layout = await HomeLayout.find({ isActive: true }).sort({ order: 1 });
+        const pageSlug = req.query.page || 'home';
+        const layout = await PageLayout.find({
+            isActive: true,
+            pageSlug: pageSlug
+        }).sort({ order: 1 });
         res.status(200).json(layout);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching home layout', error: error.message });
+        res.status(500).json({ message: 'Error fetching layout', error: error.message });
     }
 };
 
 // Get all layout components for Admin
 exports.getAllLayoutComponents = async (req, res) => {
     try {
-        const layout = await HomeLayout.find().sort({ order: 1 });
+        const pageSlug = req.query.page || 'home';
+        const layout = await PageLayout.find({ pageSlug: pageSlug }).sort({ order: 1 });
         res.status(200).json(layout);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching home layout components', error: error.message });
+        res.status(500).json({ message: 'Error fetching layout components', error: error.message });
     }
 };
 
 // Add new component to layout
 exports.addComponent = async (req, res) => {
     try {
-        const { componentType, config, order, isActive } = req.body;
-        const newComponent = new HomeLayout({
+        const { componentType, config, order, isActive, pageSlug = 'home' } = req.body;
+        const newComponent = new PageLayout({
             componentType,
             config,
             order,
-            isActive
+            isActive,
+            pageSlug
         });
         await newComponent.save();
         res.status(201).json(newComponent);
@@ -41,7 +47,7 @@ exports.addComponent = async (req, res) => {
 exports.updateComponent = async (req, res) => {
     try {
         const { id } = req.params;
-        const updatedComponent = await HomeLayout.findByIdAndUpdate(id, req.body, { new: true });
+        const updatedComponent = await PageLayout.findByIdAndUpdate(id, req.body, { new: true });
         if (!updatedComponent) {
             return res.status(404).json({ message: 'Component not found' });
         }
@@ -61,7 +67,7 @@ exports.reorderComponents = async (req, res) => {
                 update: { order: item.order }
             }
         }));
-        await HomeLayout.bulkWrite(bulkOps);
+        await PageLayout.bulkWrite(bulkOps);
         res.status(200).json({ message: 'Reordered successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Error reordering components', error: error.message });
@@ -72,7 +78,7 @@ exports.reorderComponents = async (req, res) => {
 exports.deleteComponent = async (req, res) => {
     try {
         const { id } = req.params;
-        const deletedComponent = await HomeLayout.findByIdAndDelete(id);
+        const deletedComponent = await PageLayout.findByIdAndDelete(id);
         if (!deletedComponent) {
             return res.status(404).json({ message: 'Component not found' });
         }

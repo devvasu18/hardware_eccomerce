@@ -203,10 +203,28 @@ export default function RequestsPage() {
         setQuoteModalOpen(true);
     };
 
+    const totalSelectedSum = useMemo(() => {
+        if (!activeCustomer || selectedRequestIds.length === 0) return 0;
+        return selectedRequestIds.reduce((acc, id) => {
+            const req = activeCustomer.requests.find(r => r._id === id);
+            if (!req) return acc;
+            const price = req.declaredBasePrice || req.product.selling_price_a || req.product.mrp || req.product.basePrice || 0;
+            return acc + (price * req.requestedQuantity);
+        }, 0);
+    }, [selectedRequestIds, activeCustomer]);
+
     const submitQuote = async () => {
         const token = localStorage.getItem('token');
         try {
             const promises = selectedRequestIds.map(id => {
+                const req = activeCustomer?.requests.find(r => r._id === id);
+                let priceToUse = parseFloat(responseForm.priceQuote);
+
+                // If bulk approval, use each item's individual price
+                if (selectedRequestIds.length > 1 && req) {
+                    priceToUse = req.declaredBasePrice || req.product.selling_price_a || req.product.mrp || req.product.basePrice || 0;
+                }
+
                 return fetch(`http://localhost:5000/api/requests/${id}/respond`, {
                     method: 'PATCH',
                     headers: {
@@ -215,7 +233,7 @@ export default function RequestsPage() {
                     },
                     body: JSON.stringify({
                         status: 'Approved',
-                        priceQuote: parseFloat(responseForm.priceQuote),
+                        priceQuote: priceToUse,
                         estimatedDelivery: responseForm.estimatedDelivery,
                         adminNotes: responseForm.adminNotes
                     })
@@ -545,24 +563,30 @@ export default function RequestsPage() {
                     <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', width: '450px', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }}>
                         <h3>{selectedRequestIds.length > 1 ? `Approve ${selectedRequestIds.length} Requests` : 'Approve Request'}</h3>
                         <p style={{ marginBottom: '1rem', color: '#64748B' }}>
-                            {selectedRequestIds.length > 1 ? 'Enter quote details to apply to all selected items.' : 'Enter quote details for this customer.'}
+                            {selectedRequestIds.length > 1 ? 'Individual item prices will be used. Total selected value shown below.' : 'Enter quote details for this customer.'}
                         </p>
 
-                        <div style={{ marginBottom: '1rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Quoted Price (Per Unit)</label>
-                            <input
-                                type="number"
-                                placeholder="Enter Price"
-                                value={responseForm.priceQuote}
-                                onChange={(e) => setResponseForm({ ...responseForm, priceQuote: e.target.value })}
-                                style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-                            />
-                            {selectedRequestIds.length === 1 && (
+                        {selectedRequestIds.length === 1 ? (
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Quoted Price (Per Unit)</label>
+                                <input
+                                    type="number"
+                                    placeholder="Enter Price"
+                                    value={responseForm.priceQuote}
+                                    onChange={(e) => setResponseForm({ ...responseForm, priceQuote: e.target.value })}
+                                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                />
                                 <small style={{ color: '#64748B' }}>
-                                    Original Base Price: ₹{activeCustomer?.requests.find(r => r._id === selectedRequestIds[0])?.declaredBasePrice || 'N/A'}
+                                    Original Base Price: ₹{activeCustomer?.requests.find(r => r._id === selectedRequestIds[0])?.declaredBasePrice || activeCustomer?.requests.find(r => r._id === selectedRequestIds[0])?.product.selling_price_a || 'N/A'}
                                 </small>
-                            )}
-                        </div>
+                            </div>
+                        ) : (
+                            <div style={{ marginBottom: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                                <div style={{ fontSize: '0.875rem', color: '#64748B', marginBottom: '0.25rem' }}>Total Selected Value (Sum):</div>
+                                <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b' }}>₹{totalSelectedSum.toLocaleString()}</div>
+                            </div>
+                        )}
+
                         <div style={{ marginBottom: '1rem' }}>
                             <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Est. Delivery</label>
                             <input

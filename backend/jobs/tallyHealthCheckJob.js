@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const { checkTallyHealth, processQueue } = require('../services/tallyService');
 const TallyStatusLog = require('../models/TallyStatusLog');
+const SystemSettings = require('../models/SystemSettings');
 
 /**
  * Hourly health check and queue processing job
@@ -11,8 +12,11 @@ function startTallyHealthCheckJob() {
         console.log('🔄 Running hourly Tally health check and queue processing...');
 
         try {
-            // Check env if enabled (optional)
-            // if (process.env.TALLY_INTEGRATION_ENABLED === 'false') return;
+            const settings = await SystemSettings.findById('system_settings');
+            if (settings && settings.tallyIntegrationEnabled === false) {
+                console.log('🔄 Tally Sync skipped - Integration is disabled in settings');
+                return;
+            }
 
             const health = await checkTallyHealth();
             let queueStats = { processed: 0, success: 0, failed: 0 };
@@ -51,6 +55,11 @@ function startTallyHealthCheckJob() {
  */
 async function runHealthCheckNow() {
     try {
+        const settings = await SystemSettings.findById('system_settings');
+        if (settings && settings.tallyIntegrationEnabled === false) {
+            return { success: false, message: 'Tally integration is disabled in system settings' };
+        }
+
         const health = await checkTallyHealth();
         let queueStats = { processed: 0, success: 0, failed: 0 };
 

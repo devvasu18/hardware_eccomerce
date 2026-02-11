@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import api from '../utils/api';
 import './SpecialOffers.css';
 
 interface Product {
@@ -32,22 +33,21 @@ interface SpecialOffer {
     isLimitedStock: boolean;
 }
 
-export default function SpecialOffers() {
+export default function SpecialOffers({ config }: { config?: any }) {
     const [offers, setOffers] = useState<SpecialOffer[]>([]);
     const [timeLeft, setTimeLeft] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState(true);
+
+    const displayTitle = config?.title || 'Special Deals This Week';
+    const displaySubtitle = config?.subtitle || "Grab these exclusive deals before they're gone. Wholesale prices slashed even further!";
 
     useEffect(() => {
         // Fetch special offers from API
         async function fetchOffers() {
             try {
-                const res = await fetch('http://localhost:5000/api/special-offers');
-                if (res.ok) {
-                    const data = await res.json();
-                    console.log('Special Offers Data:', data);
-                    console.log('First offer product:', data[0]?.productId);
-                    setOffers(data);
-                }
+                const res = await api.get('/special-offers');
+                const data = res.data;
+                setOffers(data);
             } catch (error) {
                 console.error('Error fetching special offers:', error);
             } finally {
@@ -87,12 +87,8 @@ export default function SpecialOffers() {
         return () => clearInterval(timer);
     }, [offers]);
 
-    if (loading) {
-        return null; // Or a loading skeleton
-    }
-
-    if (offers.length === 0) {
-        return null; // Don't show section if no offers
+    if (loading || offers.length === 0) {
+        return null;
     }
 
     return (
@@ -100,22 +96,14 @@ export default function SpecialOffers() {
             <div className="container">
                 <div className="offers-header">
                     <div className="offers-title-section">
-
-                        <h2 className="offers-title">Special Deals This Week</h2>
-                        <p className="offers-subtitle">
-                            Grab these exclusive deals before they're gone. Wholesale prices slashed even further!
-                        </p>
+                        <h2 className="offers-title">{displayTitle}</h2>
+                        <p className="offers-subtitle">{displaySubtitle}</p>
                     </div>
                 </div>
 
                 <div className="deals-grid">
                     {offers.map((offer) => (
                         <div key={offer._id} className="deal-card">
-                            <div className="deal-badge-container">
-
-
-                            </div>
-
                             <div className="deal-image-container">
                                 <div className="discount-circle">
                                     <div className="discount-percent">{offer.discountPercent}%</div>

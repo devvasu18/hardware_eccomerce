@@ -9,22 +9,21 @@ import './BrandsSection.css';
 
 
 
-export default function BrandsSection() {
+export default function BrandsSection({ config }: { config?: any }) {
     const [brands, setBrands] = useState<any[]>([]);
 
     useEffect(() => {
+        const fetchBrandsFromPublic = async () => {
+            try {
+                const res = await api.get('/brands/featured');
+                // Show up to 12 brands in the grid
+                setBrands(res.data.slice(0, 12));
+            } catch (e) {
+                console.error(e);
+            }
+        }
         fetchBrandsFromPublic();
     }, []);
-
-    const fetchBrandsFromPublic = async () => {
-        try {
-            const res = await api.get('/brands/featured');
-            // Show up to 12 brands in the grid
-            setBrands(res.data.slice(0, 12));
-        } catch (e) {
-            console.error(e);
-        }
-    }
 
     if (brands.length === 0) return null;
 
@@ -32,7 +31,8 @@ export default function BrandsSection() {
         <section className="brands-section">
             <div className="container">
                 <div className="brands-container">
-                    <h2 className="brands-title">Our Partner Brands</h2>
+                    <h2 className="brands-title">{config?.title || 'Our Partner Brands'}</h2>
+                    {config?.subtitle && <p className="brands-subtitle" style={{ textAlign: 'center', marginBottom: '2rem', opacity: 0.7 }}>{config.subtitle}</p>}
 
                     <div className="brands-grid-wrapper">
                         {brands.map((brand, idx) => (

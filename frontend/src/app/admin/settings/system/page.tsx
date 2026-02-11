@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import { useModal } from '../../../hooks/useModal';
 import Modal from '../../../components/Modal';
-import { FiSave, FiRefreshCw, FiSettings, FiMail, FiMessageSquare, FiClock, FiGlobe, FiPhone, FiPackage, FiBell } from 'react-icons/fi';
+import { FiSave, FiRefreshCw, FiSettings, FiMail, FiMessageSquare, FiClock, FiGlobe, FiPhone, FiPackage, FiBell, FiCreditCard } from 'react-icons/fi';
 
 export default function SystemSettingsPage() {
     const { modalState, showSuccess, showError, hideModal } = useModal();
@@ -22,10 +22,13 @@ export default function SystemSettingsPage() {
         whatsappNotificationsEnabled: true,
         passwordResetNotificationsEnabled: true,
         whatsappIntegrationEnabled: true,
+        tallyIntegrationEnabled: true,
         shipmentAssetExpiryDays: 7,
         onDemandResponseTime: '48 hours',
         lowStockThreshold: 10,
-        lowStockAlertsEnabled: true
+        lowStockAlertsEnabled: true,
+        onlinePaymentEnabled: true,
+        codEnabled: false
     });
 
     useEffect(() => {
@@ -265,6 +268,64 @@ export default function SystemSettingsPage() {
                             </label>
                         </div>
 
+                        {/* Tally Master Integration Switch */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: settings.tallyIntegrationEnabled ? '#f0f9ff' : '#fff1f2', borderRadius: '8px', border: `1px solid ${settings.tallyIntegrationEnabled ? '#0ea5e9' : '#f43f5e'}`, marginBottom: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '50%',
+                                    background: settings.tallyIntegrationEnabled ? '#0ea5e9' : '#f43f5e',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white'
+                                }}>
+                                    <FiSettings size={24} />
+                                </div>
+                                <div>
+                                    <p style={{ fontWeight: 700, color: '#1E293B', margin: 0, fontSize: '1.1rem' }}>Tally Integration (Master)</p>
+                                    <p style={{ fontSize: '0.9rem', color: '#475569', margin: '0.25rem 0 0' }}>
+                                        {settings.tallyIntegrationEnabled
+                                            ? 'Integration is active. Orders and Stock entries are synced to Tally Prime.'
+                                            : 'Integration is DISABLED. No data will be sent to Tally and background sync is paused.'}
+                                    </p>
+                                </div>
+                            </div>
+                            <label style={{ position: 'relative', display: 'inline-block', width: '64px', height: '32px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.tallyIntegrationEnabled}
+                                    onChange={(e) => handleChange('tallyIntegrationEnabled', e.target.checked)}
+                                    style={{ opacity: 0, width: 0, height: 0 }}
+                                />
+                                <span style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: settings.tallyIntegrationEnabled ? '#0EA5E9' : '#cbd5e1',
+                                    borderRadius: '32px',
+                                    transition: '0.3s',
+                                    cursor: 'pointer'
+                                }}>
+                                    <span style={{
+                                        position: 'absolute',
+                                        content: '""',
+                                        height: '24px',
+                                        width: '24px',
+                                        left: settings.tallyIntegrationEnabled ? '36px' : '4px',
+                                        bottom: '4px',
+                                        backgroundColor: 'white',
+                                        borderRadius: '50%',
+                                        transition: '0.3s',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    }}></span>
+                                </span>
+                            </label>
+                        </div>
+
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <FiMail size={20} color="#3B82F6" />
@@ -385,6 +446,102 @@ export default function SystemSettingsPage() {
                                         height: '22px',
                                         width: '22px',
                                         left: settings.passwordResetNotificationsEnabled ? '34px' : '4px',
+                                        bottom: '4px',
+                                        backgroundColor: 'white',
+                                        borderRadius: '50%',
+                                        transition: '0.3s'
+                                    }}></span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Payment Settings Section */}
+                <div className="card" style={{ padding: '2rem', borderRadius: '12px', background: 'white', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
+                    <h2 style={{ fontSize: '1.3rem', fontWeight: 600, color: '#1E293B', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FiCreditCard size={20} />
+                        Payment Modes
+                    </h2>
+
+                    <div style={{ display: 'grid', gap: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <FiGlobe size={20} color="#3B82F6" />
+                                <div>
+                                    <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>Online Payment</p>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
+                                        Enable PayU payment gateway for customers to pay online
+                                    </p>
+                                </div>
+                            </div>
+                            <label style={{ position: 'relative', display: 'inline-block', width: '60px', height: '30px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.onlinePaymentEnabled}
+                                    onChange={(e) => handleChange('onlinePaymentEnabled', e.target.checked)}
+                                    style={{ opacity: 0, width: 0, height: 0 }}
+                                />
+                                <span style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: settings.onlinePaymentEnabled ? '#10B981' : '#cbd5e1',
+                                    borderRadius: '30px',
+                                    transition: '0.3s',
+                                    cursor: 'pointer'
+                                }}>
+                                    <span style={{
+                                        position: 'absolute',
+                                        content: '""',
+                                        height: '22px',
+                                        width: '22px',
+                                        left: settings.onlinePaymentEnabled ? '34px' : '4px',
+                                        bottom: '4px',
+                                        backgroundColor: 'white',
+                                        borderRadius: '50%',
+                                        transition: '0.3s'
+                                    }}></span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <FiPhone size={20} color="#10B981" />
+                                <div>
+                                    <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>Cash on Delivery (COD)</p>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
+                                        Allow customers to pay when they receive the order
+                                    </p>
+                                </div>
+                            </div>
+                            <label style={{ position: 'relative', display: 'inline-block', width: '60px', height: '30px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.codEnabled}
+                                    onChange={(e) => handleChange('codEnabled', e.target.checked)}
+                                    style={{ opacity: 0, width: 0, height: 0 }}
+                                />
+                                <span style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: settings.codEnabled ? '#10B981' : '#cbd5e1',
+                                    borderRadius: '30px',
+                                    transition: '0.3s',
+                                    cursor: 'pointer'
+                                }}>
+                                    <span style={{
+                                        position: 'absolute',
+                                        content: '""',
+                                        height: '22px',
+                                        width: '22px',
+                                        left: settings.codEnabled ? '34px' : '4px',
                                         bottom: '4px',
                                         backgroundColor: 'white',
                                         borderRadius: '50%',

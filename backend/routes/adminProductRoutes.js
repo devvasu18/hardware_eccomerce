@@ -11,7 +11,8 @@ const {
     deleteProduct,
     getAdminProducts,
     getAdminProductById,
-    bulkImportProducts
+    bulkImportProducts,
+    exportProducts
 } = require('../controllers/productController');
 
 // Validation Middleware for Product
@@ -76,6 +77,7 @@ router.patch('/:id/new-arrival', protect, admin, async (req, res) => {
 });
 
 // CRUD Routes
+router.get('/export', protect, admin, exportProducts);
 router.get('/', protect, admin, getAdminProducts);
 router.get('/:id', protect, admin, getAdminProductById);
 router.post('/', protect, admin, productUploads, validateProduct, createProduct); // Added validateProduct

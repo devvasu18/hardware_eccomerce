@@ -10,9 +10,33 @@ const PAGES = [
         id: 'home',
         name: 'Home Page',
         path: '/',
-        builderPath: '/admin/home-builder',
+        builderPath: '/admin/page-builder/home',
         status: 'Active',
         lastUpdated: 'Today'
+    },
+    {
+        id: 'about',
+        name: 'About Us',
+        path: '/about',
+        builderPath: '/admin/page-builder/about',
+        status: 'Inactive',
+        lastUpdated: 'Never'
+    },
+    {
+        id: 'categories',
+        name: 'Categories Page',
+        path: '/categories',
+        builderPath: '/admin/page-builder/categories',
+        status: 'Active',
+        lastUpdated: 'Just Now'
+    },
+    {
+        id: 'products',
+        name: 'Products Listing',
+        path: '/products',
+        builderPath: '/admin/page-builder/products',
+        status: 'Active',
+        lastUpdated: 'Just Now'
     },
     // Future pages placeholder
 ];
@@ -25,10 +49,7 @@ export default function PagesList() {
                     <h1>Page Builder</h1>
                     <p>Design and customize your storefront pages</p>
                 </div>
-                <button className="btn btn-primary" style={{ height: '48px', padding: '0 24px' }} disabled title="Pro Feature">
-                    <FiPlus size={20} />
-                    <span>Create New Page</span>
-                </button>
+
             </div>
 
             <div className="pages-grid">

@@ -7,6 +7,8 @@ interface RefundModalProps {
     onClose: () => void;
     onSubmit: (data: any) => void;
     itemName: string;
+    maxQuantity: number;
+    itemPrice: number;
     orderPaymentMethod: string;
     loading: boolean;
 }
@@ -16,11 +18,14 @@ export default function RefundModal({
     onClose,
     onSubmit,
     itemName,
+    maxQuantity,
+    itemPrice,
     orderPaymentMethod,
     loading
 }: RefundModalProps) {
     const [reason, setReason] = useState('Defective or Damaged Product');
     const [description, setDescription] = useState('');
+    const [quantity, setQuantity] = useState(maxQuantity);
     const [bankDetails, setBankDetails] = useState({
         accountNumber: '',
         ifscCode: '',
@@ -35,6 +40,8 @@ export default function RefundModal({
         onSubmit({
             reason,
             description,
+            quantity,
+            amount: quantity * itemPrice,
             bankDetails: orderPaymentMethod === 'COD' ? bankDetails : undefined
         });
     };
@@ -49,9 +56,31 @@ export default function RefundModal({
                 boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
             }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Request Return</h2>
-                <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>For: <strong>{itemName}</strong></p>
+                <p style={{ color: '#64748b', marginBottom: '1rem' }}>For: <strong>{itemName}</strong></p>
 
                 <form onSubmit={handleSubmit}>
+                    {maxQuantity > 1 && (
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Quantity to Return</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max={maxQuantity}
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(parseInt(e.target.value))}
+                                    style={{ flex: 1 }}
+                                />
+                                <span style={{ fontWeight: 700, minWidth: '3rem', textAlign: 'center', background: '#f1f5f9', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
+                                    {quantity} / {maxQuantity}
+                                </span>
+                            </div>
+                            <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>
+                                Refund Amount: <strong>₹{(quantity * itemPrice).toLocaleString('en-IN')}</strong>
+                            </p>
+                        </div>
+                    )}
+
                     <div style={{ marginBottom: '1rem' }}>
                         <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Reason for Return</label>
                         <select

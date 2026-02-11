@@ -115,6 +115,7 @@ app.use('/api/categories', require('./routes/categoryRoutes')); // Category Mana
 app.use('/api/special-offers', require('./routes/specialOfferRoutes')); // Special Offers
 app.use('/api/homepage', require('./routes/homepageRoutes')); // Homepage Features & Trust Indicators
 app.use('/api/home-layout', require('./routes/homeLayoutRoutes')); // Headless CMS Home Layout
+app.use('/api/admin/home-layout', require('./routes/adminHomeLayoutRoutes')); // Admin Page Builder API
 app.use('/api/admin/parties', require('./routes/partyRoutes')); // Party Master
 app.use('/api/admin/stock', require('./routes/stockRoutes')); // Stock Entry & Ledger
 app.use('/api/coupons', require('./routes/couponRoutes')); // Coupon Management

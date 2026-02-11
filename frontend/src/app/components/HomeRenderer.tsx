@@ -12,6 +12,9 @@ const NewArrivals = lazy(() => import('@/app/components/NewArrivals'));
 const SpecialOffers = lazy(() => import('@/app/components/SpecialOffers'));
 const WhyChooseUs = lazy(() => import('@/app/components/WhyChooseUs'));
 const CategoryProductListing = lazy(() => import('@/app/components/CategoryProductListing'));
+const AllCategories = lazy(() => import('@/app/components/AllCategories'));
+const FilteredProducts = lazy(() => import('@/app/components/FilteredProducts'));
+const ImageBanner = lazy(() => import('@/app/components/ImageBanner'));
 
 const RecentlyViewed = lazy(() => import('@/app/components/RecentlyViewed'));
 const Recommended = lazy(() => import('@/app/components/RecommendedProducts'));
@@ -34,7 +37,10 @@ const componentMap: Record<string, React.ComponentType<any>> = {
     'RECOMMENDED': Recommended,
     'DEAL_OF_THE_DAY': DealOfTheDay,
     'TRUST_BADGES': TrustBadges,
-    'TESTIMONIALS': Testimonials
+    'TESTIMONIALS': Testimonials,
+    'ALL_CATEGORIES': AllCategories,
+    'PRODUCT_CATALOG': FilteredProducts,
+    'IMAGE_BANNER': ImageBanner
 };
 
 const SectionPlaceholder = () => (
@@ -43,7 +49,7 @@ const SectionPlaceholder = () => (
     </div>
 );
 
-const HomeRenderer = ({ previewLayout }: { previewLayout?: any[] }) => {
+const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: any[], pageSlug?: string }) => {
     const [layout, setLayout] = useState<any[]>(previewLayout || []);
     const [loading, setLoading] = useState(!previewLayout);
     const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
@@ -52,11 +58,12 @@ const HomeRenderer = ({ previewLayout }: { previewLayout?: any[] }) => {
         const fetchLayout = async () => {
             if (previewLayout) return; // Skip if preview data provided
             try {
-                const response = await fetch('http://localhost:5000/api/home-layout');
+                // Fetch specific page layout
+                const response = await fetch(`http://localhost:5000/api/home-layout?page=${pageSlug}`);
                 const data = await response.json();
                 setLayout(data);
             } catch (error) {
-                console.error('Error fetching home layout:', error);
+                console.error('Error fetching layout:', error);
             } finally {
                 setLoading(false);
             }

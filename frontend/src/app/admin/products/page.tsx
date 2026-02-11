@@ -4,9 +4,29 @@ import { useEffect, useState } from "react";
 import api from "../../utils/api";
 import Link from "next/link";
 import Image from "next/image";
-import { FiEdit2, FiTrash2, FiPlus, FiEye, FiSearch, FiRefreshCw, FiChevronLeft, FiChevronRight, FiUpload, FiDownload } from "react-icons/fi";
+import { FiEdit2, FiTrash2, FiPlus, FiEye, FiSearch, FiRefreshCw, FiChevronLeft, FiChevronRight, FiUpload, FiDownload, FiExternalLink, FiX } from "react-icons/fi";
 import Modal from "../../components/Modal";
 import { useModal } from "../../hooks/useModal";
+
+interface Variation {
+    _id?: string;
+    type: string;
+    value: string;
+    price: number;
+    mrp?: number;
+    stock?: number;
+    sku?: string;
+    isActive: boolean;
+}
+
+interface Model {
+    _id?: string;
+    name: string;
+    mrp: number;
+    selling_price_a: number;
+    isActive: boolean;
+    variations: Variation[];
+}
 
 interface Product {
     _id: string;
@@ -25,15 +45,15 @@ interface Product {
     selling_price_b: number;
     selling_price_c: number;
     opening_stock: number;
+    product_quantity?: string;
     featured_image: string;
     gst_rate: number;
     hsn_code: string;
     isActive: boolean;
-    variations?: {
-        price: number;
-        mrp?: number;
-        isActive: boolean;
-    }[];
+    variations?: Variation[];
+    models?: Model[];
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export default function ProductList() {
@@ -54,6 +74,9 @@ export default function ProductList() {
     const [subCategories, setSubCategories] = useState<{ _id: string, name: string }[]>([]);
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedSubCategory, setSelectedSubCategory] = useState('');
+
+    const [selectedProductForView, setSelectedProductForView] = useState<Product | null>(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
@@ -222,6 +245,32 @@ export default function ProductList() {
         a.click();
     };
 
+    const handleExport = async (format: 'csv' | 'excel') => {
+        try {
+            const res = await api.get('/admin/products/export', {
+                params: {
+                    format,
+                    search: debouncedSearch,
+                    status: activeTab,
+                    category: selectedCategory || undefined,
+                    sub_category: selectedSubCategory || undefined
+                },
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `products_${new Date().toISOString().split('T')[0]}.${format === 'excel' ? 'xlsx' : 'csv'}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error("Export failed", error);
+            showError("Failed to export products");
+        }
+    };
+
     return (
         <div className="container" style={{ maxWidth: '100%' }}>
             <Modal
@@ -240,7 +289,28 @@ export default function ProductList() {
                     <h1 className="page-title">Product Manager</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Manage inventory, pricing, and specifications.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <div className="btn-group" style={{ display: 'flex', gap: '0.2rem' }}>
+                        <button
+                            onClick={() => handleExport('csv')}
+                            className="btn btn-outline"
+                            title="Export as CSV"
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        >
+                            <FiDownload /> CSV
+                        </button>
+                        <button
+                            onClick={() => handleExport('excel')}
+                            className="btn btn-outline"
+                            title="Export as Excel"
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        >
+                            <FiDownload /> Excel
+                        </button>
+                    </div>
+
+                    <div style={{ borderLeft: '1px solid #eee', margin: '0 0.5rem' }}></div>
+
                     <button
                         onClick={downloadSample}
                         className="btn btn-outline"
@@ -250,7 +320,7 @@ export default function ProductList() {
                         <FiDownload /> Sample
                     </button>
                     <label className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                        <FiUpload /> Import CSV
+                        <FiUpload /> Import
                         <input
                             type="file"
                             accept=".csv"
@@ -259,7 +329,7 @@ export default function ProductList() {
                         />
                     </label>
                     <Link href="/admin/products/add" className="btn btn-primary">
-                        <FiPlus /> Add New Product
+                        <FiPlus /> Add Product
                     </Link>
                 </div>
             </div>
@@ -445,10 +515,20 @@ export default function ProductList() {
                                     </td>
                                     <td style={{ textAlign: 'right' }} data-label="Actions">
                                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-                                            <Link href={`/products/${product._id}`} target="_blank" className="btn-icon">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedProductForView(product);
+                                                    setIsViewModalOpen(true);
+                                                }}
+                                                className="btn-icon"
+                                                title="Quick View"
+                                            >
                                                 <FiEye />
+                                            </button>
+                                            <Link href={`/products/${product._id}`} target="_blank" className="btn-icon" title="View on Site">
+                                                <FiExternalLink />
                                             </Link>
-                                            <Link href={`/admin/products/${product._id}/edit`} className="btn-icon" style={{ color: 'var(--info)' }}>
+                                            <Link href={`/admin/products/${product._id}/edit`} className="btn-icon" style={{ color: 'var(--info)' }} title="Edit Product">
                                                 <FiEdit2 />
                                             </Link>
                                             {activeTab === 'active' ? (
@@ -604,6 +684,180 @@ export default function ProductList() {
                     </div>
                 )}
             </div>
+
+            {/* Quick View Modal */}
+            {isViewModalOpen && selectedProductForView && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 1000,
+                    padding: '20px'
+                }} onClick={() => setIsViewModalOpen(false)}>
+                    <div style={{
+                        background: 'white',
+                        width: '100%',
+                        maxWidth: '800px',
+                        maxHeight: '90vh',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
+                    }} onClick={e => e.stopPropagation()}>
+                        <div style={{
+                            padding: '1.5rem',
+                            borderBottom: '1px solid #eee',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <div>
+                                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>Product Details</h3>
+                                <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>{selectedProductForView.title}</p>
+                            </div>
+                            <button
+                                onClick={() => setIsViewModalOpen(false)}
+                                style={{
+                                    border: 'none',
+                                    background: '#f3f4f6',
+                                    width: '32px',
+                                    height: '32px',
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                <FiX />
+                            </button>
+                        </div>
+
+                        <div style={{ padding: '1.5rem', overflowY: 'auto' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+                                <div>
+                                    <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#9ca3af', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Timestamps</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <div style={{ fontSize: '0.95rem' }}>
+                                            <span style={{ color: '#666', fontWeight: 500 }}>Created:</span> {selectedProductForView.createdAt ? new Date(selectedProductForView.createdAt).toLocaleString() : 'N/A'}
+                                        </div>
+                                        <div style={{ fontSize: '0.95rem' }}>
+                                            <span style={{ color: '#666', fontWeight: 500 }}>Last Updated:</span> {selectedProductForView.updatedAt ? new Date(selectedProductForView.updatedAt).toLocaleString() : 'N/A'}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#9ca3af', marginBottom: '0.5rem', letterSpacing: '0.05em' }}>Core Specs</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                        <div style={{ fontSize: '0.95rem' }}><span style={{ color: '#666', fontWeight: 500 }}>SKU/Slug:</span> {selectedProductForView.slug}</div>
+                                        <div style={{ fontSize: '0.95rem' }}><span style={{ color: '#666', fontWeight: 500 }}>Base Price:</span> ₹{selectedProductForView.selling_price_a}</div>
+                                        {selectedProductForView.product_quantity && (
+                                            <div style={{ fontSize: '0.95rem' }}><span style={{ color: '#666', fontWeight: 500 }}>Pack Size:</span> {selectedProductForView.product_quantity}</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {(selectedProductForView.models && selectedProductForView.models.length > 0) ? (
+                                <div>
+                                    <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#9ca3af', marginBottom: '1rem', letterSpacing: '0.05em' }}>Models & Variants</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {selectedProductForView.models.map((model, idx) => (
+                                            <div key={idx} style={{
+                                                border: '1px solid #eee',
+                                                borderRadius: '8px',
+                                                padding: '1rem',
+                                                background: model.isActive ? '#fff' : '#f9fafb'
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'center' }}>
+                                                    <span style={{ fontWeight: 700, fontSize: '1rem', color: model.isActive ? '#111' : '#999' }}>
+                                                        Model: {model.name}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '12px', background: model.isActive ? '#d1fae5' : '#f3f4f6', color: model.isActive ? '#065f46' : '#666' }}>
+                                                        {model.isActive ? 'Active' : 'Inactive'}
+                                                    </span>
+                                                </div>
+
+                                                {model.variations && model.variations.length > 0 && (
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                        {model.variations.map((v, vIdx) => (
+                                                            <div key={vIdx} style={{
+                                                                background: '#f3f4f6',
+                                                                padding: '6px 12px',
+                                                                borderRadius: '6px',
+                                                                fontSize: '0.85rem'
+                                                            }}>
+                                                                <span style={{ fontWeight: 600 }}>{v.type}:</span> {v.value} — <span style={{ color: 'var(--primary)', fontWeight: 600 }}>₹{v.price}</span>
+                                                                {v.stock !== undefined && <span style={{ marginLeft: '8px', opacity: 0.6 }}>(Stock: {v.stock})</span>}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div>
+                                    {selectedProductForView.variations && selectedProductForView.variations.length > 0 && (
+                                        <div>
+                                            <h4 style={{ fontSize: '0.8rem', textTransform: 'uppercase', color: '#9ca3af', marginBottom: '1rem', letterSpacing: '0.05em' }}>Product Variants</h4>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', border: '1px solid #eee', padding: '1rem', borderRadius: '8px' }}>
+                                                {selectedProductForView.variations.map((v, vIdx) => (
+                                                    <div key={vIdx} style={{
+                                                        background: '#f3f4f6',
+                                                        padding: '6px 12px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.85rem'
+                                                    }}>
+                                                        <span style={{ fontWeight: 600 }}>{v.type}:</span> {v.value} — <span style={{ color: 'var(--primary)', fontWeight: 600 }}>₹{v.price}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {(!selectedProductForView.models?.length && !selectedProductForView.variations?.length) && (
+                                <div style={{ textAlign: 'center', padding: '2rem', background: '#f9fafb', borderRadius: '8px', color: '#666' }}>
+                                    No specific models or variants defined for this product.
+                                </div>
+                            )}
+                        </div>
+
+                        <div style={{
+                            padding: '1.5rem',
+                            borderTop: '1px solid #eee',
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            background: '#f9fafb'
+                        }}>
+                            <button
+                                onClick={() => setIsViewModalOpen(false)}
+                                style={{
+                                    padding: '0.5rem 1.5rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid #ddd',
+                                    background: 'white',
+                                    cursor: 'pointer',
+                                    fontWeight: 600
+                                }}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
+
     );
 }
