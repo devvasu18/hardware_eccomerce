@@ -171,6 +171,36 @@ exports.deleteCategory = async (req, res) => {
     } catch (error) { res.status(500).json({ error: error.message }); }
 };
 
+exports.reorderCategories = async (req, res) => {
+    try {
+        const { order } = req.body; // Array of { id, position }
+
+        if (!Array.isArray(order)) {
+            return res.status(400).json({ message: 'Invalid order data' });
+        }
+
+        const bulkOps = order.map(item => ({
+            updateOne: {
+                filter: { _id: item.id },
+                update: { displayOrder: item.position }
+            }
+        }));
+
+        await Category.bulkWrite(bulkOps);
+
+        await logAction({
+            action: 'REORDER_CATEGORIES',
+            req,
+            targetResource: 'Category',
+            details: { count: order.length }
+        });
+
+        res.json({ message: 'Categories reordered successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 // --- Sub-Categories ---
 exports.getSubCategories = async (req, res) => {
     try {

@@ -44,6 +44,10 @@ const systemSettingsSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    whatsappIntegrationEnabled: {
+        type: Boolean,
+        default: true
+    },
 
     // WhatsApp Multi-Channel Settings
     whatsappPrimarySession: {

@@ -47,6 +47,13 @@ class WhatsAppWorker {
 
     async initSession(sessionId) {
         try {
+            const isEnabled = await whatsappManager.isIntegrationEnabled();
+            if (!isEnabled) {
+                console.log(`[Worker] Integration disabled. Skipping init for ${sessionId}`);
+                whatsappManager.status.set(sessionId, 'disabled');
+                return;
+            }
+
             console.log(`[Worker] Initializing session: ${sessionId}`);
             await whatsappManager.startSession(sessionId);
 
@@ -83,11 +90,22 @@ class WhatsAppWorker {
      */
     async checkSessionHealth(sessionId) {
         try {
+            const isEnabled = await whatsappManager.isIntegrationEnabled();
+            if (!isEnabled) {
+                // If it was connected, stop it
+                if (whatsappManager.sessions.has(sessionId)) {
+                    console.log(`[Health] Integration disabled. Stopping session ${sessionId}`);
+                    await whatsappManager.stopSession(sessionId);
+                }
+                whatsappManager.status.set(sessionId, 'disabled');
+                return;
+            }
+
             const status = whatsappManager.getStatus(sessionId);
             const now = Date.now();
 
             // If session is disconnected and last check was > 5 mins ago, try to reconnect
-            if (status.status !== 'connected' && status.status !== 'inChat' && status.status !== 'isLogged' && status.status !== 'qr_ready') {
+            if (status.status !== 'connected' && status.status !== 'inChat' && status.status !== 'isLogged' && status.status !== 'qr_ready' && status.status !== 'max_retries_reached') {
                 const lastCheck = this.lastHealthCheck[sessionId] || 0;
                 if (now - lastCheck > 5 * 60 * 1000) { // 5 minutes
                     console.warn(`[Health] Session ${sessionId} is ${status.status}. Attempting reconnection...`);
@@ -108,6 +126,18 @@ class WhatsAppWorker {
         const randomDelay = Math.floor(Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS + 1) + MIN_DELAY_MS);
 
         try {
+            const isEnabled = await whatsappManager.isIntegrationEnabled();
+            if (!isEnabled) {
+                // Integration disabled, stop processing and sessions
+                if (whatsappManager.sessions.has(sessionId)) {
+                    await whatsappManager.stopSession(sessionId);
+                }
+                whatsappManager.status.set(sessionId, 'disabled');
+                // Still schedule next run to check if it's re-enabled
+                setTimeout(() => this.runSessionLoop(sessionId), 60000); // Check every minute if disabled
+                return;
+            }
+
             // Health check every loop
             await this.checkSessionHealth(sessionId);
 

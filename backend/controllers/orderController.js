@@ -340,6 +340,15 @@ exports.createOrder = async (req, res) => {
 
             await StatusLog.create(statusLogData);
 
+            // Increment Sales Count for Products
+            for (const item of orderItems) {
+                try {
+                    await Product.findByIdAndUpdate(item.product, { $inc: { salesCount: item.quantity } });
+                } catch (scErr) {
+                    console.error('Failed to update sales count:', scErr);
+                }
+            }
+
             // --- Update Request Status logic ---
             // If this order contains items from approved requests, mark them as converted
             for (const item of orderItems) {
@@ -644,8 +653,11 @@ exports.cancelOrder = async (req, res) => {
         order.status = 'Cancelled';
         await order.save();
 
-        // Restore Stock Logic
+        // Restore Stock & Sales Count
         for (const item of order.items) {
+            // Restore Sales Count
+            await Product.findByIdAndUpdate(item.product, { $inc: { salesCount: -item.quantity } });
+
             if (item.modelId) {
                 if (item.variationId) {
                     await Product.findOneAndUpdate(

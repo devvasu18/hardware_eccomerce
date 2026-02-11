@@ -90,6 +90,7 @@ export default function AdminSidebar() {
         { label: 'Banner Manager', path: '/admin/banners', icon: <FiImage />, roles: ['super_admin', 'ops_admin'] },
         { label: 'Coupons', path: '/admin/coupons', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
         { label: 'Special Deals', path: '/admin/special-deals', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
+        { label: 'Pages', path: '/admin/pages', icon: <FiGrid />, roles: ['super_admin', 'ops_admin'] },
 
         { label: 'User Management', path: '/admin/users', icon: <FiUsers />, roles: ['super_admin'] },
 

@@ -21,6 +21,7 @@ export default function SystemSettingsPage() {
         emailNotificationsEnabled: true,
         whatsappNotificationsEnabled: true,
         passwordResetNotificationsEnabled: true,
+        whatsappIntegrationEnabled: true,
         shipmentAssetExpiryDays: 7,
         onDemandResponseTime: '48 hours',
         lowStockThreshold: 10,
@@ -206,6 +207,64 @@ export default function SystemSettingsPage() {
                     </h2>
 
                     <div style={{ display: 'grid', gap: '1.5rem' }}>
+                        {/* WhatsApp Master Integration Switch */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: settings.whatsappIntegrationEnabled ? '#ecfdf5' : '#fff1f2', borderRadius: '8px', border: `1px solid ${settings.whatsappIntegrationEnabled ? '#10b981' : '#f43f5e'}`, marginBottom: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '50%',
+                                    background: settings.whatsappIntegrationEnabled ? '#10b981' : '#f43f5e',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white'
+                                }}>
+                                    <FiMessageSquare size={24} />
+                                </div>
+                                <div>
+                                    <p style={{ fontWeight: 700, color: '#1E293B', margin: 0, fontSize: '1.1rem' }}>WhatsApp Integration (Master)</p>
+                                    <p style={{ fontSize: '0.9rem', color: '#475569', margin: '0.25rem 0 0' }}>
+                                        {settings.whatsappIntegrationEnabled
+                                            ? 'Integration is active. All WhatsApp features are enabled.'
+                                            : 'Integration is DISABLED. QR Scanners, Message Sending, and Queue System are all paused.'}
+                                    </p>
+                                </div>
+                            </div>
+                            <label style={{ position: 'relative', display: 'inline-block', width: '64px', height: '32px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.whatsappIntegrationEnabled}
+                                    onChange={(e) => handleChange('whatsappIntegrationEnabled', e.target.checked)}
+                                    style={{ opacity: 0, width: 0, height: 0 }}
+                                />
+                                <span style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: settings.whatsappIntegrationEnabled ? '#10B981' : '#cbd5e1',
+                                    borderRadius: '32px',
+                                    transition: '0.3s',
+                                    cursor: 'pointer'
+                                }}>
+                                    <span style={{
+                                        position: 'absolute',
+                                        content: '""',
+                                        height: '24px',
+                                        width: '24px',
+                                        left: settings.whatsappIntegrationEnabled ? '36px' : '4px',
+                                        bottom: '4px',
+                                        backgroundColor: 'white',
+                                        borderRadius: '50%',
+                                        transition: '0.3s',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                    }}></span>
+                                </span>
+                            </label>
+                        </div>
+
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <FiMail size={20} color="#3B82F6" />
@@ -249,7 +308,7 @@ export default function SystemSettingsPage() {
                             </label>
                         </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px', opacity: settings.whatsappIntegrationEnabled ? 1 : 0.6, pointerEvents: settings.whatsappIntegrationEnabled ? 'auto' : 'none' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <FiMessageSquare size={20} color="#25D366" />
                                 <div>

@@ -210,6 +210,8 @@ router.get('/', async (req, res) => {
         if (sort === 'price_desc') sortOption = { selling_price_a: -1 };
         if (sort === 'name_asc') sortOption = { title: 1 };
         if (sort === 'newest') sortOption = { createdAt: -1 };
+        if (sort === 'most_viewed') sortOption = { views: -1 };
+        if (sort === 'most_purchased') sortOption = { salesCount: -1 };
 
         const count = await Product.countDocuments(query);
         const products = await Product.find(query)
@@ -271,6 +273,16 @@ router.put('/:id', protect, admin, async (req, res) => {
         res.json(updatedProduct);
     } catch (err) {
         res.status(500).json({ message: 'Failed to update product', error: err.message });
+    }
+});
+
+// Increment Product View
+router.put('/:id/view', async (req, res) => {
+    try {
+        await Product.findByIdAndUpdate(req.params.id, { $inc: { views: 1 } });
+        res.status(200).send();
+    } catch (err) {
+        res.status(500).json({ message: "Error incrementing view" });
     }
 });
 

@@ -1,3 +1,5 @@
+'use client';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import NewArrivalsSlider from './NewArrivalsSlider';
 import './NewArrivals.css';
@@ -14,24 +16,35 @@ interface Product {
     isOnDemand: boolean;
 }
 
-async function getNewArrivals(): Promise<Product[]> {
-    const res = await fetch('http://localhost:5000/api/products/new-arrivals?limit=10', { cache: 'no-store' });
-    if (!res.ok) {
-        return [];
-    }
-    const data = await res.json();
-    return data.map((p: any) => ({
-        ...p,
-        basePrice: p.mrp || p.basePrice,
-        discountedPrice: p.selling_price_a || p.discountedPrice,
-        title: p.title || p.name,
-        name: p.title || p.name
-    }));
-}
+export default function NewArrivals() {
+    const [products, setProducts] = useState<Product[]>([]);
+    const [loading, setLoading] = useState(true);
 
-export default async function NewArrivals() {
-    const products = await getNewArrivals();
+    useEffect(() => {
+        const fetchNewArrivals = async () => {
+            try {
+                const res = await fetch('http://localhost:5000/api/products/new-arrivals?limit=10');
+                if (res.ok) {
+                    const data = await res.json();
+                    setProducts(data.map((p: any) => ({
+                        ...p,
+                        basePrice: p.mrp || p.basePrice,
+                        discountedPrice: p.selling_price_a || p.discountedPrice,
+                        title: p.title || p.name,
+                        name: p.title || p.name
+                    })));
+                }
+            } catch (error) {
+                console.error('Error fetching new arrivals:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
+        fetchNewArrivals();
+    }, []);
+
+    if (loading) return null;
     if (products.length === 0) return null;
 
     return (
@@ -50,4 +63,3 @@ export default async function NewArrivals() {
         </section>
     );
 }
-

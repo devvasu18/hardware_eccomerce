@@ -1,5 +1,6 @@
 const wppconnect = require('@wppconnect-team/wppconnect');
 const MessageQueue = require('../models/MessageQueue');
+const SystemSettings = require('../models/SystemSettings');
 const fs = require('fs');
 
 class WhatsAppSessionManager {
@@ -15,6 +16,16 @@ class WhatsAppSessionManager {
         this.sessionDataPath = './tokens';
 
         WhatsAppSessionManager.instance = this;
+    }
+
+    async isIntegrationEnabled() {
+        try {
+            const settings = await SystemSettings.findById('system_settings');
+            return settings ? settings.whatsappIntegrationEnabled : true;
+        } catch (error) {
+            console.error('Error checking WhatsApp integration setting:', error);
+            return true; // Default to enabled if error
+        }
     }
 
     async fetchConnectedNumber(sessionId, client) {
@@ -74,6 +85,13 @@ class WhatsAppSessionManager {
             return this.sessions.get(sessionId);
         }
 
+        const isEnabled = await this.isIntegrationEnabled();
+        if (!isEnabled) {
+            console.log(`[WhatsApp] Integration is DISABLED. Skipping session start for ${sessionId}.`);
+            this.status.set(sessionId, 'disabled');
+            return null;
+        }
+
         console.log(`Starting WhatsApp session: ${sessionId}`);
         this.status.set(sessionId, 'initializing');
 
@@ -104,7 +122,6 @@ class WhatsAppSessionManager {
                 logQR: true,
                 browserArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
                 autoClose: 0, // Never close automatically
-                tokenStore: 'file',
                 tokenStore: 'file',
                 folderNameToken: `${this.sessionDataPath}/${sessionId}`,
                 puppeteerOptions: {
@@ -154,6 +171,11 @@ class WhatsAppSessionManager {
     }
 
     async sendMessage(sessionId, number, message) {
+        const isEnabled = await this.isIntegrationEnabled();
+        if (!isEnabled) {
+            throw new Error('WhatsApp integration is disabled in system settings');
+        }
+
         const client = this.sessions.get(sessionId);
         if (!client) {
             throw new Error('Session not active');

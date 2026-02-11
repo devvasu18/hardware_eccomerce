@@ -101,6 +101,10 @@ const productSchema = new mongoose.Schema({
     isDailyOffer: { type: Boolean, default: false },
     isOnDemand: { type: Boolean, default: false }, // Made-to-order products that never show as out of stock
 
+    // Metrics
+    views: { type: Number, default: 0 },
+    salesCount: { type: Number, default: 0 },
+
     // Legacy / Compatibility
     stock: { type: Number, default: 0 },
     price: { type: Number },

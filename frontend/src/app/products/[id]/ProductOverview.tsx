@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProductActionArea from './ProductActionArea';
 import ProductImage from '@/app/components/ProductImage';
@@ -62,6 +62,26 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
     const [sliderImages, setSliderImages] = useState<string[]>(initialImages);
     const [activeImage, setActiveImage] = useState(initialImages[0] || '');
     const [selectedVariation, setSelectedVariation] = useState<any>(null);
+
+    useEffect(() => {
+        // Increment View Count
+        // We use fetch directly or the axios instance if available. Using fetch for simplicity here or axios if imported.
+        // Let's use the native fetch to avoid importing api if not already imported, strictly following instructions.
+        // Actually, importing api is better practice. But let's check imports. 
+        // No api import. I'd need to add it. 
+        // For minimal diff, I'll use fetch with relative path or hardcoded local for now (or standard env).
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        fetch(`${apiUrl}/products/${product._id}/view`, { method: 'PUT' }).catch(console.error);
+
+        // Update Local Storage for Recently Viewed
+        try {
+            const viewed = JSON.parse(localStorage.getItem('recently_viewed') || '[]');
+            const newViewed = [product._id, ...viewed.filter((id: string) => id !== product._id)].slice(0, 10);
+            localStorage.setItem('recently_viewed', JSON.stringify(newViewed));
+        } catch (e) {
+            console.error('Local Storage Error:', e);
+        }
+    }, [product._id]);
 
     const handleVariationSelect = (variation: any, model: any, isAutoSelect: boolean = false) => {
         setSelectedVariation(variation);

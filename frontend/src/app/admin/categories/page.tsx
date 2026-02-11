@@ -6,7 +6,8 @@ import FormModal from '../../components/FormModal';
 import api from '../../utils/api';
 import DataTable from '../../components/DataTable';
 import { useModal } from '../../hooks/useModal';
-import { FiPlus } from 'react-icons/fi';
+import { FiPlus, FiGrid } from 'react-icons/fi';
+import ReorderModal from './ReorderModal';
 
 interface Category {
     _id: string;
@@ -36,6 +37,7 @@ export default function CategoryManager() {
     });
     const [editId, setEditId] = useState<string | null>(null);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+    const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
 
     const { modalState, hideModal, showSuccess, showError, showModal } = useModal();
     // Removed direct token usage as api utility handles it
@@ -60,6 +62,12 @@ export default function CategoryManager() {
     const startAdd = () => {
         resetForm();
         setIsFormModalOpen(true);
+    };
+
+    const handleAddFromReorder = () => {
+        resetForm();
+        setIsFormModalOpen(true);
+        // We don't close reorder modal, so after adding it shows up there
     };
 
     const handleEdit = (category: Category) => {
@@ -148,25 +156,49 @@ export default function CategoryManager() {
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h1 style={{ marginBottom: 0 }}>Category Management</h1>
-                <button
-                    onClick={startAdd}
-                    className="btn btn-primary"
-                    style={{
-                        background: '#F37021',
-                        border: 'none',
-                        padding: '0.75rem 1.5rem',
-                        borderRadius: '6px',
-                        color: 'white',
-                        fontWeight: 600,
-                        fontSize: '1rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                    }}
-                >
-                    <FiPlus /> Add New Category
-                </button>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button
+                        onClick={() => setIsReorderModalOpen(true)}
+                        className="btn"
+                        style={{
+                            background: 'white',
+                            border: '2px solid #e2e8f0',
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: '6px',
+                            color: '#475569',
+                            fontWeight: 600,
+                            fontSize: '1rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseOver={(e) => e.currentTarget.style.borderColor = '#cbd5e1'}
+                        onMouseOut={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
+                    >
+                        <FiGrid /> Reorder Categories
+                    </button>
+                    <button
+                        onClick={startAdd}
+                        className="btn btn-primary"
+                        style={{
+                            background: '#F37021',
+                            border: 'none',
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: '6px',
+                            color: 'white',
+                            fontWeight: 600,
+                            fontSize: '1rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}
+                    >
+                        <FiPlus /> Add New Category
+                    </button>
+                </div>
             </div>
 
             <div style={{ marginTop: '2rem' }}>
@@ -350,6 +382,16 @@ export default function CategoryManager() {
                     </div>
                 </form>
             </FormModal>
+            <ReorderModal
+                isOpen={isReorderModalOpen}
+                onClose={() => setIsReorderModalOpen(false)}
+                initialCategories={categories}
+                onSaveSuccess={() => {
+                    fetchCategories();
+                    showSuccess('Categories reordered successfully!');
+                }}
+                onAddCategory={handleAddFromReorder}
+            />
         </div >
     );
 }

@@ -36,6 +36,7 @@ router.put('/system', protect, admin, async (req, res) => {
             emailNotificationsEnabled,
             whatsappNotificationsEnabled,
             passwordResetNotificationsEnabled,
+            whatsappIntegrationEnabled,
             shipmentAssetExpiryDays,
             onDemandResponseTime,
             companyAddress,
@@ -59,6 +60,7 @@ router.put('/system', protect, admin, async (req, res) => {
         if (emailNotificationsEnabled !== undefined) settings.emailNotificationsEnabled = emailNotificationsEnabled;
         if (whatsappNotificationsEnabled !== undefined) settings.whatsappNotificationsEnabled = whatsappNotificationsEnabled;
         if (passwordResetNotificationsEnabled !== undefined) settings.passwordResetNotificationsEnabled = passwordResetNotificationsEnabled;
+        if (whatsappIntegrationEnabled !== undefined) settings.whatsappIntegrationEnabled = whatsappIntegrationEnabled;
         if (shipmentAssetExpiryDays !== undefined) settings.shipmentAssetExpiryDays = shipmentAssetExpiryDays;
         if (onDemandResponseTime !== undefined) settings.onDemandResponseTime = onDemandResponseTime;
         if (companyAddress !== undefined) settings.companyAddress = companyAddress;
