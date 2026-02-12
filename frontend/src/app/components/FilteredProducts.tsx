@@ -34,6 +34,7 @@ function ProductGridContent() {
     const brand = searchParams.get('brand');
     const keyword = searchParams.get('keyword');
     const subcategory = searchParams.get('subcategory');
+    const offerSlug = searchParams.get('offer');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -53,6 +54,7 @@ function ProductGridContent() {
                 if (brand) url += `brand=${brand}&`;
                 if (keyword) url += `keyword=${encodeURIComponent(keyword)}&`;
                 if (subcategory) url += `subcategory=${subcategory}&`;
+                if (offerSlug && offerSlug !== 'undefined' && offerSlug !== 'null') url += `offerSlug=${offerSlug}&`;
 
                 const prodRes = await api.get(url);
                 const data = prodRes.data.products || prodRes.data;
@@ -71,7 +73,7 @@ function ProductGridContent() {
         };
 
         fetchData();
-    }, [category, brand, keyword, subcategory]);
+    }, [category, brand, keyword, subcategory, offerSlug]);
 
     return (
         <div className="container products-content-container py-10">
@@ -116,9 +118,28 @@ function ProductGridContent() {
 
 export default function FilteredProducts({ config }: { config?: any }) {
     const searchParams = useSearchParams();
+    const [offerInfo, setOfferInfo] = useState<any>(null);
     const category = searchParams.get('category');
     const brand = searchParams.get('brand');
     const keyword = searchParams.get('keyword');
+    const offerSlug = searchParams.get('offer');
+
+    useEffect(() => {
+        const fetchOfferInfo = async () => {
+            // Only fetch if offerSlug exists and is not 'undefined' or 'null' string
+            if (offerSlug && offerSlug !== 'undefined' && offerSlug !== 'null') {
+                try {
+                    const res = await api.get(`/offers?slug=${offerSlug}`);
+                    if (res.data && res.data.length > 0) {
+                        setOfferInfo(res.data[0]);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch offer info', error);
+                }
+            }
+        };
+        fetchOfferInfo();
+    }, [offerSlug]);
 
     return (
         <section className="filtered-products-section">
@@ -126,12 +147,18 @@ export default function FilteredProducts({ config }: { config?: any }) {
             <div className="products-hero py-16 bg-slate-50 border-b border-gray-100">
                 <div className="container">
                     <h1 className="text-4xl font-extrabold text-slate-900 mb-4">
-                        {keyword ? `Search Results: "${keyword}"` : (brand ? `Brand: ${brand}` : (category ? `Category: ${category}` : (config?.title || 'Industrial Catalog')))}
+                        {offerInfo ? (
+                            <>
+                                {offerInfo.title} <span className="text-orange-600">({offerInfo.percentage}% OFF)</span>
+                            </>
+                        ) : keyword ? `Search Results: "${keyword}"` : (brand ? `Brand: ${brand}` : (category ? `Category: ${category}` : (config?.title || 'Industrial Catalog')))}
                     </h1>
                     <p className="text-lg text-slate-500 max-w-2xl">
-                        {category
-                            ? `Explore our premium selection of ${category} components designed for high-performance industrial applications.`
-                            : (config?.subtitle || 'Browse our complete catalog of high-performance hardware, tools, and accessories.')}
+                        {offerInfo
+                            ? `Discover all products eligible for our exclusive ${offerInfo.title} promotion. Save ${offerInfo.percentage}% on these premium items!`
+                            : category
+                                ? `Explore our premium selection of ${category} components designed for high-performance industrial applications.`
+                                : (config?.subtitle || 'Browse our complete catalog of high-performance hardware, tools, and accessories.')}
                     </p>
                 </div>
             </div>

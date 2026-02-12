@@ -79,7 +79,7 @@ export default function BannerList() {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title">Banner Manager</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Manage homepage sliders and promotional banners.</p>
+
                 </div>
                 <Link href="/admin/banners/add" className="btn btn-primary">
                     <FiPlus /> Add New Banner

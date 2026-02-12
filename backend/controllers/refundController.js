@@ -1,7 +1,6 @@
-const Refund = require('../models/Refund');
-const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Transaction = require('../models/Transaction');
+const tallyService = require('../services/tallyService');
 
 // @desc    Get all refund requests
 // @route   GET /api/refunds
@@ -35,7 +34,8 @@ exports.getRefunds = async (req, res) => {
 // @access  Private
 exports.requestRefund = async (req, res) => {
     try {
-        const { orderId, productId, amount, quantity, reason, description, images, bankDetails } = req.body;
+        const { orderId, productId, itemId, amount, quantity, reason, description, images, bankDetails } = req.body;
+        const refundQty = quantity || 1;
 
         const order = await Order.findById(orderId);
         if (!order) return res.status(404).json({ message: 'Order not found' });
@@ -45,15 +45,50 @@ exports.requestRefund = async (req, res) => {
             return res.status(401).json({ message: 'Not authorized' });
         }
 
+        // Identify the specific item
+        let orderItem;
+        if (itemId) {
+            orderItem = order.items.id(itemId);
+        } else if (productId) {
+            orderItem = order.items.find(i => i.product.toString() === productId);
+        }
+
+        if (!orderItem) {
+            return res.status(404).json({ message: 'Item not found in order' });
+        }
+
+        // Validate Quantity
+        if (refundQty > orderItem.quantity) {
+            return res.status(400).json({ message: 'Cannot refund more than ordered quantity' });
+        }
+
+        // Validate Amount (Fraud Prevention)
+        // items have totalWithTax calculated. 
+        // We allow some buffer for shipping? usually not for partial.
+        // Cap at proportional value.
+        const maxRefundable = (orderItem.totalWithTax / orderItem.quantity) * refundQty;
+        if (amount > maxRefundable + 1) { // +1 for floating point safety
+            return res.status(400).json({ message: `Refund amount exceeds item value (Max: ${maxRefundable})` });
+        }
+
         // Check if refund already exists for this item/order
-        const existingRefund = await Refund.findOne({ order: orderId, product: productId, status: { $ne: 'Rejected' } });
+        const existingRefund = await Refund.findOne({
+            order: orderId,
+            $or: [
+                { product: orderItem.product, variationId: orderItem.variationId }, // Match specific variant if possible
+                { product: orderItem.product, status: { $ne: 'Rejected' }, modelId: orderItem.modelId }
+            ],
+            status: { $ne: 'Rejected' }
+        });
+
         if (existingRefund) {
-            return res.status(400).json({ message: 'Refund request already pending or processed' });
+            // Allow multiple partial refunds? Complex. For now, block if ANY refund pending for this item.
+            return res.status(400).json({ message: 'Refund request already pending or processed for this item' });
         }
 
         // Check if product is returnable
-        if (productId) {
-            const product = await Product.findById(productId);
+        if (orderItem.product) {
+            const product = await Product.findById(orderItem.product);
             if (!product) return res.status(404).json({ message: 'Product not found' });
 
             if (product.isReturnable === false) {
@@ -75,14 +110,18 @@ exports.requestRefund = async (req, res) => {
         const refund = await Refund.create({
             order: orderId,
             user: req.user._id,
-            product: productId || null,
+            product: orderItem.product,
+            modelId: orderItem.modelId,
+            variationId: orderItem.variationId,
             amount,
-            quantity: quantity || 1,
+            quantity: refundQty,
             reason,
             description,
             images,
             // Logic to determine gateway: usually same as order method
-            gateway: order.paymentMethod === 'COD' ? 'Bank Transfer' : order.paymentMethod,
+            gateway: (order.paymentDetails && order.paymentDetails.provider)
+                ? order.paymentDetails.provider
+                : (order.paymentMethod === 'COD' ? 'Bank Transfer' : order.paymentMethod),
             bankAccountDetails: bankDetails,
             status: 'Pending'
         });
@@ -98,8 +137,8 @@ exports.requestRefund = async (req, res) => {
 // @access  Admin
 exports.updateRefundStatus = async (req, res) => {
     try {
-        const { status, adminNote, stockAdjustment } = req.body;
-        const refund = await Refund.findById(req.params.id);
+        const { status, adminNote, stockAdjustment, refundTransactionId, refundMethod, refundProofImage, refundDate } = req.body;
+        const refund = await Refund.findById(req.params.id).populate('order');
 
         if (!refund) return res.status(404).json({ message: 'Refund not found' });
 
@@ -111,11 +150,24 @@ exports.updateRefundStatus = async (req, res) => {
         refund.adminNote = adminNote;
         refund.processedBy = req.user._id;
 
+        // Save Manual Refund Details if provided
+        if (refundTransactionId) refund.refundTransactionId = refundTransactionId;
+        if (refundMethod) refund.refundMethod = refundMethod;
+        if (refundProofImage) refund.refundProofImage = refundProofImage;
+        if (refundDate) refund.refundDate = refundDate;
+
+        // Auto-set refund date if processed and not provided
+        if (status === 'Processed' && !refund.refundDate) {
+            refund.refundDate = new Date();
+        }
+
         if (status === 'Approved' || status === 'Processed') {
             // -- Mock Gateway Call --
-            if (refund.gateway === 'Razorpay' || refund.gateway === 'Stripe') {
+            if (refund.gateway === 'Razorpay' || refund.gateway === 'Stripe' || refund.gateway === 'PayU' || refund.gateway === 'Online') {
                 // Call Payment Gateway API here
                 // const gatewayRes = await refundMoney(refund.amount, ...);
+                console.log(`Processing automatic refund via ${refund.gateway} for amount ${refund.amount}`);
+
                 if (status === 'Approved') { // Prevent double status set if already Processed
                     refund.refundTransactionId = 'ref_gw_' + Date.now();
                     refund.status = 'Processed';
@@ -141,11 +193,31 @@ exports.updateRefundStatus = async (req, res) => {
                     paymentStatus: 'Refunded',
                     status: 'Cancelled'
                 });
+
+                // Sync Cancellation to Tally
+                tallyService.syncOrderToTally(refund.order)
+                    .then(res => console.log('Tally Sync on Full Refund:', res))
+                    .catch(err => console.error('Tally Sync Error:', err));
             }
 
             // -- Stock Adjustment --
             if (stockAdjustment && refund.product) {
-                await Product.findByIdAndUpdate(refund.product, { $inc: { stock: 1 } });
+                if (refund.modelId) {
+                    if (refund.variationId) {
+                        await Product.findOneAndUpdate(
+                            { _id: refund.product, 'models._id': refund.modelId },
+                            { $inc: { 'models.$[m].variations.$[v].stock': refund.quantity || 1 } },
+                            { arrayFilters: [{ 'm._id': refund.modelId }, { 'v._id': refund.variationId }] }
+                        );
+                    }
+                } else if (refund.variationId) {
+                    await Product.findOneAndUpdate(
+                        { _id: refund.product, 'variations._id': refund.variationId },
+                        { $inc: { 'variations.$.stock': refund.quantity || 1 } }
+                    );
+                } else {
+                    await Product.findByIdAndUpdate(refund.product, { $inc: { stock: refund.quantity || 1 } });
+                }
             }
         }
 

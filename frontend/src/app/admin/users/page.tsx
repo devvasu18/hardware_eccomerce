@@ -7,6 +7,7 @@ import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiEye } from "react-icons/fi";
 import Image from "next/image";
 import Modal from "../../components/Modal";
 import { useModal } from "../../hooks/useModal";
+import ExportButton from "../../components/ExportButton";
 
 interface User {
     _id: string;
@@ -65,6 +66,26 @@ export default function UserList() {
         );
     };
 
+    const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
+        try {
+            const res = await api.get('/users/export', {
+                params: { format },
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            const ext = format === 'excel' ? 'xlsx' : format;
+            link.setAttribute('download', `users_${new Date().toISOString().split('T')[0]}.${ext}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Export failed', error);
+        }
+    };
+
     return (
         <div className="container">
             <Modal
@@ -81,12 +102,16 @@ export default function UserList() {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title">User Management</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>View and manage registered customers.</p>
+
                 </div>
-                <Link href="/admin/users/add" className="btn btn-primary">
-                    <FiPlus /> Add New User
-                </Link>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <ExportButton onExport={handleExport} />
+                    <Link href="/admin/users/add" className="btn btn-primary">
+                        <FiPlus /> Add New User
+                    </Link>
+                </div>
             </div>
+
 
             {/* Search Bar */}
             <div className="card" style={{ padding: '1rem' }}>

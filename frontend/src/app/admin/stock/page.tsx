@@ -73,7 +73,7 @@ export default function StockList() {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title">Stock Inward Register</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Track purchase invoices and inventory additions.</p>
+
                 </div>
                 <Link href="/admin/stock/add" className="btn btn-primary">
                     <FiPlus /> New Stock Entry

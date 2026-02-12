@@ -56,12 +56,12 @@
 }
 
 .builder-btn-primary {
-    background: #3b82f6;
+    background: #F37021;
     color: white;
 }
 
 .builder-btn-primary:hover {
-    background: #2563eb;
+    background: #d65d16;
 }
 
 .builder-btn-success {
@@ -278,8 +278,8 @@
 }
 
 .preview-item:hover {
-    border-color: #3b82f6;
-    background: #eff6ff;
+    border-color: #F37021;
+    background: #fff5ed;
     transform: translateY(-4px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
@@ -346,8 +346,8 @@
 
 .form-group select:focus,
 .form-group input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: #F37021;
+    box-shadow: 0 0 0 3px rgba(243, 112, 33, 0.1);
 }
 
 /* Custom Scrollbar */
@@ -457,8 +457,8 @@
 
 .search-input-premium:focus {
     background: #ffffff;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    border-color: #F37021;
+    box-shadow: 0 0 0 4px rgba(243, 112, 33, 0.1);
     outline: none;
 }
 
@@ -494,9 +494,9 @@
 }
 
 .sidebar-category-btn.active {
-    background: #eff6ff;
-    color: #2563eb;
-    border-color: #dbeafe;
+    background: #fff5ed;
+    color: #F37021;
+    border-color: #ffd4b3;
     font-weight: 600;
 }
 
@@ -509,7 +509,7 @@
 }
 
 .sidebar-category-btn.active .category-count {
-    background: #3b82f6;
+    background: #F37021;
     color: white;
     opacity: 1;
 }
@@ -529,9 +529,9 @@
 }
 
 .component-card-premium:hover {
-    border-color: #3b82f6;
+    border-color: #F37021;
     transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.15), 0 10px 10px -5px rgba(59, 130, 246, 0.08);
+    box-shadow: 0 20px 25px -5px rgba(243, 112, 33, 0.15), 0 10px 10px -5px rgba(243, 112, 33, 0.08);
 }
 
 .card-icon-wrapper {
@@ -543,13 +543,13 @@
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    color: #3b82f6;
+    color: #F37021;
     margin-bottom: 18px;
     transition: all 0.3s;
 }
 
 .component-card-premium:hover .card-icon-wrapper {
-    background: #3b82f6;
+    background: #F37021;
     color: #ffffff;
     transform: scale(1.05) rotate(5deg);
 }

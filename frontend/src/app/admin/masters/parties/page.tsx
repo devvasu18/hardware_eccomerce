@@ -120,7 +120,7 @@ export default function PartyMaster() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <div>
                     <h1 className="page-title" style={{ margin: 0 }}>Party Master (Suppliers)</h1>
-                    <p style={{ color: 'var(--text-muted)', margin: '0.5rem 0 0 0' }}>Manage suppliers and vendors for stock entry.</p>
+
                 </div>
                 <button onClick={handleAdd} className="btn btn-primary">
                     <FiPlus /> Add New Party

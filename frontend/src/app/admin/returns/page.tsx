@@ -187,7 +187,7 @@ export default function RefundList() {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
                     <h1 className="page-title">Returns & Refunds</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Manage customer return requests and wallet refunds.</p>
+
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                     <select className="form-select" value={filter} onChange={e => setFilter(e.target.value)}>

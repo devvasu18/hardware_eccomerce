@@ -3,6 +3,7 @@ const router = express.Router();
 const ProcurementRequest = require('../models/ProcurementRequest');
 const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { exportRequests } = require('../controllers/exportController');
 
 const jwt = require('jsonwebtoken'); // Ensure jwt is available
 const Cart = require('../models/Cart');
@@ -82,6 +83,7 @@ router.post('/', async (req, res) => {
 });
 
 // Get Requests (Admin)
+router.get('/export', protect, admin, exportRequests);
 router.get('/', protect, admin, async (req, res) => {
     try {
         const requests = await ProcurementRequest.find().populate('product');
@@ -141,3 +143,4 @@ router.patch('/:id/respond', protect, admin, async (req, res) => {
 });
 
 module.exports = router;
+

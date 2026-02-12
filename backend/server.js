@@ -110,6 +110,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/tally/admin', require('./routes/tallyAdminRoutes')); // Tally Admin & Queue
 app.use('/api/tally', require('./routes/tallyRoutes')); // The integration core
 app.use('/api/banners', require('./routes/bannerRoutes')); // Dynamic Hero Slider
+app.use('/api/offers', require('./routes/offerRoutes')); // Public Offers (for product filtering)
 app.use('/api/users', require('./routes/userRoutes')); // User Management
 app.use('/api/categories', require('./routes/categoryRoutes')); // Category Management
 app.use('/api/special-offers', require('./routes/specialOfferRoutes')); // Special Offers

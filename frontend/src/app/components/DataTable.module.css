@@ -49,8 +49,8 @@
 
 .search:focus {
     outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: #F37021;
+    box-shadow: 0 0 0 3px rgba(243, 112, 33, 0.1);
 }
 
 .select {
@@ -71,7 +71,7 @@
 
 .select:focus {
     outline: none;
-    border-color: #6366f1;
+    border-color: #F37021;
 }
 
 .tableWrapper {
@@ -136,12 +136,12 @@
 }
 
 .btnEdit {
-    color: #3b82f6;
-    background-color: rgba(59, 130, 246, 0.05);
+    color: #F37021;
+    background-color: rgba(243, 112, 33, 0.05);
 }
 
 .btnEdit:hover {
-    background-color: rgba(59, 130, 246, 0.15);
+    background-color: rgba(243, 112, 33, 0.15);
 }
 
 .btnDelete {
@@ -195,9 +195,9 @@
 }
 
 .pageBtn.active {
-    background: #6366f1;
+    background: #F37021;
     color: white;
-    border-color: #6366f1;
+    border-color: #F37021;
 }
 
 .emptyState {

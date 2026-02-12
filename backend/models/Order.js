@@ -64,6 +64,14 @@ const orderSchema = new mongoose.Schema({
         enum: ['COD', 'Online', 'UPI', 'Card', 'NetBanking'],
         default: 'COD'
     },
+    paymentDetails: {
+        provider: String, // e.g. 'PayU', 'Razorpay'
+        transactionId: String,
+        txnId: String,
+        paymentId: String,
+        orderId: String,
+        signature: String
+    },
 
     status: {
         type: String,

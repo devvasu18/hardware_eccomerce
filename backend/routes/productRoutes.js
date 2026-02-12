@@ -192,6 +192,18 @@ router.get('/', async (req, res) => {
             }
         }
 
+        // 5. Offer Filter (by slug)
+        if (req.query.offerSlug) {
+            const Offer = require('../models/Offer');
+            const offerDoc = await Offer.findOne({ slug: req.query.offerSlug });
+            if (offerDoc) {
+                query.offer = offerDoc._id;
+            } else {
+                // Offer not found, return empty result
+                return res.json(req.query.page ? { products: [], page: Number(page), pages: 0, count: 0 } : []);
+            }
+        }
+
         // 5. Batch ID Fetch (for Wishlist/Cart)
         if (req.query.ids) {
             const idList = req.query.ids.split(',').filter(id => /^[0-9a-fA-F]{24}$/.test(id));

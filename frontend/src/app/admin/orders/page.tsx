@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import api from "../../utils/api";
 import Link from "next/link";
-import { FiEye, FiFilter, FiDownload } from "react-icons/fi";
+import { FiEye, FiFilter } from "react-icons/fi";
+import ExportButton from "../../components/ExportButton";
 
 interface Order {
     _id: string;
@@ -38,6 +39,26 @@ export default function OrderList() {
         }
     };
 
+    const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
+        try {
+            const res = await api.get('/orders/export', {
+                params: { format, status: statusFilter },
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            const ext = format === 'excel' ? 'xlsx' : format;
+            link.setAttribute('download', `orders_${new Date().toISOString().split('T')[0]}.${ext}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Export failed', error);
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'Delivered': return 'badge-success';
@@ -52,10 +73,11 @@ export default function OrderList() {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title">Order Processing</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Manage and fulfill customer orders.</p>
+
                 </div>
-                {/* Could add Export CSV button */}
+                <ExportButton onExport={handleExport} />
             </div>
+
 
             {/* Filters */}
             <div className="card" style={{ padding: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>

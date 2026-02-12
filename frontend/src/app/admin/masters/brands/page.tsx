@@ -127,7 +127,7 @@ export default function BrandMaster() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
                     <h1 className="page-title">Brand Management</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Manage manufacturers and brand details.</p>
+
                 </div>
                 <button onClick={handleAddNew} className="btn btn-primary">
                     <FiPlus /> Add New Brand

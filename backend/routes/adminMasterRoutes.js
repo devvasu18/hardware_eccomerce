@@ -4,19 +4,23 @@ const { protect, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 const masterController = require('../controllers/masterController');
 const brandController = require('../controllers/brandController');
+const { exportBrands, exportHSNCodes, exportOffers } = require('../controllers/exportController');
 
 // Stats
 router.get('/stats', protect, admin, masterController.getStats);
 
 // HSN
+router.get('/hsn/export', protect, admin, exportHSNCodes);
 router.get('/hsn', protect, admin, masterController.getHSNs);
 router.post('/hsn', protect, admin, masterController.createHSN);
 router.put('/hsn/:id', protect, admin, masterController.updateHSN);
 router.delete('/hsn/:id', protect, admin, masterController.deleteHSN);
 
 // Offers
+router.get('/offers/export', protect, admin, exportOffers);
 router.get('/offers', protect, admin, masterController.getOffers);
 router.post('/offers', protect, admin, upload.single('banner_image'), masterController.createOffer);
+router.put('/offers/:id', protect, admin, upload.single('banner_image'), masterController.updateOffer);
 router.delete('/offers/:id', protect, admin, masterController.deleteOffer);
 
 // Categories
@@ -35,9 +39,11 @@ router.put('/sub-categories/:id', protect, admin, upload.single('image'), master
 router.delete('/sub-categories/:id', protect, admin, masterController.deleteSubCategory);
 
 // Brands
+router.get('/brands/export', protect, admin, exportBrands);
 router.get('/brands', protect, admin, brandController.getBrands);
 router.post('/brands', protect, admin, upload.single('logo_image'), brandController.createBrand);
 router.put('/brands/:id', protect, admin, upload.single('logo_image'), brandController.updateBrand);
 router.delete('/brands/:id', protect, admin, brandController.deleteBrand);
 
 module.exports = router;
+

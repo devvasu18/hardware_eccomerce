@@ -420,11 +420,11 @@ button {
 .form-textarea {
   width: 100%;
   padding: 0.875rem 1.25rem;
-  border: 2px solid var(--light-border);
+  border: 2px solid var(--border);
   border-radius: var(--radius-md);
   font-size: 0.95rem;
   color: var(--text-primary);
-  background: var(--light-surface);
+  background: var(--background);
   transition: var(--transition-base);
   outline: none;
 }

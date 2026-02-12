@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { createOrder, getOrders, getOrderById, updateOrderStatus, cancelOrder, getMyOrders, cancelMyOrder, cancelOrderItem } = require('../controllers/orderController');
+const { exportOrders } = require('../controllers/exportController');
 const { protect, admin } = require('../middleware/authMiddleware');
 const upload = require('../middleware/uploadMiddleware');
 
@@ -24,6 +25,7 @@ router.post('/create', async (req, res, next) => {
 }, createOrder);
 
 router.get('/my-orders', protect, getMyOrders);
+router.get('/export', protect, admin, exportOrders);
 router.get('/', protect, admin, getOrders);
 router.get('/:id', protect, getOrderById);
 // Only needed single upload if we assume one image for bus/proof. 
@@ -34,3 +36,4 @@ router.post('/:id/cancel-my-order', protect, cancelMyOrder);
 router.post('/:id/cancel-item/:itemId', protect, cancelOrderItem);
 
 module.exports = router;
+

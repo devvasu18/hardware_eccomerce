@@ -10,7 +10,7 @@ const { deleteFile } = require('../utils/fileHandler');
 exports.getBanners = async (req, res) => {
     try {
         const banners = await Banner.find({})
-            .populate('offer_id', 'title percentage')
+            .populate('offer_id', 'title percentage slug')
             .populate('product_ids', 'title opening_stock')
             .sort({ createdAt: -1 });
         res.json(banners);

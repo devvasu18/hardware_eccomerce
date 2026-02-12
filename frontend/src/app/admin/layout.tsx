@@ -4,6 +4,7 @@ import AdminSidebar from '@/app/admin/components/AdminSidebar';
 import { useAuth } from '@/context/AuthContext';
 import NotFound from '@/app/not-found';
 import { useEffect, useState } from 'react';
+import './admin.css';
 import './admin-responsive.css';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

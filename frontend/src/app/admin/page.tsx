@@ -58,126 +58,176 @@ export default function AdminDashboard() {
 
     return (
         <div style={{ paddingBottom: '3rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h1>Admin Dashboard</h1>
-                <select
-                    value={range}
-                    onChange={(e) => setRange(e.target.value)}
-                    className="form-select"
-                    style={{ width: '150px' }}
-                >
-                    <option value="7days">Last 7 Days</option>
-                    <option value="30days">Last 30 Days</option>
-                </select>
+            <div className="dashboard-header">
+                <h1 className="dashboard-title">Dashboard Overview</h1>
+                <div className="dashboard-controls">
+                    <select
+                        value={range}
+                        onChange={(e) => setRange(e.target.value)}
+                        className="form-select"
+                        style={{ width: '150px' }}
+                    >
+                        <option value="7days">Last 7 Days</option>
+                        <option value="30days">Last 30 Days</option>
+                    </select>
+                </div>
             </div>
 
             {/* KPI Cards */}
-            <div className="grid desktop-grid-4" style={{ marginBottom: '2rem', gap: '1.5rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '1rem', borderRadius: '50%', background: '#DEF7EC', color: '#03543F' }}>
-                        <FiDollarSign size={24} />
+            <div className="kpi-grid">
+                <div className="kpi-card kpi-green">
+                    <div className="kpi-icon-wrapper">
+                        <FiDollarSign />
                     </div>
-                    <div>
-                        <p style={{ margin: 0, color: '#6B7280', fontSize: '0.9rem' }}>Total Revenue ({range})</p>
-                        <h3 style={{ margin: 0 }}>₹{revenueData.reduce((acc: number, cur: any) => acc + cur.totalSales, 0).toLocaleString()}</h3>
-                    </div>
-                </div>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '1rem', borderRadius: '50%', background: '#E1EFFE', color: '#1E429F' }}>
-                        <FiBox size={24} />
-                    </div>
-                    <div>
-                        <p style={{ margin: 0, color: '#6B7280', fontSize: '0.9rem' }}>Total Products</p>
-                        <h3 style={{ margin: 0 }}>{inventory?.total || 0}</h3>
+                    <div className="kpi-content">
+                        <p>Total Revenue ({range})</p>
+                        <h3>₹{revenueData.reduce((acc: number, cur: any) => acc + cur.totalSales, 0).toLocaleString()}</h3>
                     </div>
                 </div>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '1rem', borderRadius: '50%', background: '#FEECDC', color: '#8A2C0D' }}>
-                        <FiAlertCircle size={24} />
+
+                <div className="kpi-card kpi-blue">
+                    <div className="kpi-icon-wrapper">
+                        <FiBox />
                     </div>
-                    <div>
-                        <p style={{ margin: 0, color: '#6B7280', fontSize: '0.9rem' }}>Low Stock Items</p>
-                        <h3 style={{ margin: 0 }}>{inventory?.lowStock || 0}</h3>
+                    <div className="kpi-content">
+                        <p>Total Products</p>
+                        <h3>{inventory?.total || 0}</h3>
                     </div>
                 </div>
-                <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <div style={{ padding: '1rem', borderRadius: '50%', background: '#FDE8E8', color: '#9B1C1C' }}>
-                        <FiTrendingUp size={24} />
+
+                <div className="kpi-card kpi-orange">
+                    <div className="kpi-icon-wrapper">
+                        <FiAlertCircle />
                     </div>
-                    <div>
-                        <p style={{ margin: 0, color: '#6B7280', fontSize: '0.9rem' }}>Out of Stock</p>
-                        <h3 style={{ margin: 0 }}>{inventory?.outOfStock || 0}</h3>
+                    <div className="kpi-content">
+                        <p>Low Stock Items</p>
+                        <h3>{inventory?.lowStock || 0}</h3>
+                    </div>
+                </div>
+
+                <div className="kpi-card kpi-red">
+                    <div className="kpi-icon-wrapper">
+                        <FiTrendingUp />
+                    </div>
+                    <div className="kpi-content">
+                        <p>Out of Stock</p>
+                        <h3>{inventory?.outOfStock || 0}</h3>
                     </div>
                 </div>
             </div>
 
             {/* Main Grid: Revenue & Activity */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+            <div className="charts-grid">
                 {/* Revenue Chart */}
-                <div className="card" style={{ minHeight: '400px' }}>
-                    <h3 style={{ marginBottom: '1.5rem' }}>Sales Overview</h3>
+                <div className="chart-card">
+                    <div className="chart-header">
+                        <h3 className="chart-title">Sales Overview</h3>
+                    </div>
                     <div style={{ height: '300px', width: '100%' }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={revenueData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-                                <YAxis tick={{ fontSize: 12 }} />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                <XAxis
+                                    dataKey="label"
+                                    tick={{ fontSize: 12, fill: '#64748B' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 12, fill: '#64748B' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tickFormatter={(value) => `₹${value}`}
+                                />
                                 <Tooltip
-                                    formatter={(value: number) => [`₹${value}`, 'Sales']}
+                                    formatter={(value: number) => [`₹${value.toLocaleString()}`, 'Sales']}
                                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
                                 />
-                                <Line type="monotone" dataKey="totalSales" stroke="#F37021" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                                <Line
+                                    type="monotone"
+                                    dataKey="totalSales"
+                                    stroke="#F37021"
+                                    strokeWidth={3}
+                                    dot={{ r: 4, fill: '#F37021', strokeWidth: 2, stroke: '#fff' }}
+                                    activeDot={{ r: 6, fill: '#F37021', stroke: '#fff', strokeWidth: 2 }}
+                                />
                             </LineChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Activity Feed */}
-                <div className="card" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                    <h3 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <FiActivity /> Recent Activity
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {activity.map((act: any) => (
-                            <div key={act.id} style={{ display: 'flex', gap: '0.8rem', alignItems: 'start', paddingBottom: '0.8rem', borderBottom: '1px solid #f3f4f6' }}>
-                                <div style={{
-                                    minWidth: '8px', height: '8px', borderRadius: '50%', marginTop: '6px',
-                                    background: act.type === 'ORDER' ? '#10B981' : '#3B82F6'
-                                }}></div>
-                                <div>
-                                    <p style={{ margin: 0, fontSize: '0.9rem', fontWeight: 500 }}>{act.message}</p>
-                                    <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#6B7280' }}>
-                                        {new Date(act.date).toLocaleDateString()} • {act.user}
-                                    </p>
+                <div className="chart-card">
+                    <div className="chart-header">
+                        <h3 className="chart-title">
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FiActivity /> Recent Activity
+                            </span>
+                        </h3>
+                    </div>
+                    <div className="activity-list">
+                        {activity.length > 0 ? (
+                            activity.map((act: any) => (
+                                <div key={act.id} className="activity-item">
+                                    <div
+                                        className="activity-dot"
+                                        style={{ background: act.type === 'ORDER' ? '#10B981' : '#3B82F6' }}
+                                    ></div>
+                                    <div className="activity-content">
+                                        <p>{act.message}</p>
+                                        <div className="activity-meta">
+                                            {new Date(act.date).toLocaleDateString()} • {act.user}
+                                        </div>
+                                    </div>
                                 </div>
+                            ))
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                                No recent activity
                             </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             </div>
 
             {/* Secondary Grid: Top Products & Inventory */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+            <div className="charts-grid">
                 {/* Top Products */}
-                <div className="card" style={{ minHeight: '350px' }}>
-                    <h3 style={{ marginBottom: '1.5rem' }}>Top Selling Products</h3>
-                    <div style={{ height: '250px', width: '100%' }}>
+                <div className="chart-card">
+                    <div className="chart-header">
+                        <h3 className="chart-title">Top Selling Products</h3>
+                    </div>
+                    <div style={{ height: '300px', width: '100%' }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={topProducts} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
+                            <BarChart data={topProducts} layout="vertical" margin={{ left: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
                                 <XAxis type="number" hide />
-                                <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11 }} />
-                                <Tooltip cursor={{ fill: '#f3f4f6' }} />
-                                <Bar dataKey="totalSold" fill="#3B82F6" radius={[0, 4, 4, 0]} barSize={20} />
+                                <YAxis
+                                    dataKey="name"
+                                    type="category"
+                                    width={100}
+                                    tick={{ fontSize: 11, fill: '#64748B' }}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
+                                <Tooltip cursor={{ fill: '#f8fafc' }} />
+                                <Bar
+                                    dataKey="totalSold"
+                                    fill="#3B82F6"
+                                    radius={[0, 4, 4, 0]}
+                                    barSize={20}
+                                />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 {/* Inventory Health */}
-                <div className="card" style={{ minHeight: '350px' }}>
-                    <h3 style={{ marginBottom: '1.5rem' }}>Inventory Health</h3>
-                    <div style={{ height: '250px', width: '100%', display: 'flex', justifyContent: 'center' }}>
+                <div className="chart-card">
+                    <div className="chart-header">
+                        <h3 className="chart-title">Inventory Health</h3>
+                    </div>
+                    <div style={{ height: '300px', width: '100%' }}>
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
@@ -194,7 +244,7 @@ export default function AdminDashboard() {
                                     ))}
                                 </Pie>
                                 <Tooltip />
-                                <Legend />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>

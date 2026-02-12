@@ -83,9 +83,8 @@ function SortableItem(props: any) {
                         <span className="config-tag bg-gray-100 text-gray-500">
                             {compDef?.category}
                         </span>
-                        {/* Show config summary if available */}
                         {props.config?.title && (
-                            <span className="config-tag text-blue-600 font-medium">
+                            <span className="config-tag font-medium" style={{ color: '#F37021' }}>
                                 "{props.config.title}"
                             </span>
                         )}
@@ -309,7 +308,7 @@ export default function PageBuilder({ params }: { params: Promise<{ slug: string
         <div className="home-builder-container">
             <div className="builder-header">
                 <div className="builder-title">
-                    <h1>Page Builder: <span className="text-blue-600 capitalize">{pageSlug}</span></h1>
+                    <h1>Page Builder: <span className="capitalize" style={{ color: '#F37021' }}>{pageSlug}</span></h1>
                     <p>Drag and drop to reorder components</p>
                 </div>
                 <div className="builder-actions">
@@ -386,7 +385,7 @@ export default function PageBuilder({ params }: { params: Promise<{ slug: string
                         {layout.length === 0 && !loading && (
                             <div className="text-center p-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
                                 <p className="text-gray-500 mb-4">This page is empty.</p>
-                                <button onClick={() => { setInsertIndex(null); setIsAddModalOpen(true); }} className="text-blue-600 font-medium hover:underline">
+                                <button onClick={() => { setInsertIndex(null); setIsAddModalOpen(true); }} className="font-medium hover:underline" style={{ color: '#F37021' }}>
                                     Add your first component
                                 </button>
                             </div>
@@ -547,7 +546,7 @@ export default function PageBuilder({ params }: { params: Promise<{ slug: string
                                         <input
                                             type="checkbox"
                                             id="fullWidth"
-                                            className="w-5 h-5 accent-blue-600 cursor-pointer"
+                                            className="w-5 h-5 cursor-pointer" style={{ accentColor: '#F37021' }}
                                             checked={tempConfig.isFullWidth || false}
                                             onChange={e => setTempConfig({ ...tempConfig, isFullWidth: e.target.checked })}
                                         />

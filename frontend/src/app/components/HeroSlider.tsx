@@ -18,6 +18,13 @@ interface Banner {
     buttonLink?: string;
     showSecondaryButton?: boolean;
     badgeText?: string;
+    offer_id?: {
+        _id: string;
+        title: string;
+        percentage: number;
+        slug: string;
+    };
+    product_ids?: string[];
 }
 
 export default function HeroSlider() {
@@ -30,6 +37,8 @@ export default function HeroSlider() {
             .then(res => res.json())
             .then(data => {
                 if (data && data.length > 0) {
+                    console.log('Banners loaded:', data);
+                    console.log('First banner offer_id:', data[0]?.offer_id);
                     setSlides(data);
                 }
                 setLoading(false);
@@ -57,67 +66,81 @@ export default function HeroSlider() {
             <div className="hero-float-element hero-float-2"></div>
             <div className="hero-float-element hero-float-3"></div>
 
-            {slides.map((slide, index) => (
-                <div
-                    key={index}
-                    className={`hero-slide ${index === current ? 'active' : ''}`}
-                >
+            {slides.map((slide, index) => {
+                // Compute the explore products link
+                const exploreHref = slide.offer_id?.slug
+                    ? `/products?offer=${slide.offer_id.slug}`
+                    : '/products';
+
+                // Debug logging
+                if (index === current) {
+                    console.log('Current slide:', slide.title);
+                    console.log('Offer ID:', slide.offer_id);
+                    console.log('Explore href:', exploreHref);
+                }
+
+                return (
                     <div
-                        className="hero-background"
-                        style={{
-                            backgroundImage: `url(${slide.image.startsWith('http') ? slide.image : `http://localhost:5000/${slide.image}`})`
-                        }}
-                    ></div>
-                    <div className="hero-overlay"></div>
+                        key={index}
+                        className={`hero-slide ${index === current ? 'active' : ''}`}
+                    >
+                        <div
+                            className="hero-background"
+                            style={{
+                                backgroundImage: `url(${slide.image.startsWith('http') ? slide.image : `http://localhost:5000/${slide.image}`})`
+                            }}
+                        ></div>
+                        <div className="hero-overlay"></div>
 
-                    <div className="hero-content-wrapper">
-                        <div className="container">
-                            <div className="hero-content" style={{ textAlign: slide.position?.includes('right') ? 'right' : slide.position?.includes('center') ? 'center' : 'left', marginLeft: slide.position?.includes('right') ? 'auto' : slide.position?.includes('center') ? 'auto' : '0', marginRight: slide.position?.includes('center') ? 'auto' : '0' }}>
-                                {(slide.badgeText && slide.badgeText !== '') && (
-                                    <div className="hero-badge">
-                                        <FiZap />
-                                        <span>{slide.badgeText}</span>
+                        <div className="hero-content-wrapper">
+                            <div className="container">
+                                <div className="hero-content" style={{ textAlign: slide.position?.includes('right') ? 'right' : slide.position?.includes('center') ? 'center' : 'left', marginLeft: slide.position?.includes('right') ? 'auto' : slide.position?.includes('center') ? 'auto' : '0', marginRight: slide.position?.includes('center') ? 'auto' : '0' }}>
+                                    {(slide.badgeText && slide.badgeText !== '') && (
+                                        <div className="hero-badge">
+                                            <FiZap />
+                                            <span>{slide.badgeText}</span>
+                                        </div>
+                                    )}
+
+                                    <h1 className="hero-title" style={{ color: slide.textColor }}>
+                                        {slide.title.split(' ').slice(0, -1).join(' ')}{' '}
+                                        <span className="hero-title-gradient">
+                                            {slide.title.split(' ').slice(-1)}
+                                        </span>
+                                    </h1>
+
+                                    <p className="hero-description" style={{ color: slide.textColor }}>
+                                        {slide.description}
+                                    </p>
+
+                                    <div className="hero-buttons" style={{ justifyContent: slide.position?.includes('right') ? 'flex-end' : slide.position?.includes('center') ? 'center' : 'flex-start' }}>
+                                        {slide.buttonText && (
+                                            <Link
+                                                href={slide.buttonLink || '/products'}
+                                                className="hero-btn-primary"
+                                                style={{ background: slide.buttonColor }}
+                                            >
+                                                <span>{slide.buttonText}</span>
+                                                <FiArrowRight />
+                                            </Link>
+                                        )}
+                                        {(slide.showSecondaryButton !== false) && (
+                                            <Link
+                                                href={exploreHref}
+                                                className="hero-btn-secondary"
+                                                style={{ borderColor: slide.textColor, color: slide.textColor }}
+                                            >
+                                                <FiPlay />
+                                                <span>Explore Products</span>
+                                            </Link>
+                                        )}
                                     </div>
-                                )}
-
-                                <h1 className="hero-title" style={{ color: slide.textColor }}>
-                                    {slide.title.split(' ').slice(0, -1).join(' ')}{' '}
-                                    <span className="hero-title-gradient">
-                                        {slide.title.split(' ').slice(-1)}
-                                    </span>
-                                </h1>
-
-                                <p className="hero-description" style={{ color: slide.textColor }}>
-                                    {slide.description}
-                                </p>
-
-                                <div className="hero-buttons" style={{ justifyContent: slide.position?.includes('right') ? 'flex-end' : slide.position?.includes('center') ? 'center' : 'flex-start' }}>
-                                    {slide.buttonText && (
-                                        <Link
-                                            href={slide.buttonLink || '/products'}
-                                            className="hero-btn-primary"
-                                            style={{ background: slide.buttonColor }}
-                                        >
-                                            <span>{slide.buttonText}</span>
-                                            <FiArrowRight />
-                                        </Link>
-                                    )}
-                                    {(slide.showSecondaryButton !== false) && (
-                                        <Link
-                                            href="/products"
-                                            className="hero-btn-secondary"
-                                            style={{ borderColor: slide.textColor, color: slide.textColor }}
-                                        >
-                                            <FiPlay />
-                                            <span>Explore Products</span>
-                                        </Link>
-                                    )}
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            ))}
+                );
+            })}
 
             {/* Dots */}
             {slides.length > 1 && (

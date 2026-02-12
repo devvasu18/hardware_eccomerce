@@ -16,8 +16,8 @@ import {
     FiRefreshCw,
     FiSettings,
     FiUsers,
-    FiShield,
-    FiImage
+    FiImage,
+    FiPower
 } from 'react-icons/fi';
 import { getSystemSettings } from '../../utils/systemSettings';
 
@@ -132,17 +132,22 @@ export default function AdminSidebar() {
     useEffect(() => {
         menuItems.forEach(item => {
             if (item.children && item.children.some(child => isActive(child.path))) {
+                setExpandedMenus(prev => ({ ...prev, [item.label]: true }));
             }
         });
     }, [pathname]);
 
     useEffect(() => {
         const fetchSettings = async () => {
-            const settings = await getSystemSettings();
-            if (settings && settings.companyName) {
-                // Take first word or full name but uppercase
-                const name = settings.companyName.split(' ')[0].toUpperCase();
-                setCompanyName(name);
+            try {
+                const settings = await getSystemSettings();
+                if (settings && settings.companyName) {
+                    // Take first word or full name but uppercase
+                    const name = settings.companyName.split(' ')[0].toUpperCase();
+                    setCompanyName(name);
+                }
+            } catch (error) {
+                console.error("Failed to fetch settings", error);
             }
         };
         fetchSettings();
@@ -152,78 +157,51 @@ export default function AdminSidebar() {
     const filteredMenu = menuItems;
 
     return (
-        <aside style={{
-            width: collapsed ? '60px' : '260px',
-            background: '#0F172A',
-            color: 'white',
-            transition: 'width 0.3s ease',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '4px 0 10px rgba(0,0,0,0.1)',
-            zIndex: 100,
-            position: 'sticky',
-            top: 0,
-            height: '100vh',
-            overflow: 'hidden' // Contain scroll
-        }}>
-            <div style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #334155', flexShrink: 0 }}>
-                {!collapsed && <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#F37021', letterSpacing: '1px' }}>{companyName}</span>}
-                <button onClick={() => setCollapsed(!collapsed)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}>
-                    {collapsed ? '☰' : '◀'}
+        <aside className={`admin-sidebar ${collapsed ? 'collapsed' : ''}`}>
+            <div className="sidebar-header">
+                {!collapsed && <span className="logo-text">{companyName}</span>}
+                <button
+                    onClick={() => setCollapsed(!collapsed)}
+                    className="toggle-btn"
+                    title={collapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+                >
+                    {collapsed ? <FiChevronRight size={20} /> : <FiChevronDown style={{ transform: 'rotate(90deg)' }} size={20} />}
                 </button>
             </div>
 
-            <nav style={{ padding: '1rem', flex: 1, overflowY: 'auto' }}>
-                {filteredMenu.map(item => {
+            <nav className="sidebar-nav">
+                {filteredMenu.map((item, index) => {
                     const hasChildren = item.children && item.children.length > 0;
                     const isExpanded = expandedMenus[item.label];
                     const active = isParentActive(item);
 
+                    // Optional: Add group labels if needed, or separators
+
                     if (hasChildren) {
                         return (
-                            <div key={item.label} style={{ marginBottom: '0.5rem' }}>
+                            <div key={item.label} className="menu-group">
                                 <div
                                     onClick={() => !collapsed && toggleMenu(item.label)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        padding: '0.75rem 1rem',
-                                        borderRadius: '8px',
-                                        cursor: collapsed ? 'default' : 'pointer',
-                                        color: active ? 'white' : '#94a3b8',
-                                        background: active && collapsed ? '#F37021' : 'transparent', // Highlight closed parent if active
-                                        transition: 'all 0.2s',
-                                        justifyContent: 'space-between'
-                                    }}
+                                    className={`nav-item ${active ? 'active' : ''}`}
                                 >
-                                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                                        <span style={{ fontSize: '1.2rem', marginRight: collapsed ? 0 : '1rem', display: 'flex', alignItems: 'center' }}>{item.icon}</span>
-                                        {!collapsed && <span style={{ fontWeight: 500 }}>{item.label}</span>}
-                                    </div>
-                                    {!collapsed && (isExpanded ? <FiChevronDown /> : <FiChevronRight />)}
+                                    <div className="nav-icon">{item.icon}</div>
+                                    {!collapsed && (
+                                        <>
+                                            <span style={{ flex: 1 }}>{item.label}</span>
+                                            <FiChevronDown className={`menu-arrow ${isExpanded ? 'expanded' : ''}`} />
+                                        </>
+                                    )}
                                 </div>
 
                                 {/* Children mapping */}
                                 {!collapsed && isExpanded && (
-                                    <div style={{ marginLeft: '1rem', marginTop: '0.25rem', borderLeft: '1px solid #334155', paddingLeft: '0.5rem' }}>
+                                    <div className="sub-menu">
                                         {item.children!.map(child => (
                                             <Link
                                                 href={child.path}
                                                 key={child.path}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    padding: '0.6rem 1rem',
-                                                    borderRadius: '6px',
-                                                    textDecoration: 'none',
-                                                    color: isActive(child.path) ? '#F37021' : '#cbd5e1', // Orange text when active child
-                                                    fontSize: '0.9rem',
-                                                    marginBottom: '0.25rem',
-                                                    transition: 'all 0.2s',
-                                                    background: isActive(child.path) ? 'rgba(243, 112, 33, 0.1)' : 'transparent'
-                                                }}
+                                                className={`sub-nav-item ${isActive(child.path) ? 'active' : ''}`}
                                             >
-                                                {/* No icons for children, just text */}
                                                 <span>{child.label}</span>
                                             </Link>
                                         ))}
@@ -237,50 +215,33 @@ export default function AdminSidebar() {
                         <Link
                             href={item.path}
                             key={item.path}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                padding: '0.75rem 1rem',
-                                marginBottom: '0.5rem',
-                                borderRadius: '8px',
-                                textDecoration: 'none',
-                                color: isActive(item.path) ? 'white' : '#94a3b8',
-                                background: isActive(item.path) ? '#F37021' : 'transparent',
-                                transition: 'all 0.2s'
-                            }}
+                            className={`nav-item ${isActive(item.path) ? 'active' : ''}`}
                         >
-                            <span style={{ fontSize: '1.2rem', marginRight: collapsed ? 0 : '1rem', display: 'flex', alignItems: 'center' }}>{item.icon}</span>
-                            {!collapsed && <span style={{ fontWeight: 500 }}>{item.label}</span>}
+                            <div className="nav-icon">{item.icon}</div>
+                            {!collapsed && <span>{item.label}</span>}
                         </Link>
                     );
                 })}
             </nav>
 
-            <div style={{ padding: '1rem', borderTop: '1px solid #334155', flexShrink: 0 }}>
+            <div className="sidebar-footer">
                 {!collapsed && (
-                    <div style={{ marginBottom: '1rem', padding: '0.5rem', background: '#1e293b', borderRadius: '4px' }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{user?.username}</div>
-                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase' }}>{(user?.role || 'Guest').replace('_', ' ')}</div>
+                    <div className="user-profile">
+                        <div className="user-avatar">
+                            {user?.username?.charAt(0).toUpperCase() || 'A'}
+                        </div>
+                        <div className="user-info">
+                            <h4>{user?.username}</h4>
+                            <span>{(user?.role || 'Guest').replace('_', ' ')}</span>
+                        </div>
                     </div>
                 )}
-                <button
-                    onClick={logout}
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: collapsed ? 'center' : 'flex-start',
-                        width: '100%',
-                        background: 'none',
-                        border: 'none',
-                        color: '#ef4444',
-                        cursor: 'pointer',
-                        padding: '0.5rem'
-                    }}
-                >
-                    <span style={{ fontSize: '1.2rem', marginRight: collapsed ? 0 : '1rem' }}>🚪</span>
+                <button onClick={logout} className="logout-btn">
+                    <FiPower size={18} />
                     {!collapsed && <span>Logout</span>}
                 </button>
             </div>
         </aside>
     );
 }
+

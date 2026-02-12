@@ -60,7 +60,7 @@ export default function AnalyticsIntelligence() {
             <div className="page-header" style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h1 className="page-title" style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1e293b' }}>Strategic Intelligence</h1>
-                    <p style={{ color: '#64748b' }}>Real-time business performance and forecasting.</p>
+
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', background: '#f1f5f9', padding: '0.25rem', borderRadius: '8px' }}>
                     {['7days', '30days', '1year'].map(r => (

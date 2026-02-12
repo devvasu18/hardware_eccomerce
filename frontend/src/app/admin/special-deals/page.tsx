@@ -241,7 +241,7 @@ export default function SpecialDealsManager() {
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h1 style={{ marginBottom: 0 }}>Special Deals Management</h1>
+                <h3 style={{ marginBottom: 0 }}>Special Deals Management</h3>
                 <button
                     onClick={startAdd}
                     className="btn btn-primary"

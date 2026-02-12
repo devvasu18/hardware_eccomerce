@@ -838,23 +838,24 @@ exports.cancelOrderItem = async (req, res) => {
         await order.save();
 
         // Restore Stock & Sales Count for this item
-        await Product.findByIdAndUpdate(item.product, { $inc: { salesCount: -item.quantity } });
+        const productId = item.product._id || item.product;
+        await Product.findByIdAndUpdate(productId, { $inc: { salesCount: -item.quantity } });
 
         if (item.modelId) {
             if (item.variationId) {
                 await Product.findOneAndUpdate(
-                    { _id: item.product, 'models._id': item.modelId },
+                    { _id: productId, 'models._id': item.modelId },
                     { $inc: { 'models.$[m].variations.$[v].stock': item.quantity } },
                     { arrayFilters: [{ 'm._id': item.modelId }, { 'v._id': item.variationId }] }
                 );
             }
         } else if (item.variationId) {
             await Product.findOneAndUpdate(
-                { _id: item.product, 'variations._id': item.variationId },
+                { _id: productId, 'variations._id': item.variationId },
                 { $inc: { 'variations.$.stock': item.quantity } }
             );
         } else {
-            await Product.findByIdAndUpdate(item.product, {
+            await Product.findByIdAndUpdate(productId, {
                 $inc: { stock: item.quantity }
             });
         }

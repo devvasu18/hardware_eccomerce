@@ -308,7 +308,7 @@ export default function RequestsPage() {
 
     return (
         <div>
-            <h1 style={{ marginBottom: '2rem' }}>Procurement Requests</h1>
+            <h3 style={{ marginBottom: '2rem' }}>Procurement Requests</h3>
 
             {/* Parent Table View */}
             <div style={{ background: 'white', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>

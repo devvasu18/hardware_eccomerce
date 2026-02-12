@@ -44,18 +44,180 @@ exports.deleteHSN = async (req, res) => {
 // --- Offers ---
 exports.getOffers = async (req, res) => {
     try {
-        const offers = await Offer.find().sort({ createdAt: -1 });
+        const { status, slug } = req.query;
+        const query = {};
+
+        // Filter by status if provided
+        if (status === 'active') {
+            query.isActive = true;
+        } else if (status === 'inactive') {
+            query.isActive = false;
+        }
+
+        // Filter by slug if provided
+        if (slug) {
+            query.slug = slug;
+        }
+
+        const offers = await Offer.find(query).sort({ createdAt: -1 });
         res.json(offers);
     } catch (error) { res.status(500).json({ error: error.message }); }
 };
 
 exports.createOffer = async (req, res) => {
     try {
-        const { title, slug, percentage } = req.body;
+        const { title, slug, percentage, isActive } = req.body;
+
+        // Validation: Percentage range
+        const percentageNum = parseFloat(percentage);
+        if (isNaN(percentageNum) || percentageNum < 0 || percentageNum > 100) {
+            return res.status(400).json({
+                error: 'Percentage must be between 0 and 100'
+            });
+        }
+
+        // Validation: Check for duplicate slug
+        const existingOffer = await Offer.findOne({ slug });
+        if (existingOffer) {
+            return res.status(400).json({
+                error: 'An offer with this slug already exists. Please use a different title.'
+            });
+        }
+
+        // Validation: Image file type and size
+        if (req.file) {
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(req.file.mimetype)) {
+                deleteFile(req.file.path);
+                return res.status(400).json({
+                    error: 'Invalid image format. Only JPEG, PNG, and WebP are allowed.'
+                });
+            }
+
+            // 5MB limit
+            if (req.file.size > 5 * 1024 * 1024) {
+                deleteFile(req.file.path);
+                return res.status(400).json({
+                    error: 'Image size must be less than 5MB'
+                });
+            }
+        }
+
         const banner_image = req.file ? req.file.path.replace(/\\/g, '/') : null;
-        const offer = await Offer.create({ title, slug, percentage, banner_image });
+        const offer = await Offer.create({
+            title,
+            slug,
+            percentage: percentageNum,
+            banner_image,
+            isActive: isActive === 'true' || isActive === true
+        });
+
+        await logAction({
+            action: 'CREATE_OFFER',
+            req,
+            targetResource: 'Offer',
+            targetId: offer._id,
+            details: { title, slug, percentage: percentageNum }
+        });
+
         res.status(201).json(offer);
-    } catch (error) { res.status(400).json({ error: error.message }); }
+    } catch (error) {
+        // Clean up uploaded file if error occurs
+        if (req.file) {
+            deleteFile(req.file.path);
+        }
+        res.status(400).json({ error: error.message });
+    }
+};
+
+exports.updateOffer = async (req, res) => {
+    try {
+        const { title, slug, percentage, isActive } = req.body;
+        const updateData = {};
+
+        // Validation: Percentage range
+        if (percentage !== undefined) {
+            const percentageNum = parseFloat(percentage);
+            if (isNaN(percentageNum) || percentageNum < 0 || percentageNum > 100) {
+                return res.status(400).json({
+                    error: 'Percentage must be between 0 and 100'
+                });
+            }
+            updateData.percentage = percentageNum;
+        }
+
+        // Validation: Check for duplicate slug (excluding current offer)
+        if (slug) {
+            const existingOffer = await Offer.findOne({
+                slug,
+                _id: { $ne: req.params.id }
+            });
+            if (existingOffer) {
+                return res.status(400).json({
+                    error: 'An offer with this slug already exists. Please use a different title.'
+                });
+            }
+            updateData.slug = slug;
+        }
+
+        if (title) updateData.title = title;
+        if (isActive !== undefined) {
+            updateData.isActive = isActive === 'true' || isActive === true;
+        }
+
+        // Handle Image Update
+        if (req.file) {
+            // Validation: Image file type and size
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(req.file.mimetype)) {
+                deleteFile(req.file.path);
+                return res.status(400).json({
+                    error: 'Invalid image format. Only JPEG, PNG, and WebP are allowed.'
+                });
+            }
+
+            if (req.file.size > 5 * 1024 * 1024) {
+                deleteFile(req.file.path);
+                return res.status(400).json({
+                    error: 'Image size must be less than 5MB'
+                });
+            }
+
+            updateData.banner_image = req.file.path.replace(/\\/g, '/');
+
+            // Delete old image
+            const oldOffer = await Offer.findById(req.params.id);
+            if (oldOffer && oldOffer.banner_image) {
+                deleteFile(oldOffer.banner_image);
+            }
+        }
+
+        const offer = await Offer.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        );
+
+        if (!offer) {
+            return res.status(404).json({ message: 'Offer not found' });
+        }
+
+        await logAction({
+            action: 'UPDATE_OFFER',
+            req,
+            targetResource: 'Offer',
+            targetId: req.params.id,
+            details: { title, slug, percentage }
+        });
+
+        res.json(offer);
+    } catch (error) {
+        // Clean up uploaded file if error occurs
+        if (req.file) {
+            deleteFile(req.file.path);
+        }
+        res.status(400).json({ error: error.message });
+    }
 };
 
 exports.deleteOffer = async (req, res) => {
@@ -64,6 +226,14 @@ exports.deleteOffer = async (req, res) => {
         if (offer) {
             deleteFile(offer.banner_image);
             await offer.deleteOne();
+
+            await logAction({
+                action: 'DELETE_OFFER',
+                req,
+                targetResource: 'Offer',
+                targetId: req.params.id,
+                details: { title: offer.title }
+            });
         }
         res.json({ message: 'Offer deleted' });
     } catch (error) { res.status(500).json({ error: error.message }); }

@@ -287,7 +287,7 @@ export default function ProductList() {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
                     <h1 className="page-title">Product Manager</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Manage inventory, pricing, and specifications.</p>
+
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <div className="btn-group" style={{ display: 'flex', gap: '0.2rem' }}>

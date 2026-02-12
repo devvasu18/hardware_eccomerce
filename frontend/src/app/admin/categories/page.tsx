@@ -175,7 +175,7 @@ export default function CategoryManager() {
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h1 style={{ marginBottom: 0 }}>Category Management</h1>
+                <h3 style={{ marginBottom: 0 }}>Category Management</h3>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                     <div className="btn-group" style={{ display: 'flex', gap: '0.2rem' }}>
                         <button

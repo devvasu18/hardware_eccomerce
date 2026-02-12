@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import api from "../../utils/api";
 import { FiFilter, FiDownload, FiDollarSign, FiSearch, FiCode, FiX, FiCheck, FiAlertCircle, FiCalendar } from "react-icons/fi";
+import ExportButton from "../../components/ExportButton";
 
 export default function TransactionList() {
     const [transactions, setTransactions] = useState<any[]>([]);
@@ -34,6 +35,29 @@ export default function TransactionList() {
             console.error(error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
+        try {
+            const res = await api.get('/transactions/export', {
+                params: {
+                    format,
+                    status: statusFilter
+                },
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            const ext = format === 'excel' ? 'xlsx' : format;
+            link.setAttribute('download', `transactions_${new Date().toISOString().split('T')[0]}.${ext}`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Export failed', error);
         }
     };
 
@@ -112,11 +136,9 @@ export default function TransactionList() {
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <div>
                     <h1 className="page-title">Transactions</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Audit financial records / Date Range Analysis.</p>
+
                 </div>
-                <button className="btn btn-secondary">
-                    <FiDownload /> Export CSV
-                </button>
+                <ExportButton onExport={handleExport} />
             </div>
 
             <div className="card" style={{ padding: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
