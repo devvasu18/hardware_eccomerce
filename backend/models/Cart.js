@@ -15,6 +15,9 @@ const cartItemSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    mrp: {
+        type: Number // Store MRP for discount calculation display
+    },
     variationId: {
         type: mongoose.Schema.Types.ObjectId
     },

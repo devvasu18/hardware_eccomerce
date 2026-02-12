@@ -16,7 +16,7 @@ router.get('/', protect, async (req, res) => {
         let wishlist = await Wishlist.findOne({ user: req.user._id })
             .populate({
                 path: 'items.product',
-                select: 'title basePrice discountedPrice featured_image gallery_images stock category isActive'
+                select: 'title basePrice discountedPrice featured_image gallery_images stock category isActive offers'
             });
 
         if (!wishlist) {
@@ -89,7 +89,7 @@ router.post('/add', protect, async (req, res) => {
         // Populate and return updated wishlist
         await wishlist.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock category isActive'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock category isActive offers'
         });
         console.log('🔄 Wishlist populated');
 
@@ -136,7 +136,7 @@ router.delete('/remove/:productId', protect, async (req, res) => {
         // Populate and return updated wishlist
         await wishlist.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock category isActive'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock category isActive offers'
         });
 
         const validItems = wishlist.items.filter(item =>
@@ -209,7 +209,7 @@ router.post('/sync', protect, async (req, res) => {
         // Populate and return synced wishlist
         await wishlist.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock category isActive'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock category isActive offers'
         });
 
         const validItems = wishlist.items.filter(item =>

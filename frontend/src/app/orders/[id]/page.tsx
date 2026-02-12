@@ -839,17 +839,53 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                             </h3>
 
                             <div style={{ marginBottom: '1.5rem' }}>
-                                <div style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    marginBottom: '0.75rem',
-                                    fontSize: '0.95rem'
-                                }}>
-                                    <span style={{ color: '#64748b' }}>Subtotal</span>
-                                    <span style={{ fontWeight: 600 }}>
-                                        ₹{(order.totalAmount - order.taxTotal).toLocaleString('en-IN')}
-                                    </span>
-                                </div>
+                                {(() => {
+                                    const mrpTotal = order.items.reduce((acc: number, item: any) => acc + ((item.mrpAtBooking || item.priceAtBooking) * item.quantity), 0);
+                                    const sellingTotal = order.totalAmount - order.taxTotal;
+                                    const totalSavings = mrpTotal - sellingTotal;
+
+                                    return (
+                                        <>
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                marginBottom: '0.75rem',
+                                                fontSize: '0.95rem'
+                                            }}>
+                                                <span style={{ color: '#64748b' }}>Subtotal (MRP)</span>
+                                                <span style={{ fontWeight: 600, textDecoration: totalSavings > 0 ? 'line-through' : 'none', color: totalSavings > 0 ? '#64748b' : 'inherit' }}>
+                                                    ₹{mrpTotal.toLocaleString('en-IN')}
+                                                </span>
+                                            </div>
+
+                                            {totalSavings > 0 && (
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    marginBottom: '0.75rem',
+                                                    fontSize: '0.95rem',
+                                                    color: '#10b981',
+                                                    fontWeight: 600
+                                                }}>
+                                                    <span>Total Savings</span>
+                                                    <span>-₹{totalSavings.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            )}
+
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                marginBottom: '0.75rem',
+                                                fontSize: '0.95rem'
+                                            }}>
+                                                <span style={{ color: '#64748b' }}>Selling Price</span>
+                                                <span style={{ fontWeight: 600 }}>
+                                                    ₹{sellingTotal.toLocaleString('en-IN')}
+                                                </span>
+                                            </div>
+                                        </>
+                                    );
+                                })()}
 
 
                                 {/* Tax Breakdown */}

@@ -135,11 +135,8 @@ export default function ProductCard({ product }: { product: Product }) {
     }
 
     if (user?.customerType === 'wholesale' && user.wholesaleDiscount) {
-        // Wholesale discount applies on the original effective price (usually) or the already discounted price?
-        // Let's assume on the original effective price for now to be safe, or ask user.
-        // But usually wholesale doesn't stack with retail offers.
-        // Let's stick to existing wholesale logic which overrides everything.
-        finalPrice = Math.round(effectivePrice * (1 - user.wholesaleDiscount / 100));
+        // Stack wholesale discount on top of the already calculated finalPrice (which might include offer discount)
+        finalPrice = Math.round(finalPrice * (1 - user.wholesaleDiscount / 100));
     }
 
     const inWishlist = isInWishlist(product._id);

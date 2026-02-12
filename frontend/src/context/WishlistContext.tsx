@@ -15,6 +15,7 @@ interface WishlistItem {
         stock: number;
         category: string;
         isActive: boolean;
+        offers?: { title: string; percentage: number; isActive?: boolean }[];
     };
     addedAt: string;
 }
@@ -40,6 +41,49 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     const [isWishlistOpen, setIsWishlistOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
+    // Calculate Stacked Price Helper
+    const processWishlistData = useCallback((items: any[]): WishlistItem[] => {
+        if (!items) return []; // Guard against null items
+        return items.map(item => {
+            const product = item.product;
+            if (!product) return item; // Safety
+
+            let finalPrice = product.discountedPrice || product.basePrice || 0;
+            // Often backend 'discountedPrice' matches 'selling_price_a'.
+            // If backend didn't apply offers (which it doesn't in populate), we start from base.
+            // Actually, safe bet is to start from max(basePrice, discountedPrice) if no offers applied yet?
+            // No, 'basePrice' is MRP. 'discountedPrice' is Selling Price A (Variant min).
+            // We apply Apply Offer on Selling Price A.
+
+            // 1. Offer
+            if (product.offers && Array.isArray(product.offers) && product.offers.length > 0) {
+                const bestOffer = product.offers.reduce((prev: any, current: any) => {
+                    // Check if offer is active (if populated object has isActive field)
+                    if (current.isActive === false) return prev;
+                    const p = current.percentage || 0;
+                    return (prev.percentage > p) ? prev : { ...current, percentage: p };
+                }, { percentage: 0 });
+
+                if (bestOffer.percentage > 0) {
+                    finalPrice = Math.round(finalPrice * (1 - bestOffer.percentage / 100));
+                }
+            }
+
+            // 2. Wholesale
+            if (user?.customerType === 'wholesale' && user.wholesaleDiscount > 0) {
+                finalPrice = Math.round(finalPrice * (1 - user.wholesaleDiscount / 100));
+            }
+
+            return {
+                ...item,
+                product: {
+                    ...product,
+                    discountedPrice: finalPrice
+                }
+            };
+        });
+    }, [user]);
+
     // Load wishlist on mount and when user changes
     useEffect(() => {
         if (user) {
@@ -47,7 +91,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         } else {
             loadGuestWishlist();
         }
-    }, [user]);
+    }, [user, processWishlistData]);
 
     // Register sync callback on login
     useEffect(() => {
@@ -69,7 +113,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
             if (response.ok) {
                 const data = await response.json();
-                setWishlistItems(data.items || []);
+                setWishlistItems(processWishlistData(data.items || []));
             }
         } catch (error) {
             console.error('Error fetching wishlist:', error);
@@ -96,7 +140,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                         const data = await res.json();
                         const products = Array.isArray(data) ? data : data.products;
 
-                        setWishlistItems(products.map((p: any) => ({
+                        const items = products.map((p: any) => ({
                             _id: p._id,
                             product: {
                                 _id: p._id,
@@ -107,14 +151,16 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                                 gallery_images: p.gallery_images,
                                 stock: p.stock || 0,
                                 category: p.category?.name || 'Uncategorized',
-                                isActive: p.isActive
+                                isActive: p.isActive,
+                                offers: p.offers // Pass offers
                             },
                             addedAt: new Date().toISOString()
-                        })));
+                        }));
+
+                        setWishlistItems(processWishlistData(items));
                     }
                 } catch (fetchErr) {
                     console.error("Failed to fetch guest wishlist details", fetchErr);
-                    // Fallback to just IDs if fetch fails, though rendering will be poor
                     setWishlistItems(productIds.map((id: string) => ({
                         _id: id,
                         product: { _id: id, title: 'Loading...', category: '', basePrice: 0, discountedPrice: 0, stock: 0, isActive: true },
@@ -151,7 +197,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
             if (response.ok) {
                 const data = await response.json();
-                setWishlistItems(data.items || []);
+                setWishlistItems(processWishlistData(data.items || []));
                 localStorage.removeItem('guestWishlist');
             }
         } catch (error) {
@@ -167,7 +213,6 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
             if (user) {
                 // Authenticated user - save to database
                 const token = localStorage.getItem('token');
-                console.log('✅ User authenticated, making API call with token:', token?.substring(0, 20) + '...');
 
                 const response = await fetch('http://localhost:5000/api/wishlist/add', {
                     method: 'POST',
@@ -178,22 +223,14 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                     body: JSON.stringify({ productId }),
                 });
 
-                console.log('📡 API Response status:', response.status);
-
                 if (response.ok) {
                     const data = await response.json();
-                    setWishlistItems(data.items || []);
+                    setWishlistItems(processWishlistData(data.items || []));
                     console.log('✅ Successfully added to wishlist (authenticated)');
                 } else {
                     const errorText = await response.text();
                     console.error('❌ API Error Response:', errorText);
-                    let errorData;
-                    try {
-                        errorData = JSON.parse(errorText);
-                    } catch {
-                        errorData = { message: errorText || 'Failed to add to wishlist' };
-                    }
-                    throw new Error(errorData.message || 'Failed to add to wishlist');
+                    throw new Error('Failed to add to wishlist');
                 }
             } else {
                 // Guest user - save to localStorage
@@ -205,7 +242,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                     productIds.push(productId);
                     localStorage.setItem('guestWishlist', JSON.stringify(productIds));
 
-                    // Update state
+                    // Update state (basic, no price calc until reload/fetch)
                     setWishlistItems(prev => [
                         ...prev,
                         {
@@ -214,17 +251,13 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                             addedAt: new Date().toISOString()
                         }
                     ]);
-                    console.log('✅ Successfully added to wishlist (guest), total items:', productIds.length);
-                } else {
-                    console.log('ℹ️ Product already in wishlist');
+                    // Optionally trigger reload to get price
+                    loadGuestWishlist();
                 }
             }
         } catch (error) {
             console.error('❌ Error adding to wishlist:', error);
-            // Only throw error for authenticated users
-            if (user) {
-                throw error;
-            }
+            if (user) throw error;
         }
     };
 
@@ -243,7 +276,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
                 if (response.ok) {
                     const data = await response.json();
-                    setWishlistItems(data.items || []);
+                    setWishlistItems(processWishlistData(data.items || []));
                 } else {
                     throw new Error('Failed to remove from wishlist');
                 }

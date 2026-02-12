@@ -235,14 +235,21 @@ export default function ProductList() {
         }
     };
 
-    const downloadSample = () => {
-        const csvContent = "title,mrp,selling_price_a,stock,part_number,category_name,brand_name,description\nSample Tool,1000,850,50,T001,Power Tools,Bosch,A high quality power tool";
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'sample_products.csv';
-        a.click();
+    const downloadSample = async () => {
+        try {
+            const res = await api.get('/admin/products/import-sample', {
+                responseType: 'blob'
+            });
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'product_import_sample.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Failed to download sample", error);
+            showError("Failed to download sample");
+        }
     };
 
     const handleExport = async (format: 'csv' | 'excel') => {
@@ -427,7 +434,7 @@ export default function ProductList() {
                         <FiSearch style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#aaa' }} />
                         <input
                             type="text"
-                            placeholder="Search by name, sku, brand..."
+                            placeholder="Search by name, sku, brand, product code..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{

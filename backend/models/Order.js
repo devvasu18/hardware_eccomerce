@@ -29,6 +29,7 @@ const orderSchema = new mongoose.Schema({
         quantity: { type: Number, required: true },
         quantityReturned: { type: Number, default: 0 }, // Track partial returns
         priceAtBooking: { type: Number, required: true },
+        mrpAtBooking: { type: Number }, // Snapshot for discount display
         variationId: { type: mongoose.Schema.Types.ObjectId },
         variationText: { type: String }, // Stored snapshot: "Color: Red"
         modelId: { type: mongoose.Schema.Types.ObjectId },

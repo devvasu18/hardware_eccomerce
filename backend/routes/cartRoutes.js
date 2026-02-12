@@ -19,7 +19,7 @@ router.get('/', authenticateToken, async (req, res) => {
         const cart = await Cart.findOne({ user: req.user.id }).populate([
             {
                 path: 'items.product',
-                select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations'
+                select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations offers'
             },
             {
                 path: 'items.requestId',
@@ -57,7 +57,24 @@ router.get('/', authenticateToken, async (req, res) => {
                 }
 
                 itemObj.resolvedImage = specificImage;
-                // -----------------------------
+
+                // --- RESOLVE MRP ---
+                let mrp = item.product.mrp || item.product.basePrice || item.price;
+                if (item.modelId && item.product.models) {
+                    const model = item.product.models.find(m => m._id.toString() === item.modelId.toString());
+                    if (model) {
+                        mrp = model.mrp || mrp;
+                        if (item.variationId && model.variations) {
+                            const variant = model.variations.find(v => v._id.toString() === item.variationId.toString());
+                            if (variant && variant.mrp) mrp = variant.mrp;
+                        }
+                    }
+                } else if (item.variationId && item.product.variations) {
+                    const variant = item.product.variations.find(v => v._id.toString() === item.variationId.toString());
+                    if (variant && variant.mrp) mrp = variant.mrp;
+                }
+                itemObj.mrp = mrp;
+                // -------------------
 
                 if (item.requestId && item.requestId.requestedQuantity) {
                     itemObj.approvedLimit = item.requestId.requestedQuantity;
@@ -87,7 +104,7 @@ router.post('/add', authenticateToken, async (req, res) => {
         const { productId, quantity, price, size, variationId, variationText, modelId, modelName } = req.body;
 
         // Validate product exists
-        const product = await Product.findById(productId);
+        const product = await Product.findById(productId).populate('offers');
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
         }
@@ -120,27 +137,48 @@ router.post('/add', authenticateToken, async (req, res) => {
 
         let cart = await Cart.findOne({ user: req.user.id });
 
-        // Calculate Price Securely
+        // Calculate Price & MRP Securely
         let securePrice = product.selling_price_a || product.mrp;
+        let secureMrp = product.mrp || product.basePrice || securePrice;
 
         if (modelId && product.models) {
             const model = product.models.find(m => m._id.toString() === modelId);
             if (model) {
                 securePrice = model.selling_price_a || model.mrp || securePrice;
+                secureMrp = model.mrp || secureMrp;
                 if (variationId) {
                     const variant = model.variations.find(v => v._id.toString() === variationId);
-                    if (variant) securePrice = variant.price;
+                    if (variant) {
+                        securePrice = variant.price;
+                        secureMrp = variant.mrp || secureMrp;
+                    }
                 }
             }
         } else if (variationId && product.variations) {
             const variant = product.variations.find(v => v._id.toString() === variationId);
-            if (variant) securePrice = variant.price;
+            if (variant) {
+                securePrice = variant.price;
+                secureMrp = variant.mrp || secureMrp;
+            }
+        }
+
+        // Apply Product Offer Discount
+        if (product.offers && product.offers.length > 0) {
+            const bestOffer = product.offers.reduce((prev, current) => {
+                if (current.isActive === false) return prev;
+                const p = current.percentage || 0;
+                return (prev.percentage > p) ? prev : { ...current, percentage: p };
+            }, { percentage: 0 });
+
+            if (bestOffer.percentage > 0) {
+                securePrice = Math.round(securePrice * (1 - bestOffer.percentage / 100));
+            }
         }
 
         // Apply Wholesale Discount
         if (user && user.customerType === 'wholesale' && user.wholesaleDiscount > 0) {
             const discountAmount = (securePrice * user.wholesaleDiscount) / 100;
-            securePrice = Math.round((securePrice - discountAmount) * 100) / 100;
+            securePrice = Math.round(securePrice - discountAmount);
         }
 
         if (!cart) {
@@ -177,12 +215,14 @@ router.post('/add', authenticateToken, async (req, res) => {
                     return res.status(400).json({ message: `Insufficient stock for total quantity. Only ${limit} available.` });
                 }
                 cart.items[existingItemIndex].price = securePrice; // Update price secure
+                cart.items[existingItemIndex].mrp = secureMrp;
             } else {
                 // Add new item
                 cart.items.push({
                     product: productId,
                     quantity,
                     price: securePrice,
+                    mrp: secureMrp,
                     size,
                     variationId,
                     variationText,
@@ -197,7 +237,7 @@ router.post('/add', authenticateToken, async (req, res) => {
         console.log('Cart saved. Populating...');
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations offers'
         });
         console.log('Cart populated.');
 
@@ -247,11 +287,12 @@ router.patch('/update', authenticateToken, async (req, res) => {
         }
 
         // Validate stock
-        const product = await Product.findById(productId);
+        const product = await Product.findById(productId).populate('offers');
         const user = await User.findById(req.user.id);
 
         let limit = 0;
         let securePrice = 0;
+        let secureMrp = 0;
 
         if (product) {
             limit = product.stock;
@@ -261,11 +302,13 @@ router.patch('/update', authenticateToken, async (req, res) => {
                 const model = product.models.find(m => m._id.toString() === modelId);
                 if (model) {
                     securePrice = model.selling_price_a || model.mrp || securePrice;
+                    secureMrp = model.mrp || secureMrp;
                     if (variationId) {
                         const variant = model.variations.find(v => v._id.toString() === variationId);
                         if (variant) {
                             limit = variant.stock;
                             securePrice = variant.price;
+                            secureMrp = variant.mrp || secureMrp;
                         }
                     } else {
                         limit = model.variations.reduce((acc, v) => acc + (v.stock || 0), 0);
@@ -276,6 +319,7 @@ router.patch('/update', authenticateToken, async (req, res) => {
                 if (variant) {
                     limit = variant.stock;
                     securePrice = variant.price;
+                    secureMrp = variant.mrp || secureMrp;
                 }
             }
 
@@ -296,15 +340,29 @@ router.patch('/update', authenticateToken, async (req, res) => {
                 }
             }
 
+            // Apply Product Offer Discount
+            if (product.offers && product.offers.length > 0) {
+                const bestOffer = product.offers.reduce((prev, current) => {
+                    if (current.isActive === false) return prev;
+                    const p = current.percentage || 0;
+                    return (prev.percentage > p) ? prev : { ...current, percentage: p };
+                }, { percentage: 0 });
+
+                if (bestOffer.percentage > 0) {
+                    securePrice = Math.round(securePrice * (1 - bestOffer.percentage / 100));
+                }
+            }
+
             // Apply Wholesale Discount
             if (user && user.customerType === 'wholesale' && user.wholesaleDiscount > 0) {
                 const discountAmount = (securePrice * user.wholesaleDiscount) / 100;
-                securePrice = Math.round((securePrice - discountAmount) * 100) / 100;
+                securePrice = Math.round(securePrice - discountAmount);
             }
 
             // Only update price if it's NOT a special request item
             if (!cart.items[itemIndex].requestId) {
                 cart.items[itemIndex].price = securePrice;
+                cart.items[itemIndex].mrp = secureMrp;
             }
         }
 
@@ -312,7 +370,7 @@ router.patch('/update', authenticateToken, async (req, res) => {
         await cart.save();
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations offers'
         });
 
         const validItems = cart.items.filter(item => item.product);
@@ -353,7 +411,7 @@ router.delete('/remove', authenticateToken, async (req, res) => {
         await cart.save();
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations offers'
         });
 
         const validItems = cart.items.filter(item => item.product);
@@ -405,10 +463,11 @@ router.post('/sync', authenticateToken, async (req, res) => {
 
         for (const localItem of localCartItems) {
             // Fetch real product to get safe price
-            const product = await Product.findById(localItem.productId);
+            const product = await Product.findById(localItem.productId).populate('offers');
             if (!product || !product.isActive) continue;
 
             let dbPrice = product.selling_price_a || product.mrp;
+            let dbMrp = product.mrp || product.basePrice || dbPrice;
             let variationText = localItem.variationText || '';
             let modelName = localItem.modelName || '';
 
@@ -417,11 +476,13 @@ router.post('/sync', authenticateToken, async (req, res) => {
                 const model = product.models?.find(m => m._id.toString() === localItem.modelId);
                 if (model) {
                     dbPrice = model.selling_price_a || model.mrp || dbPrice;
+                    dbMrp = model.mrp || dbMrp;
                     modelName = model.name;
                     if (localItem.variationId) {
                         const variant = model.variations?.find(v => v._id.toString() === localItem.variationId);
                         if (variant) {
                             dbPrice = variant.price || dbPrice;
+                            dbMrp = variant.mrp || dbMrp;
                             variationText = `${variant.type}: ${variant.value}`;
                         }
                     }
@@ -430,7 +491,21 @@ router.post('/sync', authenticateToken, async (req, res) => {
                 const variant = product.variations?.find(v => v._id.toString() === localItem.variationId);
                 if (variant) {
                     dbPrice = variant.price || dbPrice;
+                    dbMrp = variant.mrp || dbMrp;
                     variationText = `${variant.type}: ${variant.value}`;
+                }
+            }
+
+            // Apply Product Offer Discount
+            if (product.offers && product.offers.length > 0) {
+                const bestOffer = product.offers.reduce((prev, current) => {
+                    if (current.isActive === false) return prev;
+                    const p = current.percentage || 0;
+                    return (prev.percentage > p) ? prev : { ...current, percentage: p };
+                }, { percentage: 0 });
+
+                if (bestOffer.percentage > 0) {
+                    dbPrice = Math.round(dbPrice * (1 - bestOffer.percentage / 100));
                 }
             }
 
@@ -448,11 +523,13 @@ router.post('/sync', authenticateToken, async (req, res) => {
             if (existingItemIndex > -1) {
                 cart.items[existingItemIndex].quantity += localItem.quantity;
                 cart.items[existingItemIndex].price = dbPrice; // Trusted price from DB
+                cart.items[existingItemIndex].mrp = dbMrp;
             } else {
                 cart.items.push({
                     product: localItem.productId,
                     quantity: localItem.quantity,
                     price: dbPrice,
+                    mrp: dbMrp,
                     size: localItem.size,
                     variationId: localItem.variationId,
                     variationText: variationText,
@@ -465,7 +542,7 @@ router.post('/sync', authenticateToken, async (req, res) => {
         await cart.save();
         await cart.populate({
             path: 'items.product',
-            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations'
+            select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations offers'
         });
 
         const validItems = cart.items.filter(item => item.product);

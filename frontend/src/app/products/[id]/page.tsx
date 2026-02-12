@@ -2,7 +2,8 @@ import Link from 'next/link';
 
 import ProductOverview from './ProductOverview';
 import Header from '@/app/components/Header';
-import ProductImage from '@/app/components/ProductImage';
+import ProductImage from '../../components/ProductImage';
+import ProductCard from '../../components/ProductCard';
 import './product-detail.css';
 
 interface Product {
@@ -174,42 +175,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                     <div className="related-products">
                         <h2>RELATED PRODUCTS</h2>
                         <div className="related-grid">
-                            {relatedProducts.map((relatedProduct) => {
-                                const relatedCategoryName = typeof relatedProduct.category === 'object' && relatedProduct.category !== null ? relatedProduct.category.name : String(relatedProduct.category);
-                                return (
-                                    <Link
-                                        key={relatedProduct._id}
-                                        href={`/products/${relatedProduct._id}`}
-                                        className="related-product-card"
-                                    >
-                                        <div className="related-product-image">
-                                            {(relatedProduct.featured_image || (relatedProduct.gallery_images && relatedProduct.gallery_images.length > 0)) ? (
-                                                <ProductImage
-                                                    src={relatedProduct.featured_image || relatedProduct.gallery_images![0]}
-                                                    alt={relatedProduct.title || relatedProduct.name || 'Product'}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                                                />
-                                            ) : (
-                                                <div className="no-image">No Image</div>
-                                            )}
-                                        </div>
-                                        <div className="related-product-info">
-                                            <p className="related-category">{relatedCategoryName}</p>
-                                            <h3 className="related-name">{relatedProduct.title || relatedProduct.name}</h3>
-                                            <div className="related-price">
-                                                {relatedProduct.discountedPrice && relatedProduct.discountedPrice < relatedProduct.basePrice ? (
-                                                    <>
-                                                        <span className="price-original">₹{relatedProduct.basePrice}</span>
-                                                        <span className="price-current">₹{relatedProduct.discountedPrice}</span>
-                                                    </>
-                                                ) : (
-                                                    <span className="price-current">₹{relatedProduct.basePrice}</span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </Link>
-                                )
-                            })}
+                            {relatedProducts.map((relatedProduct) => (
+                                <ProductCard key={relatedProduct._id} product={relatedProduct} />
+                            ))}
                         </div>
                     </div>
                 )}

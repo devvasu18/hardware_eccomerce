@@ -23,7 +23,11 @@ interface Product {
     isOnDemand: boolean;
 }
 
-function ProductGridContent() {
+interface ProductGridContentProps {
+    offerInfo?: any;
+}
+
+function ProductGridContent({ offerInfo }: ProductGridContentProps) {
     const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
@@ -59,12 +63,18 @@ function ProductGridContent() {
                 const prodRes = await api.get(url);
                 const data = prodRes.data.products || prodRes.data;
 
-                setProducts(data.map((p: any) => ({
-                    ...p,
-                    name: p.title || p.name,
-                    basePrice: p.mrp || p.basePrice,
-                    discountedPrice: p.selling_price_a || p.discountedPrice
-                })));
+                setProducts(data.map((p: any) => {
+                    let finalPrice = p.selling_price_a || p.discountedPrice || p.mrp || 0;
+
+                    // Apply offer discount if available
+                    return {
+                        ...p,
+                        name: p.title || p.name,
+                        basePrice: p.mrp || p.basePrice,
+                        discountedPrice: finalPrice, // Just the base price, ProductCard handles discount
+                        offerApplied: !!offerInfo
+                    };
+                }));
             } catch (error) {
                 console.error("Failed to fetch products", error);
             } finally {
@@ -73,7 +83,7 @@ function ProductGridContent() {
         };
 
         fetchData();
-    }, [category, brand, keyword, subcategory, offerSlug]);
+    }, [category, brand, keyword, subcategory, offerSlug, offerInfo]); // Re-run when offerInfo changes
 
     return (
         <div className="container products-content-container py-10">
@@ -136,6 +146,8 @@ export default function FilteredProducts({ config }: { config?: any }) {
                 } catch (error) {
                     console.error('Failed to fetch offer info', error);
                 }
+            } else {
+                setOfferInfo(null);
             }
         };
         fetchOfferInfo();
@@ -164,7 +176,7 @@ export default function FilteredProducts({ config }: { config?: any }) {
             </div>
 
             <Suspense fallback={<div className="p-20 text-center">Loading component...</div>}>
-                <ProductGridContent />
+                <ProductGridContent offerInfo={offerInfo} />
             </Suspense>
         </section>
     );

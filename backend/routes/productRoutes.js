@@ -29,7 +29,8 @@ router.post('/', protect, admin, async (req, res) => {
 router.get('/featured', async (req, res) => {
     try {
         const products = await Product.find({ isVisible: true, isFeatured: true })
-            .populate('category', 'name');
+            .populate('category', 'name')
+            .populate('offers');
         res.json(products);
     } catch (err) {
         res.status(500).json(err);
@@ -40,7 +41,8 @@ router.get('/featured', async (req, res) => {
 router.get('/top-sales', async (req, res) => {
     try {
         const products = await Product.find({ isVisible: true, isTopSale: true })
-            .populate('category', 'name');
+            .populate('category', 'name')
+            .populate('offers');
         res.json(products);
     } catch (err) {
         res.status(500).json(err);
@@ -51,7 +53,8 @@ router.get('/top-sales', async (req, res) => {
 router.get('/daily-offers', async (req, res) => {
     try {
         const products = await Product.find({ isVisible: true, isDailyOffer: true })
-            .populate('category', 'name');
+            .populate('category', 'name')
+            .populate('offers');
         res.json(products);
     } catch (err) {
         res.status(500).json(err);
@@ -75,6 +78,7 @@ router.get('/new-arrivals', async (req, res) => {
 
         let productsQuery = Product.find(query)
             .populate('category', 'name')
+            .populate('offers')
             .sort({ newArrivalPriority: -1, newArrivalCreatedAt: -1, createdAt: -1 });
 
         if (limit > 0) {
@@ -197,7 +201,7 @@ router.get('/', async (req, res) => {
             const Offer = require('../models/Offer');
             const offerDoc = await Offer.findOne({ slug: req.query.offerSlug });
             if (offerDoc) {
-                query.offer = offerDoc._id;
+                query.offers = offerDoc._id;
             } else {
                 // Offer not found, return empty result
                 return res.json(req.query.page ? { products: [], page: Number(page), pages: 0, count: 0 } : []);

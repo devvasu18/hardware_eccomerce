@@ -77,7 +77,7 @@ exports.createOrder = async (req, res) => {
 
         // Optimize: Fetch all products in one query to avoid N+1 reads
         const productIds = items.map(item => item.productId);
-        const products = await Product.find({ _id: { $in: productIds } });
+        const products = await Product.find({ _id: { $in: productIds } }).populate('offers');
         const productMap = new Map(products.map(p => [p._id.toString(), p]));
 
         // Validate all products exist
@@ -97,6 +97,7 @@ exports.createOrder = async (req, res) => {
             if (item.modelId && product.models) {
                 const model = product.models.find(m => m._id.toString() === item.modelId);
                 if (model) {
+
                     if (item.variationId) {
                         const variant = model.variations.find(v => v._id.toString() === item.variationId);
                         if (variant) availableStock = variant.stock;
@@ -200,30 +201,55 @@ exports.createOrder = async (req, res) => {
 
             // 3. Use Database Price & GST
             let price;
+            let mrp;
 
             if (item.modelId && product.models) {
                 const model = product.models.find(m => m._id.toString() === item.modelId);
                 if (model) {
                     price = model.selling_price_a || model.mrp;
+                    mrp = model.mrp || price;
                     if (item.variationId) {
                         const variant = model.variations.find(v => v._id.toString() === item.variationId);
-                        if (variant) price = variant.price;
+                        if (variant) {
+                            price = variant.price;
+                            mrp = variant.mrp || mrp;
+                        }
                     }
                 }
             } else if (item.variationId && product.variations) {
                 const variant = product.variations.find(v => v._id.toString() === item.variationId);
-                if (variant) price = variant.price;
+                if (variant) {
+                    price = variant.price;
+                    mrp = variant.mrp || price;
+                }
             }
 
             if (price === undefined || price === null) {
                 // Fallback to Base Product Price
                 price = product.selling_price_a || product.mrp;
+                mrp = product.mrp || price;
             }
 
-            // Apply Wholesale Discount
+            // 4. Apply Product Offer Discount
+            if (product.offers && Array.isArray(product.offers) && product.offers.length > 0) {
+                // Find best active offer
+                const bestOffer = product.offers.reduce((prev, current) => {
+                    // Check active status if available on offer object, though population usually returns doc.
+                    if (current.isActive === false) return prev;
+                    const p = current.percentage || 0;
+                    return (prev.percentage > p) ? prev : { ...current, percentage: p };
+                }, { percentage: 0 });
+
+                if (bestOffer.percentage > 0) {
+                    const offerDiscountAmount = (price * bestOffer.percentage) / 100;
+                    price = Math.round(price - offerDiscountAmount);
+                }
+            }
+
+            // 5. Apply Wholesale Discount (Stacking)
             if (req.user && req.user.customerType === 'wholesale' && req.user.wholesaleDiscount > 0) {
                 const discountAmount = (price * req.user.wholesaleDiscount) / 100;
-                price = Math.round((price - discountAmount) * 100) / 100; // Ensure 2 decimal places max or rounding
+                price = Math.round(price - discountAmount);
             }
             const gstRate = product.gst_rate || 18; // Default to 18% if not set
 
@@ -239,6 +265,7 @@ exports.createOrder = async (req, res) => {
                 productImage: product.featured_image,
                 quantity: item.quantity,
                 priceAtBooking: price,
+                mrpAtBooking: mrp,
                 size: item.size || null,
                 variationId: item.variationId,
                 variationText: item.variationText,

@@ -216,9 +216,10 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
                     <span className="review-count">17 reviews</span>
                 </div>
 
-                <p className="product-description">
-                    {product.description || "Premium quality industrial hardware component designed for professional use."}
-                </p>
+                <div
+                    className="product-description ck-content"
+                    dangerouslySetInnerHTML={{ __html: product.description || "Premium quality industrial hardware component designed for professional use." }}
+                />
 
                 {/* Pricing & Action Area */}
                 {/* We pass handleVariationSelect to update the image when variant changes */}

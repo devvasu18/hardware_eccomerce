@@ -30,6 +30,7 @@ async function advancedSearch(keyword, queryOptions = {}) {
         .sort({ score: { $meta: "textScore" } })
         .populate('category', 'name')
         .populate('brand', 'name')
+        .populate('offers', 'title percentage')
         .limit(limit)
         .skip(skip);
 
@@ -60,6 +61,7 @@ async function advancedSearch(keyword, queryOptions = {}) {
         })
             .populate('category', 'name')
             .populate('brand', 'name')
+            .populate('offers', 'title percentage')
             .limit(limit - searchResults.length);
 
         searchResults = [...searchResults, ...fuzzyResults];
@@ -77,6 +79,7 @@ async function advancedSearch(keyword, queryOptions = {}) {
         searchResults = await Product.find({ isVisible: true, isFeatured: true })
             .populate('category', 'name')
             .populate('brand', 'name')
+            .populate('offers', 'title percentage')
             .limit(4);
     }
 
@@ -108,7 +111,8 @@ async function getRecommendations(productId, limit = 4) {
         })
             .limit(limit)
             .populate('category', 'name')
-            .populate('brand', 'name');
+            .populate('brand', 'name')
+            .populate('offers', 'title percentage');
 
         return recommended;
     } catch (error) {

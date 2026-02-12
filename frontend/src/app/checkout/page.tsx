@@ -29,6 +29,8 @@ export default function CheckoutPage() {
 
     // Calculate totals only for Available items
     const cartTotal = useMemo(() => availableItems.reduce((acc, item) => acc + (item.price * item.quantity), 0), [availableItems]);
+    const mrpTotal = useMemo(() => availableItems.reduce((acc, item) => acc + ((item.mrp || item.price) * item.quantity), 0), [availableItems]);
+    const totalSavings = mrpTotal - cartTotal;
     const taxAmount = useMemo(() => availableItems.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0), [availableItems]);
     const grandTotal = Math.round(cartTotal + taxAmount);
 
@@ -696,7 +698,19 @@ export default function CheckoutPage() {
                         {availableItems.length > 0 ? (
                             <>
                                 <div className="summary-row">
-                                    <span>Subtotal</span>
+                                    <span>Subtotal (MRP)</span>
+                                    <span style={{ textDecoration: totalSavings > 0 ? 'line-through' : 'none', color: totalSavings > 0 ? '#666' : 'inherit' }}>₹{mrpTotal}</span>
+                                </div>
+
+                                {totalSavings > 0 && (
+                                    <div className="summary-row text-success" style={{ fontWeight: 600, color: '#2e7d32' }}>
+                                        <span>Total Savings</span>
+                                        <span>-₹{totalSavings}</span>
+                                    </div>
+                                )}
+
+                                <div className="summary-row" style={{ marginTop: '0.25rem' }}>
+                                    <span>Selling Price</span>
                                     <span>₹{cartTotal}</span>
                                 </div>
 

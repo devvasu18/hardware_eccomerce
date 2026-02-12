@@ -189,9 +189,32 @@
 }
 
 .product-description {
-    font-size: 1rem;
-    line-height: 1.8;
-    color: #475569;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #526071;
+    margin: 0.5rem 0 1rem;
+}
+
+.product-description p {
+    margin-bottom: 0.75rem;
+}
+
+.product-description p:last-child {
+    margin-bottom: 0;
+}
+
+.product-description ul,
+.product-description ol {
+    margin-left: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.product-description li {
+    margin-bottom: 0.25rem;
+}
+
+.ck-content {
+    font-family: inherit;
 }
 
 /* Size Guide */
@@ -663,6 +686,75 @@
 }
 
 /* Add to Cart Button */
+/* Model Selector Styles */
+.models-selector-section {
+    margin-bottom: 2rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.model-options {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.model-btn {
+    padding: 0.75rem 1.5rem;
+    height: auto;
+    min-width: 120px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    color: #475569;
+    cursor: pointer;
+}
+
+.model-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    background: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.model-btn.active {
+    font-weight: 700;
+    border: 2px solid var(--primary);
+    background: #fff;
+    color: var(--secondary);
+    box-shadow: 0 4px 12px rgba(243, 112, 33, 0.1);
+}
+
+/* Offer Banner Styles */
+.offer-banner {
+    margin-bottom: 1.5rem;
+    display: flex;
+}
+
+.offer-tag {
+    background-color: #fff;
+    color: var(--success);
+    border: 1px solid var(--success);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.1);
+}
+
+.offer-tag::before {
+    content: '🏷️';
+    font-size: 1rem;
+}
+
 .btn-add-to-cart {
     width: 100%;
     padding: 1.25rem;
@@ -682,7 +774,88 @@
     background: #D65D16;
     transform: translateY(-2px);
     box-shadow: 0 8px 16px rgba(243, 112, 33, 0.3);
-}/* ========================================
+}
+
+/* Variation Buttons */
+.variation-btn {
+    min-width: 60px;
+    height: 40px;
+    padding: 0 1rem;
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #64748B;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.variation-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-1px);
+}
+
+.variation-btn.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(243, 112, 33, 0.2);
+}
+
+/* Color Swatch Specifics */
+.color-variation {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    border-radius: 50%;
+    background-color: var(--variation-color);
+    text-indent: -9999px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #e2e8f0;
+}
+
+.color-variation:hover {
+    transform: scale(1.1);
+}
+
+.color-variation.active {
+    box-shadow: 0 0 0 2px var(--primary);
+    background-color: var(--variation-color);
+}
+
+/* Rich Text Content */
+.ck-content {
+    line-height: 1.6;
+    color: #526071;
+}
+
+.ck-content p {
+    margin-bottom: 1rem;
+}
+
+.ck-content ul,
+.ck-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.ck-content li {
+    margin-bottom: 0.5rem;
+}
+
+.ck-content h1,
+.ck-content h2,
+.ck-content h3 {
+    margin: 1.5rem 0 1rem;
+    color: var(--secondary);
+}
+
+/* ========================================
    📱 PRODUCT DETAIL PAGE - RESPONSIVE
    Mobile-First Design
    ======================================== */
@@ -770,14 +943,7 @@
         font-size: 1rem;
     }
 
-    /* Add to cart button */
-    .btn-add-to-cart {
-        padding: 1rem;
-        font-size: 0.95rem;
-        letter-spacing: 0.5px;
-    }
-
-    /* Tabs */
+    /* Full Screen Zoom Modal */
     .tabs-header {
         overflow-x: auto;
         scrollbar-width: none;

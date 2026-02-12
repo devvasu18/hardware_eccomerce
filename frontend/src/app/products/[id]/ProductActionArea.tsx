@@ -336,14 +336,22 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
     // Discount Logic
     let finalPrice = basePrice;
 
-    // Offers
+    // 1. Apply Product Offer Discount
     const offers = product.offers || [];
-    const bestOffer = offers.reduce((prev, current) => (prev.percentage > current.percentage) ? prev : current, { percentage: 0, title: '' });
+    const bestOffer = offers.reduce((prev, current) => {
+        if (!current || typeof current !== 'object') return prev;
+        const p = current.percentage || 0;
+        return (prev.percentage > p) ? prev : { ...current, percentage: p };
+    }, { percentage: 0, title: '' });
+    const offerDiscount = bestOffer.percentage || 0;
+    if (offerDiscount > 0) {
+        finalPrice = Math.round(basePrice * (1 - offerDiscount / 100));
+    }
 
-    if (user?.wholesaleDiscount && user.wholesaleDiscount > 0) {
-        finalPrice = Math.round(basePrice * (1 - user.wholesaleDiscount / 100));
-    } else if (bestOffer.percentage > 0) {
-        finalPrice = Math.round(basePrice * (1 - bestOffer.percentage / 100));
+    // 2. Apply Wholesale Discount (Stacking)
+    const wholesaleDiscount = user?.wholesaleDiscount || 0;
+    if (wholesaleDiscount > 0) {
+        finalPrice = Math.round(finalPrice * (1 - wholesaleDiscount / 100));
     }
 
     // Calculate Effective MRP for Display
@@ -422,25 +430,14 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             <div className="product-action-section">
                 {/* Model Selector */}
                 {hasModels && (
-                    <div className="variations-container" style={{ marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid #f1f5f9' }}>
-                        <label className="section-label" style={{ display: 'block', marginBottom: '10px', color: '#1a1a1a', fontWeight: 700 }}>CHOOSE MODEL</label>
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <div className="models-selector-section">
+                        <label className="section-label">CHOOSE MODEL</label>
+                        <div className="model-options">
                             {product.models?.map(m => (
                                 <button
                                     key={m._id}
-                                    className={`size-btn ${selectedModel?._id === m._id ? 'active' : ''}`}
+                                    className={`model-btn ${selectedModel?._id === m._id ? 'active' : ''}`}
                                     onClick={() => handleModelSelect(m)}
-                                    style={{
-                                        padding: '8px 20px',
-                                        height: 'auto',
-                                        minWidth: '100px',
-                                        fontSize: '0.9rem',
-                                        fontWeight: selectedModel?._id === m._id ? 700 : 400,
-                                        border: selectedModel?._id === m._id ? '2px solid var(--primary)' : '1px solid #e2e8f0',
-                                        background: selectedModel?._id === m._id ? '#fff' : '#f8fafc',
-                                        borderRadius: '8px',
-                                        transition: 'all 0.2s'
-                                    }}
                                 >
                                     {m.name}
                                 </button>
@@ -470,9 +467,9 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
 
 
                 {/* Offer Badge Display */}
-                {bestOffer.percentage > 0 && !user?.wholesaleDiscount && (
-                    <div className="offer-badge-section" style={{ marginTop: '0.5rem', marginBottom: '1rem' }}>
-                        <span className="badge-offer" style={{ backgroundColor: '#fff', color: 'var(--success)', border: '1px solid var(--success)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 600 }}>
+                {bestOffer.percentage > 0 && (
+                    <div className="offer-banner">
+                        <span className="offer-tag">
                             {bestOffer.title} ({bestOffer.percentage}% OFF Applied)
                         </span>
                     </div>
@@ -488,15 +485,9 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                                     {variants.map(v => (
                                         <button
                                             key={v._id}
-                                            className={`size-btn ${currentVariation?._id === v._id ? 'active' : ''}`}
+                                            className={`variation-btn ${currentVariation?._id === v._id ? 'active' : ''} ${type.toLowerCase()}-variation`}
                                             onClick={() => handleSelect(type, v.value)}
-                                            style={type === 'Color' ? {
-                                                backgroundColor: v.value.toLowerCase(), // Simple color assumption
-                                                color: ['white', 'black'].includes(v.value.toLowerCase()) ? 'gray' : 'transparent',
-                                                border: currentVariation?._id === v._id ? '2px solid black' : '1px solid #ddd',
-                                                width: '30px', height: '30px', borderRadius: '50%',
-                                                textIndent: '-9999px', overflow: 'hidden'
-                                            } : {}}
+                                            style={type === 'Color' ? { '--variation-color': v.value.toLowerCase() } as React.CSSProperties : {}}
                                             title={`${v.value} - ₹${v.price}`}
                                         >
                                             {v.value}

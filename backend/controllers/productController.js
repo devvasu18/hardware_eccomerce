@@ -1,12 +1,17 @@
 const Product = require('../models/Product');
 const Brand = require('../models/Brand');
 const Category = require('../models/Category');
+const SubCategory = require('../models/SubCategory');
+const HSNCode = require('../models/HSNCode');
 const fs = require('fs');
 const csv = require('csv-parser');
 const { deleteFile } = require('../utils/fileHandler');
 const { logAction } = require('../utils/auditLogger');
 const { Parser } = require('json2csv');
 const ExcelJS = require('exceljs');
+const tallyService = require('../services/tallyService');
+const { generateStockItemXML } = require('../utils/tallyStockItemGenerator');
+const SystemSettings = require('../models/SystemSettings');
 
 // @desc    Get all products (Admin)
 // @route   GET /api/admin/products
@@ -52,6 +57,8 @@ exports.getAdminProducts = async (req, res) => {
                 { title: searchRegex },
                 { slug: searchRegex },
                 { part_number: searchRegex },
+                { 'variations.sku': searchRegex },
+                { 'models.variations.sku': searchRegex },
                 { brand: { $in: brandIds } },
                 { category: { $in: categoryIds } }
             ];
@@ -547,16 +554,54 @@ exports.bulkImportProducts = async (req, res) => {
 
                         const productData = {
                             title: row.title,
-                            slug: row.slug || row.title.toLowerCase().split(' ').join('-'),
+                            slug: row.slug || row.title.toLowerCase().split(' ').join('-').replace(/[^a-z0-9-]/g, ''),
                             subtitle: row.subtitle,
                             part_number: row.part_number,
                             mrp: Number(row.mrp),
+                            basePrice: Number(row.mrp),
                             selling_price_a: Number(row.selling_price_a || row.mrp),
+                            discountedPrice: Number(row.selling_price_a || row.mrp),
+                            selling_price_b: row.selling_price_b ? Number(row.selling_price_b) : undefined,
+                            selling_price_c: row.selling_price_c ? Number(row.selling_price_c) : undefined,
+                            opening_stock: Number(row.stock || 0),
                             stock: Number(row.stock || 0),
                             description: row.description,
+                            deliveryTime: row.delivery_time || '3-5 business days',
+                            returnWindow: row.return_window ? Number(row.return_window) : 7,
+                            meta_title: row.meta_title,
+                            meta_description: row.meta_description,
+                            keywords: row.keywords ? row.keywords.split(',').map(k => k.trim()) : undefined,
                             isActive: true,
                             isVisible: true
                         };
+
+                        // Handle Images
+                        const images = [];
+                        if (row.featured_image_url) {
+                            productData.featured_image = row.featured_image_url;
+                            images.push({ url: row.featured_image_url, isMain: true });
+                        }
+
+                        if (row.gallery_image_urls) {
+                            const gallery = row.gallery_image_urls.split(',').map(u => u.trim()).filter(Boolean);
+                            productData.gallery_images = gallery;
+                            gallery.forEach(url => {
+                                images.push({ url, isMain: false });
+                            });
+                        }
+
+                        if (images.length > 0) productData.images = images;
+
+                        if (row.gst_rate) productData.gst_rate = Number(row.gst_rate);
+
+                        // Look up HSN Code
+                        if (row.hsn_code) {
+                            const hsn = await HSNCode.findOne({ hsn_code: row.hsn_code });
+                            if (hsn) {
+                                productData.hsn_code = hsn._id;
+                                if (!productData.gst_rate) productData.gst_rate = hsn.gst_rate;
+                            }
+                        }
 
                         // Look up Category and Brand if names are provided
                         if (row.category_name) {
@@ -569,15 +614,44 @@ exports.bulkImportProducts = async (req, res) => {
                             if (brand) productData.brand = brand._id;
                         }
 
+                        // Look up SubCategories (comma separated)
+                        if (row.sub_category_names) {
+                            const subCatNames = row.sub_category_names.split(',').map(s => s.trim()).filter(Boolean);
+                            const subCats = await SubCategory.find({ name: { $in: subCatNames.map(name => new RegExp(`^${name}$`, 'i')) } });
+                            if (subCats.length > 0) productData.sub_category = subCats.map(sc => sc._id);
+                        }
+
+                        let savedProduct;
                         if (product) {
                             // Update existing
                             Object.assign(product, productData);
-                            await product.save();
+                            savedProduct = await product.save();
                         } else {
                             // Create new
+                            if (!productData.category) {
+                                errors.push({ row: i + 1, message: 'Category not found or invalid' });
+                                continue;
+                            }
                             const newProduct = new Product(productData);
-                            await newProduct.save();
+                            savedProduct = await newProduct.save();
                         }
+
+                        // Sync to Tally if enabled
+                        try {
+                            const settings = await SystemSettings.findById('system_settings');
+                            if (settings && settings.tallyIntegrationEnabled) {
+                                await tallyService.syncWithHealthCheck({
+                                    xmlData: generateStockItemXML(savedProduct),
+                                    type: 'Product',
+                                    relatedId: savedProduct._id,
+                                    relatedModel: 'Product'
+                                });
+                            }
+                        } catch (tallyErr) {
+                            console.error(`Tally Sync Failed for product ${savedProduct.title}:`, tallyErr.message);
+                            // We don't fail the import because Tally sync failed, it's just a background task
+                        }
+
                         successCount++;
                     } catch (err) {
                         errors.push({ row: i + 1, message: err.message });
@@ -587,7 +661,7 @@ exports.bulkImportProducts = async (req, res) => {
                 // Cleanup file
                 deleteFile(file.path);
 
-                await logAction({ action: 'BULK_IMPORT_PRODUCTS', req, details: { count: successCount, errorCount: errors.length } });
+                await logAction({ action: 'BULK_IMPORT_PRODUCTS', req, details: { count: successCount, error_count: errors.length } });
 
                 res.json({
                     success: true,
@@ -629,6 +703,8 @@ exports.exportProducts = async (req, res) => {
                 { title: searchRegex },
                 { slug: searchRegex },
                 { part_number: searchRegex },
+                { 'variations.sku': searchRegex },
+                { 'models.variations.sku': searchRegex },
                 { brand: { $in: brandIds } },
                 { category: { $in: categoryIds } }
             ];
@@ -690,5 +766,52 @@ exports.exportProducts = async (req, res) => {
     } catch (error) {
         console.error('Export products error:', error);
         res.status(500).json({ message: 'Failed to export products', error: error.message });
+    }
+};
+
+// @desc    Download Bulk Import Sample CSV
+// @route   GET /api/admin/products/import-sample
+// @access  Admin
+exports.getImportSample = async (req, res) => {
+    try {
+        const headers = [
+            'title', 'mrp', 'selling_price_a', 'selling_price_b', 'selling_price_c',
+            'stock', 'part_number', 'category_name', 'sub_category_names', 'brand_name',
+            'hsn_code', 'gst_rate', 'delivery_time', 'return_window', 'featured_image_url',
+            'gallery_image_urls', 'meta_title', 'meta_description', 'keywords', 'description'
+        ];
+
+        const data = [
+            {
+                title: 'Sample Tool',
+                mrp: 1000,
+                selling_price_a: 850,
+                selling_price_b: 800,
+                selling_price_c: 750,
+                stock: 50,
+                part_number: 'T001',
+                category_name: 'Power Tools',
+                sub_category_names: 'Drills, Handheld',
+                brand_name: 'Bosch',
+                hsn_code: '8467',
+                gst_rate: 18,
+                delivery_time: '3-5 Days',
+                return_window: 7,
+                featured_image_url: 'https://placehold.co/600x400',
+                gallery_image_urls: 'https://placehold.co/600x400,https://placehold.co/600x400',
+                meta_title: 'Best Drill',
+                meta_description: 'High quality drill for pros',
+                keywords: 'tool, drill, bosch',
+                description: 'A high quality power tool'
+            }
+        ];
+
+        const json2csvParser = new Parser({ fields: headers });
+        const csv = json2csvParser.parse(data);
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', 'attachment; filename=product_import_sample.csv');
+        res.status(200).send(csv);
+    } catch (error) {
+        res.status(500).json({ message: 'Failed to generate sample', error: error.message });
     }
 };

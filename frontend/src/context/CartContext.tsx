@@ -7,6 +7,7 @@ export interface CartItem {
     productId: string;
     name: string;
     price: number;
+    mrp?: number;
     quantity: number;
     image?: string;
     size?: string; // Legacy
@@ -151,6 +152,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                                         gst_rate?: number;
                                         models?: any[];
                                         variations?: any[];
+                                        offers?: any[];
                                     }
 
                                     const productsMap = new Map<string, ProductData>((Array.isArray(data) ? data : data.products || []).map((p: ProductData) => [p._id, p]));
@@ -160,10 +162,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
                                         const product = productsMap.get(item.productId);
                                         if (!product) return item; // Keep as is if fetch fails
 
+                                        let basePrice = product.discountedPrice || product.basePrice || product.mrp || 0;
+
+                                        if (item.modelId && product.models) {
+                                            const model = product.models.find((m: any) => m._id === item.modelId || m._id === item.modelId?.toString());
+                                            if (model) {
+                                                basePrice = model.selling_price_a || model.mrp || basePrice;
+                                                if (item.variationId && model.variations) {
+                                                    const variant = model.variations.find((v: any) => v._id === item.variationId || v._id === item.variationId?.toString());
+                                                    if (variant) basePrice = variant.price;
+                                                }
+                                            }
+                                        } else if (item.variationId && product.variations) {
+                                            const variant = product.variations.find((v: any) => v._id === item.variationId || v._id === item.variationId?.toString());
+                                            if (variant) basePrice = variant.price;
+                                        }
+
+                                        let price = basePrice;
+
+                                        // Apply Offer Discount (Guest)
+                                        if (product.offers && Array.isArray(product.offers) && product.offers.length > 0) {
+                                            const bestOffer = product.offers.reduce((prev: any, current: any) => {
+                                                const p = current.percentage || 0;
+                                                return (prev.percentage > p) ? prev : { ...current, percentage: p };
+                                            }, { percentage: 0 });
+                                            if (bestOffer.percentage > 0) {
+                                                price = Math.round(price * (1 - bestOffer.percentage / 100));
+                                            }
+                                        }
+
                                         return {
                                             ...item,
                                             name: product.title,
-                                            price: product.discountedPrice || product.basePrice || product.mrp || 0,
+                                            price: price,
+                                            mrp: basePrice,
                                             image: product.featured_image || product.gallery_images?.[0] || '',
                                             // Calculate dynamic IsOnDemand based on stock
                                             isOnDemand: resolveIsOnDemand(product, item),
@@ -214,6 +246,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         productId: typeof item.product === 'object' ? item.product._id : item.product,
                         name: item.variationText ? `${item.product?.title} (${item.variationText})` : (item.product?.title || 'Unknown Product'),
                         price: item.price,
+                        mrp: item.mrp || item.price,
                         quantity: item.quantity,
                         image: item.resolvedImage || item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
@@ -269,6 +302,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                         productId: typeof item.product === 'object' ? item.product._id : item.product,
                         name: item.product?.title || 'Unknown Product',
                         price: item.price,
+                        mrp: item.mrp || item.price,
                         quantity: item.quantity,
                         image: item.product?.featured_image || item.product?.gallery_images?.[0] || '',
                         size: item.size,
