@@ -249,8 +249,8 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
     try {
-        const { name, slug, description, displayOrder, showInNav } = req.body;
-        const image = req.file ? req.file.path.replace(/\\/g, '/') : null;
+        const { name, slug, description, displayOrder, showInNav, imageUrl } = req.body;
+        const finalImageUrl = req.file ? req.file.path.replace(/\\/g, '/') : imageUrl;
 
         if (showInNav) {
             const count = await Category.countDocuments({ showInNav: true });
@@ -259,19 +259,37 @@ exports.createCategory = async (req, res) => {
             }
         }
 
-        const category = await Category.create({ name, slug, description, displayOrder, image, showInNav });
+        const category = await Category.create({
+            name,
+            slug,
+            description,
+            displayOrder,
+            imageUrl: finalImageUrl,
+            showInNav: showInNav === 'true' || showInNav === true
+        });
         await logAction({ action: 'CREATE_CATEGORY', req, targetResource: 'Category', targetId: category._id, details: { name, slug, displayOrder, showInNav } });
         res.status(201).json(category);
-    } catch (error) { res.status(400).json({ error: error.message }); }
+    } catch (error) {
+        if (req.file) deleteFile(req.file.path);
+        res.status(400).json({ error: error.message });
+    }
 };
 
 exports.updateCategory = async (req, res) => {
     try {
-        const { name, slug, description, displayOrder, showInNav, isActive } = req.body;
-        const updateData = { name, slug, description, displayOrder, showInNav, isActive };
+        const { name, slug, description, displayOrder, showInNav, isActive, imageUrl } = req.body;
+        const updateData = {
+            name,
+            slug,
+            description,
+            displayOrder,
+            showInNav: showInNav === 'true' || showInNav === true,
+            isActive: isActive === 'true' || isActive === true,
+            imageUrl
+        };
 
-        // Handle showInNav check (handling both boolean and string "true" from multipart)
-        const isShowInNav = showInNav === true || showInNav === 'true';
+        // Handle showInNav check
+        const isShowInNav = updateData.showInNav;
 
         if (isShowInNav) {
             const count = await Category.countDocuments({ showInNav: true, _id: { $ne: req.params.id } });
@@ -282,11 +300,11 @@ exports.updateCategory = async (req, res) => {
 
         // Handle Image Update
         if (req.file) {
-            updateData.image = req.file.path.replace(/\\/g, '/');
+            updateData.imageUrl = req.file.path.replace(/\\/g, '/');
             // Delete old image
             const oldCategory = await Category.findById(req.params.id);
-            if (oldCategory && oldCategory.image) {
-                deleteFile(oldCategory.image);
+            if (oldCategory && oldCategory.imageUrl) {
+                deleteFile(oldCategory.imageUrl);
             }
         }
 
@@ -300,7 +318,10 @@ exports.updateCategory = async (req, res) => {
 
         await logAction({ action: 'UPDATE_CATEGORY', req, targetResource: 'Category', targetId: category._id, details: { name, slug } });
         res.json(category);
-    } catch (error) { res.status(400).json({ error: error.message }); }
+    } catch (error) {
+        if (req.file) deleteFile(req.file.path);
+        res.status(400).json({ error: error.message });
+    }
 };
 
 exports.deleteCategory = async (req, res) => {
@@ -311,7 +332,9 @@ exports.deleteCategory = async (req, res) => {
         // Cascading Delete
         // 1. Delete SubCategories
         const subCats = await SubCategory.find({ category_id: category._id });
-        subCats.forEach(sc => deleteFile(sc.image));
+        subCats.forEach(sc => {
+            if (sc.image) deleteFile(sc.image);
+        });
         await SubCategory.deleteMany({ category_id: category._id });
 
         // 2. Delete/Archive Products (Safety Guard)
@@ -324,16 +347,18 @@ exports.deleteCategory = async (req, res) => {
 
         const products = await Product.find({ category: category._id });
         for (const prod of products) {
-            deleteFile(prod.featured_image);
-            deleteFile(prod.featured_image_2);
+            if (prod.featured_image) deleteFile(prod.featured_image);
+            if (prod.featured_image_2) deleteFile(prod.featured_image_2);
             // Delete gallery images too if they exist
             if (prod.gallery_images && Array.isArray(prod.gallery_images)) {
-                prod.gallery_images.forEach(img => deleteFile(img));
+                prod.gallery_images.forEach(img => {
+                    if (img) deleteFile(img);
+                });
             }
             await prod.deleteOne();
         }
 
-        deleteFile(category.image);
+        if (category.imageUrl) deleteFile(category.imageUrl);
         await category.deleteOne();
 
         // Audit Log

@@ -26,7 +26,7 @@ export default function PartyMaster() {
 
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
-    const { register, handleSubmit, reset, setValue } = useForm<Party>();
+    const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<Party>();
 
     useEffect(() => {
         fetchParties();
@@ -171,7 +171,20 @@ export default function PartyMaster() {
                         </div>
                         <div className="form-group">
                             <label className="form-label">Phone No</label>
-                            <input {...register("phone_no")} className="form-input" placeholder="+91 98765 43210" style={{ width: '100%', padding: '0.5rem' }} />
+                            <input
+                                {...register("phone_no", {
+                                    pattern: {
+                                        value: /^[0-9]{10}$/,
+                                        message: "Please enter a valid 10-digit number"
+                                    },
+                                    minLength: { value: 10, message: "Must be exactly 10 digits" },
+                                    maxLength: { value: 10, message: "Must be exactly 10 digits" }
+                                })}
+                                className="form-input"
+                                placeholder="9876543210"
+                                style={{ width: '100%', padding: '0.5rem' }}
+                            />
+                            {errors.phone_no && <span style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.25rem', display: 'block' }}>{errors.phone_no.message}</span>}
                         </div>
                         <div className="form-group">
                             <label className="form-label">Email</label>

@@ -45,6 +45,7 @@ export default function SpecialDealsManager() {
     });
     const [editId, setEditId] = useState<string | null>(null);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+    const [productSearch, setProductSearch] = useState('');
 
     const { modalState, hideModal, showSuccess, showError, showModal } = useModal();
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
@@ -127,6 +128,7 @@ export default function SpecialDealsManager() {
 
     const handleCloseForm = () => {
         setIsFormModalOpen(false);
+        setProductSearch('');
         resetForm();
     };
 
@@ -342,6 +344,24 @@ export default function SpecialDealsManager() {
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>
                             Select Product {products.length > 0 && `(${products.length} products)`}
                         </label>
+                        <input
+                            type="text"
+                            placeholder="🔍 Search product by name..."
+                            value={productSearch}
+                            onChange={(e) => setProductSearch(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                marginBottom: '0.5rem',
+                                borderRadius: '6px',
+                                border: '1px solid #cbd5e1',
+                                fontSize: '0.95rem',
+                                outline: 'none',
+                                transition: 'border-color 0.2s'
+                            }}
+                            onFocus={(e) => e.target.style.borderColor = '#F37021'}
+                            onBlur={(e) => e.target.style.borderColor = '#cbd5e1'}
+                        />
                         <select
                             className="input"
                             required
@@ -353,9 +373,20 @@ export default function SpecialDealsManager() {
                             <option value="">
                                 {loading ? '⏳ Loading products...' : products.length === 0 ? '⚠️ No products found' : '-- Select Product --'}
                             </option>
-                            {products.map(p => (
-                                <option key={p._id} value={p._id}>{p.name || p.title || 'Unnamed Product'}</option>
-                            ))}
+                            {products
+                                .filter(p => (p.name || p.title || '').toLowerCase().includes(productSearch.toLowerCase()))
+                                .map(p => (
+                                    <option key={p._id} value={p._id}>{p.name || p.title || 'Unnamed Product'}</option>
+                                ))
+                            }
+                            {/* Keep selected product in list even if filtered out */}
+                            {formData.productId && !products
+                                .filter(p => (p.name || p.title || '').toLowerCase().includes(productSearch.toLowerCase()))
+                                .find(p => p._id === formData.productId) && (
+                                    <option key={formData.productId} value={formData.productId}>
+                                        {products.find(p => p._id === formData.productId)?.name || products.find(p => p._id === formData.productId)?.title || 'Selected Product'}
+                                    </option>
+                                )}
                         </select>
                     </div>
 

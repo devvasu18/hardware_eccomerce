@@ -16,6 +16,7 @@ interface Coupon {
     discount_value: number;
     usage_count: number;
     status: boolean;
+    expiry_date?: string;
 }
 
 export default function CouponList() {
@@ -119,6 +120,11 @@ export default function CouponList() {
                                     {item.discount_type === 'Percentage' ? `${item.discount_value}% OFF` : `₹${item.discount_value} OFF`}
                                 </span>
                             ),
+                            sortable: true
+                        },
+                        {
+                            header: 'Expiry Date',
+                            accessor: (item) => item.expiry_date ? new Date(item.expiry_date).toLocaleDateString() : 'No Expiry',
                             sortable: true
                         },
                         { header: 'Description', accessor: 'description', sortable: false },

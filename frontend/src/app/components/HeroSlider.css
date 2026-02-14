@@ -62,6 +62,9 @@
     height: 100%;
     display: flex;
     align-items: center;
+    padding-bottom: 5rem;
+    /* Ensure space for dots at the bottom */
+    box-sizing: border-box;
     z-index: 2;
 }
 
@@ -220,20 +223,24 @@
 
 .hero-dots {
     position: absolute;
-    bottom: 3rem;
+    bottom: 2rem;
+    /* Moved slightly lower */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     gap: 0.75rem;
-    z-index: 10;
+    z-index: 20;
+    /* Increased to ensure it's always on top */
 }
 
 .hero-dot {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    background: transparent;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    /* Increased visibility */
+    background: rgba(0, 0, 0, 0.2);
+    /* Added subtle background */
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }

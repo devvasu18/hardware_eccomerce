@@ -115,8 +115,14 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <div style={{ width: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
                         <span>Total Taxable Amount:</span>
-                        <span>₹{order.totalAmount - order.taxTotal}</span>
+                        <span>₹{order.totalAmount - order.taxTotal + (order.discountAmount || 0)}</span>
                     </div>
+                    {order.discountAmount > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', color: '#B91C1C' }}>
+                            <span>Coupon Discount ({order.couponCode}):</span>
+                            <span>-₹{order.discountAmount}</span>
+                        </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
                         <span>Total Tax (GST):</span>
                         <span>₹{order.taxTotal}</span>

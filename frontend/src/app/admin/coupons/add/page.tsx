@@ -20,7 +20,9 @@ export default function AddCouponPage() {
             min_cart_value: 0,
             usage_limit: 0,
             status: true,
-            statusBool: "true" // For radio group
+            statusBool: "true", // For radio group
+            expiry_date: '',
+            image: null
         }
     });
 
@@ -39,6 +41,9 @@ export default function AddCouponPage() {
         formData.append('min_cart_value', data.min_cart_value?.toString() || '0');
         formData.append('usage_limit', data.usage_limit?.toString() || '0');
         formData.append('status', data.statusBool); // Backend handles string 'true'/'false'
+        if (data.expiry_date) {
+            formData.append('expiry_date', data.expiry_date);
+        }
 
         try {
             await api.post('/coupons', formData, {
@@ -55,6 +60,17 @@ export default function AddCouponPage() {
 
     return (
         <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
             <h1 className="page-title">Create New Coupon</h1>
 
             <form onSubmit={handleSubmit(onSubmit)} style={{ maxWidth: '800px' }}>
@@ -73,7 +89,7 @@ export default function AddCouponPage() {
                                     setValue('code', e.target.value.toUpperCase());
                                 }}
                             />
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Uppercase letters and numbers only.</p>
+                            <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Uppercase letters and numbers only.</p>
                         </div>
 
                         <div className="form-group">
@@ -81,8 +97,13 @@ export default function AddCouponPage() {
                             <input {...register("description", { required: true })} className="form-input" placeholder="e.g. Get 50% off on all items" />
                         </div>
 
+                        <div className="form-group">
+                            <label className="form-label">Coupon Banner Image (Optional)</label>
+                            <input type="file" {...register("image")} className="form-input" accept="image/*" />
+                        </div>
+
                         {/* Discount Logic */}
-                        <div style={{ gridColumn: '1 / -1', background: '#F8FAFC', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                        <div style={{ gridColumn: '1 / -1', background: '#F8FAFC', padding: '1.5rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                             <label className="form-label" style={{ marginBottom: '1rem', display: 'block' }}>Discount Type</label>
                             <div style={{ display: 'flex', gap: '2rem', marginBottom: '1.5rem' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
@@ -127,6 +148,12 @@ export default function AddCouponPage() {
                                     <input type="radio" value="false" {...register("statusBool")} /> Inactive
                                 </label>
                             </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Expiry Date</label>
+                            <input type="date" {...register("expiry_date")} className="form-input" />
+                            <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Leave blank for no expiry.</p>
                         </div>
 
                     </div>

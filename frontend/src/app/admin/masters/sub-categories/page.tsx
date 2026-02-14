@@ -32,6 +32,7 @@ export default function SubCategoryMaster() {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
+    const [categorySearch, setCategorySearch] = useState('');
 
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
@@ -127,6 +128,7 @@ export default function SubCategoryMaster() {
     const handleCloseModal = () => {
         setIsModalOpen(false);
         setEditingId(null);
+        setCategorySearch('');
         reset();
         setImage(null);
         setPreviewImage(null);
@@ -291,13 +293,38 @@ export default function SubCategoryMaster() {
                     <div className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <div className="form-group">
                             <label className="form-label">Parent Category</label>
+                            <input
+                                type="text"
+                                placeholder="🔍 Search category..."
+                                value={categorySearch}
+                                onChange={(e) => setCategorySearch(e.target.value)}
+                                style={{
+                                    width: '100%',
+                                    padding: '0.5rem',
+                                    marginBottom: '0.5rem',
+                                    borderRadius: '4px',
+                                    border: '1px solid #cbd5e1',
+                                    fontSize: '0.875rem'
+                                }}
+                            />
                             <select
                                 {...register("category_id", { required: "Category is required" })}
                                 className="form-select"
                                 style={{ width: '100%', padding: '0.5rem' }}
                             >
                                 <option value="">-- Select Category --</option>
-                                {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                {categories
+                                    .filter(c => c.name.toLowerCase().includes(categorySearch.toLowerCase()))
+                                    .map(c => <option key={c._id} value={c._id}>{c.name}</option>)
+                                }
+                                {/* Ensure selected category is always visible */}
+                                {watch('category_id') && !categories
+                                    .filter(c => c.name.toLowerCase().includes(categorySearch.toLowerCase()))
+                                    .find(c => c._id === watch('category_id')) && (
+                                        <option key={watch('category_id')} value={watch('category_id')}>
+                                            {categories.find(c => c._id === watch('category_id'))?.name || 'Selected Category'}
+                                        </option>
+                                    )}
                             </select>
                             {errors.category_id && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.category_id.message}</span>}
                         </div>

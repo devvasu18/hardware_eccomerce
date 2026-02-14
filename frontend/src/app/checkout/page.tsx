@@ -32,7 +32,6 @@ export default function CheckoutPage() {
     const mrpTotal = useMemo(() => availableItems.reduce((acc, item) => acc + ((item.mrp || item.price) * item.quantity), 0), [availableItems]);
     const totalSavings = mrpTotal - cartTotal;
     const taxAmount = useMemo(() => availableItems.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0), [availableItems]);
-    const grandTotal = Math.round(cartTotal + taxAmount);
 
     // Guest customer details
     const [guestName, setGuestName] = useState('');
@@ -109,6 +108,13 @@ export default function CheckoutPage() {
     const [paymentSettings, setPaymentSettings] = useState({ onlinePaymentEnabled: true, codEnabled: false });
     const [loading, setLoading] = useState(false);
 
+    // Coupon State
+    const [couponInput, setCouponInput] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+    const [couponDiscount, setCouponDiscount] = useState(0);
+
+    const grandTotal = Math.round(cartTotal + taxAmount - couponDiscount);
+
     const { modalState, hideModal, showError, showWarning, showSuccess } = useModal();
 
     useEffect(() => {
@@ -147,6 +153,38 @@ export default function CheckoutPage() {
             router.push('/cart');
         }
     }, [items, router, orderPlaced, cartLoading]);
+
+    const handleApplyCoupon = async () => {
+        if (!couponInput.trim()) return;
+
+        try {
+            const res = await fetch('http://localhost:5000/api/coupons/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: couponInput, cartTotal })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                setAppliedCoupon(data.coupon);
+                setCouponDiscount(data.discountAmount);
+                showSuccess(`Coupon "${data.coupon.code}" applied! You saved ₹${data.discountAmount}.`);
+            } else {
+                showError(data.message || 'Invalid coupon code');
+                setAppliedCoupon(null);
+                setCouponDiscount(0);
+            }
+        } catch (e) {
+            console.error(e);
+            showError('Failed to validate coupon');
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null);
+        setCouponDiscount(0);
+        setCouponInput('');
+    };
 
 
     if (items.length === 0 && !orderPlaced) {
@@ -281,7 +319,8 @@ export default function CheckoutPage() {
                     shippingAddress: finalAddressString,
                     billingAddress: finalAddressString,
                     paymentMethod,
-                    guestCustomer: customerContact
+                    guestCustomer: customerContact,
+                    couponCode: appliedCoupon?.code
                 };
 
                 const resOrder = await fetch('http://localhost:5000/api/orders/create', {
@@ -730,6 +769,35 @@ export default function CheckoutPage() {
                                     <div className="tax-row mb-1">
                                         <span>IGST (Total)</span>
                                         <span>₹{Math.round(taxAmount)}</span>
+                                    </div>
+                                )}
+
+                                {/* Coupon Section */}
+                                <div className="summary-divider"></div>
+                                {!appliedCoupon ? (
+                                    <div className="coupon-apply-box">
+                                        <input
+                                            type="text"
+                                            value={couponInput}
+                                            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                            placeholder="ENTER COUPON CODE"
+                                            className="coupon-input"
+                                        />
+                                        <button onClick={handleApplyCoupon} className="coupon-apply-btn">Apply</button>
+                                    </div>
+                                ) : (
+                                    <div className="applied-coupon-box">
+                                        <div className="flex justify-between items-center w-full">
+                                            <div>
+                                                <div className="coupon-code-badge">{appliedCoupon.code}</div>
+                                                <div className="coupon-desc-text">{appliedCoupon.description}</div>
+                                            </div>
+                                            <button onClick={handleRemoveCoupon} className="coupon-remove-btn">Remove</button>
+                                        </div>
+                                        <div className="summary-row text-success mt-2" style={{ fontWeight: 600 }}>
+                                            <span>Coupon Discount</span>
+                                            <span>-₹{couponDiscount}</span>
+                                        </div>
                                     </div>
                                 )}
 

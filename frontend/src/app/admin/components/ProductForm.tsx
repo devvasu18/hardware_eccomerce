@@ -4,9 +4,9 @@ import { useForm, useWatch, useFieldArray, SubmitHandler, Controller } from "rea
 import RichTextEditor from "../../components/RichTextEditor";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import api from "../../utils/api";
-import { FiSave, FiUploadCloud, FiX, FiArrowLeft, FiPlus, FiTrash2, FiBox, FiImage, FiCheckCircle, FiEdit2 } from "react-icons/fi";
+import { FiSave, FiUploadCloud, FiX, FiArrowLeft, FiPlus, FiTrash2, FiBox, FiImage, FiCheckCircle, FiEdit2, FiChevronDown } from "react-icons/fi";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import FormModal from "../../components/FormModal";
@@ -264,6 +264,21 @@ interface ProductImage {
 export default function ProductForm({ productId }: ProductFormProps) {
     const router = useRouter();
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
+
+    // Applied Offers Dropdown State
+    const [isOfferDropdownOpen, setIsOfferDropdownOpen] = useState(false);
+    const offerDropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (offerDropdownRef.current && !offerDropdownRef.current.contains(event.target as Node)) {
+                setIsOfferDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // New Image System State
     const [productImages, setProductImages] = useState<ProductImage[]>([]);
@@ -1304,7 +1319,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                     </div>
 
                     {/* Classification */}
-                    <div className="card">
+                    <div className="card" style={{ overflow: 'visible' }}>
                         <div className="card-header">Classification</div>
                         <div className="form-group" style={{ marginBottom: '1rem' }}>
                             <label className="form-label">Category *</label>
@@ -1330,25 +1345,142 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         </div>
                         <div className="form-group">
                             <label className="form-label">Applied Offers</label>
-                            <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid #ddd', padding: '0.5rem', borderRadius: '4px' }}>
-                                {offers.map(o => (
-                                    <label key={o._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem', cursor: 'pointer' }}>
-                                        <input
-                                            type="checkbox"
-                                            value={o._id}
-                                            checked={watch('offers')?.includes(o._id) || false}
-                                            onChange={(e) => {
-                                                const currentOffers = watch('offers') || [];
-                                                if (e.target.checked) {
-                                                    setValue('offers', [...currentOffers, o._id]);
-                                                } else {
-                                                    setValue('offers', currentOffers.filter((id: string) => id !== o._id));
-                                                }
-                                            }}
-                                        />
-                                        <span>{o.title} ({o.percentage}%)</span>
-                                    </label>
-                                ))}
+                            <div className="custom-multiselect" ref={offerDropdownRef} style={{ position: 'relative' }}>
+                                <div
+                                    className="form-select"
+                                    style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        cursor: 'pointer',
+                                        minHeight: '42px',
+                                        height: 'auto',
+                                        padding: '0.4rem 0.75rem',
+                                        backgroundColor: '#fff',
+                                        border: isOfferDropdownOpen ? '1px solid var(--primary)' : '1px solid #ddd',
+                                        boxShadow: isOfferDropdownOpen ? '0 0 0 3px rgba(243, 112, 33, 0.1)' : 'none'
+                                    }}
+                                    onClick={() => setIsOfferDropdownOpen(!isOfferDropdownOpen)}
+                                >
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', flex: 1 }}>
+                                        {(watch('offers') || []).length === 0 ? (
+                                            <span style={{ color: '#94A3B8', fontSize: '0.9rem' }}>Select Offers</span>
+                                        ) : (
+                                            <>
+                                                {offers.filter(o => (watch('offers') || []).includes(o._id)).slice(0, 3).map(o => (
+                                                    <span key={o._id} style={{
+                                                        background: 'rgba(243, 112, 33, 0.1)',
+                                                        color: '#F37021',
+                                                        padding: '2px 8px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '0.75rem',
+                                                        fontWeight: 600,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px',
+                                                        border: '1px solid rgba(243, 112, 33, 0.2)'
+                                                    }}>
+                                                        {o.title}
+                                                        <FiX
+                                                            size={12}
+                                                            style={{ cursor: 'pointer' }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const currentOffers = watch('offers') || [];
+                                                                setValue('offers', currentOffers.filter((id: string) => id !== o._id));
+                                                            }}
+                                                        />
+                                                    </span>
+                                                ))}
+                                                {(watch('offers') || []).length > 3 && (
+                                                    <span style={{ fontSize: '0.8rem', color: '#64748B', alignSelf: 'center', fontWeight: 500 }}>
+                                                        +{(watch('offers') || []).length - 3} more
+                                                    </span>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+                                    <FiChevronDown style={{
+                                        color: '#64748B',
+                                        transform: isOfferDropdownOpen ? 'rotate(180deg)' : 'none',
+                                        transition: 'transform 0.2s',
+                                        marginLeft: '0.5rem'
+                                    }} />
+                                </div>
+
+                                {isOfferDropdownOpen && (
+                                    <div style={{
+                                        position: 'absolute',
+                                        top: 'calc(100% + 5px)',
+                                        left: 0,
+                                        right: 0,
+                                        zIndex: 1000,
+                                        background: 'white',
+                                        border: '1px solid #E2E8F0',
+                                        borderRadius: '12px',
+                                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                        maxHeight: '250px',
+                                        overflowY: 'auto',
+                                        padding: '0.5rem'
+                                    }}>
+                                        {offers.length === 0 ? (
+                                            <div style={{ padding: '1rem', textAlign: 'center', color: '#94A3B8', fontSize: '0.875rem' }}>No offers available</div>
+                                        ) : (
+                                            offers.map(o => {
+                                                const isChecked = (watch('offers') || []).includes(o._id);
+                                                return (
+                                                    <label key={o._id} style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '0.75rem',
+                                                        padding: '0.6rem 0.75rem',
+                                                        cursor: 'pointer',
+                                                        borderRadius: '8px',
+                                                        transition: 'all 0.2s',
+                                                        backgroundColor: isChecked ? '#FFF7ED' : 'transparent',
+                                                        marginBottom: '2px'
+                                                    }}
+                                                        onMouseEnter={(e) => !isChecked && (e.currentTarget.style.backgroundColor = '#F8FAFC')}
+                                                        onMouseLeave={(e) => !isChecked && (e.currentTarget.style.backgroundColor = 'transparent')}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            value={o._id}
+                                                            checked={isChecked}
+                                                            onChange={(e) => {
+                                                                const currentOffers = watch('offers') || [];
+                                                                if (e.target.checked) {
+                                                                    setValue('offers', [...currentOffers, o._id]);
+                                                                } else {
+                                                                    setValue('offers', currentOffers.filter((id: string) => id !== o._id));
+                                                                }
+                                                            }}
+                                                            style={{
+                                                                display: 'none'
+                                                            }}
+                                                        />
+                                                        {isChecked ? (
+                                                            <FiCheckCircle size={18} style={{ color: '#F37021', flexShrink: 0 }} />
+                                                        ) : (
+                                                            <div style={{
+                                                                width: '18px',
+                                                                height: '18px',
+                                                                borderRadius: '50%',
+                                                                border: '2px solid #E2E8F0',
+                                                                flexShrink: 0,
+                                                                backgroundColor: '#fff'
+                                                            }} />
+                                                        )}
+                                                        <div style={{ display: 'flex', flexDirection: 'column', userSelect: 'none' }}>
+                                                            <span style={{ fontSize: '0.875rem', fontWeight: isChecked ? 600 : 500, color: isChecked ? '#9A3412' : '#1E293B' }}>{o.title}</span>
+                                                            <span style={{ fontSize: '0.75rem', color: isChecked ? '#C2410C' : '#64748B' }}>{o.percentage}% Discount</span>
+                                                        </div>
+                                                    </label>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </div>

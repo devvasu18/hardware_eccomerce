@@ -33,6 +33,8 @@ interface Order {
     _id: string;
     totalAmount: number;
     taxTotal: number;
+    discountAmount?: number;
+    couponCode?: string;
     status: string;
     createdAt: string;
     items: any[];
@@ -841,7 +843,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                             <div style={{ marginBottom: '1.5rem' }}>
                                 {(() => {
                                     const mrpTotal = order.items.reduce((acc: number, item: any) => acc + ((item.mrpAtBooking || item.priceAtBooking) * item.quantity), 0);
-                                    const sellingTotal = order.totalAmount - order.taxTotal;
+                                    const sellingTotal = order.totalAmount - order.taxTotal + (order.discountAmount || 0);
                                     const totalSavings = mrpTotal - sellingTotal;
 
                                     return (
@@ -883,6 +885,20 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                     ₹{sellingTotal.toLocaleString('en-IN')}
                                                 </span>
                                             </div>
+
+                                            {order.discountAmount > 0 && (
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    marginBottom: '0.75rem',
+                                                    fontSize: '0.95rem',
+                                                    color: '#F37021',
+                                                    fontWeight: 600
+                                                }}>
+                                                    <span>Coupon Discount ({order.couponCode})</span>
+                                                    <span>-₹{order.discountAmount.toLocaleString('en-IN')}</span>
+                                                </div>
+                                            )}
                                         </>
                                     );
                                 })()}

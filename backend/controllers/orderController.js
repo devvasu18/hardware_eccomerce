@@ -2,6 +2,7 @@ const Order = require('../models/Order');
 const StatusLog = require('../models/StatusLog');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Coupon = require('../models/Coupon');
 const tallyService = require('../services/tallyService');
 const { logAction } = require('../utils/auditLogger');
 const { checkLowStockAlert } = require('../utils/inventoryNotifications');
@@ -13,7 +14,7 @@ const { checkLowStockAlert } = require('../utils/inventoryNotifications');
 // @access  Public (supports both authenticated and guest users)
 exports.createOrder = async (req, res) => {
     try {
-        const { items, shippingAddress, billingAddress, paymentMethod, guestCustomer } = req.body;
+        const { items, shippingAddress, billingAddress, paymentMethod, guestCustomer, couponCode } = req.body;
 
 
         // Validation
@@ -290,7 +291,35 @@ exports.createOrder = async (req, res) => {
             orderItems.push(orderItem);
         }
 
-        const grandTotal = Math.round(orderTotal + totalTax);
+        const grandTotalPreDiscount = Math.round(orderTotal + totalTax);
+        let finalGrandTotal = grandTotalPreDiscount;
+        let appliedDiscountAmount = 0;
+        let couponDoc = null;
+
+        // Apply Coupon if present
+        if (couponCode) {
+            const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), status: true });
+            if (coupon) {
+                // Validate coupon again securely
+                const meetsMinCart = orderTotal >= coupon.min_cart_value;
+                const withinLimit = coupon.usage_limit === 0 || coupon.usage_count < coupon.usage_limit;
+
+                if (meetsMinCart && withinLimit) {
+                    couponDoc = coupon;
+                    if (coupon.discount_type === 'Percentage') {
+                        appliedDiscountAmount = Math.round((orderTotal * coupon.discount_value) / 100);
+                        if (coupon.max_discount_amount > 0 && appliedDiscountAmount > coupon.max_discount_amount) {
+                            appliedDiscountAmount = coupon.max_discount_amount;
+                        }
+                    } else {
+                        appliedDiscountAmount = coupon.discount_value;
+                    }
+
+                    if (appliedDiscountAmount > orderTotal) appliedDiscountAmount = orderTotal;
+                    finalGrandTotal = grandTotalPreDiscount - appliedDiscountAmount;
+                }
+            }
+        }
 
         // Generate Invoice Number
         // Format: INV-YYYYMMDD-SEQUENCE (Using timestamp for uniqueness + sequence fallback if needed, or just random/timestamp for MVP)
@@ -318,8 +347,11 @@ exports.createOrder = async (req, res) => {
             paymentMethod: paymentMethod || 'Online',
             paymentStatus: paymentMethod === 'COD' ? 'COD' : 'Pending',
             status: 'Order Placed',  // Changed from 'Pending' to 'Order Placed' to match enum
-            totalAmount: grandTotal,  // Changed from 'total' to 'totalAmount'
+            totalAmount: finalGrandTotal,  // Changed from 'total' to 'totalAmount'
             taxTotal: Math.round(totalTax),      // Changed from 'tax' to 'taxTotal'
+            discountAmount: appliedDiscountAmount,
+            coupon: couponDoc ? couponDoc._id : null,
+            couponCode: couponDoc ? couponDoc.code : null,
             isGuestOrder: false       // Will be set to true for guest orders
         };
 
@@ -374,6 +406,11 @@ exports.createOrder = async (req, res) => {
                 } catch (scErr) {
                     console.error('Failed to update sales count:', scErr);
                 }
+            }
+
+            // Increment Coupon Usage
+            if (couponDoc) {
+                await Coupon.findByIdAndUpdate(couponDoc._id, { $inc: { usage_count: 1 } });
             }
 
             // --- Update Request Status logic ---

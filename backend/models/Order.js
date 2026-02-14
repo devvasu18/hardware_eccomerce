@@ -47,6 +47,9 @@ const orderSchema = new mongoose.Schema({
     }],
     totalAmount: { type: Number, required: true },
     taxTotal: { type: Number },
+    discountAmount: { type: Number, default: 0 },
+    coupon: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
+    couponCode: { type: String },
 
     // Invoicing
     invoiceNumber: { type: String, unique: true, sparse: true },

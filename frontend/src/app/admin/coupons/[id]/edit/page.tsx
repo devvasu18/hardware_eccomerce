@@ -21,7 +21,9 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
             max_discount_amount: 0,
             min_cart_value: 0,
             usage_limit: 0,
-            statusBool: "true"
+            statusBool: "true",
+            expiry_date: '',
+            image: null
         }
     });
 
@@ -37,10 +39,8 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
 
     const fetchCoupon = async (id: string) => {
         try {
-            // My route getCoupons returns ALL. I don't have getById.
-            // I'll just fetch all and find it. Not efficient but works for now as per my controller.
-            const res = await api.get('/coupons');
-            const found = res.data.find((c: any) => c._id === id);
+            const res = await api.get(`/coupons/${id}`);
+            const found = res.data;
 
             if (found) {
                 reset({
@@ -51,11 +51,13 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
                     max_discount_amount: found.max_discount_amount,
                     min_cart_value: found.min_cart_value,
                     usage_limit: found.usage_limit,
-                    statusBool: found.status ? "true" : "false"
+                    statusBool: found.status ? "true" : "false",
+                    expiry_date: found.expiry_date ? found.expiry_date.split('T')[0] : ''
                 });
             }
         } catch (error) {
             console.error('Failed to load coupon', error);
+            showError('Could not load coupon details');
         }
     };
 
@@ -69,6 +71,11 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
         formData.append('min_cart_value', data.min_cart_value?.toString() || '0');
         formData.append('usage_limit', data.usage_limit?.toString() || '0');
         formData.append('status', data.statusBool); // Backend handles string 'true'/'false'
+        if (data.expiry_date) {
+            formData.append('expiry_date', data.expiry_date);
+        } else {
+            formData.append('expiry_date', ''); // Explicitly clear if empty
+        }
 
         // Add image if selected (assuming input type="file" is added later or handled)
         if (data.image && data.image[0]) {
@@ -125,6 +132,11 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
                             <input {...register("description", { required: true })} className="form-input" />
                         </div>
 
+                        <div className="form-group">
+                            <label className="form-label">Update Banner Image (Optional)</label>
+                            <input type="file" {...register("image")} className="form-input" accept="image/*" />
+                        </div>
+
                         {/* Discount Logic */}
                         <div style={{ gridColumn: '1 / -1', background: '#F8FAFC', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
                             <label className="form-label" style={{ marginBottom: '1rem', display: 'block' }}>Discount Type</label>
@@ -171,6 +183,12 @@ export default function EditCouponPage({ params }: { params: Promise<{ id: strin
                                     <input type="radio" value="false" {...register("statusBool")} /> Inactive
                                 </label>
                             </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Expiry Date</label>
+                            <input type="date" {...register("expiry_date")} className="form-input" />
+                            <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Leave blank for no expiry.</p>
                         </div>
 
                     </div>

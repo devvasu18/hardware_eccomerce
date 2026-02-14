@@ -3,6 +3,7 @@ const router = express.Router();
 const Category = require('../models/Category');
 const Product = require('../models/Product');
 const { protect, admin } = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware');
 
 // Get all active categories (for homepage)
 router.get('/', async (req, res) => {
@@ -62,8 +63,12 @@ router.get('/:slug/subcategories', async (req, res) => {
 });
 
 // Admin: Create category
-router.post('/', protect, admin, async (req, res) => {
+router.post('/', protect, admin, upload.single('image'), async (req, res) => {
     try {
+        if (req.file) {
+            req.body.imageUrl = req.file.path;
+        }
+
         const category = new Category(req.body);
         const newCategory = await category.save();
         res.status(201).json(newCategory);
@@ -73,8 +78,20 @@ router.post('/', protect, admin, async (req, res) => {
 });
 
 // Admin: Update category
-router.put('/:id', protect, admin, async (req, res) => {
+router.put('/:id', protect, admin, upload.single('image'), async (req, res) => {
     try {
+        if (req.file) {
+            req.body.imageUrl = req.file.path;
+        }
+
+        if (req.body.showInNav === 'true' || req.body.showInNav === true) {
+            // Handle boolean conversion if coming from multipart form-data (often strings)
+            req.body.showInNav = true;
+        }
+        if (req.body.showInNav === 'false' || req.body.showInNav === false) {
+            req.body.showInNav = false;
+        }
+
         if (req.body.showInNav === true) {
             const count = await Category.countDocuments({ showInNav: true, _id: { $ne: req.params.id } });
             if (count >= 10) {

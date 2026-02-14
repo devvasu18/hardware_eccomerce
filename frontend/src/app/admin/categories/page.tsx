@@ -38,6 +38,8 @@ export default function CategoryManager() {
     const [editId, setEditId] = useState<string | null>(null);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [filePreview, setFilePreview] = useState<string | null>(null);
 
     const { modalState, hideModal, showSuccess, showError, showModal } = useModal();
     // Removed direct token usage as api utility handles it
@@ -82,6 +84,7 @@ export default function CategoryManager() {
             showInNav: category.showInNav
         });
         setEditId(category._id);
+        setFilePreview(category.imageUrl ? (category.imageUrl.startsWith('http') ? category.imageUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/${category.imageUrl}`) : null);
         setIsFormModalOpen(true);
     };
 
@@ -97,11 +100,25 @@ export default function CategoryManager() {
             showInNav: false
         });
         setEditId(null);
+        setSelectedFile(null);
+        setFilePreview(null);
     };
 
     const handleCloseFormModal = () => {
         setIsFormModalOpen(false);
         resetForm();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFilePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,11 +130,23 @@ export default function CategoryManager() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            const data = new FormData();
+            Object.entries(formData).forEach(([key, value]) => {
+                data.append(key, value.toString());
+            });
+            if (selectedFile) {
+                data.append('image', selectedFile);
+            }
+
             if (editId) {
-                await api.put(`/admin/categories/${editId}`, formData);
+                await api.put(`/admin/categories/${editId}`, data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 showSuccess('Category updated successfully!');
             } else {
-                await api.post('/admin/categories', formData);
+                await api.post('/admin/categories', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 showSuccess('Category created successfully!');
             }
 
@@ -283,7 +312,13 @@ export default function CategoryManager() {
                                     justifyContent: 'center',
                                     overflow: 'hidden'
                                 }}>
-                                    {item.imageUrl && <img src={item.imageUrl} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                    {item.imageUrl && (
+                                        <img
+                                            src={item.imageUrl.startsWith('http') ? item.imageUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/${item.imageUrl}`}
+                                            alt={item.name}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    )}
                                 </div>
                             ),
                             sortable: false
@@ -371,16 +406,63 @@ export default function CategoryManager() {
                             style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontFamily: 'inherit', fontSize: '1rem' }}
                         />
                     </div>
-                    <div className="form-group">
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Image URL</label>
-                        <input
-                            className="input"
-                            required
-                            value={formData.imageUrl}
-                            onChange={e => setFormData({ ...formData, imageUrl: e.target.value })}
-                            placeholder="https://..."
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
-                        />
+                    <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Category Image</label>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
+                            <div style={{ flex: 1 }}>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleFileChange}
+                                    style={{ display: 'none' }}
+                                    id="category-image-upload"
+                                />
+                                <label
+                                    htmlFor="category-image-upload"
+                                    style={{
+                                        display: 'block',
+                                        padding: '0.75rem',
+                                        borderRadius: '6px',
+                                        border: '2px dashed #cbd5e1',
+                                        textAlign: 'center',
+                                        cursor: 'pointer',
+                                        color: '#64748b',
+                                        transition: 'all 0.2s'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.borderColor = '#94a3b8';
+                                        e.currentTarget.style.background = '#f8fafc';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.borderColor = '#cbd5e1';
+                                        e.currentTarget.style.background = 'transparent';
+                                    }}
+                                >
+                                    {selectedFile ? selectedFile.name : 'Click to upload image'}
+                                </label>
+                                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#64748b' }}>
+                                    Or provide an external URL:
+                                </div>
+                                <input
+                                    className="input"
+                                    value={formData.imageUrl}
+                                    onChange={e => {
+                                        setFormData({ ...formData, imageUrl: e.target.value });
+                                        if (e.target.value) {
+                                            setFilePreview(e.target.value);
+                                            setSelectedFile(null);
+                                        }
+                                    }}
+                                    placeholder="https://..."
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', marginTop: '0.25rem' }}
+                                />
+                            </div>
+                            {filePreview && (
+                                <div style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+                                    <img src={filePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <div className="form-group">
                         <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Display Order</label>
