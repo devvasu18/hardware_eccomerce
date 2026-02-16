@@ -44,15 +44,15 @@ const componentMap: Record<string, React.ComponentType<any>> = {
     'IMAGE_BANNER': ImageBanner
 };
 
+// Replaced ugly skeleton with invisible placeholder for smoother transition
 const SectionPlaceholder = () => (
-    <div className="w-full h-64 bg-gray-50 flex items-center justify-center animate-pulse border-y border-gray-100 my-4">
-        <div className="w-20 h-20 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
-    </div>
+    <div className="w-full h-96 bg-transparent animate-pulse" />
 );
 
 const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: any[], pageSlug?: string }) => {
     const [layout, setLayout] = useState<any[]>(previewLayout || []);
     const [loading, setLoading] = useState(!previewLayout);
+    const [hasError, setHasError] = useState(false);
     const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
 
     useEffect(() => {
@@ -61,10 +61,14 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
             try {
                 // Fetch specific page layout
                 const response = await fetch(`http://localhost:5000/api/home-layout?page=${pageSlug}`);
+                if (!response.ok) throw new Error('Failed to fetch');
                 const data = await response.json();
                 setLayout(data);
+                // Artificial delay to show off the loader if it was too fast, or ensure smooth transition
+                await new Promise(resolve => setTimeout(resolve, 800));
             } catch (error) {
                 console.error('Error fetching layout:', error);
+                setHasError(true);
             } finally {
                 setLoading(false);
             }
@@ -97,9 +101,34 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
             <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Header />
                 <Loader />
-                <div className="flex-grow">
-                    {/* Placeholder content to maintain layout structure while loading */}
-                    <div className="w-full h-96 bg-gray-50/50 animate-pulse"></div>
+                <div className="flex-grow"></div>
+                <Footer />
+            </main>
+        );
+    }
+
+    if (hasError) {
+        return (
+            <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+                <Header />
+                <Loader status="error" text="SERVER UNREACHABLE" />
+                <div className="flex-grow"></div>
+                <Footer />
+            </main>
+        );
+    }
+
+    // Handle empty layout (connected but no content)
+    if (layout.length === 0) {
+        // Optionally show a "Maintenance" or just keep the loader
+        return (
+            <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+                <Header />
+                <div className="flex-grow flex items-center justify-center min-h-[50vh]">
+                    <div className="text-center">
+                        <h2 className="text-2xl font-bold text-gray-400">Under Maintenance</h2>
+                        <p className="text-gray-500 mt-2">We are upgrading our system. Please check back soon.</p>
+                    </div>
                 </div>
                 <Footer />
             </main>

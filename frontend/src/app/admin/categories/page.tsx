@@ -132,11 +132,20 @@ export default function CategoryManager() {
         e.preventDefault();
         try {
             const data = new FormData();
+            // Append all form data except imageUrl (handle separately)
             Object.entries(formData).forEach(([key, value]) => {
-                data.append(key, value.toString());
+                if (key !== 'imageUrl') {
+                    data.append(key, value.toString());
+                }
             });
+
+            // Handle image: either file upload or URL
             if (selectedFile) {
                 data.append('image', selectedFile);
+                // Don't send imageUrl when uploading a file
+            } else if (formData.imageUrl) {
+                // Only send imageUrl if it has a value and no file is selected
+                data.append('imageUrl', formData.imageUrl);
             }
 
             if (editId) {

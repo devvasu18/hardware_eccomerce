@@ -158,13 +158,13 @@ export default function FilteredProducts({ config }: { config?: any }) {
             {/* dynamic hero based on filter */}
             <div className="products-hero py-16 bg-slate-50 border-b border-gray-100">
                 <div className="container">
-                    <h1 className="text-4xl font-extrabold text-slate-900 mb-4">
+                    <h3 className="text-4xl font-extrabold text-slate-900 mb-4">
                         {offerInfo ? (
                             <>
                                 {offerInfo.title} <span className="text-orange-600">({offerInfo.percentage}% OFF)</span>
                             </>
                         ) : keyword ? `Search Results: "${keyword}"` : (brand ? `Brand: ${brand}` : (category ? `Category: ${category}` : (config?.title || 'Industrial Catalog')))}
-                    </h1>
+                    </h3>
                     <p className="text-lg text-slate-500 max-w-2xl">
                         {offerInfo
                             ? `Discover all products eligible for our exclusive ${offerInfo.title} promotion. Save ${offerInfo.percentage}% on these premium items!`

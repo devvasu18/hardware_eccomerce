@@ -8,6 +8,7 @@ const categorySchema = new mongoose.Schema({
     displayOrder: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     showInNav: { type: Boolean, default: false },
+    gradient: { type: String, default: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
 }, { timestamps: true });
 
 // Cascade delete middleware would go here typically, but user requested "system MUST warn the user". 

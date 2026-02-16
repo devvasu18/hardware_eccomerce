@@ -23,6 +23,8 @@ const Header = () => {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const [categories, setCategories] = useState<{ _id: string, name: string, slug: string, showInNav: boolean }[]>([]);
+    const [subCategories, setSubCategories] = useState<Record<string, { _id: string, name: string, slug: string }[]>>({});
+    const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -92,20 +94,37 @@ const Header = () => {
     }, [searchTerm]);
 
     useEffect(() => {
-        const fetchCategories = async () => {
+        const fetchAllNavData = async () => {
             try {
+                // Fetch categories
                 const res = await fetch('http://localhost:5000/api/categories');
-                if (res.ok) {
-                    const data = await res.json();
-                    // Filter by showInNav and take max 10
-                    const navCategories = data.filter((cat: any) => cat.showInNav).slice(0, 10);
-                    setCategories(navCategories);
-                }
+                if (!res.ok) throw new Error('Failed to fetch categories');
+
+                const data = await res.json();
+                const navCategories = data.filter((cat: any) => cat.showInNav).slice(0, 10);
+
+                // Fetch sub-categories in parallel
+                const subCatMap: Record<string, any[]> = {};
+                await Promise.all(navCategories.map(async (cat: any) => {
+                    try {
+                        const subRes = await fetch(`http://localhost:5000/api/categories/${cat.slug}/subcategories`);
+                        if (subRes.ok) {
+                            subCatMap[cat._id] = await subRes.json();
+                        }
+                    } catch (err) {
+                        console.error(`Error fetching sub-categories for ${cat.slug}:`, err);
+                    }
+                }));
+
+                // Update both states
+                setCategories(navCategories);
+                setSubCategories(subCatMap);
+                console.log('Final Navigation Data Loaded:', { categories: navCategories, subCategories: subCatMap });
             } catch (error) {
-                console.error('Failed to load menu categories', error);
+                console.error('Failed to load navigation data:', error);
             }
         };
-        fetchCategories();
+        fetchAllNavData();
     }, []);
 
     useEffect(() => {
@@ -343,15 +362,55 @@ const Header = () => {
             <div className="header-nav-bar">
                 <div className="nav-links-container">
                     {categories.length > 0 ? (
-                        categories.map((category) => (
-                            <Link
-                                key={category._id}
-                                href={`/products?category=${category.slug}`}
-                                className="nav-link"
-                            >
-                                {category.name}
-                            </Link>
-                        ))
+                        categories.map((category) => {
+                            const hasSubCategories = subCategories[category._id]?.length > 0;
+                            return (
+                                <div
+                                    key={String(category._id)}
+                                    className="nav-link-wrapper"
+                                    onMouseEnter={() => {
+                                        if (hasSubCategories) {
+                                            setHoveredCategory(String(category._id));
+                                        }
+                                    }}
+                                    onMouseLeave={() => {
+                                        setHoveredCategory(null);
+                                    }}
+                                >
+                                    <Link
+                                        href={`/products?category=${category.slug}`}
+                                        className="nav-link"
+                                        onMouseEnter={() => {
+                                            if (hasSubCategories) setHoveredCategory(String(category._id));
+                                        }}
+                                    >
+                                        {category.name}
+                                        {hasSubCategories && (
+                                            <span className="nav-link-arrow">▼</span>
+                                        )}
+                                    </Link>
+
+                                    {/* Sub-category Dropdown */}
+                                    {hasSubCategories && hoveredCategory === String(category._id) && (
+                                        <div className="subcategory-dropdown">
+                                            <div className="subcategory-grid">
+                                                {subCategories[category._id].map((subCat: any) => (
+                                                    <Link
+                                                        key={String(subCat._id)}
+                                                        href={`/products?category=${category.slug}&subcategory=${subCat.slug}`}
+                                                        className="subcategory-item"
+                                                        onClick={() => setHoveredCategory(null)}
+                                                    >
+                                                        <span className="subcategory-icon">→</span>
+                                                        {subCat.name}
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })
                     ) : (
                         <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Loading categories...</span>
                     )}

@@ -249,8 +249,12 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
     try {
-        const { name, slug, description, displayOrder, showInNav, imageUrl } = req.body;
+        const { name, slug, description, displayOrder, showInNav, imageUrl, gradient } = req.body;
         const finalImageUrl = req.file ? req.file.path.replace(/\\/g, '/') : imageUrl;
+
+        console.log('Create Category - File:', req.file ? 'Present' : 'None');
+        console.log('Create Category - imageUrl from body:', imageUrl);
+        console.log('Create Category - finalImageUrl:', finalImageUrl);
 
         if (showInNav) {
             const count = await Category.countDocuments({ showInNav: true });
@@ -265,7 +269,8 @@ exports.createCategory = async (req, res) => {
             description,
             displayOrder,
             imageUrl: finalImageUrl,
-            showInNav: showInNav === 'true' || showInNav === true
+            showInNav: showInNav === 'true' || showInNav === true,
+            gradient
         });
         await logAction({ action: 'CREATE_CATEGORY', req, targetResource: 'Category', targetId: category._id, details: { name, slug, displayOrder, showInNav } });
         res.status(201).json(category);
@@ -278,7 +283,11 @@ exports.createCategory = async (req, res) => {
 
 exports.updateCategory = async (req, res) => {
     try {
-        const { name, slug, description, displayOrder, showInNav, isActive, imageUrl } = req.body;
+        const { name, slug, description, displayOrder, showInNav, isActive, imageUrl, gradient } = req.body;
+
+        console.log('Update Category - File:', req.file ? 'Present' : 'None');
+        console.log('Update Category - imageUrl from body:', imageUrl);
+
         const updateData = {
             name,
             slug,
@@ -286,7 +295,7 @@ exports.updateCategory = async (req, res) => {
             displayOrder,
             showInNav: showInNav === 'true' || showInNav === true,
             isActive: isActive === 'true' || isActive === true,
-            imageUrl
+            gradient
         };
 
         // Handle showInNav check
@@ -301,13 +310,22 @@ exports.updateCategory = async (req, res) => {
 
         // Handle Image Update
         if (req.file) {
+            // File upload takes precedence
             updateData.imageUrl = req.file.path.replace(/\\/g, '/');
+            console.log('Update Category - Using uploaded file:', updateData.imageUrl);
             // Delete old image
             const oldCategory = await Category.findById(req.params.id);
             if (oldCategory && oldCategory.imageUrl) {
                 deleteFile(oldCategory.imageUrl);
             }
+        } else if (imageUrl !== undefined && imageUrl !== '') {
+            // Only update imageUrl if a valid URL is provided
+            updateData.imageUrl = imageUrl;
+            console.log('Update Category - Using URL:', updateData.imageUrl);
+        } else {
+            console.log('Update Category - Keeping existing image');
         }
+        // If neither file nor URL provided, keep existing imageUrl (don't update it)
 
         const category = await Category.findByIdAndUpdate(
             req.params.id,
@@ -321,8 +339,16 @@ exports.updateCategory = async (req, res) => {
         res.json(category);
     } catch (error) {
         console.error('Update Category Error:', error);
+        console.error('Error stack:', error.stack);
         if (req.file) deleteFile(req.file.path);
-        res.status(400).json({ message: error.message });
+
+        // Provide more detailed error message
+        let errorMessage = error.message;
+        if (error.name === 'ValidationError') {
+            errorMessage = Object.values(error.errors).map(e => e.message).join(', ');
+        }
+
+        res.status(400).json({ message: errorMessage });
     }
 };
 
