@@ -30,6 +30,12 @@ const deleteFile = async (filePath) => {
         }
     } else {
         // Assume Local File
+
+        // If it is an external URL (not localhost), do nothing
+        if (filePath.startsWith('http') && !filePath.includes('localhost')) {
+            return;
+        }
+
         // Adjust for potential relative/absolute path differences
         // If it starts with 'uploads/', it's relative to project root usually
         // If passed as full URL from previous fix (http://localhost...), we need to strip domain

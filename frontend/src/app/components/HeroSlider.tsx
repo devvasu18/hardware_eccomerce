@@ -18,6 +18,7 @@ interface Banner {
     buttonLink?: string;
     showSecondaryButton?: boolean;
     badgeText?: string;
+    secondaryButtonColor?: string;
     offer_id?: {
         _id: string;
         title: string;
@@ -128,7 +129,7 @@ export default function HeroSlider() {
                                             <Link
                                                 href={exploreHref}
                                                 className="hero-btn-secondary"
-                                                style={{ borderColor: slide.textColor, color: slide.textColor }}
+                                                style={{ borderColor: slide.secondaryButtonColor || slide.textColor, color: slide.secondaryButtonColor || slide.textColor }}
                                             >
                                                 <FiPlay />
                                                 <span>Explore Products</span>

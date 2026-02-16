@@ -29,10 +29,15 @@ interface MenuItem {
     children?: MenuItem[];
 }
 
-export default function AdminSidebar() {
+interface AdminSidebarProps {
+    collapsed: boolean;
+    setCollapsed: (collapsed: boolean) => void;
+}
+
+export default function AdminSidebar({ collapsed, setCollapsed }: AdminSidebarProps) {
     const { user, logout } = useAuth();
     const pathname = usePathname();
-    const [collapsed, setCollapsed] = useState(false);
+    // const [collapsed, setCollapsed] = useState(false); // Removed internal state
     const [expandedMenus, setExpandedMenus] = useState<Record<string, boolean>>({
         'Product Manager': false,
         'Stock Manager': false,
@@ -62,6 +67,33 @@ export default function AdminSidebar() {
     const menuItems: MenuItem[] = [
         { label: 'Dashboard', path: '/admin', icon: <FiGrid />, roles: ['super_admin', 'ops_admin'] },
 
+        ,
+        { label: 'Orders & Logistics', path: '/admin/orders', icon: <FiTruck />, roles: ['super_admin', 'ops_admin', 'logistics_admin'] },
+
+        { label: 'On Demand Request', path: '/admin/requests', icon: <FiFileText />, roles: ['super_admin', 'ops_admin', 'support_staff'] },
+
+        { label: 'Transactions', path: '/admin/transactions', icon: <FiFileText />, roles: ['super_admin', 'accounts_admin'] },
+
+        { label: 'Returns & Refunds', path: '/admin/returns', icon: <FiRefreshCw />, roles: ['super_admin', 'ops_admin', 'accounts_admin'] },
+
+        {
+            label: 'Stock Manager', path: '/admin/stock', icon: <FiGrid />, roles: ['super_admin', 'ops_admin', 'logistics_admin'], children: [
+                { label: 'Stock Entry', path: '/admin/stock', roles: ['super_admin', 'ops_admin'] },
+                { label: 'Party Master', path: '/admin/masters/parties', roles: ['super_admin', 'ops_admin'] }
+            ]
+        },
+
+
+        { label: 'Coupons', path: '/admin/coupons', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
+        { label: 'Special Deals', path: '/admin/special-deals', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
+        { label: 'Pages', path: '/admin/pages', icon: <FiGrid />, roles: ['super_admin', 'ops_admin'] },
+
+
+
+
+
+
+        { label: 'User Management', path: '/admin/users', icon: <FiUsers />, roles: ['super_admin'] },
         // Grouped Product Manager
         {
             label: 'Product Manager',
@@ -77,28 +109,7 @@ export default function AdminSidebar() {
                 { label: 'Products', path: '/admin/products', roles: ['super_admin', 'ops_admin'] },
             ]
         },
-
-        { label: 'On Demand Request', path: '/admin/requests', icon: <FiFileText />, roles: ['super_admin', 'ops_admin', 'support_staff'] },
-
-        {
-            label: 'Stock Manager', path: '/admin/stock', icon: <FiGrid />, roles: ['super_admin', 'ops_admin', 'logistics_admin'], children: [
-                { label: 'Stock Entry', path: '/admin/stock', roles: ['super_admin', 'ops_admin'] },
-                { label: 'Party Master', path: '/admin/masters/parties', roles: ['super_admin', 'ops_admin'] }
-            ]
-        },
-
         { label: 'Banner Manager', path: '/admin/banners', icon: <FiImage />, roles: ['super_admin', 'ops_admin'] },
-        { label: 'Coupons', path: '/admin/coupons', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
-        { label: 'Special Deals', path: '/admin/special-deals', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
-        { label: 'Pages', path: '/admin/pages', icon: <FiGrid />, roles: ['super_admin', 'ops_admin'] },
-
-        { label: 'User Management', path: '/admin/users', icon: <FiUsers />, roles: ['super_admin'] },
-
-        { label: 'Orders & Logistics', path: '/admin/orders', icon: <FiTruck />, roles: ['super_admin', 'ops_admin', 'logistics_admin'] },
-        { label: 'Transactions', path: '/admin/transactions', icon: <FiFileText />, roles: ['super_admin', 'accounts_admin'] },
-
-        { label: 'Returns & Refunds', path: '/admin/returns', icon: <FiRefreshCw />, roles: ['super_admin', 'ops_admin', 'accounts_admin'] },
-
         // Grouped System Settings
         {
             label: 'System Settings',
@@ -114,7 +125,7 @@ export default function AdminSidebar() {
         },
 
         {
-            label: 'Business Intelligence',
+            label: 'Analytics',
             path: '#',
             icon: <FiPieChart />,
             roles: ['super_admin', 'ops_admin'],
@@ -225,21 +236,7 @@ export default function AdminSidebar() {
             </nav>
 
             <div className="sidebar-footer">
-                {!collapsed && (
-                    <div className="user-profile">
-                        <div className="user-avatar">
-                            {user?.username?.charAt(0).toUpperCase() || 'A'}
-                        </div>
-                        <div className="user-info">
-                            <h4>{user?.username}</h4>
-                            <span>{(user?.role || 'Guest').replace('_', ' ')}</span>
-                        </div>
-                    </div>
-                )}
-                <button onClick={logout} className="logout-btn">
-                    <FiPower size={18} />
-                    {!collapsed && <span>Logout</span>}
-                </button>
+                {/* Profile and Logout moved to Header */}
             </div>
         </aside>
     );

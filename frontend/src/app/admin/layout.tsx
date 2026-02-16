@@ -1,6 +1,7 @@
 'use client';
 
 import AdminSidebar from '@/app/admin/components/AdminSidebar';
+import AdminHeader from '@/app/admin/components/AdminHeader';
 import { useAuth } from '@/context/AuthContext';
 import NotFound from '@/app/not-found';
 import { useEffect, useState } from 'react';
@@ -11,6 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const { user, loading } = useAuth();
     // Start with a local ready state to ensure we don't flash 404 while auth is initializing
     const [isReady, setIsReady] = useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     useEffect(() => {
         if (!loading) {
@@ -33,18 +35,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         );
     }
 
+
+
     if (!user || user.role !== 'super_admin') {
         return <NotFound />;
     }
 
     return (
         <div className="admin-layout-container">
-            <AdminSidebar />
+            <AdminSidebar collapsed={isSidebarCollapsed} setCollapsed={setIsSidebarCollapsed} />
 
-            {/* MainContent */}
-            <main className="admin-main-content">
-                {children}
-            </main>
+            <div className="admin-content-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
+                <AdminHeader isSidebarCollapsed={isSidebarCollapsed} setIsSidebarCollapsed={setIsSidebarCollapsed} />
+
+                {/* MainContent */}
+                <main className="admin-main-content">
+                    {children}
+                </main>
+            </div>
         </div>
     );
 }

@@ -50,6 +50,10 @@ const bannerSchema = new mongoose.Schema({
         type: String,
         default: '/products'
     },
+    secondaryButtonColor: {
+        type: String,
+        default: '#FFFFFF'
+    },
     showSecondaryButton: {
         type: Boolean,
         default: true

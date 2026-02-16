@@ -270,8 +270,9 @@ exports.createCategory = async (req, res) => {
         await logAction({ action: 'CREATE_CATEGORY', req, targetResource: 'Category', targetId: category._id, details: { name, slug, displayOrder, showInNav } });
         res.status(201).json(category);
     } catch (error) {
+        console.error('Create Category Error:', error);
         if (req.file) deleteFile(req.file.path);
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ message: error.message });
     }
 };
 
@@ -319,10 +320,13 @@ exports.updateCategory = async (req, res) => {
         await logAction({ action: 'UPDATE_CATEGORY', req, targetResource: 'Category', targetId: category._id, details: { name, slug } });
         res.json(category);
     } catch (error) {
+        console.error('Update Category Error:', error);
         if (req.file) deleteFile(req.file.path);
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ message: error.message });
     }
 };
+
+// ... (Sub-Categories)
 
 exports.deleteCategory = async (req, res) => {
     try {
@@ -365,7 +369,7 @@ exports.deleteCategory = async (req, res) => {
         await logAction({ action: 'DELETE_CATEGORY', req, targetResource: 'Category', targetId: req.params.id, details: { name: category.name } });
 
         res.json({ message: 'Category and related data deleted' });
-    } catch (error) { res.status(500).json({ error: error.message }); }
+    } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
 exports.reorderCategories = async (req, res) => {
@@ -394,7 +398,7 @@ exports.reorderCategories = async (req, res) => {
 
         res.json({ message: 'Categories reordered successfully' });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 
@@ -405,7 +409,7 @@ exports.getSubCategories = async (req, res) => {
         const query = req.query.category_id ? { category_id: req.query.category_id } : {};
         const subCategories = await SubCategory.find(query).populate('category_id', 'name');
         res.json(subCategories);
-    } catch (error) { res.status(500).json({ error: error.message }); }
+    } catch (error) { res.status(500).json({ message: error.message }); }
 };
 
 exports.createSubCategory = async (req, res) => {
@@ -414,7 +418,10 @@ exports.createSubCategory = async (req, res) => {
         const image = req.file ? req.file.path.replace(/\\/g, '/') : null;
         const subCategory = await SubCategory.create({ category_id, name, slug, image });
         res.status(201).json(subCategory);
-    } catch (error) { res.status(400).json({ error: error.message }); }
+    } catch (error) {
+        console.error('Create SubCategory Error:', error);
+        res.status(400).json({ message: error.message });
+    }
 };
 
 exports.deleteSubCategory = async (req, res) => {
@@ -449,7 +456,10 @@ exports.updateSubCategory = async (req, res) => {
             { new: true }
         );
         res.json(subCategory);
-    } catch (error) { res.status(400).json({ error: error.message }); }
+    } catch (error) {
+        console.error('Update SubCategory Error:', error);
+        res.status(400).json({ message: error.message });
+    }
 };
 
 // --- Brands ---

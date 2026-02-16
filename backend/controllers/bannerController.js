@@ -24,7 +24,7 @@ exports.getBanners = async (req, res) => {
 // @access  Admin
 exports.createBanner = async (req, res) => {
     try {
-        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink, showSecondaryButton, badgeText } = req.body;
+        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink, showSecondaryButton, badgeText, secondaryButtonColor } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'Image is required' });
@@ -61,7 +61,8 @@ exports.createBanner = async (req, res) => {
             buttonText,
             buttonLink,
             showSecondaryButton: showSecondaryButton === 'true' || showSecondaryButton === true,
-            badgeText
+            badgeText,
+            secondaryButtonColor
         });
 
         res.status(201).json(banner);
@@ -88,7 +89,7 @@ exports.updateBanner = async (req, res) => {
         const banner = await Banner.findById(req.params.id);
         if (!banner) return res.status(404).json({ message: 'Banner not found' });
 
-        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink, showSecondaryButton, badgeText } = req.body;
+        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink, showSecondaryButton, badgeText, secondaryButtonColor } = req.body;
 
         // Update basic fields
         if (title !== undefined) banner.title = title;
@@ -100,6 +101,7 @@ exports.updateBanner = async (req, res) => {
         if (buttonLink) banner.buttonLink = buttonLink;
         if (showSecondaryButton !== undefined) banner.showSecondaryButton = showSecondaryButton === 'true' || showSecondaryButton === true;
         if (badgeText !== undefined) banner.badgeText = badgeText;
+        if (secondaryButtonColor) banner.secondaryButtonColor = secondaryButtonColor;
 
         // Update image if provided
         if (req.file) {

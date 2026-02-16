@@ -108,6 +108,7 @@ export default function AddBannerPage() {
         formData.append('buttonLink', data.buttonLink);
         formData.append('showSecondaryButton', data.showSecondaryButton);
         formData.append('badgeText', data.badgeText);
+        formData.append('secondaryButtonColor', data.secondaryButtonColor);
 
         if (linkType === 'offer') {
             formData.append('offer_id', data.offer_id);
@@ -206,6 +207,12 @@ export default function AddBannerPage() {
                             <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
                                 <input type="checkbox" {...register("showSecondaryButton")} defaultChecked={true} style={{ width: '20px', height: '20px' }} />
                                 <label className="form-label" style={{ marginBottom: 0 }}>Show "Explore Products" Button</label>
+
+                                <div style={{ marginLeft: '2rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <label className="form-label" style={{ marginBottom: 0, marginRight: '0.5rem' }}>Explore Button Color</label>
+                                    <input type="color" {...register("secondaryButtonColor")} defaultValue="#FFFFFF" style={{ height: '30px', width: '40px', padding: 0, border: 'none', background: 'none' }} />
+                                    <input {...register("secondaryButtonColor")} className="form-input" style={{ width: '100px', height: '30px' }} defaultValue="#FFFFFF" />
+                                </div>
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Badge Text</label>

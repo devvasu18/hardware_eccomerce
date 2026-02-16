@@ -113,6 +113,7 @@ export default function CategoryManager() {
         const file = e.target.files?.[0];
         if (file) {
             setSelectedFile(file);
+            setFormData({ ...formData, imageUrl: '' }); // Clear manual URL if file is selected
             const reader = new FileReader();
             reader.onloadend = () => {
                 setFilePreview(reader.result as string);
