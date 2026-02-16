@@ -76,13 +76,7 @@ exports.createOffer = async (req, res) => {
             });
         }
 
-        // Validation: Check for duplicate slug
-        const existingOffer = await Offer.findOne({ slug });
-        if (existingOffer) {
-            return res.status(400).json({
-                error: 'An offer with this slug already exists. Please use a different title.'
-            });
-        }
+        // Slug uniqueness is now handled by the model's pre-save hook
 
         // Validation: Image file type and size
         if (req.file) {
@@ -146,17 +140,8 @@ exports.updateOffer = async (req, res) => {
             updateData.percentage = percentageNum;
         }
 
-        // Validation: Check for duplicate slug (excluding current offer)
+        // Slug uniqueness is now handled by the model's pre-save hook
         if (slug) {
-            const existingOffer = await Offer.findOne({
-                slug,
-                _id: { $ne: req.params.id }
-            });
-            if (existingOffer) {
-                return res.status(400).json({
-                    error: 'An offer with this slug already exists. Please use a different title.'
-                });
-            }
             updateData.slug = slug;
         }
 

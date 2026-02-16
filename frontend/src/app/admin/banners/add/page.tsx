@@ -165,7 +165,14 @@ export default function AddBannerPage() {
                     {/* Appearance */}
                     <div className="card">
                         <div className="card-header">Appearance</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                        <div className="form-grid-inner" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                            {/* Badge Text - Now at the top */}
+                            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                <label className="form-label">Badge Text</label>
+                                <input {...register("badgeText")} className="form-input" placeholder="e.g. Premium Quality, New Arrival" defaultValue="Premium Quality" />
+                            </div>
+
+                            {/* Row 1: Text Pos & Color */}
                             <div className="form-group">
                                 <label className="form-label">Text Position</label>
                                 <select {...register("position")} className="form-select" defaultValue="center-left">
@@ -183,19 +190,12 @@ export default function AddBannerPage() {
                             <div className="form-group">
                                 <label className="form-label">Text Color</label>
                                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    <input type="color" {...register("textColor")} defaultValue="#ffffff" style={{ height: '38px', width: '50px', padding: 0, border: 'none', background: 'none' }} />
+                                    <input type="color" {...register("textColor")} defaultValue="#ffffff" style={{ height: '38px', width: '50px', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }} />
                                     <input {...register("textColor")} className="form-input" defaultValue="#ffffff" />
                                 </div>
                             </div>
-                            <div className="form-group">
-                                <label className="form-label">Button Color</label>
-                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    <input type="color" {...register("buttonColor")} defaultValue="#0F172A" style={{ height: '38px', width: '50px', padding: 0, border: 'none', background: 'none' }} />
-                                    <input {...register("buttonColor")} className="form-input" defaultValue="#0F172A" />
-                                </div>
-                            </div>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+
+                            {/* Row 2: Button Text & Link */}
                             <div className="form-group">
                                 <label className="form-label">Button Text</label>
                                 <input {...register("buttonText")} className="form-input" placeholder="Shop Now" />
@@ -204,19 +204,30 @@ export default function AddBannerPage() {
                                 <label className="form-label">Button Link</label>
                                 <input {...register("buttonLink")} className="form-input" placeholder="/products" />
                             </div>
-                            <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
-                                <input type="checkbox" {...register("showSecondaryButton")} defaultChecked={true} style={{ width: '20px', height: '20px' }} />
-                                <label className="form-label" style={{ marginBottom: 0 }}>Show "Explore Products" Button</label>
 
-                                <div style={{ marginLeft: '2rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    <label className="form-label" style={{ marginBottom: 0, marginRight: '0.5rem' }}>Explore Button Color</label>
-                                    <input type="color" {...register("secondaryButtonColor")} defaultValue="#FFFFFF" style={{ height: '30px', width: '40px', padding: 0, border: 'none', background: 'none' }} />
-                                    <input {...register("secondaryButtonColor")} className="form-input" style={{ width: '100px', height: '30px' }} defaultValue="#FFFFFF" />
+                            {/* Row 3: Button Color & Explore Color */}
+                            <div className="form-group">
+                                <label className="form-label">Button Color</label>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <input type="color" {...register("buttonColor")} defaultValue="#0F172A" style={{ height: '38px', width: '50px', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }} />
+                                    <input {...register("buttonColor")} className="form-input" defaultValue="#0F172A" />
                                 </div>
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Badge Text</label>
-                                <input {...register("badgeText")} className="form-input" placeholder="Premium Quality" defaultValue="Premium Quality" />
+                                <label className="form-label">Explore Button Color</label>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <input type="color" {...register("secondaryButtonColor")} defaultValue="#FFFFFF" style={{ height: '38px', width: '50px', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }} />
+                                    <input {...register("secondaryButtonColor")} className="form-input" defaultValue="#FFFFFF" />
+                                </div>
+                            </div>
+
+                            {/* Full width: Show Explore Switch */}
+                            <div className="form-group" style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '1rem', borderRadius: '8px', marginTop: '0.5rem' }}>
+                                <input type="checkbox" {...register("showSecondaryButton")} defaultChecked={true} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <label className="form-label" style={{ marginBottom: 0, fontWeight: 600 }}>Show "Explore Products" Button</label>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Displays a secondary white button next to the main CTA</span>
+                                </div>
                             </div>
                         </div>
                     </div>

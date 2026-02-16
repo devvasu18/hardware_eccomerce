@@ -8,6 +8,8 @@ import Image from "next/image";
 import FormModal from "../../../components/FormModal";
 import DataTable from "../../../components/DataTable";
 import Modal from "../../../components/Modal";
+import ErrorState from "../../../components/ErrorState";
+import Loader from "../../../components/Loader";
 import { useModal } from "../../../hooks/useModal";
 
 interface Category {
@@ -27,6 +29,7 @@ export default function SubCategoryMaster() {
     const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [image, setImage] = useState<File | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -59,11 +62,14 @@ export default function SubCategoryMaster() {
     }, [subCategories, selectedCategory]);
 
     const fetchSubCategories = async () => {
+        setLoading(true);
+        setError(null);
         try {
             const res = await api.get('/admin/sub-categories');
             setSubCategories(res.data);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            setError(error.message || "Failed to load sub-categories");
         } finally {
             setLoading(false);
         }
@@ -233,7 +239,11 @@ export default function SubCategoryMaster() {
             </div>
 
             {loading ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>Loading...</div>
+                <div style={{ padding: '5rem 0' }}><Loader /></div>
+            ) : error ? (
+                <div style={{ padding: '2rem 0' }}>
+                    <ErrorState message={error} onRetry={fetchSubCategories} />
+                </div>
             ) : (
                 <DataTable
                     title="Sub-Category List"
@@ -292,21 +302,6 @@ export default function SubCategoryMaster() {
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <div className="form-group">
-                            <label className="form-label">Parent Category</label>
-                            <input
-                                type="text"
-                                placeholder="🔍 Search category..."
-                                value={categorySearch}
-                                onChange={(e) => setCategorySearch(e.target.value)}
-                                style={{
-                                    width: '100%',
-                                    padding: '0.5rem',
-                                    marginBottom: '0.5rem',
-                                    borderRadius: '4px',
-                                    border: '1px solid #cbd5e1',
-                                    fontSize: '0.875rem'
-                                }}
-                            />
                             <select
                                 {...register("category_id", { required: "Category is required" })}
                                 className="form-select"

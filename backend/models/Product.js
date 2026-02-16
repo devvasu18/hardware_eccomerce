@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { makeUniqueSlug, slugify } = require('../utils/slugify');
 
 const productSchema = new mongoose.Schema({
     // Core Info
@@ -128,8 +129,14 @@ productSchema.index({ isOnDemand: 1 });
 productSchema.index({ title: 'text', description: 'text', part_number: 'text', 'variations.value': 'text' });
 
 // AUTO-CALCULATE LOWEST PRICE ON SAVE
-productSchema.pre('save', async function () {
+productSchema.pre('save', async function (next) {
     try {
+        // Handle Slug Uniqueness
+        if (this.isModified('slug') || this.isNew) {
+            const baseSlug = this.slug || slugify(this.title);
+            this.slug = await makeUniqueSlug(this.constructor, baseSlug, this._id);
+        }
+
         let minPrice = Infinity;
         let minMrp = Infinity;
         let hasVariants = false;
@@ -205,10 +212,10 @@ productSchema.pre('save', async function () {
             // Sync gallery (all images)
             this.gallery_images = this.images.map(img => img.url);
         }
-
+        next();
     } catch (err) {
         console.error('Error in pre-save price calculation:', err);
-        throw err;
+        next(err);
     }
 });
 

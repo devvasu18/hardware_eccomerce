@@ -55,52 +55,60 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
     const [hasError, setHasError] = useState(false);
     const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
 
+    const fetchData = async () => {
+        setLoading(true);
+        setHasError(false);
+
+        try {
+            // Fetch specific page layout
+            const response = await fetch(`http://localhost:5000/api/home-layout?page=${pageSlug}`);
+            if (!response.ok) throw new Error('Failed to fetch');
+            const data = await response.json();
+            setLayout(data);
+
+            // Artificial delay to show off the loader if it was too fast, or ensure smooth transition
+            await new Promise(resolve => setTimeout(resolve, 800));
+        } catch (error) {
+            console.error('Error fetching layout:', error);
+            setHasError(true);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const fetchFeatured = async () => {
+        try {
+            const res = await fetch('http://localhost:5000/api/products/featured');
+            if (res.ok) {
+                const data = await res.json();
+                setFeaturedProducts(data.map((p: any) => ({
+                    ...p,
+                    basePrice: p.mrp || p.basePrice,
+                    discountedPrice: p.selling_price_a || p.discountedPrice,
+                    title: p.title || p.name,
+                    name: p.title || p.name
+                })));
+            }
+        } catch (error) {
+            console.error('Error fetching featured products:', error);
+        }
+    };
+
     useEffect(() => {
-        const fetchLayout = async () => {
-            if (previewLayout) return; // Skip if preview data provided
-            try {
-                // Fetch specific page layout
-                const response = await fetch(`http://localhost:5000/api/home-layout?page=${pageSlug}`);
-                if (!response.ok) throw new Error('Failed to fetch');
-                const data = await response.json();
-                setLayout(data);
-                // Artificial delay to show off the loader if it was too fast, or ensure smooth transition
-                await new Promise(resolve => setTimeout(resolve, 800));
-            } catch (error) {
-                console.error('Error fetching layout:', error);
-                setHasError(true);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        const fetchFeatured = async () => {
-            try {
-                const res = await fetch('http://localhost:5000/api/products/featured');
-                if (res.ok) {
-                    const data = await res.json();
-                    setFeaturedProducts(data.map((p: any) => ({
-                        ...p,
-                        basePrice: p.mrp || p.basePrice,
-                        discountedPrice: p.selling_price_a || p.discountedPrice,
-                        title: p.title || p.name,
-                        name: p.title || p.name
-                    })));
-                }
-            } catch (error) {
-                console.error('Error fetching featured products:', error);
-            }
-        };
-
-        fetchLayout();
+        if (previewLayout) {
+            setLayout(previewLayout);
+            setLoading(false);
+            return;
+        }
+        fetchData();
         fetchFeatured();
-    }, [previewLayout]);
+    }, [previewLayout, pageSlug]);
 
     if (loading) {
         return (
             <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Header />
-                <Loader />
+                <Loader onRetry={fetchData} />
                 <div className="flex-grow"></div>
                 <Footer />
             </main>
@@ -111,7 +119,7 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
         return (
             <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Header />
-                <Loader status="error" text="SERVER UNREACHABLE" />
+                <Loader status="error" text="SERVER UNREACHABLE" onRetry={fetchData} />
                 <div className="flex-grow"></div>
                 <Footer />
             </main>

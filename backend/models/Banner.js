@@ -66,23 +66,21 @@ const bannerSchema = new mongoose.Schema({
     timestamps: true // created_at logic
 });
 
+const { makeUniqueSlug, slugify } = require('../utils/slugify');
+
 // Auto-generate slug before save
-// Auto-generate slug before save
-bannerSchema.pre('save', async function () {
-    if (this.isModified('title') && this.title) {
-        // Simple slugify implementation
-        this.slug = this.title
-            .toString()
-            .toLowerCase()
-            .trim()
-            .replace(/\s+/g, '-')     // Replace spaces with -
-            .replace(/[^\w\-]+/g, '') // Remove all non-word chars
-            .replace(/\-\-+/g, '-');  // Replace multiple - with single -
-    } else if (!this.slug && !this.title) {
-        // If no title and no slug, generate a random one or use ID if available (but pre-save ID might not be stable for slug? usually is)
-        // Let's just generate a timestamp based slug if title is missing
-        this.slug = 'banner-' + Date.now();
+bannerSchema.pre('save', async function (next) {
+    if (this.isModified('title') || this.isModified('slug') || this.isNew) {
+        let baseSlug = this.slug;
+        if (!baseSlug && this.title) {
+            baseSlug = slugify(this.title);
+        } else if (!baseSlug && !this.title) {
+            baseSlug = 'banner';
+        }
+
+        this.slug = await makeUniqueSlug(this.constructor, baseSlug, this._id);
     }
+    next();
 });
 
 module.exports = mongoose.model('Banner', bannerSchema);

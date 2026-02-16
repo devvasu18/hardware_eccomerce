@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import ProductFilters from '@/app/components/ProductFilters';
 import ProductCard from '@/app/components/ProductCard';
+import ErrorState from './ErrorState';
+import Loader from './Loader';
 import api from '../utils/api';
 import './FilteredProducts.css';
 
@@ -33,6 +35,7 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
     const [categories, setCategories] = useState<any[]>([]);
     const [brands, setBrands] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     const category = searchParams.get('category');
     const brand = searchParams.get('brand');
@@ -40,48 +43,50 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
     const subcategory = searchParams.get('subcategory');
     const offerSlug = searchParams.get('offer');
 
+    const fetchData = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            // Fetch filters
+            const [catRes, brandRes] = await Promise.all([
+                api.get('/categories'),
+                api.get('/brands/featured')
+            ]);
+            setCategories(catRes.data);
+            setBrands(brandRes.data);
+
+            // Fetch products
+            let url = '/products?';
+            if (category) url += `category=${category}&`;
+            if (brand) url += `brand=${brand}&`;
+            if (keyword) url += `keyword=${encodeURIComponent(keyword)}&`;
+            if (subcategory) url += `subcategory=${subcategory}&`;
+            if (offerSlug && offerSlug !== 'undefined' && offerSlug !== 'null') url += `offerSlug=${offerSlug}&`;
+
+            const prodRes = await api.get(url);
+            const data = prodRes.data.products || prodRes.data;
+
+            setProducts(data.map((p: any) => {
+                let finalPrice = p.selling_price_a || p.discountedPrice || p.mrp || 0;
+
+                // Apply offer discount if available
+                return {
+                    ...p,
+                    name: p.title || p.name,
+                    basePrice: p.mrp || p.basePrice,
+                    discountedPrice: finalPrice, // Just the base price, ProductCard handles discount
+                    offerApplied: !!offerInfo
+                };
+            }));
+        } catch (error: any) {
+            console.error("Failed to fetch products", error);
+            setError(error.message || "Failed to load products");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                // Fetch filters
-                const [catRes, brandRes] = await Promise.all([
-                    api.get('/categories'),
-                    api.get('/brands/featured')
-                ]);
-                setCategories(catRes.data);
-                setBrands(brandRes.data);
-
-                // Fetch products
-                let url = '/products?';
-                if (category) url += `category=${category}&`;
-                if (brand) url += `brand=${brand}&`;
-                if (keyword) url += `keyword=${encodeURIComponent(keyword)}&`;
-                if (subcategory) url += `subcategory=${subcategory}&`;
-                if (offerSlug && offerSlug !== 'undefined' && offerSlug !== 'null') url += `offerSlug=${offerSlug}&`;
-
-                const prodRes = await api.get(url);
-                const data = prodRes.data.products || prodRes.data;
-
-                setProducts(data.map((p: any) => {
-                    let finalPrice = p.selling_price_a || p.discountedPrice || p.mrp || 0;
-
-                    // Apply offer discount if available
-                    return {
-                        ...p,
-                        name: p.title || p.name,
-                        basePrice: p.mrp || p.basePrice,
-                        discountedPrice: finalPrice, // Just the base price, ProductCard handles discount
-                        offerApplied: !!offerInfo
-                    };
-                }));
-            } catch (error) {
-                console.error("Failed to fetch products", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchData();
     }, [category, brand, keyword, subcategory, offerSlug, offerInfo]); // Re-run when offerInfo changes
 
@@ -94,11 +99,9 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
                 {/* Product Grid */}
                 <section style={{ flex: 1 }}>
                     {loading ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-                            {[...Array(6)].map((_, i) => (
-                                <div key={i} className="bg-gray-100 h-80 rounded-2xl"></div>
-                            ))}
-                        </div>
+                        <div className="py-20 flex justify-center"><Loader /></div>
+                    ) : error ? (
+                        <ErrorState message={error} onRetry={fetchData} />
                     ) : products.length === 0 ? (
                         <div className="products-empty-state text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
                             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>

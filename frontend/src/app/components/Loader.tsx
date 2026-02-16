@@ -4,11 +4,13 @@ import React, { useEffect, useState } from 'react';
 interface LoaderProps {
   text?: string;
   status?: 'loading' | 'error' | 'success';
+  onRetry?: () => void;
 }
 
-const Loader = ({ text: propText, status = 'loading' }: LoaderProps) => {
+const Loader = ({ text: propText, status = 'loading', onRetry }: LoaderProps) => {
   const [progress, setProgress] = useState(0);
   const [displayText, setDisplayText] = useState(propText || 'INITIALIZING');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Colors based on status
   const primaryColor = status === 'error' ? '#ef4444' : '#F37021'; // Red for error, Orange for default
@@ -47,7 +49,7 @@ const Loader = ({ text: propText, status = 'loading' }: LoaderProps) => {
           return states[(currentIndex + 1) % states.length];
         });
       }, 400); // Faster text cycle
-    } else if (propText) {
+    } else if (propText && !isRefreshing) {
       setDisplayText(propText);
     }
 
@@ -63,6 +65,17 @@ const Loader = ({ text: propText, status = 'loading' }: LoaderProps) => {
       setDisplayText('SYSTEM READY');
     }
   }, [progress, propText, status]);
+
+  const handleRetry = async () => {
+    if (!onRetry) return;
+    setIsRefreshing(true);
+    setDisplayText('REFRESHING...');
+    try {
+      await onRetry();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <>
@@ -231,6 +244,34 @@ const Loader = ({ text: propText, status = 'loading' }: LoaderProps) => {
           background-color: rgba(255,255,255,0.5);
           filter: blur(2px);
         }
+        .retry-button {
+          margin-top: 1.5rem;
+          padding: 0.75rem 2rem;
+          background: linear-gradient(to right, #ef4444, #f37021);
+          border: none;
+          border-radius: 9999px;
+          color: white;
+          font-weight: 700;
+          font-family: monospace;
+          letter-spacing: 0.1em;
+          cursor: pointer;
+          transition: all 0.2s;
+          box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .retry-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 0 25px rgba(239, 68, 68, 0.6);
+        }
+        .retry-button:active {
+          transform: translateY(0);
+        }
+        .retry-button:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
       `}</style>
 
       <div className="loader-container">
@@ -261,17 +302,37 @@ const Loader = ({ text: propText, status = 'loading' }: LoaderProps) => {
         {/* Text & Status */}
         <div className="status-container">
           <h2 className="status-text">
-            {displayText}
+            {isRefreshing ? 'REFRESHING...' : displayText}
           </h2>
 
           <div className="version-info">
-            <span>{status === 'error' ? 'SYSTEM_OFFLINE' : 'SYSTEM_READY'}</span>
+            <span>{status === 'error' ? 'SYSTEM_OFFLINE' : (isRefreshing ? 'REFRESHING' : 'SYSTEM_READY')}</span>
             <span style={{ width: 4, height: 4, backgroundColor: primaryColor, borderRadius: '50%' }}></span>
             <span>V 2.0.4</span>
           </div>
 
+          {/* Retry Button */}
+          {status === 'error' && onRetry && (
+            <button
+              className="retry-button"
+              onClick={handleRetry}
+              disabled={isRefreshing}
+            >
+              <svg
+                style={{ width: '1.25rem', height: '1.25rem', animation: isRefreshing ? 'spin 1s linear infinite' : 'none' }}
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {isRefreshing ? 'REFRESHING...' : 'RETRY CONNECTION'}
+            </button>
+          )}
+
           {/* Progress Bar */}
-          <div className="progress-track" style={{ opacity: status === 'error' ? 0 : 1 }}>
+          <div className="progress-track" style={{ opacity: (status === 'error' || isRefreshing) ? 0 : 1 }}>
             <div
               className="progress-bar"
               style={{ width: `${progress}%` }}

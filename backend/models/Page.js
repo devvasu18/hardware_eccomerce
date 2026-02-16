@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { makeUniqueSlug, slugify } = require('../utils/slugify');
 
 const pageSchema = new mongoose.Schema({
     title: {
@@ -25,6 +26,15 @@ const pageSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true
+});
+
+// Ensure unique slug before saving
+pageSchema.pre('save', async function (next) {
+    if (this.isModified('slug') || this.isNew) {
+        const baseSlug = this.slug || slugify(this.title);
+        this.slug = await makeUniqueSlug(this.constructor, baseSlug, this._id);
+    }
+    next();
 });
 
 module.exports = mongoose.model('Page', pageSchema);

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { makeUniqueSlug, slugify } = require('../utils/slugify');
 
 const categorySchema = new mongoose.Schema({
     name: { type: String, required: true },
@@ -11,7 +12,13 @@ const categorySchema = new mongoose.Schema({
     gradient: { type: String, default: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
 }, { timestamps: true });
 
-// Cascade delete middleware would go here typically, but user requested "system MUST warn the user". 
-// We will handle the check in the controller for safety.
+// Ensure unique slug before saving
+categorySchema.pre('save', async function (next) {
+    if (this.isModified('slug') || this.isNew) {
+        const baseSlug = this.slug || slugify(this.name);
+        this.slug = await makeUniqueSlug(this.constructor, baseSlug, this._id);
+    }
+    next();
+});
 
 module.exports = mongoose.model('Category', categorySchema);

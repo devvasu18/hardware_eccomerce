@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import api from '../utils/api';
+import ErrorState from './ErrorState';
+import Loader from './Loader';
 import './AllCategories.css';
 
 interface Category {
@@ -20,57 +22,42 @@ export default function AllCategories({ config }: { config?: any }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const fetchCategories = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            console.log('Fetching categories from /api/categories...');
+            const res = await api.get('/categories');
+            console.log('Categories response:', res.data);
+
+            // Backend already filters for isActive: true, so we can use the data directly
+            const activeCategories = res.data || [];
+            console.log('Active categories count:', activeCategories.length);
+
+            setCategories(activeCategories);
+        } catch (error: any) {
+            console.error('Error fetching categories:', error);
+            setError(error.response?.data?.message || error.message || 'Failed to load categories');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                console.log('Fetching categories from /api/categories...');
-                const res = await api.get('/categories');
-                console.log('Categories response:', res.data);
-
-                // Backend already filters for isActive: true, so we can use the data directly
-                const activeCategories = res.data || [];
-                console.log('Active categories count:', activeCategories.length);
-
-                setCategories(activeCategories);
-                setError(null);
-            } catch (error: any) {
-                console.error('Error fetching categories:', error);
-                console.error('Error details:', {
-                    message: error.message,
-                    response: error.response?.data,
-                    status: error.response?.status
-                });
-                setError(error.response?.data?.message || error.message || 'Failed to load categories');
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchCategories();
     }, []);
 
     if (loading) {
-        return (
-            <div className="container py-20 text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-blue-600"></div>
-                <p className="mt-4 text-gray-500">Loading categories...</p>
-            </div>
-        );
+        return <div className="py-20 flex justify-center"><Loader /></div>;
     }
 
     if (error) {
         return (
-            <div className="container py-20 text-center">
-                <div className="bg-red-50 border border-red-200 rounded-xl p-6 max-w-md mx-auto">
-                    <div className="text-red-600 text-4xl mb-4">⚠️</div>
-                    <h3 className="text-lg font-bold text-red-900 mb-2">Failed to Load Categories</h3>
-                    <p className="text-red-700 text-sm">{error}</p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                        Retry
-                    </button>
-                </div>
+            <div className="container py-20">
+                <ErrorState
+                    message={error}
+                    onRetry={fetchCategories}
+                />
             </div>
         );
     }
