@@ -7,6 +7,7 @@ export const metadata: Metadata = {
     description: 'Industrial-grade mechanical parts and hardware e-commerce platform.',
 };
 
+import { NotificationProvider } from '@/context/NotificationContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { WishlistProvider } from '@/context/WishlistContext';
@@ -24,14 +25,16 @@ export default function RootLayout({
         <html lang="en">
             <body>
                 <AuthProvider>
-                    <CartProvider>
-                        <WishlistProvider>
-                            {children}
-                            <CartSidebar />
-                            <WishlistSidebar />
-                            <MobileBottomNav />
-                        </WishlistProvider>
-                    </CartProvider>
+                    <NotificationProvider>
+                        <CartProvider>
+                            <WishlistProvider>
+                                {children}
+                                <CartSidebar />
+                                <WishlistSidebar />
+                                <MobileBottomNav />
+                            </WishlistProvider>
+                        </CartProvider>
+                    </NotificationProvider>
                 </AuthProvider>
             </body>
         </html>

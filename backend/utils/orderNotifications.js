@@ -69,7 +69,8 @@ Thank you for choosing {{company_name}} 🙏`;
             order_id: order.invoiceNumber || order._id.toString(),
             order_date: order.createdAt.toLocaleDateString('en-IN'),
             paid_items: paidItems
-        }
+        },
+        userSettings: customer.settings
     });
 }
 
@@ -130,7 +131,8 @@ Thank you 🙏`;
             customer_name: customer.name,
             request_id: request._id.toString(),
             on_demand_items: onDemandItems
-        }
+        },
+        userSettings: customer.settings
     });
 }
 
@@ -203,7 +205,8 @@ Thank you 🙏`;
             order_id: order.invoiceNumber || order._id.toString(),
             paid_items: paidItemsList,
             on_demand_items: onDemandItemsList
-        }
+        },
+        userSettings: customer.settings
     });
 }
 
@@ -285,7 +288,8 @@ Thank you for shopping with us 🙏`;
             arrival_date: order.busDetails?.expectedArrival ? new Date(order.busDetails.expectedArrival).toLocaleDateString('en-IN') : 'TBD',
             shipped_items: shippedItems,
             shipment_tracking_link: shipmentTrackingLink
-        }
+        },
+        userSettings: customer.settings
     });
 }
 

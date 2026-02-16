@@ -42,17 +42,17 @@ exports.createPaymentOrder = async (req, res) => {
             return res.status(500).json({ success: false, message: 'Server Configuration Error: FRONTEND_URL missing' });
         }
 
-        const { orderId } = req.body; // Ignore client amount
+        const { orderId } = req.body;
 
         // 1. Fetch Order to get secure Amount
-        const order = await Order.findById(orderId);
+        const order = await Order.findById(orderId).populate('user');
         if (!order) {
             return res.status(404).json({ success: false, message: 'Order not found' });
         }
 
         // Security Check: If order belongs to a user, requester MUST be that user
         if (order.user) {
-            if (!req.user || req.user._id.toString() !== order.user.toString()) {
+            if (!req.user || req.user._id.toString() !== order.user._id.toString()) {
                 return res.status(403).json({ success: false, message: 'Unauthorized to pay for this order' });
             }
         }
@@ -62,36 +62,71 @@ exports.createPaymentOrder = async (req, res) => {
         // Generate unique transaction ID
         const txnid = `TXN${Date.now()}`;
 
-        // BYPASS: Direct Success Simulation for Manual Testing
-        // Instead of returning PayU params, we will tell frontend to "verify" immediately
-        // Note: Frontend must be ready to assume success if it sees this specific flag or handling
-        // OR we just return dummy data that points to success URL directly?
+        // Prepare PayU Data
+        // User details
+        let firstname = 'Guest';
+        let email = 'guest@example.com';
+        let phone = '0000000000';
 
-        // Actually, user asked to "just payment directly done". 
-        // Best way: Update order STATUS here directly and return "mock_success" to frontend so it redirects.
-
-        order.paymentStatus = 'Paid'; // Changed for immediate effect
-        order.status = 'Processing'; // Consistency with verifyPayment
-        order.paymentDetails = { provider: 'Manual_Bypass', transactionId: txnid };
-        await order.save();
-
-        // Clear Cart in bypass mode
         if (order.user) {
-            const Cart = require('../models/Cart');
-            await Cart.findOneAndDelete({ user: order.user });
+            firstname = order.user.username || order.user.name || 'Customer';
+            email = order.user.email || 'customer@example.com';
+            phone = order.user.mobile || order.user.phone || '0000000000';
+        } else if (order.guestCustomer) {
+            firstname = order.guestCustomer.name || 'Guest';
+            email = order.guestCustomer.email || 'guest@example.com';
+            phone = order.guestCustomer.phone || '0000000000';
         }
 
-        // Return dummy param that frontend might use, or just success
-        // If frontend expects PayU form, this might break UI. 
-        // Assuming strict "remove it and show directly payment done" implies backend action is key.
+        const productinfo = `Order #${order.invoiceNumber || order._id}`;
+
+        // SURL/FURL should point to Frontend which will then call backend verification
+        // OR point to Backend directly if PayU handles POSTs and redirects (but VerifyPayment returns JSON, so Frontend is better)
+        const surl = `${process.env.FRONTEND_URL}/payment/response`;
+        const furl = `${process.env.FRONTEND_URL}/payment/response`;
+
+        const payUData = {
+            key: PAYU_MERCHANT_KEY,
+            txnid: txnid,
+            amount: amount,
+            productinfo: productinfo,
+            firstname: firstname,
+            email: email,
+            phone: phone,
+            udf1: order._id.toString(), // Store Order ID in UDF1 for verification
+            udf2: '',
+            udf3: '',
+            udf4: '',
+            udf5: '',
+            salt: PAYU_MERCHANT_SALT
+        };
+
+        const hash = generatePayUHash(payUData);
+
+        // Update Order with initial payment attempt info (optional but good for tracking)
+        order.paymentDetails = {
+            provider: 'PayU',
+            transactionId: null, // Not yet confirmed
+            txnId: txnid
+        };
+        await order.save();
 
         res.json({
             success: true,
-            bypass: true, // Frontend clue
-            paymentUrl: `${process.env.FRONTEND_URL}/payment/success`, // Redirect direct
+            bypass: false,
+            paymentUrl: PAYU_BASE_URL,
             params: {
-                // Dummy params to prevent frontend crash if it tries to destructure
-                key: 'dummy', hash: 'dummy'
+                key: PAYU_MERCHANT_KEY,
+                txnid: txnid,
+                amount: amount,
+                productinfo: productinfo,
+                firstname: firstname,
+                email: email,
+                phone: phone,
+                surl: surl,
+                furl: furl,
+                hash: hash,
+                udf1: payUData.udf1
             }
         });
 

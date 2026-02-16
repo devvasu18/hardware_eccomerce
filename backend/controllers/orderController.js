@@ -6,6 +6,7 @@ const Coupon = require('../models/Coupon');
 const tallyService = require('../services/tallyService');
 const { logAction } = require('../utils/auditLogger');
 const { checkLowStockAlert } = require('../utils/inventoryNotifications');
+const notificationService = require('../services/notificationService');
 
 
 // @desc    Create a new order
@@ -429,6 +430,37 @@ exports.createOrder = async (req, res) => {
 
             // --- Send Email Notifications (Async, don't fail order if email fails) ---
             try {
+                // 🔔 Send In-App Notifications
+                // 1. To Customer
+                if (req.user) {
+                    notificationService.sendNotification({
+                        userId: req.user._id,
+                        role: 'USER',
+                        title: 'Order Placed',
+                        message: `Your order #${order.invoiceNumber || order._id} has been placed successfully.`,
+                        type: 'ORDER',
+                        entityId: order._id,
+                        redirectUrl: `/orders/${order._id}`,
+                        priority: 'NORMAL'
+                    });
+                }
+
+                // 2. To Admins
+                const admins = await User.find({ role: { $in: ['admin', 'super_admin', 'ops_admin'] } }).select('_id');
+                for (const admin of admins) {
+                    notificationService.sendNotification({
+                        userId: admin._id,
+                        role: 'ADMIN',
+                        title: 'New Order Received',
+                        message: `New order #${order.invoiceNumber || order._id} worth ₹${finalGrandTotal}`,
+                        type: 'ORDER',
+                        entityId: order._id,
+                        redirectUrl: `/admin/orders/${order._id}`,
+                        priority: 'HIGH'
+                    });
+                }
+
+                // 📧 Email Logic
                 // 1. To Customer
                 const customerEmail = req.user ? req.user.email : (guestCustomer ? guestCustomer.email : null);
                 if (customerEmail) {
@@ -436,8 +468,8 @@ exports.createOrder = async (req, res) => {
                     await sendEmail({
                         email: customerEmail,
                         subject: `Order Confirmation - #${order.orderNumber || order._id}`,
-                        message: `Thank you for your order! Your order #${order.orderNumber || order._id} has been placed successfully. Total: ₹${grandTotal}. We will notify you when it ships.`,
-                        html: `<h1>Order Confirmation</h1><p>Thank you for shopping with us.</p><p>Order ID: <strong>${order.orderNumber || order._id}</strong></p><p>Total Amount: <strong>₹${grandTotal}</strong></p>`
+                        message: `Thank you for your order! Your order #${order.orderNumber || order._id} has been placed successfully. Total: ₹${finalGrandTotal}. We will notify you when it ships.`,
+                        html: `<h1>Order Confirmation</h1><p>Thank you for shopping with us.</p><p>Order ID: <strong>${order.orderNumber || order._id}</strong></p><p>Total Amount: <strong>₹${finalGrandTotal}</strong></p>`
                     });
                 }
                 // 2. To Admin
@@ -643,6 +675,20 @@ exports.updateOrderStatus = async (req, res) => {
             targetId: order._id,
             details: { from: oldStatus, to: status, notes: description }
         });
+
+        // 🔔 In-App Notification
+        if (order.user) {
+            notificationService.sendNotification({
+                userId: order.user._id || order.user,
+                role: 'USER',
+                title: `Order ${status}`,
+                message: `Your order #${order.invoiceNumber || order._id} status updated to: ${status}`,
+                type: 'ORDER',
+                entityId: order._id,
+                redirectUrl: `/orders/${order._id}`,
+                priority: 'NORMAL'
+            });
+        }
 
         // 📧 SEND EMAIL NOTIFICATION
         if (notifyUser !== false) { // Allow frontend to optionally suppress

@@ -64,7 +64,7 @@ function renderTemplate(template, variables) {
  * Send notification via both Email and WhatsApp
  * Handles multi-channel WhatsApp to prevent duplicate sends
  */
-async function sendNotification({ recipient, email, mobile, subject, emailBody, whatsappBody, variables = {} }) {
+async function sendNotification({ recipient, email, mobile, subject, emailBody, whatsappBody, variables = {}, userSettings }) {
     const settings = await getSystemSettings();
 
     // Add system settings to variables
@@ -79,8 +79,12 @@ async function sendNotification({ recipient, email, mobile, subject, emailBody, 
 
     const promises = [];
 
+    // Check user preferences if available (default to true if not set)
+    const userEmailEnabled = !userSettings || !userSettings.notifications || userSettings.notifications.email !== false;
+    const userWhatsAppEnabled = !userSettings || !userSettings.notifications || userSettings.notifications.whatsapp !== false;
+
     // Send Email
-    if (settings.emailNotificationsEnabled && email) {
+    if (settings.emailNotificationsEnabled && userEmailEnabled && email) {
         const renderedSubject = renderTemplate(subject, allVariables);
         const renderedBody = renderTemplate(emailBody, allVariables);
 
@@ -99,7 +103,7 @@ async function sendNotification({ recipient, email, mobile, subject, emailBody, 
 
     // Send WhatsApp (Only once, using default sessionId)
     // The WhatsAppWorker will handle multi-session distribution
-    if (settings.whatsappNotificationsEnabled && mobile) {
+    if (settings.whatsappNotificationsEnabled && userWhatsAppEnabled && mobile) {
         const renderedWhatsApp = renderTemplate(whatsappBody, allVariables);
 
         promises.push(

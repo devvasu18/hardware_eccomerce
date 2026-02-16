@@ -10,6 +10,8 @@ import {
     FiLogOut
 } from 'react-icons/fi';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useNotification, Notification } from '@/context/NotificationContext';
 
 interface AdminHeaderProps {
     isSidebarCollapsed: boolean;
@@ -18,19 +20,13 @@ interface AdminHeaderProps {
 
 export default function AdminHeader({ isSidebarCollapsed, setIsSidebarCollapsed }: AdminHeaderProps) {
     const { user, logout } = useAuth();
+    const router = useRouter();
+    const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
-    // Mock notifications for now - in a real app these would come from a context or API
-    const [notifications, setNotifications] = useState([
-        { id: 1, type: 'ORDER', message: 'New order #1234 received', isRead: false, createdAt: new Date().toISOString() },
-        { id: 2, type: 'SYSTEM', message: 'System update scheduled', isRead: true, createdAt: new Date(Date.now() - 86400000).toISOString() }
-    ]);
-
     const notificationRef = useRef<HTMLDivElement>(null);
     const profileRef = useRef<HTMLDivElement>(null);
-
-    const unreadCount = notifications.filter(n => !n.isRead).length;
 
     // Handle click outside to close dropdowns
     useEffect(() => {
@@ -58,18 +54,16 @@ export default function AdminHeader({ isSidebarCollapsed, setIsSidebarCollapsed 
         }
     };
 
-    const handleMarkAllRead = () => {
-        setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+    const handleMarkAllRead = async () => {
+        await markAllAsRead();
     };
 
-    const handleNotificationClick = (notif: any) => {
-        // Mark as read
-        const updated = notifications.map(n =>
-            n.id === notif.id ? { ...n, isRead: true } : n
-        );
-        setNotifications(updated);
-        // Navigate or show details logic here
+    const handleNotificationClick = async (notif: Notification) => {
+        await markAsRead(notif._id);
         setIsNotificationsOpen(false);
+        if (notif.redirectUrl) {
+            router.push(notif.redirectUrl);
+        }
     };
 
     const [companyName, setCompanyName] = useState('ADMIN');
@@ -127,9 +121,9 @@ export default function AdminHeader({ isSidebarCollapsed, setIsSidebarCollapsed 
                                 {notifications.length === 0 ? (
                                     <div className="no-notif">No new notifications</div>
                                 ) : (
-                                    notifications.map((notif, idx) => (
+                                    notifications.map((notif: Notification) => (
                                         <div
-                                            key={idx}
+                                            key={notif._id}
                                             className={`notif-item ${!notif.isRead ? 'unread' : ''}`}
                                             onClick={() => handleNotificationClick(notif)}
                                         >

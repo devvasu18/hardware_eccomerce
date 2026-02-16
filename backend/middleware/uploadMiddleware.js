@@ -15,22 +15,22 @@ const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
     params: {
         folder: 'hardware-store', // The folder in cloudinary
-        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-        // transformation: [{ width: 1000, crop: "limit" }] // Optional resizing disabled for stability
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'mp3', 'wav'],
+        resource_type: 'auto' // Allow both image and raw/video (audio)
     }
 });
 
 const fileFilter = (req, file, cb) => {
     // Determine allowed types
-    const allowedTypes = /jpeg|jpg|png|webp|gif/;
+    const allowedTypes = /jpeg|jpg|png|webp|gif|mp3|wav|mpeg/;
     // For Cloudinary storage, file.originalname is available
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const mimetype = allowedTypes.test(file.mimetype) || file.mimetype.startsWith('audio/');
 
-    if (extname && mimetype) {
+    if (extname || mimetype) {
         return cb(null, true);
     } else {
-        cb(new Error('Only images are allowed (jpeg, jpg, png, webp, gif)!'), false);
+        cb(new Error('Only images and audio files are allowed!'), false);
     }
 };
 

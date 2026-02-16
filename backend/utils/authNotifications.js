@@ -65,7 +65,8 @@ Thank you,
             user_email: user.email,
             reset_date: resetDate,
             reset_time: resetTime
-        }
+        },
+        userSettings: user.settings
     });
 }
 
@@ -115,7 +116,8 @@ If you did not request this, please ignore this message.`;
         variables: {
             user_name: user.username || user.name || 'User',
             reset_url: resetUrl
-        }
+        },
+        userSettings: user.settings
     });
 }
 

@@ -642,5 +642,52 @@ router.put('/change-mobile/:token', authLimiter, [
     }
 });
 
+
+// @desc    Update User Settings
+// @route   PUT /api/auth/settings
+// @access  Private
+router.put('/settings', protect, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        if (user) {
+            // Check if settings exist, if not, create default
+            if (!user.settings) {
+                user.settings = {
+                    notifications: {
+                        email: true,
+                        whatsapp: true,
+                        sms: true
+                    },
+                    language: 'en',
+                    theme: 'light'
+                };
+            }
+
+            // Update user settings
+            if (req.body.notifications) {
+                user.settings.notifications = {
+                    ...user.settings.notifications,
+                    ...req.body.notifications
+                };
+            }
+            if (req.body.language) user.settings.language = req.body.language;
+            if (req.body.theme) user.settings.theme = req.body.theme;
+
+            const updatedUser = await user.save();
+
+            res.json({
+                success: true,
+                message: 'Settings updated successfully',
+                settings: updatedUser.settings
+            });
+        } else {
+            res.status(404).json({ message: 'User not found' });
+        }
+    } catch (err) {
+        res.status(500).json({ message: 'Server Error', error: err.message });
+    }
+});
+
 module.exports = router;
 

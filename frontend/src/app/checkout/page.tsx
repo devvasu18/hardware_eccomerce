@@ -8,6 +8,7 @@ import Modal from '@/app/components/Modal';
 import { useModal } from '@/app/hooks/useModal';
 import { FaArrowLeft, FaCreditCard, FaMoneyBillWave } from 'react-icons/fa';
 import { getSystemSettings } from '@/app/utils/systemSettings';
+import Header from '@/app/components/Header';
 import './checkout.css';
 
 const INDIAN_STATES = [
@@ -451,408 +452,411 @@ export default function CheckoutPage() {
     };
 
     return (
-        <div className="container checkout-container">
-            <button onClick={() => router.back()} className="back-btn">
-                <FaArrowLeft /> Back
-            </button>
-            <h1 className="checkout-title">
-                {availableItems.length > 0 ? 'Secure Checkout' : 'Submit Procurement Request'}
-            </h1>
+        <>
+            <Header />
+            <div className="container checkout-container">
+                <button onClick={() => router.back()} className="back-btn">
+                    <FaArrowLeft /> Back
+                </button>
+                <h1 className="checkout-title">
+                    {availableItems.length > 0 ? 'Secure Checkout' : 'Submit Procurement Request'}
+                </h1>
 
-            <div className="checkout-grid">
+                <div className="checkout-grid">
 
-                {/* Left: Details */}
-                <div>
-                    {/* Guest Customer Details */}
-                    {!user && (
-                        <div className="card checkout-section">
-                            <h3 className="section-title">Contact Information</h3>
-                            <div className="form-group">
-                                <label className="form-label">
-                                    Full Name <span className="form-asterisk">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={guestName}
-                                    onChange={(e) => setGuestName(e.target.value)}
-                                    placeholder="Enter your full name"
-                                    className="form-input"
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">
-                                    Phone Number <span className="form-asterisk">*</span>
-                                </label>
-                                <input
-                                    type="tel"
-                                    value={guestPhone}
-                                    onChange={(e) => setGuestPhone(e.target.value)}
-                                    placeholder="Enter your phone number"
-                                    className="form-input"
-                                />
-                            </div>
-                            <div>
-                                <label className="form-label">
-                                    Email (Optional)
-                                </label>
-                                <input
-                                    type="email"
-                                    value={guestEmail}
-                                    onChange={(e) => setGuestEmail(e.target.value)}
-                                    placeholder="Enter your email"
-                                    className="form-input"
-                                />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Address Selection Section */}
-                    <div className="card checkout-section">
-                        <h3 className="section-title">{availableItems.length > 0 ? 'Shipping Address' : 'Contact Address'}</h3>
-
-                        {lockedAddress ? (
-                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md mb-4">
-                                <p className="text-sm font-semibold text-blue-800 mb-1">
-                                    Address Locked for Approved Limit
-                                </p>
-                                <p className="text-sm text-blue-700">
-                                    Your order contains an approved On-Demand request which is tied to the following address:
-                                </p>
-                                <div className="mt-2 p-3 bg-white border border-blue-100 rounded text-gray-800 font-medium">
-                                    {lockedAddress}
-                                </div>
-                                <p className="text-xs text-blue-600 mt-2">
-                                    To ship to a different address, please remove the approved On-Demand item from your cart.
-                                </p>
-                            </div>
-                        ) : (null)}
-
-                        {/* Saved Addresses List */}
-                        {!lockedAddress && savedAddresses.length > 0 && (
-                            <div className="address-list">
-                                {savedAddresses.map((addr: any) => (
-                                    <label key={addr._id} className={`address-card ${selectedAddressId === addr._id ? 'selected' : ''}`}>
-                                        <input
-                                            type="radio"
-                                            name="address"
-                                            value={addr._id}
-                                            checked={selectedAddressId === addr._id}
-                                            onChange={() => setSelectedAddressId(addr._id)}
-                                            style={{ marginTop: '0.25rem' }}
-                                        />
-                                        <div>
-                                            <div className="address-street">{addr.street}, {addr.city}</div>
-                                            <div className="address-meta">
-                                                {addr.landmark ? `${addr.landmark}, ` : ''} {addr.state} - {addr.pincode}
-                                            </div>
-                                        </div>
+                    {/* Left: Details */}
+                    <div>
+                        {/* Guest Customer Details */}
+                        {!user && (
+                            <div className="card checkout-section">
+                                <h3 className="section-title">Contact Information</h3>
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        Full Name <span className="form-asterisk">*</span>
                                     </label>
-                                ))}
-
-                                <label className="add-new-address-label">
-                                    <input
-                                        type="radio"
-                                        name="address"
-                                        value="new"
-                                        checked={selectedAddressId === 'new'}
-                                        onChange={() => setSelectedAddressId('new')}
-                                    />
-                                    <span>+ Add New Address</span>
-                                </label>
-                            </div>
-                        )}
-
-                        {/* New Address Form */}
-                        {!lockedAddress && isNewAddress && (
-                            <div className="grid-gap-1">
-                                <div className="address-grid">
-                                    <div>
-                                        <label className="form-label">Pincode <span className="form-asterisk">*</span></label>
-                                        <input
-                                            type="text"
-                                            value={newAddress.pincode}
-                                            onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
-                                            placeholder="123456"
-                                            className="form-input"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="form-label">Town / City <span className="form-asterisk">*</span></label>
-                                        <input
-                                            type="text"
-                                            value={newAddress.city}
-                                            onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
-                                            placeholder="Ahmedabad"
-                                            className="form-input"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="form-label">Street Address <span className="form-asterisk">*</span></label>
                                     <input
                                         type="text"
-                                        value={newAddress.street}
-                                        onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
-                                        placeholder="123, Vasu House"
+                                        value={guestName}
+                                        onChange={(e) => setGuestName(e.target.value)}
+                                        placeholder="Enter your full name"
                                         className="form-input"
                                     />
                                 </div>
-
-                                <div className="address-grid">
-                                    <div>
-                                        <label className="form-label">Landmark (Optional)</label>
-                                        <input
-                                            type="text"
-                                            value={newAddress.landmark}
-                                            onChange={(e) => setNewAddress({ ...newAddress, landmark: e.target.value })}
-                                            placeholder="Near City Mall"
-                                            className="form-input"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="form-label">State <span className="form-asterisk">*</span></label>
-                                        <select
-                                            value={newAddress.state}
-                                            onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
-                                            className="form-input"
-                                            style={{ backgroundColor: 'white' }}
-                                        >
-                                            {INDIAN_STATES.map(st => (
-                                                <option key={st} value={st}>{st}</option>
-                                            ))}
-                                        </select>
-                                    </div>
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        Phone Number <span className="form-asterisk">*</span>
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        value={guestPhone}
+                                        onChange={(e) => setGuestPhone(e.target.value)}
+                                        placeholder="Enter your phone number"
+                                        className="form-input"
+                                    />
                                 </div>
-
-                                {user && (
-                                    <div className="save-btn-container">
-                                        <button
-                                            type="button"
-                                            onClick={handleSaveAddress}
-                                            className="save-address-btn"
-                                        >
-                                            Save Address
-                                        </button>
-                                    </div>
-                                )}
+                                <div>
+                                    <label className="form-label">
+                                        Email (Optional)
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={guestEmail}
+                                        onChange={(e) => setGuestEmail(e.target.value)}
+                                        placeholder="Enter your email"
+                                        className="form-input"
+                                    />
+                                </div>
                             </div>
                         )}
-                    </div>
 
-                    {/* Payment Method - Dynamic Selection */}
-                    {availableItems.length > 0 && (paymentSettings.onlinePaymentEnabled || paymentSettings.codEnabled) && (
+                        {/* Address Selection Section */}
                         <div className="card checkout-section">
-                            <h3 className="section-title">Payment Method</h3>
+                            <h3 className="section-title">{availableItems.length > 0 ? 'Shipping Address' : 'Contact Address'}</h3>
 
-                            <div className="payment-options">
-                                {paymentSettings.onlinePaymentEnabled && (
-                                    <label className={`payment-card ${paymentMethod === 'Online' ? 'selected' : ''}`}>
+                            {lockedAddress ? (
+                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-md mb-4">
+                                    <p className="text-sm font-semibold text-blue-800 mb-1">
+                                        Address Locked for Approved Limit
+                                    </p>
+                                    <p className="text-sm text-blue-700">
+                                        Your order contains an approved On-Demand request which is tied to the following address:
+                                    </p>
+                                    <div className="mt-2 p-3 bg-white border border-blue-100 rounded text-gray-800 font-medium">
+                                        {lockedAddress}
+                                    </div>
+                                    <p className="text-xs text-blue-600 mt-2">
+                                        To ship to a different address, please remove the approved On-Demand item from your cart.
+                                    </p>
+                                </div>
+                            ) : (null)}
+
+                            {/* Saved Addresses List */}
+                            {!lockedAddress && savedAddresses.length > 0 && (
+                                <div className="address-list">
+                                    {savedAddresses.map((addr: any) => (
+                                        <label key={addr._id} className={`address-card ${selectedAddressId === addr._id ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="address"
+                                                value={addr._id}
+                                                checked={selectedAddressId === addr._id}
+                                                onChange={() => setSelectedAddressId(addr._id)}
+                                                style={{ marginTop: '0.25rem' }}
+                                            />
+                                            <div>
+                                                <div className="address-street">{addr.street}, {addr.city}</div>
+                                                <div className="address-meta">
+                                                    {addr.landmark ? `${addr.landmark}, ` : ''} {addr.state} - {addr.pincode}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    ))}
+
+                                    <label className="add-new-address-label">
                                         <input
                                             type="radio"
-                                            name="paymentMethod"
-                                            value="Online"
-                                            checked={paymentMethod === 'Online'}
-                                            onChange={() => setPaymentMethod('Online')}
+                                            name="address"
+                                            value="new"
+                                            checked={selectedAddressId === 'new'}
+                                            onChange={() => setSelectedAddressId('new')}
                                         />
-                                        <div className="payment-icon">
-                                            <FaCreditCard size={20} />
-                                        </div>
-                                        <div className="payment-info">
-                                            <div className="payment-name">Online Payment</div>
-                                            <div className="payment-desc">Pay securely via Cards, UPI, or NetBanking</div>
-                                        </div>
+                                        <span>+ Add New Address</span>
                                     </label>
-                                )}
+                                </div>
+                            )}
 
-                                {paymentSettings.codEnabled && (
-                                    <label className={`payment-card ${paymentMethod === 'COD' ? 'selected' : ''}`}>
+                            {/* New Address Form */}
+                            {!lockedAddress && isNewAddress && (
+                                <div className="grid-gap-1">
+                                    <div className="address-grid">
+                                        <div>
+                                            <label className="form-label">Pincode <span className="form-asterisk">*</span></label>
+                                            <input
+                                                type="text"
+                                                value={newAddress.pincode}
+                                                onChange={(e) => setNewAddress({ ...newAddress, pincode: e.target.value })}
+                                                placeholder="123456"
+                                                className="form-input"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="form-label">Town / City <span className="form-asterisk">*</span></label>
+                                            <input
+                                                type="text"
+                                                value={newAddress.city}
+                                                onChange={(e) => setNewAddress({ ...newAddress, city: e.target.value })}
+                                                placeholder="Ahmedabad"
+                                                className="form-input"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="form-label">Street Address <span className="form-asterisk">*</span></label>
                                         <input
-                                            type="radio"
-                                            name="paymentMethod"
-                                            value="COD"
-                                            checked={paymentMethod === 'COD'}
-                                            onChange={() => setPaymentMethod('COD')}
+                                            type="text"
+                                            value={newAddress.street}
+                                            onChange={(e) => setNewAddress({ ...newAddress, street: e.target.value })}
+                                            placeholder="123, Vasu House"
+                                            className="form-input"
                                         />
-                                        <div className="payment-icon">
-                                            <FaMoneyBillWave size={20} />
-                                        </div>
-                                        <div className="payment-info">
-                                            <div className="payment-name">Cash on Delivery (COD)</div>
-                                            <div className="payment-desc">Pay when you receive your order</div>
-                                        </div>
-                                    </label>
-                                )}
-                            </div>
+                                    </div>
 
-                            {!paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled && (
-                                <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
-                                    No payment methods are currently available. Please contact support.
+                                    <div className="address-grid">
+                                        <div>
+                                            <label className="form-label">Landmark (Optional)</label>
+                                            <input
+                                                type="text"
+                                                value={newAddress.landmark}
+                                                onChange={(e) => setNewAddress({ ...newAddress, landmark: e.target.value })}
+                                                placeholder="Near City Mall"
+                                                className="form-input"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="form-label">State <span className="form-asterisk">*</span></label>
+                                            <select
+                                                value={newAddress.state}
+                                                onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
+                                                className="form-input"
+                                                style={{ backgroundColor: 'white' }}
+                                            >
+                                                {INDIAN_STATES.map(st => (
+                                                    <option key={st} value={st}>{st}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    {user && (
+                                        <div className="save-btn-container">
+                                            <button
+                                                type="button"
+                                                onClick={handleSaveAddress}
+                                                className="save-address-btn"
+                                            >
+                                                Save Address
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
-                    )}
 
-                    {availableItems.length > 0 && !paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled && (
-                        <div className="hidden">
-                            <input type="hidden" value={paymentMethod} />
-                        </div>
-                    )}
-                </div>
+                        {/* Payment Method - Dynamic Selection */}
+                        {availableItems.length > 0 && (paymentSettings.onlinePaymentEnabled || paymentSettings.codEnabled) && (
+                            <div className="card checkout-section">
+                                <h3 className="section-title">Payment Method</h3>
 
-                {/* Right: Summary */}
-                <div>
-                    <div className="card summary-sticky">
-                        <h3 className="section-title">Summary</h3>
-
-                        {/* Available Items */}
-                        {availableItems.length > 0 && (
-                            <>
-                                <h4 className="summary-header">Items for Purchase</h4>
-                                {availableItems.map(item => (
-                                    <div key={`${item.productId}-${item.size || 'default'}`} className="summary-item">
-                                        <span>{item.name} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
-                                        <span style={{ fontWeight: 600 }}>₹{item.price * item.quantity}</span>
-                                    </div>
-                                ))}
-                                <div className="summary-divider"></div>
-                            </>
-                        )}
-
-                        {/* On-Demand Items */}
-                        {requestItems.length > 0 && (
-                            <>
-                                <h4 className={`summary-header ${availableItems.length > 0 ? 'mt-1-5' : 'mt-0'}`}>Procurement Request Items</h4>
-                                {requestItems.map(item => (
-                                    <div key={`${item.productId}-${item.size || 'default'}`} className="summary-item text-request">
-                                        <span>{item.name} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
-                                        <span className="request-tag">REQUEST ONLY</span>
-                                    </div>
-                                ))}
-                                <div className="summary-divider"></div>
-                            </>
-                        )}
-
-                        {/* Totals - Only show if there are available items */}
-                        {availableItems.length > 0 ? (
-                            <>
-                                <div className="summary-row">
-                                    <span>Subtotal (MRP)</span>
-                                    <span style={{ textDecoration: totalSavings > 0 ? 'line-through' : 'none', color: totalSavings > 0 ? '#666' : 'inherit' }}>₹{mrpTotal}</span>
-                                </div>
-
-                                {totalSavings > 0 && (
-                                    <div className="summary-row text-success" style={{ fontWeight: 600, color: '#2e7d32' }}>
-                                        <span>Total Savings</span>
-                                        <span>-₹{totalSavings}</span>
-                                    </div>
-                                )}
-
-                                <div className="summary-row" style={{ marginTop: '0.25rem' }}>
-                                    <span>Selling Price</span>
-                                    <span>₹{cartTotal}</span>
-                                </div>
-
-                                {/* Dynamic Tax Display */}
-                                {isIntraState ? (
-                                    <>
-                                        <div className="tax-row">
-                                            <span>CGST (Total)</span>
-                                            <span>₹{Math.round(taxAmount / 2)}</span>
-                                        </div>
-                                        <div className="tax-row mb-1">
-                                            <span>SGST (Total)</span>
-                                            <span>₹{Math.round(taxAmount / 2)}</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="tax-row mb-1">
-                                        <span>IGST (Total)</span>
-                                        <span>₹{Math.round(taxAmount)}</span>
-                                    </div>
-                                )}
-
-                                {/* Coupon Section */}
-                                <div className="summary-divider"></div>
-                                {!appliedCoupon ? (
-                                    <div className="coupon-apply-box">
-                                        <input
-                                            type="text"
-                                            value={couponInput}
-                                            onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-                                            placeholder="ENTER COUPON CODE"
-                                            className="coupon-input"
-                                        />
-                                        <button onClick={handleApplyCoupon} className="coupon-apply-btn">Apply</button>
-                                    </div>
-                                ) : (
-                                    <div className="applied-coupon-box">
-                                        <div className="flex justify-between items-center w-full">
-                                            <div>
-                                                <div className="coupon-code-badge">{appliedCoupon.code}</div>
-                                                <div className="coupon-desc-text">{appliedCoupon.description}</div>
+                                <div className="payment-options">
+                                    {paymentSettings.onlinePaymentEnabled && (
+                                        <label className={`payment-card ${paymentMethod === 'Online' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="paymentMethod"
+                                                value="Online"
+                                                checked={paymentMethod === 'Online'}
+                                                onChange={() => setPaymentMethod('Online')}
+                                            />
+                                            <div className="payment-icon">
+                                                <FaCreditCard size={20} />
                                             </div>
-                                            <button onClick={handleRemoveCoupon} className="coupon-remove-btn">Remove</button>
-                                        </div>
-                                        <div className="summary-row text-success mt-2" style={{ fontWeight: 600 }}>
-                                            <span>Coupon Discount</span>
-                                            <span>-₹{couponDiscount}</span>
-                                        </div>
+                                            <div className="payment-info">
+                                                <div className="payment-name">Online Payment</div>
+                                                <div className="payment-desc">Pay securely via Cards, UPI, or NetBanking</div>
+                                            </div>
+                                        </label>
+                                    )}
+
+                                    {paymentSettings.codEnabled && (
+                                        <label className={`payment-card ${paymentMethod === 'COD' ? 'selected' : ''}`}>
+                                            <input
+                                                type="radio"
+                                                name="paymentMethod"
+                                                value="COD"
+                                                checked={paymentMethod === 'COD'}
+                                                onChange={() => setPaymentMethod('COD')}
+                                            />
+                                            <div className="payment-icon">
+                                                <FaMoneyBillWave size={20} />
+                                            </div>
+                                            <div className="payment-info">
+                                                <div className="payment-name">Cash on Delivery (COD)</div>
+                                                <div className="payment-desc">Pay when you receive your order</div>
+                                            </div>
+                                        </label>
+                                    )}
+                                </div>
+
+                                {!paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled && (
+                                    <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                                        No payment methods are currently available. Please contact support.
                                     </div>
                                 )}
-
-                                <div className="grand-total">
-                                    <span>Grand Total</span>
-                                    <span>₹{grandTotal}</span>
-                                </div>
-                            </>
-                        ) : (
-                            <div className="text-muted-italic">
-                                No payment required for ON-DEMAND items. We will contact you within 24 hours.
                             </div>
                         )}
 
-                        <button
-                            onClick={handlePlaceOrder}
-                            disabled={loading || (availableItems.length > 0 && !paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled)}
-                            className="btn btn-primary submit-btn"
-                        >
-                            {submitButtonText}
-                        </button>
+                        {availableItems.length > 0 && !paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled && (
+                            <div className="hidden">
+                                <input type="hidden" value={paymentMethod} />
+                            </div>
+                        )}
+                    </div>
 
-                        <p className="terms-text">
-                            {availableItems.length > 0
-                                ? 'By placing this order, you agree to our terms and conditions'
-                                : 'For more information about ON-DEMAND items, please contact us on 9876543210.'}
+                    {/* Right: Summary */}
+                    <div>
+                        <div className="card summary-sticky">
+                            <h3 className="section-title">Summary</h3>
+
+                            {/* Available Items */}
+                            {availableItems.length > 0 && (
+                                <>
+                                    <h4 className="summary-header">Items for Purchase</h4>
+                                    {availableItems.map(item => (
+                                        <div key={`${item.productId}-${item.size || 'default'}`} className="summary-item">
+                                            <span>{item.name} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
+                                            <span style={{ fontWeight: 600 }}>₹{item.price * item.quantity}</span>
+                                        </div>
+                                    ))}
+                                    <div className="summary-divider"></div>
+                                </>
+                            )}
+
+                            {/* On-Demand Items */}
+                            {requestItems.length > 0 && (
+                                <>
+                                    <h4 className={`summary-header ${availableItems.length > 0 ? 'mt-1-5' : 'mt-0'}`}>Procurement Request Items</h4>
+                                    {requestItems.map(item => (
+                                        <div key={`${item.productId}-${item.size || 'default'}`} className="summary-item text-request">
+                                            <span>{item.name} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
+                                            <span className="request-tag">REQUEST ONLY</span>
+                                        </div>
+                                    ))}
+                                    <div className="summary-divider"></div>
+                                </>
+                            )}
+
+                            {/* Totals - Only show if there are available items */}
+                            {availableItems.length > 0 ? (
+                                <>
+                                    <div className="summary-row">
+                                        <span>Subtotal (MRP)</span>
+                                        <span style={{ textDecoration: totalSavings > 0 ? 'line-through' : 'none', color: totalSavings > 0 ? '#666' : 'inherit' }}>₹{mrpTotal}</span>
+                                    </div>
+
+                                    {totalSavings > 0 && (
+                                        <div className="summary-row text-success" style={{ fontWeight: 600, color: '#2e7d32' }}>
+                                            <span>Total Savings</span>
+                                            <span>-₹{totalSavings}</span>
+                                        </div>
+                                    )}
+
+                                    <div className="summary-row" style={{ marginTop: '0.25rem' }}>
+                                        <span>Selling Price</span>
+                                        <span>₹{cartTotal}</span>
+                                    </div>
+
+                                    {/* Dynamic Tax Display */}
+                                    {isIntraState ? (
+                                        <>
+                                            <div className="tax-row">
+                                                <span>CGST (Total)</span>
+                                                <span>₹{Math.round(taxAmount / 2)}</span>
+                                            </div>
+                                            <div className="tax-row mb-1">
+                                                <span>SGST (Total)</span>
+                                                <span>₹{Math.round(taxAmount / 2)}</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="tax-row mb-1">
+                                            <span>IGST (Total)</span>
+                                            <span>₹{Math.round(taxAmount)}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Coupon Section */}
+                                    <div className="summary-divider"></div>
+                                    {!appliedCoupon ? (
+                                        <div className="coupon-apply-box">
+                                            <input
+                                                type="text"
+                                                value={couponInput}
+                                                onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                                                placeholder="ENTER COUPON CODE"
+                                                className="coupon-input"
+                                            />
+                                            <button onClick={handleApplyCoupon} className="coupon-apply-btn">Apply</button>
+                                        </div>
+                                    ) : (
+                                        <div className="applied-coupon-box">
+                                            <div className="flex justify-between items-center w-full">
+                                                <div>
+                                                    <div className="coupon-code-badge">{appliedCoupon.code}</div>
+                                                    <div className="coupon-desc-text">{appliedCoupon.description}</div>
+                                                </div>
+                                                <button onClick={handleRemoveCoupon} className="coupon-remove-btn">Remove</button>
+                                            </div>
+                                            <div className="summary-row text-success mt-2" style={{ fontWeight: 600 }}>
+                                                <span>Coupon Discount</span>
+                                                <span>-₹{couponDiscount}</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="grand-total">
+                                        <span>Grand Total</span>
+                                        <span>₹{grandTotal}</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="text-muted-italic">
+                                    No payment required for ON-DEMAND items. We will contact you within 24 hours.
+                                </div>
+                            )}
+
+                            <button
+                                onClick={handlePlaceOrder}
+                                disabled={loading || (availableItems.length > 0 && !paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled)}
+                                className="btn btn-primary submit-btn"
+                            >
+                                {submitButtonText}
+                            </button>
+
+                            <p className="terms-text">
+                                {availableItems.length > 0
+                                    ? 'By placing this order, you agree to our terms and conditions'
+                                    : 'For more information about ON-DEMAND items, please contact us on 9876543210.'}
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <Modal
+                    isOpen={modalState.isOpen}
+                    onClose={hideModal}
+                    title={modalState.title}
+                    message={modalState.message}
+                    type={modalState.type}
+                    confirmText={modalState.confirmText}
+                    cancelText={modalState.cancelText}
+                    onConfirm={modalState.onConfirm}
+                    showCancel={modalState.showCancel}
+                />
+
+                {/* Loading Overlay */}
+                {loading && (
+                    <div className="loading-overlay">
+                        <div className="spinner"></div>
+                        <p style={{ color: 'white', marginTop: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>
+                            {paymentMethod === 'Online' && availableItems.length > 0
+                                ? 'Redirecting to Secure Payment Gateway...'
+                                : 'Processing your Request...'}
                         </p>
                     </div>
-                </div>
-
+                )}
             </div>
-
-            <Modal
-                isOpen={modalState.isOpen}
-                onClose={hideModal}
-                title={modalState.title}
-                message={modalState.message}
-                type={modalState.type}
-                confirmText={modalState.confirmText}
-                cancelText={modalState.cancelText}
-                onConfirm={modalState.onConfirm}
-                showCancel={modalState.showCancel}
-            />
-
-            {/* Loading Overlay */}
-            {loading && (
-                <div className="loading-overlay">
-                    <div className="spinner"></div>
-                    <p style={{ color: 'white', marginTop: '1rem', fontSize: '1.2rem', fontWeight: 600 }}>
-                        {paymentMethod === 'Online' && availableItems.length > 0
-                            ? 'Redirecting to Secure Payment Gateway...'
-                            : 'Processing your Request...'}
-                    </p>
-                </div>
-            )}
-        </div>
+        </>
     );
 }

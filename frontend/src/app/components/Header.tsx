@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext'; // Import AuthContext
 import { useCart } from '../../context/CartContext'; // Import CartContext
 import { useWishlist } from '../../context/WishlistContext'; // Import WishlistContext
+import { useNotification, Notification } from '../../context/NotificationContext'; // Import NotificationContext
 import { getSystemSettings } from '../utils/systemSettings';
 import './Header.css';
 
@@ -16,11 +17,13 @@ const Header = () => {
     const router = useRouter();
     const pathname = usePathname();
     const { wishlistCount, openWishlist } = useWishlist();
+    const { unreadCount, notifications, markAsRead } = useNotification();
     const [searchTerm, setSearchTerm] = useState('');
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
     const [categories, setCategories] = useState<{ _id: string, name: string, slug: string, showInNav: boolean }[]>([]);
+    const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [mobileSearchTerm, setMobileSearchTerm] = useState('');
@@ -225,6 +228,25 @@ const Header = () => {
 
                 {/* Right: User Actions */}
                 <div className="header-actions-area">
+                    {/* Notification Bell */}
+                    {user && (
+                        <div
+                            className="action-item notification-btn-wrapper"
+                            onClick={() => router.push('/notifications')}
+                            style={{ cursor: 'pointer', position: 'relative' }}
+                            title="Notifications"
+                        >
+                            <div className="notification-icon-container">
+                                <svg className="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                {unreadCount > 0 && (
+                                    <span className="notification-badge">{unreadCount}</span>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Login / Profile */}
                     <div
                         className="action-item relative-wrapper"
@@ -253,6 +275,7 @@ const Header = () => {
                                                 <Link href="/profile" className="dropdown-item">My Profile</Link>
                                                 <Link href="/orders" className="dropdown-item">My Orders</Link>
                                                 <Link href="/change-password" className="dropdown-item">Change Password</Link>
+                                                <Link href="/settings" className="dropdown-item">Settings</Link>
                                             </>
                                         )}
                                         {(user.role === 'admin' || user.role === 'super_admin') && (

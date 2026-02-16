@@ -24,7 +24,9 @@ router.get('/settings', async (req, res) => {
             companyAddress: settings.companyAddress,
             companyGstNumber: settings.companyGstNumber,
             onlinePaymentEnabled: settings.onlinePaymentEnabled,
-            codEnabled: settings.codEnabled
+            codEnabled: settings.codEnabled,
+            notificationSoundEnabled: settings.notificationSoundEnabled,
+            notificationSound: settings.notificationSound
         };
 
         res.json(publicSettings);

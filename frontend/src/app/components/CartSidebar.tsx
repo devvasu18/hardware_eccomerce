@@ -3,9 +3,11 @@
 import React from 'react';
 import { useCart } from '../../context/CartContext'; // Adjust path if needed
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import './CartSidebar.css';
 
 const CartSidebar = () => {
+    const pathname = usePathname();
     const {
         isCartOpen,
         closeCart,
@@ -15,6 +17,7 @@ const CartSidebar = () => {
         cartTotal
     } = useCart();
 
+    if (pathname === '/checkout') return null;
     if (!isCartOpen) return null;
 
     return (

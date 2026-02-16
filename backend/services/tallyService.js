@@ -156,6 +156,27 @@ async function processQueueItem(queueItem) {
                         tallyErrorLog: `Queue Failed: ${result.error}`
                     });
                 }
+
+                // 🔔 Notify Super Admin
+                try {
+                    const notificationService = require('../services/notificationService');
+                    const User = require('../models/User');
+                    const admins = await User.find({ role: 'super_admin' }).select('_id');
+                    for (const admin of admins) {
+                        notificationService.sendNotification({
+                            userId: admin._id,
+                            role: 'ADMIN',
+                            title: 'Tally Sync Failed',
+                            message: `Sync failed for ${queueItem.relatedModel} #${queueItem.relatedId}. Error: ${result.error}`,
+                            type: 'ERROR',
+                            entityId: queueItem.relatedId.toString(),
+                            redirectUrl: '/admin/settings?tab=tally',
+                            priority: 'HIGH'
+                        });
+                    }
+                } catch (notifErr) {
+                    console.error('Failed to send Tally failure notification:', notifErr);
+                }
             } else {
                 queueItem.status = 'pending'; // Retry later
             }

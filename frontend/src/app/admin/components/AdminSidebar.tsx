@@ -76,12 +76,7 @@ export default function AdminSidebar({ collapsed, setCollapsed }: AdminSidebarPr
 
         { label: 'Returns & Refunds', path: '/admin/returns', icon: <FiRefreshCw />, roles: ['super_admin', 'ops_admin', 'accounts_admin'] },
 
-        {
-            label: 'Stock Manager', path: '/admin/stock', icon: <FiGrid />, roles: ['super_admin', 'ops_admin', 'logistics_admin'], children: [
-                { label: 'Stock Entry', path: '/admin/stock', roles: ['super_admin', 'ops_admin'] },
-                { label: 'Party Master', path: '/admin/masters/parties', roles: ['super_admin', 'ops_admin'] }
-            ]
-        },
+
 
 
         { label: 'Coupons', path: '/admin/coupons', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
@@ -94,6 +89,12 @@ export default function AdminSidebar({ collapsed, setCollapsed }: AdminSidebarPr
 
 
         { label: 'User Management', path: '/admin/users', icon: <FiUsers />, roles: ['super_admin'] },
+        {
+            label: 'Stock Manager', path: '/admin/stock', icon: <FiGrid />, roles: ['super_admin', 'ops_admin', 'logistics_admin'], children: [
+                { label: 'Stock Entry', path: '/admin/stock', roles: ['super_admin', 'ops_admin'] },
+                { label: 'Party Master', path: '/admin/masters/parties', roles: ['super_admin', 'ops_admin'] }
+            ]
+        },
         // Grouped Product Manager
         {
             label: 'Product Manager',

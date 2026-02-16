@@ -62,6 +62,7 @@ app.use('/api', globalLimiter);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const logger = require('./utils/logger');
+const notificationService = require('./services/notificationService');
 const { startTallyHealthCheckJob } = require('./jobs/tallyHealthCheckJob');
 const { cleanupStuckMessages, cleanupStuckEmails, getQueueHealth, getEmailQueueHealth } = require('./utils/queueCleanup');
 
@@ -145,11 +146,24 @@ emailWorker.start().catch(err => logger.error('Email Worker Error:', err));
 app.use('/api/whatsapp', require('./routes/whatsappRoutes')); // WhatsApp Automation Routes
 app.use('/api/email', require('./routes/emailRoutes')); // Email Monitoring Routes
 app.use('/api/admin/settings', require('./routes/settingsRoutes')); // System Settings
+app.use('/api/notifications', require('./routes/notificationRoutes')); // Notification System
 
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
     logger.info(`Server running on port ${PORT}`);
 });
+
+// Initialize Socket.IO
+const { Server } = require('socket.io');
+const io = new Server(server, {
+    cors: {
+        origin: [process.env.FRONTEND_URL, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+        methods: ["GET", "POST"],
+        credentials: true
+    }
+});
+
+notificationService.init(io);
 server.setTimeout(10 * 60 * 1000); // 10 minutes timeout
 server.keepAliveTimeout = 120 * 1000; // 2 minutes
 server.headersTimeout = 120 * 1000; // 2 minutes

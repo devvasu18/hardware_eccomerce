@@ -46,40 +46,18 @@ exports.getTransactions = async (req, res) => {
 // @access  Public (Signature Verified)
 exports.handlePaymentWebhook = async (req, res) => {
     try {
-        // 1. Verify Signature (Mock)
-        const signature = req.headers['x-payment-signature'];
-        // if (!verifySignature(signature)) return res.status(400).send('Invalid Signature');
+        // SECURITY: This endpoint was identified as vulnerable. 
+        // It used a mock verification check and signature header not standard to PayU.
+        // It is DISABLED for Production Security.
+        // If a server-to-server webhook is needed from PayU, it must verify the 'hash' parameter 
+        // using the merchant salt, similar to verifyPayment controller.
 
-        const { paymentId, orderId, userId, amount, status, method, rawData } = req.body;
+        console.warn('Security Alert: Attempt to access disabled webhook endpoint');
+        return res.status(403).json({ message: 'Webhook endpoint is disabled for security.' });
 
-        // 2. Idempotency Check
-        const existingTx = await Transaction.findOne({ paymentId });
-        if (existingTx) {
-            return res.status(200).json({ message: 'Transaction already processed' });
-        }
-
-        // 3. Create Transaction
-        const transaction = await Transaction.create({
-            order: orderId,
-            user: userId,
-            paymentId,
-            paymentMethod: method || 'Online',
-            amount,
-            status: status === 'succeeded' ? 'Success' : 'Failed',
-            gatewayResponse: rawData || req.body
-        });
-
-        // 4. Update Order Status
-        if (status === 'succeeded') {
-            const order = await Order.findById(orderId);
-            if (order) {
-                order.paymentStatus = 'Paid';
-                order.paymentMethod = method || 'Online';
-                await order.save();
-            }
-        }
-
-        res.status(200).json({ received: true });
+        /*
+        // ORIGINAL INSECURE CODE REMOVED
+        */
     } catch (error) {
         console.error('Webhook Error:', error);
         res.status(500).json({ message: 'Webhook Failed' });

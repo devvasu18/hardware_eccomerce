@@ -28,7 +28,9 @@ export default function SystemSettingsPage() {
         lowStockThreshold: 10,
         lowStockAlertsEnabled: true,
         onlinePaymentEnabled: true,
-        codEnabled: false
+        codEnabled: false,
+        notificationSoundEnabled: true,
+        notificationSound: '/sounds/order_alert.mp3'
     });
 
     useEffect(() => {
@@ -453,6 +455,61 @@ export default function SystemSettingsPage() {
                                     }}></span>
                                 </span>
                             </label>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <FiBell size={20} color="#F59E0B" />
+                                <div>
+                                    <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>Notification Sound</p>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
+                                        Play a sound when a new notification arrives
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                {settings.notificationSoundEnabled && (
+                                    <select
+                                        value={settings.notificationSound || 'default'}
+                                        onChange={(e) => handleChange('notificationSound', e.target.value)}
+                                        style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                                    >
+                                        <option value="default">Default</option>
+                                        <option value="/sounds/order_alert.mp3">Cash Register (Cha-Ching)</option>
+                                        <option value="/sounds/notification.mp3">Subtle Chime</option>
+                                    </select>
+                                )}
+                                <label style={{ position: 'relative', display: 'inline-block', width: '60px', height: '30px', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.notificationSoundEnabled !== false} // Default to true if undefined
+                                        onChange={(e) => handleChange('notificationSoundEnabled', e.target.checked)}
+                                        style={{ opacity: 0, width: 0, height: 0 }}
+                                    />
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: settings.notificationSoundEnabled !== false ? '#10B981' : '#cbd5e1',
+                                        borderRadius: '30px',
+                                        transition: '0.3s',
+                                        cursor: 'pointer'
+                                    }}>
+                                        <span style={{
+                                            position: 'absolute',
+                                            content: '""',
+                                            height: '22px',
+                                            width: '22px',
+                                            left: settings.notificationSoundEnabled !== false ? '34px' : '4px',
+                                            bottom: '4px',
+                                            backgroundColor: 'white',
+                                            borderRadius: '50%',
+                                            transition: '0.3s'
+                                        }}></span>
+                                    </span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>

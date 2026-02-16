@@ -3,6 +3,8 @@ const router = express.Router();
 const SystemSettings = require('../models/SystemSettings');
 const { protect, admin } = require('../middleware/authMiddleware');
 
+const upload = require('../middleware/uploadMiddleware');
+
 // @desc    Get system settings
 // @route   GET /api/admin/settings/system
 // @access  Admin
@@ -19,6 +21,27 @@ router.get('/system', protect, admin, async (req, res) => {
     } catch (error) {
         console.error('Get system settings error:', error);
         res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// @desc    Upload notification sound
+// @route   POST /api/admin/settings/upload-sound
+// @access  Admin
+router.post('/upload-sound', protect, admin, upload.single('sound'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ message: 'No file uploaded' });
+        }
+
+        // Return the Cloudinary URL
+        res.json({
+            success: true,
+            message: 'Sound uploaded successfully',
+            url: req.file.path
+        });
+    } catch (error) {
+        console.error('Upload sound error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
@@ -45,7 +68,9 @@ router.put('/system', protect, admin, async (req, res) => {
             lowStockThreshold,
             lowStockAlertsEnabled,
             onlinePaymentEnabled,
-            codEnabled
+            codEnabled,
+            notificationSoundEnabled,
+            notificationSound
         } = req.body;
 
         let settings = await SystemSettings.findById('system_settings');
@@ -73,6 +98,8 @@ router.put('/system', protect, admin, async (req, res) => {
         if (lowStockAlertsEnabled !== undefined) settings.lowStockAlertsEnabled = lowStockAlertsEnabled;
         if (onlinePaymentEnabled !== undefined) settings.onlinePaymentEnabled = onlinePaymentEnabled;
         if (codEnabled !== undefined) settings.codEnabled = codEnabled;
+        if (notificationSoundEnabled !== undefined) settings.notificationSoundEnabled = notificationSoundEnabled;
+        if (notificationSound !== undefined) settings.notificationSound = notificationSound;
 
         await settings.save();
 

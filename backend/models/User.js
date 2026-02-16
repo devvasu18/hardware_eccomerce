@@ -33,6 +33,15 @@ const userSchema = new mongoose.Schema({
     mobileChangeToken: String,
     mobileChangeExpire: Date,
     isActive: { type: Boolean, default: true },
+    settings: {
+        notifications: {
+            email: { type: Boolean, default: true },
+            whatsapp: { type: Boolean, default: true },
+            sms: { type: Boolean, default: true }
+        },
+        language: { type: String, default: 'en' },
+        theme: { type: String, default: 'light' }
+    },
     passwordHistory: [{
         password: { type: String, required: true },
         changedAt: { type: Date, default: Date.now }
