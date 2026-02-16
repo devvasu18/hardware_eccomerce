@@ -103,6 +103,10 @@ router.post('/add', authenticateToken, async (req, res) => {
     try {
         const { productId, quantity, price, size, variationId, variationText, modelId, modelName } = req.body;
 
+        if (!quantity || quantity < 1) {
+            return res.status(400).json({ message: 'Quantity must be at least 1' });
+        }
+
         // Validate product exists
         const product = await Product.findById(productId).populate('offers');
         if (!product) {

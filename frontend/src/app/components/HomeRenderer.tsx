@@ -2,6 +2,7 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
+import Loader from '@/app/components/Loader';
 
 // Lazy load components for performance
 const HeroSlider = lazy(() => import('@/app/components/HeroSlider'));
@@ -93,11 +94,13 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
 
     if (loading) {
         return (
-            <main>
+            <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Header />
-                <SectionPlaceholder />
-                <SectionPlaceholder />
-                <SectionPlaceholder />
+                <Loader />
+                <div className="flex-grow">
+                    {/* Placeholder content to maintain layout structure while loading */}
+                    <div className="w-full h-96 bg-gray-50/50 animate-pulse"></div>
+                </div>
                 <Footer />
             </main>
         );

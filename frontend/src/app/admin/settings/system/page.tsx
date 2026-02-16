@@ -54,6 +54,50 @@ export default function SystemSettingsPage() {
         setSettings(prev => ({ ...prev, [field]: value }));
     };
 
+    const [uploadingSound, setUploadingSound] = useState(false);
+
+    const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        const validTypes = ['audio/mpeg', 'audio/wav', 'audio/mp3'];
+        if (!validTypes.includes(file.type) && !file.name.match(/\.(mp3|wav)$/i)) {
+            showError('Please upload a valid MP3 or WAV file');
+            return;
+        }
+
+        // Validate file size (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            showError('File size must be less than 2MB');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('sound', file);
+
+        setUploadingSound(true);
+        try {
+            const res = await api.post('/admin/settings/upload-sound', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            if (res.data.success) {
+                setSettings(prev => ({
+                    ...prev,
+                    notificationSound: res.data.url
+                }));
+                showSuccess('Sound uploaded successfully! Don\'t forget to save settings.');
+            }
+        } catch (error: any) {
+            console.error('Sound upload failed:', error);
+            showError(error.response?.data?.message || 'Failed to upload sound');
+        } finally {
+            setUploadingSound(false);
+            e.target.value = ''; // Reset input
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -471,13 +515,49 @@ export default function SystemSettingsPage() {
                                     <select
                                         value={settings.notificationSound || 'default'}
                                         onChange={(e) => handleChange('notificationSound', e.target.value)}
-                                        style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem' }}
+                                        style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', maxWidth: '150px' }}
                                     >
                                         <option value="default">Default</option>
                                         <option value="/sounds/order_alert.mp3">Cash Register (Cha-Ching)</option>
                                         <option value="/sounds/notification.mp3">Subtle Chime</option>
+                                        <option value="custom">Custom Sound</option>
+                                        {settings.notificationSound && !['default', '/sounds/order_alert.mp3', '/sounds/notification.mp3', 'custom'].includes(settings.notificationSound) && (
+                                            <option value={settings.notificationSound}>Uploaded Sound</option>
+                                        )}
                                     </select>
                                 )}
+
+                                {settings.notificationSoundEnabled && (
+                                    <>
+                                        <input
+                                            type="file"
+                                            id="sound-upload"
+                                            accept=".mp3,.wav"
+                                            style={{ display: 'none' }}
+                                            onChange={handleSoundUpload}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => document.getElementById('sound-upload')?.click()}
+                                            disabled={uploadingSound}
+                                            style={{
+                                                padding: '0.4rem 0.8rem',
+                                                borderRadius: '6px',
+                                                border: '1px solid #cbd5e1',
+                                                background: '#fff',
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem'
+                                            }}
+                                        >
+                                            {uploadingSound ? <FiRefreshCw className="spin" /> : <FiPhone />}
+                                            Upload
+                                        </button>
+                                    </>
+                                )}
+
                                 <label style={{ position: 'relative', display: 'inline-block', width: '60px', height: '30px', cursor: 'pointer' }}>
                                     <input
                                         type="checkbox"

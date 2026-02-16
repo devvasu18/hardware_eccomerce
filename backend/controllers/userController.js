@@ -101,6 +101,11 @@ exports.createUser = async (req, res) => {
     try {
         const { username, mobile, email, password, role, image } = req.body;
 
+        // Security: Only Super Admin can create another Super Admin
+        if (role === 'super_admin' && req.user.role !== 'super_admin') {
+            return res.status(403).json({ message: 'Not authorized to create Super Admin' });
+        }
+
         const userExists = await User.findOne({ $or: [{ email }, { mobile }] });
         if (userExists) {
             return res.status(400).json({ message: 'User already exists with this email or mobile' });
@@ -140,6 +145,16 @@ exports.updateUser = async (req, res) => {
         const user = await User.findById(req.params.id);
 
         if (user) {
+            // Security: Prevent Privilege Escalation
+            // 1. Cannot change TO super_admin unless you ARE super_admin
+            if (req.body.role === 'super_admin' && req.user.role !== 'super_admin') {
+                return res.status(403).json({ message: 'Not authorized to assign Super Admin role' });
+            }
+            // 2. Cannot update an EXISTING super_admin unless you ARE super_admin
+            if (user.role === 'super_admin' && req.user.role !== 'super_admin') {
+                return res.status(403).json({ message: 'Not authorized to modify Super Admin accounts' });
+            }
+
             user.username = req.body.username || user.username;
             user.email = req.body.email || user.email;
             user.mobile = req.body.mobile || user.mobile;

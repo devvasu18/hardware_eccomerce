@@ -73,6 +73,11 @@ router.put('/system', protect, admin, async (req, res) => {
             notificationSound
         } = req.body;
 
+        // Security Check: Only Super Admin can change system settings
+        if (req.user.role !== 'super_admin') {
+            return res.status(403).json({ message: 'Not authorized to change system settings' });
+        }
+
         let settings = await SystemSettings.findById('system_settings');
 
         if (!settings) {
