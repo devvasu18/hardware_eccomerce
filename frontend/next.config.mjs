@@ -53,7 +53,11 @@ const nextConfig = {
     unoptimized: process.env.NODE_ENV === 'development',
   },
   async rewrites() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    // Use localhost for development, production backend for deployed environments
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL
+      ? process.env.NEXT_PUBLIC_API_URL.replace('/api', '') // Remove /api suffix if present
+      : 'http://localhost:5000';
+
     return [
       {
         source: '/api/:path*',
