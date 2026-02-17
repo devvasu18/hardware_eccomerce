@@ -38,7 +38,7 @@ export default function SpecialDealsPage() {
     useEffect(() => {
         async function fetchOffers() {
             try {
-                const res = await fetch('http://localhost:5000/api/special-offers');
+                const res = await fetch('/api/special-offers');
                 if (res.ok) {
                     const data = await res.json();
                     setOffers(data);
@@ -211,7 +211,7 @@ export default function SpecialDealsPage() {
 
                                             const fullImageUrl = imageUrl.startsWith('http')
                                                 ? imageUrl
-                                                : `http://localhost:5000/${imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl}`;
+                                                : `/${imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl}`;
 
                                             return (
                                                 <Image

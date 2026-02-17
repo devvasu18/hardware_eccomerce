@@ -92,7 +92,7 @@ export default function CategorySection({ config }: { config?: any }) {
                                                 src={cat.imageUrl?.startsWith('http')
                                                     ? cat.imageUrl
                                                     : (cat.imageUrl
-                                                        ? `http://localhost:5000/${cat.imageUrl.startsWith('/') ? cat.imageUrl.slice(1) : cat.imageUrl}`
+                                                        ? `/${cat.imageUrl.startsWith('/') ? cat.imageUrl.slice(1) : cat.imageUrl}`
                                                         : '/placeholder.png')}
                                                 fill
                                                 alt={getLocalized(cat.name)}

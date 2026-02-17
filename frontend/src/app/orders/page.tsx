@@ -42,7 +42,7 @@ export default function MyOrdersPage() {
         setLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/orders/my-orders', {
+            const res = await fetch('/api/orders/my-orders', {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -163,7 +163,7 @@ export default function MyOrdersPage() {
                                                     <img
                                                         src={item.product.featured_image.startsWith('http')
                                                             ? item.product.featured_image
-                                                            : `http://localhost:5000/${item.product.featured_image.replace(/\\/g, '/')}`}
+                                                            : `/${item.product.featured_image.replace(/\\/g, '/')}`}
                                                         alt={item.product.name}
                                                         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                                     />

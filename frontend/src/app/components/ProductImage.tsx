@@ -17,7 +17,7 @@ export default function ProductImage({ src, alt, style }: ProductImageProps) {
         if (url.startsWith('http') || url.startsWith('data:')) return url;
         // Remove leading slash if present to avoid double slashes when appending
         const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
-        return `http://localhost:5000/${cleanUrl}`;
+        return `/${cleanUrl}`;
     };
 
     const formattedSrc = formatSrc(src);

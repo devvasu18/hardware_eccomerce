@@ -36,7 +36,7 @@ export default function HeroSlider() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('http://localhost:5000/api/banners')
+        fetch('/api/banners')
             .then(res => res.json())
             .then(data => {
                 if (data && data.length > 0) {
@@ -95,7 +95,7 @@ export default function HeroSlider() {
                         <div
                             className="hero-background"
                             style={{
-                                backgroundImage: `url(${slide.image.startsWith('http') ? slide.image : `http://localhost:5000/${slide.image}`})`
+                                backgroundImage: `url(${slide.image.startsWith('http') ? slide.image : `/${slide.image.startsWith('/') ? slide.image.slice(1) : slide.image}`})`
                             }}
                         ></div>
                         <div className="hero-overlay"></div>

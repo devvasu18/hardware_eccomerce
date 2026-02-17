@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiArrowRight } from 'react-icons/fi';
 import api from '../utils/api';
 import './BrandsSection.css';
 import { useLanguage } from '../../context/LanguageContext';
@@ -33,8 +33,16 @@ export default function BrandsSection({ config }: { config?: any }) {
         <section className="brands-section">
             <div className="container">
                 <div className="brands-container">
-                    <h2 className="brands-title">{config?.title || t('our_partner_brands')}</h2>
-                    {config?.subtitle && <p className="brands-subtitle">{config.subtitle}</p>}
+                    <div className="brands-header">
+                        <div>
+                            <h2 className="brands-title">{config?.title || t('our_partner_brands')}</h2>
+                            {config?.subtitle && <p className="brands-subtitle">{config.subtitle}</p>}
+                        </div>
+                        <Link href="/brands" className="brands-view-all-btn">
+                            <span>{t('view_all_brands')}</span>
+                            <FiArrowRight />
+                        </Link>
+                    </div>
 
                     <div className="brands-grid-wrapper">
                         {brands.map((brand, idx) => (
@@ -49,7 +57,7 @@ export default function BrandsSection({ config }: { config?: any }) {
                                             src={(brand.logo || brand.logo_image)?.startsWith('http')
                                                 ? (brand.logo || brand.logo_image)
                                                 : ((brand.logo || brand.logo_image)
-                                                    ? `http://localhost:5000/${brand.logo || brand.logo_image}`
+                                                    ? `/${(brand.logo || brand.logo_image).startsWith('/') ? (brand.logo || brand.logo_image).slice(1) : (brand.logo || brand.logo_image)}`
                                                     : '/placeholder-logo.png')}
                                             fill
                                             alt={brand.name}
@@ -59,12 +67,6 @@ export default function BrandsSection({ config }: { config?: any }) {
                                 </div>
                             </Link>
                         ))}
-                    </div>
-
-                    <div className="view-all-btn-wrapper">
-                        <Link href="/brands" className="brands-view-all-btn">
-                            {t('view_all_brands')}
-                        </Link>
                     </div>
 
                 </div>

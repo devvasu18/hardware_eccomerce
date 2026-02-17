@@ -63,7 +63,7 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
         const fetchSubcategories = async () => {
             if (currentCategory) {
                 try {
-                    const res = await fetch(`http://localhost:5000/api/categories/${currentCategory}/subcategories`);
+                    const res = await fetch(`/api/categories/${currentCategory}/subcategories`);
                     if (res.ok) {
                         const data = await res.json();
                         setSubcategories(data);

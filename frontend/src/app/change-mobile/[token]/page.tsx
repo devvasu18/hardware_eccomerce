@@ -27,9 +27,7 @@ export default function ChangeMobilePage({ params }: { params: { token: string }
         }
 
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-
-            const res = await fetch(`${API_URL}/auth/change-mobile/${params.token}`, {
+            const res = await fetch(`/api/auth/change-mobile/${params.token}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'

@@ -31,8 +31,8 @@ export default function WhyChooseUs() {
         async function fetchData() {
             try {
                 const [featuresRes, indicatorsRes] = await Promise.all([
-                    fetch('http://localhost:5000/api/homepage/features'),
-                    fetch('http://localhost:5000/api/homepage/trust-indicators')
+                    fetch('/api/homepage/features'),
+                    fetch('/api/homepage/trust-indicators')
                 ]);
 
                 if (featuresRes.ok) {

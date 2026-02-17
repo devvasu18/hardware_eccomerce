@@ -81,7 +81,7 @@ export default function AllCategories({ config }: { config?: any }) {
                         if (imageUrl && !imageUrl.startsWith('http')) {
                             // Handle local uploads
                             const cleanPath = imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl;
-                            imageUrl = `http://localhost:5000/${cleanPath}`;
+                            imageUrl = `/${cleanPath}`;
                         }
 
                         return (

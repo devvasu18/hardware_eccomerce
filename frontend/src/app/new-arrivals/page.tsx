@@ -15,7 +15,8 @@ interface Product {
 }
 
 async function getAllNewArrivals(): Promise<Product[]> {
-    const res = await fetch('http://localhost:5000/api/products/new-arrivals', { cache: 'no-store' });
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+    const res = await fetch(`${apiUrl}/api/products/new-arrivals`, { cache: 'no-store' });
     if (!res.ok) {
         return [];
     }

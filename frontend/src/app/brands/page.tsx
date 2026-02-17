@@ -74,7 +74,7 @@ export default function BrandsPage() {
                                 >
                                     <div style={{ position: 'relative', width: '100px', height: '80px', marginBottom: '1rem' }}>
                                         <Image
-                                            src={(brand.logo || brand.logo_image)?.startsWith('http') ? (brand.logo || brand.logo_image) : ((brand.logo || brand.logo_image) ? `http://localhost:5000/${brand.logo || brand.logo_image}` : '/placeholder-logo.png')}
+                                            src={(brand.logo || brand.logo_image)?.startsWith('http') ? (brand.logo || brand.logo_image) : ((brand.logo || brand.logo_image) ? `/${(brand.logo || brand.logo_image).startsWith('/') ? (brand.logo || brand.logo_image).slice(1) : (brand.logo || brand.logo_image)}` : '/placeholder-logo.png')}
                                             fill
                                             style={{ objectFit: 'contain' }}
                                             alt={brand.name}

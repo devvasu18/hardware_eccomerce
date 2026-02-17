@@ -137,7 +137,7 @@ export default function SpecialOffers({ config }: { config?: any }) {
 
                                     const fullImageUrl = imageUrl.startsWith('http')
                                         ? imageUrl
-                                        : `http://localhost:5000/${imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl}`;
+                                        : `/${imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl}`;
 
                                     return (
                                         <Image

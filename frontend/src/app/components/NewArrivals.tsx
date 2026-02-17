@@ -25,7 +25,7 @@ export default function NewArrivals({ config }: { config?: any }) {
     useEffect(() => {
         const fetchNewArrivals = async () => {
             try {
-                const res = await fetch('http://localhost:5000/api/products/new-arrivals?limit=10');
+                const res = await fetch('/api/products/new-arrivals?limit=10');
                 if (res.ok) {
                     const data = await res.json();
                     setProducts(data.map((p: any) => ({

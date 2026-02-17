@@ -71,14 +71,14 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
             if (token) headers['Authorization'] = `Bearer ${token}`;
 
             // Fetch order
-            const orderRes = await fetch(`http://localhost:5000/api/orders/${id}`, { headers });
+            const orderRes = await fetch(`/api/orders/${id}`, { headers });
             const orderData = await orderRes.json();
 
             if (orderData.success) {
                 setOrder(orderData.order);
 
                 // Fetch status history
-                const historyRes = await fetch(`http://localhost:5000/api/status/history/${id}`, { headers });
+                const historyRes = await fetch(`/api/status/history/${id}`, { headers });
                 const historyData = await historyRes.json();
                 if (historyData.success) {
                     setStatusHistory(historyData.statusHistory);
@@ -86,7 +86,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
 
                 // Fetch shipment if assigned
                 try {
-                    const shipmentRes = await fetch(`http://localhost:5000/api/shipments/order/${id}`, { headers });
+                    const shipmentRes = await fetch(`/api/shipments/order/${id}`, { headers });
                     const shipmentData = await shipmentRes.json();
 
                     if (shipmentData.success && shipmentData.shipment) {
@@ -133,7 +133,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
         setRefundLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:5000/api/refunds/request', {
+            const res = await fetch('/api/refunds/request', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -170,7 +170,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
         setRefundLoading(true);
         try {
             const token = localStorage.getItem('token');
-            const res = await fetch(`http://localhost:5000/api/orders/${order._id}/cancel-my-order`, {
+            const res = await fetch(`/api/orders/${order._id}/cancel-my-order`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -207,7 +207,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                     setRefundLoading(true);
                     try {
                         const token = localStorage.getItem('token');
-                        const res = await fetch(`http://localhost:5000/api/orders/${order._id}/cancel-item/${itemId}`, {
+                        const res = await fetch(`/api/orders/${order._id}/cancel-item/${itemId}`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -606,7 +606,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                     <img
                                                         src={item.product.featured_image.startsWith('http')
                                                             ? item.product.featured_image
-                                                            : `http://localhost:5000/${item.product.featured_image.replace(/\\/g, '/')}`}
+                                                            : `/${item.product.featured_image.replace(/\\/g, '/')}`}
                                                         alt={item.product.name}
                                                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                                     />
@@ -708,7 +708,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                         <img
                                             src={shipment.busPhotoUrl.startsWith('http')
                                                 ? shipment.busPhotoUrl
-                                                : `http://localhost:5000${shipment.busPhotoUrl}`}
+                                                : `${shipment.busPhotoUrl}`}
                                             alt="Bus"
                                             style={{
                                                 width: '100%',
@@ -720,7 +720,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                             }}
                                             onClick={() => setViewImage(shipment.busPhotoUrl.startsWith('http')
                                                 ? shipment.busPhotoUrl
-                                                : `http://localhost:5000${shipment.busPhotoUrl}`)}
+                                                : `${shipment.busPhotoUrl}`)}
                                         />
                                     </div>
                                 )}

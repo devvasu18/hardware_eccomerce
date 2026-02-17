@@ -22,7 +22,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }, []);
 
     useEffect(() => {
-        fetch(`http://localhost:5000/api/orders/${params.id}`)
+        fetch(`/api/orders/${params.id}`)
             .then(res => res.json())
             .then(data => setOrder(data));
     }, [params.id]);

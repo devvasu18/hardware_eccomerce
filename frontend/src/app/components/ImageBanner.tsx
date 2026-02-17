@@ -50,7 +50,7 @@ export default function ImageBanner({ config }: ImageBannerProps) {
             >
                 {/* Background Image */}
                 <Image
-                    src={imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000/${imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl}`}
+                    src={imageUrl.startsWith('http') ? imageUrl : `/${imageUrl.startsWith('/') ? imageUrl.slice(1) : imageUrl}`}
                     alt={altText}
                     fill
                     className="object-cover transition-transform duration-1000 group-hover:scale-105"
