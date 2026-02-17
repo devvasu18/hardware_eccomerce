@@ -126,22 +126,22 @@
     gap: 0.75rem;
     cursor: pointer;
     font-size: 0.9rem;
-    color: #64748b;
+    color: var(--text-muted);
     padding: 0.25rem 0;
     transition: color 0.2s;
 }
 
 .filter-item:hover {
-    color: #0f172a;
+    color: var(--text-primary);
 }
 
 .filter-item.active {
-    color: #6366f1;
+    color: var(--primary);
     font-weight: 600;
 }
 
 .filter-item input {
-    accent-color: #6366f1;
+    accent-color: var(--primary);
     cursor: pointer;
 }
 
@@ -161,7 +161,7 @@
 }
 
 .sub-item.active {
-    color: #6366f1;
+    color: var(--primary);
     font-weight: 600;
 }
 

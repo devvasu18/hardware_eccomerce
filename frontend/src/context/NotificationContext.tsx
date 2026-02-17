@@ -43,7 +43,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         const fetchSettings = async () => {
             try {
                 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
-                const res = await fetch(`${backendUrl}/api/public/settings`);
+                const res = await fetch(`/api/public/settings`);
                 const data = await res.json();
                 if (data) {
                     setSoundSettings({
@@ -159,8 +159,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 };
 
                 const [notifsRes, countRes] = await Promise.all([
-                    fetch(`${backendUrl}/api/notifications?limit=20`, { headers }),
-                    fetch(`${backendUrl}/api/notifications/unread-count`, { headers })
+                    fetch(`/api/notifications?limit=20`, { headers }),
+                    fetch(`/api/notifications/unread-count`, { headers })
                 ]);
 
                 if (notifsRes.ok && countRes.ok) {
@@ -201,7 +201,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 setUnreadCount(prev => Math.max(0, prev - 1));
             }
 
-            await fetch(`${backendUrl}/api/notifications/${id}/read`, {
+            await fetch(`/api/notifications/${id}/read`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -221,7 +221,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             setUnreadCount(0);
 
-            await fetch(`${backendUrl}/api/notifications/read-all`, {
+            await fetch(`/api/notifications/read-all`, {
                 method: 'PUT',
                 headers: { 'Authorization': `Bearer ${token}` }
             });

@@ -72,7 +72,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         if (user) {
             try {
                 const token = localStorage.getItem('token');
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+                const API_URL = '/api';
                 await fetch(`${API_URL}/auth/settings`, {
                     method: 'PUT',
                     headers: {
