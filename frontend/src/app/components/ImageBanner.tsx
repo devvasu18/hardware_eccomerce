@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ImageBannerProps {
     config?: {
@@ -20,9 +21,10 @@ interface ImageBannerProps {
 }
 
 export default function ImageBanner({ config }: ImageBannerProps) {
+    const { t } = useLanguage();
     const imageUrl = config?.imageUrl || 'https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&q=80&w=2070';
     const link = config?.link || '#';
-    const altText = config?.altText || 'Promotional Banner';
+    const altText = config?.altText || t('promotional_banner');
     const height = config?.height || '450px';
     const title = config?.title || '';
     const subtitle = config?.subtitle || '';

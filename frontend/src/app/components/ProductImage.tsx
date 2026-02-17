@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ProductImageProps {
     src: string;
@@ -10,6 +11,7 @@ interface ProductImageProps {
 }
 
 export default function ProductImage({ src, alt, style }: ProductImageProps) {
+    const { t } = useLanguage();
     const formatSrc = (url: string) => {
         if (!url) return '';
         if (url.startsWith('http') || url.startsWith('data:')) return url;
@@ -27,7 +29,7 @@ export default function ProductImage({ src, alt, style }: ProductImageProps) {
             style={style}
             onError={(e) => {
                 const target = e.target as HTMLImageElement;
-                target.src = 'https://placehold.co/600x600/e2e8f0/64748B.png?text=No+Image';
+                target.src = `https://placehold.co/600x600/e2e8f0/64748B.png?text=${t('no_image')}`;
             }}
         />
     );

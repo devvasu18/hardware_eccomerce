@@ -30,7 +30,7 @@ const CategoryProductListing: React.FC<CategoryProductListingProps> = ({ config 
     const sortBy = config?.sortBy || 'newest';
     const limit = config?.limit || 4;
     const showViewAll = config?.showViewAll !== false;
-    const displayTitle = config?.title || config?.categoryName || 'Featured Category';
+    const displayTitle = config?.title || config?.categoryName || t('featured_category');
     const displaySubtitle = config?.subtitle || '';
 
     useEffect(() => {

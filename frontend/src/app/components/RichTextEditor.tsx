@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 // Common interface for props
 interface RichTextEditorProps {
@@ -11,6 +12,7 @@ interface RichTextEditorProps {
 }
 
 export default function RichTextEditor({ value, onChange, placeholder, style }: RichTextEditorProps) {
+    const { t } = useLanguage();
     const editorRef = useRef<any>(null);
     const [editorLoaded, setEditorLoaded] = useState(false);
     const { CKEditor, ClassicEditor } = editorRef.current || {};
@@ -31,7 +33,7 @@ export default function RichTextEditor({ value, onChange, placeholder, style }: 
     }, []);
 
     if (!editorLoaded) {
-        return <div style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px', color: '#888' }}>Loading Editor...</div>;
+        return <div style={{ padding: '1rem', border: '1px solid #ddd', borderRadius: '4px', color: '#888' }}>{t('loading_editor')}</div>;
     }
 
     return (
@@ -40,7 +42,7 @@ export default function RichTextEditor({ value, onChange, placeholder, style }: 
                 editor={ClassicEditor}
                 data={value || ''}
                 config={{
-                    placeholder: placeholder || 'Type here...',
+                    placeholder: placeholder || t('type_here'),
                     toolbar: [
                         'heading', '|',
                         'bold', 'italic', 'link', 'bulletedList', 'numberedList', '|',

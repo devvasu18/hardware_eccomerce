@@ -7,6 +7,7 @@ import api from '../utils/api';
 import ErrorState from './ErrorState';
 import Loader from './Loader';
 import './AllCategories.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Category {
     _id: string;
@@ -18,6 +19,7 @@ interface Category {
 }
 
 export default function AllCategories({ config }: { config?: any }) {
+    const { t } = useLanguage();
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -92,7 +94,7 @@ export default function AllCategories({ config }: { config?: any }) {
                                     {imageUrl ? (
                                         <Image
                                             src={imageUrl}
-                                            alt={category.name || 'Category'}
+                                            alt={category.name || t('category_placeholder')}
                                             fill
                                             className="category-item-image"
                                             unoptimized
@@ -114,7 +116,7 @@ export default function AllCategories({ config }: { config?: any }) {
                                         {category.name}
                                     </h3>
                                     <p className="category-item-count">
-                                        {category.productCount || 0} Product{category.productCount !== 1 ? 's' : ''}
+                                        {category.productCount || 0} {t(category.productCount !== 1 ? 'products_suffix' : 'product_suffix')}
                                     </p>
                                 </div>
                             </Link>
@@ -124,7 +126,7 @@ export default function AllCategories({ config }: { config?: any }) {
 
                 {categories.length === 0 && (
                     <div className="all-categories-empty">
-                        <p>No categories available at the moment.</p>
+                        <p>{t('no_categories_available')}</p>
                     </div>
                 )}
             </div>

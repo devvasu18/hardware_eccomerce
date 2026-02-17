@@ -3,7 +3,10 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 
+import { useLanguage } from '@/context/LanguageContext';
+
 export default function NotFound() {
+    const { t } = useLanguage();
     return (
         <div style={{
             minHeight: '100vh',
@@ -29,7 +32,7 @@ export default function NotFound() {
                     lineHeight: 1,
                     textShadow: '4px 4px 0px rgba(15, 118, 110, 0.2)'
                 }}>
-                    404
+                    {t('error_404')}
                 </h1>
             </motion.div>
 
@@ -44,7 +47,7 @@ export default function NotFound() {
                     color: '#115e59',
                     marginBottom: '1rem'
                 }}>
-                    Page Not Found
+                    {t('page_not_found')}
                 </h2>
                 <p style={{
                     fontSize: '1.1rem',
@@ -52,7 +55,7 @@ export default function NotFound() {
                     maxWidth: '500px',
                     margin: '0 auto'
                 }}>
-                    Oops! The page you are looking for doesn't exist or you don't have permission to access it.
+                    {t('page_not_found_desc')}
                 </p>
             </motion.div>
 
@@ -73,7 +76,7 @@ export default function NotFound() {
                     transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                     display: 'inline-block'
                 }}>
-                    Return Home
+                    {t('return_home')}
                 </Link>
             </motion.div>
         </div>

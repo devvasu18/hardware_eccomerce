@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { FiDownload, FiChevronDown } from 'react-icons/fi';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ExportButtonProps {
     onExport: (format: 'csv' | 'excel' | 'pdf') => Promise<void> | void;
@@ -18,8 +19,11 @@ export default function ExportButton({
     className = '',
     style = {}
 }: ExportButtonProps) {
+    const { t } = useLanguage();
     const [isOpen, setIsOpen] = useState(false);
     const [isExporting, setIsExporting] = useState(false);
+
+    const displayLabel = label === 'Export' ? t('export') : label;
 
     const handleExport = async (format: 'csv' | 'excel' | 'pdf') => {
         setIsExporting(true);
@@ -63,7 +67,7 @@ export default function ExportButton({
                 }}
             >
                 <FiDownload />
-                {label}
+                {displayLabel}
                 <FiChevronDown style={{
                     fontSize: '0.8rem',
                     transition: 'transform 0.2s',
@@ -121,7 +125,7 @@ export default function ExportButton({
                             letterSpacing: '0.05em',
                             borderBottom: '1px solid #f1f5f9'
                         }}>
-                            Download As
+                            {t('download_as')}
                         </div>
                         {formats.map((format) => (
                             <button
@@ -153,7 +157,7 @@ export default function ExportButton({
                                 }}
                             >
                                 <span style={{ fontSize: '1.2rem' }}>{formatIcons[format]}</span>
-                                <span>{formatLabels[format]}</span>
+                                <span style={{ fontSize: '1.2rem', marginLeft: '0.5rem' }}>{formatLabels[format]}</span>
                             </button>
                         ))}
                     </div>

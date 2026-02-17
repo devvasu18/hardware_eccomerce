@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface LoaderProps {
   text?: string;
@@ -8,8 +9,9 @@ interface LoaderProps {
 }
 
 const Loader = ({ text: propText, status = 'loading', onRetry }: LoaderProps) => {
+  const { t } = useLanguage();
   const [progress, setProgress] = useState(0);
-  const [displayText, setDisplayText] = useState(propText || 'INITIALIZING');
+  const [displayText, setDisplayText] = useState(propText || t('initializing'));
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Colors based on status
@@ -38,9 +40,9 @@ const Loader = ({ text: propText, status = 'loading', onRetry }: LoaderProps) =>
     if (!propText && status === 'loading') {
       textInterval = setInterval(() => {
         setDisplayText(prev => {
-          if (prev === 'SYSTEM READY') return 'SYSTEM READY';
+          if (prev === t('system_ready')) return t('system_ready');
 
-          const states = ['INITIALIZING', 'CONNECTING', 'SYNCING DATA', 'PREPARING ASSETS'];
+          const states = [t('initializing'), t('connecting'), t('syncing_data'), t('preparing_assets')];
           const currentIndex = states.indexOf(prev);
 
           // If the current text isn't in states (e.g. customized), reset or keep
@@ -57,19 +59,19 @@ const Loader = ({ text: propText, status = 'loading', onRetry }: LoaderProps) =>
       clearInterval(timer);
       if (textInterval) clearInterval(textInterval);
     };
-  }, [status, propText]);
+  }, [status, propText, t]);
 
   // Force text update when progress hits 100
   useEffect(() => {
     if (progress === 100 && !propText && status === 'loading') {
-      setDisplayText('SYSTEM READY');
+      setDisplayText(t('system_ready'));
     }
-  }, [progress, propText, status]);
+  }, [progress, propText, status, t]);
 
   const handleRetry = async () => {
     if (!onRetry) return;
     setIsRefreshing(true);
-    setDisplayText('REFRESHING...');
+    setDisplayText(t('refreshing'));
     try {
       await onRetry();
     } finally {
@@ -302,11 +304,11 @@ const Loader = ({ text: propText, status = 'loading', onRetry }: LoaderProps) =>
         {/* Text & Status */}
         <div className="status-container">
           <h2 className="status-text">
-            {isRefreshing ? 'REFRESHING...' : displayText}
+            {isRefreshing ? t('refreshing') : displayText}
           </h2>
 
           <div className="version-info">
-            <span>{status === 'error' ? 'SYSTEM_OFFLINE' : (isRefreshing ? 'REFRESHING' : 'SYSTEM_READY')}</span>
+            <span>{status === 'error' ? t('system_offline') : (isRefreshing ? 'REFRESHING' : t('system_ready'))}</span>
             <span style={{ width: 4, height: 4, backgroundColor: primaryColor, borderRadius: '50%' }}></span>
             <span>V 2.0.4</span>
           </div>
@@ -327,7 +329,7 @@ const Loader = ({ text: propText, status = 'loading', onRetry }: LoaderProps) =>
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              {isRefreshing ? 'REFRESHING...' : 'RETRY CONNECTION'}
+              {isRefreshing ? t('refreshing') : t('retry_connection')}
             </button>
           )}
 
@@ -341,7 +343,7 @@ const Loader = ({ text: propText, status = 'loading', onRetry }: LoaderProps) =>
             </div>
           </div>
           <div style={{ marginTop: '0.25rem', fontSize: '0.75rem', color: primaryColor, fontFamily: 'monospace', letterSpacing: '0.1em', opacity: status === 'error' ? 0 : 1 }}>
-            {progress}% COMPLETED
+            {progress}% {t('completed')}
           </div>
         </div>
       </div>

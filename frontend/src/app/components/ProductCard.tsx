@@ -169,12 +169,12 @@ export default function ProductCard({ product }: { product: Product }) {
                 {allImages.length > 0 ? (
                     <ProductImage
                         src={allImages[currentImageIndex]}
-                        alt={getLocalized(product.title || product.name || 'Product')}
+                        alt={getLocalized(product.title || product.name || t('default_product_name'))}
                         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     />
                 ) : (
                     <div className="no-image-placeholder">
-                        No Image
+                        {t('no_image')}
                     </div>
                 )}
 
@@ -195,7 +195,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     className={`wishlist-btn ${inWishlist ? 'active' : ''}`}
                     onClick={handleWishlistClick}
                     disabled={isAddingToWishlist}
-                    aria-label={inWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                    aria-label={inWishlist ? t('remove_from_wishlist') : t('add_to_wishlist')}
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -223,7 +223,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     {typeof product.category === 'object' && product.category?.name
                         ? getLocalized(product.category.name)
                         : (typeof product.category === 'string' && product.category.length > 10
-                            ? 'Auto Part'
+                            ? t('auto_part')
                             : getLocalized(product.category))}
                 </p>
                 <h3 className="product-title" title={getLocalized(product.title || product.name)}>{getLocalized(product.title || product.name)}</h3>

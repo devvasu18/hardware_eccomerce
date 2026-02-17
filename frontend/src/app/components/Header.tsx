@@ -13,7 +13,7 @@ import { getSystemSettings } from '../utils/systemSettings';
 import './Header.css';
 
 const Header = () => {
-    const { t } = useLanguage();
+    const { t, language, setLanguage } = useLanguage();
     const { user, logout } = useAuth();
     const { cartCount, openCart } = useCart();
     const router = useRouter();
@@ -28,6 +28,7 @@ const Header = () => {
     const [subCategories, setSubCategories] = useState<Record<string, { _id: string, name: string, slug: string }[]>>({});
     const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+    const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [mobileSearchTerm, setMobileSearchTerm] = useState('');
@@ -249,13 +250,49 @@ const Header = () => {
 
                 {/* Right: User Actions */}
                 <div className="header-actions-area">
+                    {/* Language Switcher */}
+                    <div
+                        className="action-item relative-wrapper"
+                        onMouseEnter={() => setIsLangDropdownOpen(true)}
+                        onMouseLeave={() => setIsLangDropdownOpen(false)}
+                        onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                    >
+                        <svg className="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="2" y1="12" x2="22" y2="12"></line>
+                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                        </svg>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, marginLeft: '0.2rem' }}>
+                            {language === 'en' ? 'EN' : 'HI'}
+                        </span>
+
+                        {isLangDropdownOpen && (
+                            <div className="user-dropdown" style={{ minWidth: '140px', right: '0', width: 'auto' }}>
+                                <button
+                                    className={`dropdown-item ${language === 'en' ? 'active' : ''}`}
+                                    onClick={(e) => { e.stopPropagation(); setLanguage('en'); setIsLangDropdownOpen(false); }}
+                                    style={{ color: language === 'en' ? 'var(--primary)' : 'inherit' }}
+                                >
+                                    English
+                                </button>
+                                <button
+                                    className={`dropdown-item ${language === 'hi' ? 'active' : ''}`}
+                                    onClick={(e) => { e.stopPropagation(); setLanguage('hi'); setIsLangDropdownOpen(false); }}
+                                    style={{ color: language === 'hi' ? 'var(--primary)' : 'inherit' }}
+                                >
+                                    हिंदी (Hindi)
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
                     {/* Notification Bell */}
                     {user && (
                         <div
                             className="action-item notification-btn-wrapper"
                             onClick={() => router.push('/notifications')}
                             style={{ cursor: 'pointer', position: 'relative' }}
-                            title="Notifications"
+                            title={t('notifications_title')}
                         >
                             <div className="notification-icon-container">
                                 <svg className="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">

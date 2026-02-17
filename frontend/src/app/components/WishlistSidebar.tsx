@@ -5,8 +5,10 @@ import { useWishlist } from '../../context/WishlistContext';
 import { useCart } from '../../context/CartContext';
 import Link from 'next/link';
 import './WishlistSidebar.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 const WishlistSidebar = () => {
+    const { t } = useLanguage();
     const {
         isWishlistOpen,
         closeWishlist,
@@ -47,7 +49,7 @@ const WishlistSidebar = () => {
                         <svg className="wishlist-title-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
-                        My Wishlist ({wishlistItems.length})
+                        {t('my_wishlist')} ({wishlistItems.length})
                     </h2>
                     <button className="close-wishlist-btn" onClick={closeWishlist} aria-label="Close wishlist">
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -64,10 +66,10 @@ const WishlistSidebar = () => {
                             <svg className="empty-wishlist-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                             </svg>
-                            <p>Your wishlist is empty.</p>
-                            <p className="empty-wishlist-subtext">Save your favorite items here!</p>
+                            <p>{t('wishlist_empty')}</p>
+                            <p className="empty-wishlist-subtext">{t('wishlist_save_text')}</p>
                             <button onClick={closeWishlist} className="start-shopping-btn">
-                                Start Shopping
+                                {t('start_shopping')}
                             </button>
                         </div>
                     ) : (
@@ -77,7 +79,7 @@ const WishlistSidebar = () => {
                                     {(item.product.featured_image || item.product.gallery_images?.[0]) ? (
                                         <img src={item.product.featured_image || item.product.gallery_images[0]} alt={item.product.title} />
                                     ) : (
-                                        <div className="no-image-placeholder">No Image</div>
+                                        <div className="no-image-placeholder">{t('no_image')}</div>
                                     )}
                                 </div>
                                 <div className="wishlist-item-details">
@@ -107,7 +109,7 @@ const WishlistSidebar = () => {
                                                 <circle cx="20" cy="21" r="1" />
                                                 <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6" />
                                             </svg>
-                                            Add to Cart
+                                            {t('add_to_cart')}
                                         </button>
                                         <button
                                             className="remove-wishlist-item-btn"
@@ -130,10 +132,10 @@ const WishlistSidebar = () => {
                 {wishlistItems.length > 0 && (
                     <div className="wishlist-sidebar-footer">
                         <p className="wishlist-footer-text">
-                            {wishlistItems.length} {wishlistItems.length === 1 ? 'item' : 'items'} in your wishlist
+                            {wishlistItems.length} {wishlistItems.length === 1 ? t('item_in_wishlist') : t('items_in_wishlist')}
                         </p>
                         <button onClick={closeWishlist} className="continue-shopping-btn">
-                            Continue Shopping
+                            {t('continue_shopping')}
                         </button>
                     </div>
                 )}

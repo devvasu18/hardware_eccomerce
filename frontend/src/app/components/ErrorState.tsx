@@ -1,6 +1,8 @@
 'use client';
 import React, { useState } from 'react';
 import { FiRefreshCw, FiAlertTriangle } from 'react-icons/fi';
+import { useLanguage } from '../../context/LanguageContext';
+
 
 interface ErrorStateProps {
     title?: string;
@@ -15,7 +17,15 @@ const ErrorState: React.FC<ErrorStateProps> = ({
     onRetry,
     fullPage = false
 }) => {
+    const { t } = useLanguage();
     const [isRefreshing, setIsRefreshing] = useState(false);
+
+    // Fallback if not provided, but we will use keys usually? 
+    // Actually the props have default values. We should use t() for those defaults if they are undefined?
+    // Or simpler: ignore the props defaults if they match the hardcoded strings.
+
+    const displayTitle = title === 'SYSTEM_OFFLINE' ? t('system_offline') : title;
+    const displayMessage = message === 'We encountered an error while connecting to the server.' ? t('connection_error_message') : message;
 
     const handleRetry = async () => {
         if (!onRetry) {
@@ -40,11 +50,11 @@ const ErrorState: React.FC<ErrorStateProps> = ({
             </div>
 
             <h3 className="text-3xl font-black text-white mb-3 tracking-tight">
-                {isRefreshing ? 'REFRESHING...' : title}
+                {isRefreshing ? t('refreshing') : displayTitle}
             </h3>
 
             <p className="text-gray-400 mb-10 max-w-sm mx-auto font-medium leading-relaxed">
-                {isRefreshing ? 'Please wait while we attempt to re-establish connection.' : message}
+                {isRefreshing ? t('wait_connection') : displayMessage}
             </p>
 
             <button
@@ -54,13 +64,13 @@ const ErrorState: React.FC<ErrorStateProps> = ({
             >
                 <FiRefreshCw className={`${isRefreshing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
                 <span className="tracking-wider uppercase text-sm">
-                    {isRefreshing ? 'Refreshing...' : 'Retry Connection'}
+                    {isRefreshing ? t('refreshing') : t('retry_connection')}
                 </span>
             </button>
 
             <div className="mt-8 flex items-center gap-2 text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em]">
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                Error Code: ERR_CONNECTION_FAILED
+                {t('error_code_connection')}
             </div>
         </div>
     );

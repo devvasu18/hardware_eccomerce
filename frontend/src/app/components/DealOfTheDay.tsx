@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import './FeaturedProducts.css'; // Reuse CSS
 import api from '@/app/utils/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function DealOfTheDay() {
+    const { t } = useLanguage();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -36,8 +38,8 @@ export default function DealOfTheDay() {
             <div className="container">
                 <div className="featured-header">
                     <div className="featured-title-group">
-                        <h2 className="featured-title">Deal of the Day</h2>
-                        <p className="featured-subtitle">Limited time offers!</p>
+                        <h2 className="featured-title">{t('deal_of_the_day')}</h2>
+                        <p className="featured-subtitle">{t('limited_time_offers')}</p>
                     </div>
                 </div>
                 <div className="featured-grid">

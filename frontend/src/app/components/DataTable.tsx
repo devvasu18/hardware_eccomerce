@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import styles from './DataTable.module.css';
 import { FiEdit2, FiTrash2, FiSearch, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Column<T> {
     header: string;
@@ -44,6 +45,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
     loading = false,
     itemsPerPage = 10,
 }: DataTableProps<T>) {
+    const { t } = useLanguage();
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [sortConfig, setSortConfig] = useState<{ key: keyof T | string; direction: 'asc' | 'desc' } | null>(null);
@@ -119,7 +121,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
         <div className={styles.container}>
             <div className={styles.header}>
                 <div style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
-                    {title || "Data Table"} <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginLeft: '0.5rem', fontWeight: 400 }}>({data.length})</span>
+                    {title || t('data_table')} <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginLeft: '0.5rem', fontWeight: 400 }}>({data.length})</span>
                 </div>
                 <div className={styles.controls}>
                     {searchable && (
@@ -127,7 +129,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
                             <FiSearch className={styles.searchIcon} />
                             <input
                                 type="text"
-                                placeholder="Search..."
+                                placeholder={t('search_placeholder_dots')}
                                 className={styles.search}
                                 value={searchTerm}
                                 onChange={handleSearch}
@@ -157,7 +159,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
                                     </div>
                                 </th>
                             ))}
-                            {(onEdit || onDelete) && <th style={{ textAlign: 'center', width: '100px' }}>Actions</th>}
+                            {(onEdit || onDelete) && <th style={{ textAlign: 'center', width: '100px' }}>{t('actions')}</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -209,7 +211,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
                                 >
                                     <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
                                         <FiSearch size={24} color="var(--text-muted)" />
-                                        <span>No records found matching your search.</span>
+                                        <span>{t('no_records_found')}</span>
                                     </div>
                                 </td>
                             </tr>
@@ -221,11 +223,11 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
             {totalPages > 1 && (
                 <div className={styles.pagination}>
                     <div className={styles.pageInfo}>
-                        Showing <span style={{ fontWeight: 600 }}>{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
+                        {t('showing')} <span style={{ fontWeight: 600 }}>{(currentPage - 1) * itemsPerPage + 1}</span> {t('to')}{' '}
                         <span style={{ fontWeight: 600 }}>
                             {Math.min(currentPage * itemsPerPage, processedData.length)}
                         </span>{' '}
-                        of <span style={{ fontWeight: 600 }}>{processedData.length}</span> entries
+                        {t('of')} <span style={{ fontWeight: 600 }}>{processedData.length}</span> {t('entries')}
                     </div>
                     <div className={styles.pageButtons}>
                         <button

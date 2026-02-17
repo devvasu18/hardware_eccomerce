@@ -1,6 +1,5 @@
 'use client';
-
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../i18n'; // Initialize i18n
 
@@ -17,11 +16,6 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const { i18n, t } = useTranslation();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     const setLanguage = (lang: Language) => {
         i18n.changeLanguage(lang);
@@ -40,11 +34,6 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         return content['en'] || '';
     };
 
-    // Prevent hydration mismatch
-    if (!mounted) {
-        return <div style={{ visibility: 'hidden' }}>{children}</div>;
-    }
-
     return (
         <LanguageContext.Provider value={{ language: i18n.language as Language || 'en', setLanguage, t, getLocalized }}>
             {children}
@@ -55,7 +44,18 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 export function useLanguage() {
     const context = useContext(LanguageContext);
     if (context === undefined) {
-        throw new Error('useLanguage must be used within a LanguageProvider');
+        // During SSR or if not wrapped in provider, return fallback
+        console.warn('useLanguage used outside LanguageProvider, using fallback');
+        return {
+            language: 'en' as Language,
+            setLanguage: () => { },
+            t: (key: string) => key,
+            getLocalized: (content: any) => {
+                if (!content) return '';
+                if (typeof content === 'string') return content;
+                return content['en'] || content || '';
+            }
+        };
     }
     return context;
 }

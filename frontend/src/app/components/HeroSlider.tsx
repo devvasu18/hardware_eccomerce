@@ -30,7 +30,7 @@ interface Banner {
 }
 
 export default function HeroSlider() {
-    const { getLocalized } = useLanguage();
+    const { getLocalized, t } = useLanguage();
     const [slides, setSlides] = useState<Banner[]>([]);
     const [current, setCurrent] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -139,7 +139,7 @@ export default function HeroSlider() {
                                                 style={{ borderColor: slide.secondaryButtonColor || slide.textColor, color: slide.secondaryButtonColor || slide.textColor }}
                                             >
                                                 <FiPlay />
-                                                <span>Explore Products</span>
+                                                <span>{t('explore_products')}</span>
                                             </Link>
                                         )}
                                     </div>
@@ -158,7 +158,7 @@ export default function HeroSlider() {
                             key={idx}
                             onClick={() => setCurrent(idx)}
                             className={`hero-dot ${idx === current ? 'active' : ''}`}
-                            aria-label={`Go to slide ${idx + 1}`}
+                            aria-label={`${t('go_to_slide')} ${idx + 1}`}
                         />
                     ))}
                 </div>

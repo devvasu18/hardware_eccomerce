@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import ProductCard from './ProductCard';
 import './FeaturedProducts.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Product {
     _id: string;
@@ -22,23 +23,24 @@ interface FeaturedProductsProps {
 }
 
 export default function FeaturedProducts({ products, config }: FeaturedProductsProps) {
+    const { t } = useLanguage();
     return (
         <section className="featured-section">
             <div className="container">
                 <div className="featured-header">
                     <div className="featured-title-group">
-                        <h2 className="featured-title">{config?.title || 'Featured Products'}</h2>
-                        <p className="featured-subtitle">{config?.subtitle || 'Handpicked selections from our premium collection'}</p>
+                        <h2 className="featured-title">{config?.title || t('featured_products')}</h2>
+                        <p className="featured-subtitle">{config?.subtitle || t('featured_subtitle')}</p>
                     </div>
                     <Link href="/products" className="featured-view-all">
-                        View All Products
+                        {t('view_all_products')}
                         <span>→</span>
                     </Link>
                 </div>
 
                 {products.length === 0 ? (
                     <div className="featured-empty">
-                        <p>No products available at the moment. Please check back later.</p>
+                        <p>{t('no_products_available')}</p>
                     </div>
                 ) : (
                     <div className="featured-grid">

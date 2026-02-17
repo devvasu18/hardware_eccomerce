@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Fragment } from 'react';
 import './WhyChooseUs.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 
 interface Feature {
@@ -20,6 +21,7 @@ interface TrustIndicator {
 }
 
 export default function WhyChooseUs() {
+    const { t } = useLanguage();
     const [features, setFeatures] = useState<Feature[]>([]);
     const [trustIndicators, setTrustIndicators] = useState<TrustIndicator[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
@@ -110,10 +112,10 @@ export default function WhyChooseUs() {
         <section className="why-choose-us">
             <div className="container">
                 <div className="section-header-center">
-                    <span className="section-badge">Why Choose Us</span>
-                    <h2 className="section-title-center">Your Trusted Hardware Partner</h2>
+                    <span className="section-badge">{t('why_choose_us')}</span>
+                    <h2 className="section-title-center">{t('trusted_hardware_partner')}</h2>
                     <p className="section-description">
-                        We combine quality products, competitive pricing, and exceptional service to power your industrial and home needs
+                        {t('why_choose_us_desc')}
                     </p>
                 </div>
 

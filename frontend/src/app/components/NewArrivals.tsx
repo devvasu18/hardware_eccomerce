@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import NewArrivalsSlider from './NewArrivalsSlider';
 import './NewArrivals.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Product {
     _id: string;
@@ -17,6 +18,7 @@ interface Product {
 }
 
 export default function NewArrivals({ config }: { config?: any }) {
+    const { t } = useLanguage();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -51,11 +53,11 @@ export default function NewArrivals({ config }: { config?: any }) {
         <section className="container new-arrivals-section" style={{ overflow: 'visible' }}>
             <div className="new-arrivals-header">
                 <div>
-                    <h2 className="new-arrivals-title">{config?.title || 'New Arrivals'}</h2>
-                    <p className="new-arrivals-subtitle">{config?.subtitle || 'Check out our latest industrial hardware and tools'}</p>
+                    <h2 className="new-arrivals-title">{config?.title || t('new_arrivals')}</h2>
+                    <p className="new-arrivals-subtitle">{config?.subtitle || t('check_out_latest')}</p>
                 </div>
                 <Link href="/new-arrivals" className="view-all-btn">
-                    View All &rarr;
+                    {t('view_all')} &rarr;
                 </Link>
             </div>
 

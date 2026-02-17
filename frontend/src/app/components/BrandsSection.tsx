@@ -6,10 +6,12 @@ import Link from 'next/link';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import api from '../utils/api';
 import './BrandsSection.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 
 
 export default function BrandsSection({ config }: { config?: any }) {
+    const { t } = useLanguage();
     const [brands, setBrands] = useState<any[]>([]);
 
     useEffect(() => {
@@ -31,7 +33,7 @@ export default function BrandsSection({ config }: { config?: any }) {
         <section className="brands-section">
             <div className="container">
                 <div className="brands-container">
-                    <h2 className="brands-title">{config?.title || 'Our Partner Brands'}</h2>
+                    <h2 className="brands-title">{config?.title || t('our_partner_brands')}</h2>
                     {config?.subtitle && <p className="brands-subtitle">{config.subtitle}</p>}
 
                     <div className="brands-grid-wrapper">
@@ -61,7 +63,7 @@ export default function BrandsSection({ config }: { config?: any }) {
 
                     <div className="view-all-btn-wrapper">
                         <Link href="/brands" className="brands-view-all-btn">
-                            View All Brands
+                            {t('view_all_brands')}
                         </Link>
                     </div>
 

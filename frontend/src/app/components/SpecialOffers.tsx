@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import api from '../utils/api';
 import './SpecialOffers.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Product {
     _id: string;
@@ -34,12 +35,13 @@ interface SpecialOffer {
 }
 
 export default function SpecialOffers({ config }: { config?: any }) {
+    const { t } = useLanguage();
     const [offers, setOffers] = useState<SpecialOffer[]>([]);
     const [timeLeft, setTimeLeft] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState(true);
 
-    const displayTitle = config?.title || 'Special Deals This Week';
-    const displaySubtitle = config?.subtitle || "Grab these exclusive deals before they're gone. Wholesale prices slashed even further!";
+    const displayTitle = config?.title || t('special_deals_title');
+    const displaySubtitle = config?.subtitle || t('special_deals_subtitle');
 
     useEffect(() => {
         // Fetch special offers from API
@@ -77,7 +79,7 @@ export default function SpecialOffers({ config }: { config?: any }) {
 
                     newTimeLeft[offer._id] = `${days}d ${hours}h ${minutes}m ${seconds}s`;
                 } else {
-                    newTimeLeft[offer._id] = 'EXPIRED';
+                    newTimeLeft[offer._id] = t('expired');
                 }
             });
 
@@ -107,7 +109,7 @@ export default function SpecialOffers({ config }: { config?: any }) {
                             <div className="deal-image-container">
                                 <div className="discount-circle">
                                     <div className="discount-percent">{offer.discountPercent}%</div>
-                                    <div className="discount-text">OFF</div>
+                                    <div className="discount-text">{t('off')}</div>
                                 </div>
                                 {(() => {
                                     const product = offer.productId;
@@ -151,7 +153,7 @@ export default function SpecialOffers({ config }: { config?: any }) {
                             </div>
 
                             <div className="deal-content">
-                                <div className="deal-category ">{offer.productId?.title || 'Auto Parts'}</div>
+                                <div className="deal-category ">{offer.productId?.title || t('auto_part')}</div>
 
 
                                 <div className="deal-pricing">
@@ -164,7 +166,7 @@ export default function SpecialOffers({ config }: { config?: any }) {
                                                 <div className="price-row">
                                                     <span className="original-price">₹{basePrice.toLocaleString()}</span>
                                                     <span className="savings-badge">
-                                                        Save ₹{(basePrice - discountedPrice).toLocaleString()}
+                                                        {t('save')} ₹{(basePrice - discountedPrice).toLocaleString()}
                                                     </span>
                                                 </div>
                                                 <div className="discounted-price">₹{discountedPrice.toLocaleString()}</div>
@@ -176,13 +178,13 @@ export default function SpecialOffers({ config }: { config?: any }) {
                                 <div className="deal-timer">
                                     <div className="timer-icon">⏰</div>
                                     <div className="timer-content">
-                                        <div className="timer-label">Ends in:</div>
+                                        <div className="timer-label">{t('ends_in')}</div>
                                         <div className="timer-value">{timeLeft[offer._id] || 'Loading...'}</div>
                                     </div>
                                 </div>
 
                                 <Link href={`/products/${offer.productId?._id}`} className="deal-cta">
-                                    Grab This Deal
+                                    {t('grab_deal')}
                                     <span className="cta-arrow">→</span>
                                 </Link>
                             </div>
@@ -192,7 +194,7 @@ export default function SpecialOffers({ config }: { config?: any }) {
 
                 <div className="view-all-deals">
                     <Link href="/special-deals" className="view-all-deals-btn">
-                        View All Special Offers
+                        {t('view_all_offers')}
                         <span className="btn-shine" />
                     </Link>
                 </div>

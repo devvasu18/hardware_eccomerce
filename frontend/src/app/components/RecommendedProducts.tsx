@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import './FeaturedProducts.css'; // Reuse CSS
 import api from '@/app/utils/api';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function RecommendedProducts() {
+    const { t } = useLanguage();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -55,8 +57,8 @@ export default function RecommendedProducts() {
             <div className="container">
                 <div className="featured-header">
                     <div className="featured-title-group">
-                        <h2 className="featured-title">Recommended For You</h2>
-                        <p className="featured-subtitle">Based on your recent interests</p>
+                        <h2 className="featured-title">{t('recommended_title')}</h2>
+                        <p className="featured-subtitle">{t('recommended_subtitle')}</p>
                     </div>
                 </div>
                 <div className="featured-grid">

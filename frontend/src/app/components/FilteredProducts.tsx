@@ -9,6 +9,7 @@ import ErrorState from './ErrorState';
 import Loader from './Loader';
 import api from '../utils/api';
 import './FilteredProducts.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Product {
     _id: string;
@@ -30,6 +31,7 @@ interface ProductGridContentProps {
 }
 
 function ProductGridContent({ offerInfo }: ProductGridContentProps) {
+    const { t } = useLanguage();
     const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
@@ -105,10 +107,10 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
                     ) : products.length === 0 ? (
                         <div className="products-empty-state text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
                             <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">No products found</h3>
-                            <p className="text-gray-500 mb-6">We couldn't find any products matching your filters.</p>
+                            <h3 className="text-xl font-bold text-gray-900 mb-2">{t('no_products_found')}</h3>
+                            <p className="text-gray-500 mb-6">{t('no_products_desc')}</p>
                             <Link href="/products" className="inline-block px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors">
-                                Clear All Filters
+                                {t('clear_filters')}
                             </Link>
                         </div>
                     ) : (
@@ -117,8 +119,8 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
                                 <ProductCard key={item._id} product={{
                                     ...item,
                                     category: item.category
-                                        ? (typeof item.category === 'object' && item.category !== null ? item.category.name : (String(item.category).length > 10 ? 'Auto Part' : item.category))
-                                        : 'Uncategorized'
+                                        ? (typeof item.category === 'object' && item.category !== null ? item.category.name : (String(item.category).length > 10 ? t('auto_part') : item.category))
+                                        : t('uncategorized')
                                 }} />
                             ))}
                         </div>
@@ -130,6 +132,7 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
 }
 
 export default function FilteredProducts({ config }: { config?: any }) {
+    const { t } = useLanguage();
     const searchParams = useSearchParams();
     const [offerInfo, setOfferInfo] = useState<any>(null);
     const category = searchParams.get('category');
@@ -164,21 +167,21 @@ export default function FilteredProducts({ config }: { config?: any }) {
                     <h3 className="text-4xl font-extrabold text-slate-900 mb-4">
                         {offerInfo ? (
                             <>
-                                {offerInfo.title} <span className="text-orange-600">({offerInfo.percentage}% OFF)</span>
+                                {offerInfo.title} <span className="text-orange-600">({offerInfo.percentage}% {t('off')})</span>
                             </>
-                        ) : keyword ? `Search Results: "${keyword}"` : (brand ? `Brand: ${brand}` : (category ? `Category: ${category}` : (config?.title || 'Industrial Catalog')))}
+                        ) : keyword ? `${t('search_results')}: "${keyword}"` : (brand ? `${t('brand_label')}: ${brand}` : (category ? `${t('category_label')}: ${category}` : (config?.title || t('industrial_catalog'))))}
                     </h3>
                     <p className="text-lg text-slate-500 max-w-2xl">
                         {offerInfo
-                            ? `Discover all products eligible for our exclusive ${offerInfo.title} promotion. Save ${offerInfo.percentage}% on these premium items!`
+                            ? t('discover_promotion', { title: offerInfo.title, percentage: offerInfo.percentage })
                             : category
-                                ? `Explore our premium selection of ${category} components designed for high-performance industrial applications.`
-                                : (config?.subtitle || 'Browse our complete catalog of high-performance hardware, tools, and accessories.')}
+                                ? t('explore_category', { category: category })
+                                : (config?.subtitle || t('browse_catalog'))}
                     </p>
                 </div>
             </div>
 
-            <Suspense fallback={<div className="p-20 text-center">Loading component...</div>}>
+            <Suspense fallback={<div className="p-20 text-center">{t('loading_component')}</div>}>
                 <ProductGridContent offerInfo={offerInfo} />
             </Suspense>
         </section>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface ModalProps {
     isOpen: boolean;
@@ -25,6 +26,11 @@ export default function Modal({
     onConfirm,
     showCancel = false
 }: ModalProps) {
+    const { t } = useLanguage();
+
+    const displayConfirm = confirmText === 'OK' ? t('ok') : confirmText;
+    const displayCancel = cancelText === 'Cancel' ? t('cancel_btn') : cancelText;
+
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = 'hidden';
@@ -170,7 +176,7 @@ export default function Modal({
                                 e.currentTarget.style.color = 'var(--text-secondary)';
                             }}
                         >
-                            {cancelText}
+                            {displayCancel}
                         </button>
                     )}
                     <button
@@ -197,7 +203,7 @@ export default function Modal({
                             e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)';
                         }}
                     >
-                        {confirmText}
+                        {displayConfirm}
                     </button>
                 </div>
             </div>

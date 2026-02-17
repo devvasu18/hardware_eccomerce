@@ -3,6 +3,7 @@ import React, { useEffect, useState, Suspense, lazy } from 'react';
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import Loader from '@/app/components/Loader';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Lazy load components for performance
 const HeroSlider = lazy(() => import('@/app/components/HeroSlider'));
@@ -20,9 +21,15 @@ const ImageBanner = lazy(() => import('@/app/components/ImageBanner'));
 const RecentlyViewed = lazy(() => import('@/app/components/RecentlyViewed'));
 const Recommended = lazy(() => import('@/app/components/RecommendedProducts'));
 const DealOfTheDay = lazy(() => import('@/app/components/DealOfTheDay'));
-const FlashSale = () => <div className="p-10 text-center bg-gray-100 my-4 rounded-xl">Flash Sale Component (Coming Soon)</div>;
+const FlashSale = () => {
+    const { t } = useLanguage();
+    return <div className="p-10 text-center bg-gray-100 my-4 rounded-xl">{t('flash_sale_coming_soon')}</div>;
+};
 const TrustBadges = lazy(() => import('@/app/components/WhyChooseUs')); // Reuse WhyChooseUs or separate? WhyChooseUs seems to handle trust badges.
-const Testimonials = () => <div className="p-10 text-center bg-gray-100 my-4 rounded-xl">Testimonials Component (Coming Soon)</div>;
+const Testimonials = () => {
+    const { t } = useLanguage();
+    return <div className="p-10 text-center bg-gray-100 my-4 rounded-xl">{t('testimonials_coming_soon')}</div>;
+};
 
 const componentMap: Record<string, React.ComponentType<any>> = {
     'HERO_SLIDER': HeroSlider,
@@ -50,6 +57,7 @@ const SectionPlaceholder = () => (
 );
 
 const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: any[], pageSlug?: string }) => {
+    const { t } = useLanguage();
     const [layout, setLayout] = useState<any[]>(previewLayout || []);
     const [loading, setLoading] = useState(!previewLayout);
     const [hasError, setHasError] = useState(false);
@@ -60,17 +68,31 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
         setHasError(false);
 
         try {
+            // Add timeout for build-time to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
             // Fetch specific page layout
-            const response = await fetch(`http://localhost:5000/api/home-layout?page=${pageSlug}`);
+            const response = await fetch(`http://localhost:5000/api/home-layout?page=${pageSlug}`, {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
             if (!response.ok) throw new Error('Failed to fetch');
             const data = await response.json();
             setLayout(data);
 
             // Artificial delay to show off the loader if it was too fast, or ensure smooth transition
             await new Promise(resolve => setTimeout(resolve, 800));
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error fetching layout:', error);
-            setHasError(true);
+            // Don't set error during build time (when window is undefined during SSR)
+            if (typeof window !== 'undefined') {
+                setHasError(true);
+            } else {
+                // During build, just set empty layout
+                setLayout([]);
+            }
         } finally {
             setLoading(false);
         }
@@ -78,7 +100,14 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
 
     const fetchFeatured = async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/products/featured');
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const res = await fetch('http://localhost:5000/api/products/featured', {
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+
             if (res.ok) {
                 const data = await res.json();
                 setFeaturedProducts(data.map((p: any) => ({
@@ -91,6 +120,7 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
             }
         } catch (error) {
             console.error('Error fetching featured products:', error);
+            // Silently fail during build
         }
     };
 
@@ -119,7 +149,7 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
         return (
             <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Header />
-                <Loader status="error" text="SERVER UNREACHABLE" onRetry={fetchData} />
+                <Loader status="error" text={t('server_unreachable')} onRetry={fetchData} />
                 <div className="flex-grow"></div>
                 <Footer />
             </main>
@@ -134,8 +164,8 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
                 <Header />
                 <div className="flex-grow flex items-center justify-center min-h-[50vh]">
                     <div className="text-center">
-                        <h2 className="text-2xl font-bold text-gray-400">Under Maintenance</h2>
-                        <p className="text-gray-500 mt-2">We are upgrading our system. Please check back soon.</p>
+                        <h2 className="text-2xl font-bold text-gray-400">{t('under_maintenance')}</h2>
+                        <p className="text-gray-500 mt-2">{t('maintenance_desc')}</p>
                     </div>
                 </div>
                 <Footer />
