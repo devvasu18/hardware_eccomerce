@@ -39,7 +39,7 @@ export default function FormModal({
                 left: 0,
                 right: 0,
                 bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -51,7 +51,7 @@ export default function FormModal({
         >
             <div
                 style={{
-                    background: 'white',
+                    background: 'var(--surface)',
                     borderRadius: '12px',
                     padding: '0',
                     maxWidth: maxWidth,
@@ -59,16 +59,17 @@ export default function FormModal({
                     maxHeight: '90vh',
                     display: 'flex',
                     flexDirection: 'column',
-                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    boxShadow: 'var(--shadow-xl)',
                     animation: 'slideUp 0.3s ease-out',
-                    position: 'relative'
+                    position: 'relative',
+                    border: '1px solid var(--border)'
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
                 <div style={{
                     padding: '1.5rem',
-                    borderBottom: '1px solid #e5e7eb',
+                    borderBottom: '1px solid var(--border)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
@@ -76,7 +77,7 @@ export default function FormModal({
                     <h2 style={{
                         fontSize: '1.25rem',
                         fontWeight: '600',
-                        color: '#1f2937',
+                        color: 'var(--text-primary)',
                         margin: 0
                     }}>
                         {title}
@@ -87,14 +88,14 @@ export default function FormModal({
                             background: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
-                            color: '#6b7280',
+                            color: 'var(--text-muted)',
                             fontSize: '1.25rem',
                             display: 'flex',
                             padding: '4px',
                             borderRadius: '4px',
                             transition: 'background 0.2s'
                         }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f3f4f6'}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--surface-hover)'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                     >
                         <FiX />

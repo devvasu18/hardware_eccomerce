@@ -229,7 +229,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 <div className="product-card-footer">
                     <div className="product-price">
                         <>
-                            {showStartingAt && <span style={{ fontSize: '0.7rem', color: '#64748B', display: 'block', marginBottom: '2px' }}>From</span>}
+                            {showStartingAt && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>From</span>}
                             {(displayMRP && displayMRP > 0 && displayMRP > finalPrice) && (
                                 <span className="price-original">₹{displayMRP}</span>
                             )}

@@ -41,13 +41,13 @@ export default function Modal({
     const getIconAndColor = () => {
         switch (type) {
             case 'success':
-                return { icon: '✓', color: '#10b981', bg: '#d1fae5' };
+                return { icon: '✓', color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.1)' };
             case 'error':
-                return { icon: '✕', color: '#ef4444', bg: '#fee2e2' };
+                return { icon: '✕', color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.1)' };
             case 'warning':
-                return { icon: '⚠', color: '#f59e0b', bg: '#fef3c7' };
+                return { icon: '⚠', color: 'var(--primary)', bg: 'rgba(243, 112, 33, 0.1)' };
             default:
-                return { icon: 'ℹ', color: '#3b82f6', bg: '#dbeafe' };
+                return { icon: 'ℹ', color: 'var(--primary)', bg: 'rgba(59, 130, 246, 0.1)' };
         }
     };
 
@@ -68,7 +68,7 @@ export default function Modal({
                 left: 0,
                 right: 0,
                 bottom: 0,
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                backgroundColor: 'rgba(0, 0, 0, 0.7)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -80,14 +80,15 @@ export default function Modal({
         >
             <div
                 style={{
-                    background: 'white',
+                    background: 'var(--surface)',
                     borderRadius: '12px',
                     padding: '2rem',
                     maxWidth: '450px',
                     width: '90%',
-                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    boxShadow: 'var(--shadow-xl)',
                     animation: 'slideUp 0.3s ease-out',
-                    position: 'relative'
+                    position: 'relative',
+                    border: '1px solid var(--border)'
                 }}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -104,7 +105,8 @@ export default function Modal({
                         margin: '0 auto 1.5rem',
                         fontSize: '2rem',
                         fontWeight: 'bold',
-                        color: color
+                        color: color,
+                        border: `1px solid ${color}33`
                     }}
                 >
                     {icon}
@@ -117,7 +119,7 @@ export default function Modal({
                         fontWeight: '700',
                         textAlign: 'center',
                         marginBottom: '0.75rem',
-                        color: '#1f2937'
+                        color: 'var(--text-primary)'
                     }}
                 >
                     {title}
@@ -128,7 +130,7 @@ export default function Modal({
                     style={{
                         fontSize: '1rem',
                         textAlign: 'center',
-                        color: '#6b7280',
+                        color: 'var(--text-secondary)',
                         marginBottom: '2rem',
                         lineHeight: '1.6'
                     }}
@@ -150,9 +152,9 @@ export default function Modal({
                             style={{
                                 padding: '0.75rem 1.5rem',
                                 borderRadius: '8px',
-                                border: '2px solid #e5e7eb',
-                                background: 'white',
-                                color: '#6b7280',
+                                border: '2px solid var(--border)',
+                                background: 'transparent',
+                                color: 'var(--text-secondary)',
                                 fontSize: '1rem',
                                 fontWeight: '600',
                                 cursor: 'pointer',
@@ -160,12 +162,12 @@ export default function Modal({
                                 minWidth: '100px'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.borderColor = '#d1d5db';
-                                e.currentTarget.style.backgroundColor = '#f9fafb';
+                                e.currentTarget.style.borderColor = 'var(--primary)';
+                                e.currentTarget.style.color = 'var(--primary)';
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.borderColor = '#e5e7eb';
-                                e.currentTarget.style.backgroundColor = 'white';
+                                e.currentTarget.style.borderColor = 'var(--border)';
+                                e.currentTarget.style.color = 'var(--text-secondary)';
                             }}
                         >
                             {cancelText}
@@ -188,7 +190,7 @@ export default function Modal({
                         }}
                         onMouseEnter={(e) => {
                             e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 6px 8px -1px rgba(0, 0, 0, 0.15)';
+                            e.currentTarget.style.boxShadow = 'var(--shadow-lg)';
                         }}
                         onMouseLeave={(e) => {
                             e.currentTarget.style.transform = 'translateY(0)';

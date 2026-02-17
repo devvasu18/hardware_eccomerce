@@ -120,7 +120,7 @@ export default function ProfilePage() {
         return (
             <main>
                 <Header />
-                <div className="container" style={{ padding: '4rem', textAlign: 'center' }}>
+                <div className="container" style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-primary)' }}>
                     <p>Please log in to view your profile.</p>
                 </div>
             </main>
@@ -128,52 +128,52 @@ export default function ProfilePage() {
     }
 
     return (
-        <main style={{ backgroundColor: '#f8fafc', minHeight: '100vh', paddingBottom: '4rem' }}>
+        <main style={{ backgroundColor: 'var(--background)', minHeight: '100vh', paddingBottom: '4rem' }}>
             <Header />
             <div className="container" style={{ maxWidth: '600px', margin: '3rem auto' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '2rem', color: '#1e293b' }}>My Profile</h1>
+                <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '2rem', color: 'var(--text-primary)' }}>My Profile</h1>
 
-                <div className="card" style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
+                <div className="card" style={{ background: 'var(--surface)', padding: '2rem', borderRadius: '12px', boxShadow: 'var(--shadow-md)', border: '1px solid var(--border)' }}>
 
                     {message && (
-                        <div style={{ padding: '1rem', background: '#dcfce7', color: '#166534', borderRadius: '8px', marginBottom: '1.5rem' }}>
+                        <div style={{ padding: '1rem', background: 'rgba(22, 101, 52, 0.1)', color: 'var(--success)', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid var(--success)' }}>
                             {message}
                         </div>
                     )}
                     {error && (
-                        <div style={{ padding: '1rem', background: '#fee2e2', color: '#991b1b', borderRadius: '8px', marginBottom: '1.5rem' }}>
+                        <div style={{ padding: '1rem', background: 'rgba(153, 27, 27, 0.1)', color: 'var(--danger)', borderRadius: '8px', marginBottom: '1.5rem', border: '1px solid var(--danger)' }}>
                             {error}
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit}>
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Full Name</label>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Full Name</label>
                             <input
                                 type="text"
                                 name="username"
                                 value={formData.username}
                                 onChange={handleChange}
-                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }}
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', outline: 'none' }}
                                 required
                             />
                         </div>
 
                         <div style={{ marginBottom: '1.5rem' }}>
-                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Email Address</label>
+                            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: 'var(--text-secondary)' }}>Email Address</label>
                             <input
                                 type="email"
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }}
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', outline: 'none' }}
                                 required
                             />
                         </div>
 
                         <div style={{ marginBottom: '2rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
-                                <label style={{ display: 'block', fontWeight: 600, color: '#475569' }}>Mobile Number</label>
+                                <label style={{ display: 'block', fontWeight: 600, color: 'var(--text-secondary)' }}>Mobile Number</label>
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -186,7 +186,7 @@ export default function ProfilePage() {
                                     style={{
                                         background: 'none',
                                         border: 'none',
-                                        color: '#3b82f6',
+                                        color: 'var(--primary)',
                                         fontSize: '0.875rem',
                                         cursor: 'pointer',
                                         textDecoration: 'underline',
@@ -201,7 +201,7 @@ export default function ProfilePage() {
                                 name="mobile"
                                 value={formData.mobile}
                                 disabled
-                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', background: '#f1f5f9', color: '#64748b', cursor: 'not-allowed' }}
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-muted)', cursor: 'not-allowed' }}
                                 title="Mobile number cannot be changed directly"
                             />
                         </div>
@@ -210,12 +210,13 @@ export default function ProfilePage() {
                         {showPasswordModal && (
                             <div style={{
                                 position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                                backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 1000,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                backdropFilter: 'blur(4px)'
                             }}>
-                                <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '90%', maxWidth: '400px' }}>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem', color: '#1e293b' }}>Verify Password</h3>
-                                    <p style={{ marginBottom: '1.5rem', color: '#64748b', fontSize: '0.9rem' }}>
+                                <div style={{ background: 'var(--surface)', padding: '2rem', borderRadius: '12px', width: '90%', maxWidth: '400px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>Verify Password</h3>
+                                    <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                                         To change your mobile number, please enter your current password. A verification link will be sent to your email <strong>{formData.email}</strong>.
                                     </p>
                                     <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
@@ -224,7 +225,7 @@ export default function ProfilePage() {
                                             placeholder="Enter your password"
                                             value={passwordForMobileChange}
                                             onChange={(e) => setPasswordForMobileChange(e.target.value)}
-                                            style={{ width: '100%', padding: '0.75rem', paddingRight: '2.5rem', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none' }}
+                                            style={{ width: '100%', padding: '0.75rem', paddingRight: '2.5rem', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--text-primary)', outline: 'none' }}
                                         />
                                         <button
                                             type="button"
@@ -237,7 +238,7 @@ export default function ProfilePage() {
                                                 background: 'none',
                                                 border: 'none',
                                                 cursor: 'pointer',
-                                                color: '#64748B'
+                                                color: 'var(--text-muted)'
                                             }}
                                         >
                                             {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
@@ -247,7 +248,7 @@ export default function ProfilePage() {
                                         <button
                                             type="button"
                                             onClick={() => { setShowPasswordModal(false); setPasswordForMobileChange(''); }}
-                                            style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: 'white', cursor: 'pointer' }}
+                                            style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-primary)', cursor: 'pointer' }}
                                         >
                                             Cancel
                                         </button>
@@ -256,7 +257,7 @@ export default function ProfilePage() {
                                             onClick={handleRequestMobileChange}
                                             disabled={mobileChangeLoading || !passwordForMobileChange}
                                             style={{
-                                                padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: '#3b82f6', color: 'white', cursor: 'pointer',
+                                                padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: 'var(--primary)', color: 'white', cursor: 'pointer',
                                                 opacity: (mobileChangeLoading || !passwordForMobileChange) ? 0.7 : 1
                                             }}
                                         >

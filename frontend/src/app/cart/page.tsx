@@ -28,8 +28,8 @@ export default function CartPage() {
             <>
                 <Header />
                 <div className="container" style={{ padding: '4rem 0', textAlign: 'center', minHeight: '60vh' }}>
-                    <h1>Your Cart is Empty</h1>
-                    <p style={{ marginBottom: '2rem', color: '#64748B' }}>Looks like you haven't added any industrial parts yet.</p>
+                    <h1 style={{ color: 'var(--text-primary)' }}>Your Cart is Empty</h1>
+                    <p style={{ marginBottom: '2rem', color: 'var(--text-secondary)' }}>Looks like you haven't added any industrial parts yet.</p>
                     <Link href="/products" className="btn btn-primary">Browse Catalog</Link>
                 </div>
                 <Footer />
@@ -47,17 +47,17 @@ export default function CartPage() {
                     {/* Cart Items */}
                     <div className="card">
                         {items.map((item) => (
-                            <div key={`${item.productId}-${item.modelId || 'nm'}-${item.variationId || item.size || 'default'}`} style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                            <div key={`${item.productId}-${item.modelId || 'nm'}-${item.variationId || item.size || 'default'}`} style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1rem' }}>
                                 <div
-                                    style={{ width: '80px', height: '80px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer' }}
+                                    style={{ width: '80px', height: '80px', background: 'var(--background)', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--border)' }}
                                     onClick={() => setZoomedImage(item.image)}
                                 >
-                                    {item.image ? <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                                    {item.image ? <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : null}
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <h4 style={{ marginBottom: '0.25rem' }}>{item.name}</h4>
-                                    {item.size && <p style={{ color: '#F37021', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>Size: {item.size}</p>}
-                                    <p style={{ color: '#64748B', fontSize: '0.9rem' }}>Unit Price: ₹{item.price}</p>
+                                    <h4 style={{ marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{item.name}</h4>
+                                    {item.size && <p style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>Size: {item.size}</p>}
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Unit Price: ₹{item.price}</p>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -81,10 +81,10 @@ export default function CartPage() {
                                         >+</button>
                                     </div>
                                     {item.approvedLimit && (
-                                        <span style={{ fontSize: '0.75rem', color: '#10b981' }}>Max: {item.approvedLimit} (Approved)</span>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Max: {item.approvedLimit} (Approved)</span>
                                     )}
-                                    <span style={{ fontWeight: 700, marginTop: '0.25rem' }}>₹{item.price * item.quantity}</span>
-                                    <button onClick={() => removeFromCart(item.productId, item.variationId || item.size, item.modelId)} style={{ color: '#ef4444', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
+                                    <span style={{ fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>₹{item.price * item.quantity}</span>
+                                    <button onClick={() => removeFromCart(item.productId, item.variationId || item.size, item.modelId)} style={{ color: 'var(--danger)', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
                                 </div>
                             </div>
                         ))}
@@ -93,16 +93,16 @@ export default function CartPage() {
 
                     {/* Summary */}
                     <div className="card" style={{ height: 'fit-content' }}>
-                        <h3 style={{ marginBottom: '1rem' }}>Order Summary</h3>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>Order Summary</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                             <span>Subtotal</span>
                             <span>₹{cartTotal}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: '#64748B', fontSize: '0.9rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                             <span>Tax (GST)</span>
                             <span>₹{Math.round(items.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0))}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontWeight: 700, fontSize: '1.2rem', borderTop: '1px solid #e2e8f0', paddingTop: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontWeight: 700, fontSize: '1.2rem', borderTop: '1px solid var(--border)', paddingTop: '1rem', color: 'var(--text-primary)' }}>
                             <span>Total</span>
                             <span>₹{Math.round(cartTotal + items.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0))}</span>
                         </div>

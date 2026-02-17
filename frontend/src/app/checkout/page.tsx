@@ -514,17 +514,17 @@ export default function CheckoutPage() {
                             <h3 className="section-title">{availableItems.length > 0 ? 'Shipping Address' : 'Contact Address'}</h3>
 
                             {lockedAddress ? (
-                                <div className="p-4 bg-blue-50 border border-blue-200 rounded-md mb-4">
-                                    <p className="text-sm font-semibold text-blue-800 mb-1">
+                                <div style={{ padding: '1rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '6px', marginBottom: '1rem' }}>
+                                    <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '0.25rem' }}>
                                         Address Locked for Approved Limit
                                     </p>
-                                    <p className="text-sm text-blue-700">
+                                    <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                                         Your order contains an approved On-Demand request which is tied to the following address:
                                     </p>
-                                    <div className="mt-2 p-3 bg-white border border-blue-100 rounded text-gray-800 font-medium">
+                                    <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'var(--background)', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--text-primary)', fontWeight: 500 }}>
                                         {lockedAddress}
                                     </div>
-                                    <p className="text-xs text-blue-600 mt-2">
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
                                         To ship to a different address, please remove the approved On-Demand item from your cart.
                                     </p>
                                 </div>
@@ -619,7 +619,6 @@ export default function CheckoutPage() {
                                                 value={newAddress.state}
                                                 onChange={(e) => setNewAddress({ ...newAddress, state: e.target.value })}
                                                 className="form-input"
-                                                style={{ backgroundColor: 'white' }}
                                             >
                                                 {INDIAN_STATES.map(st => (
                                                     <option key={st} value={st}>{st}</option>
@@ -689,7 +688,7 @@ export default function CheckoutPage() {
                                 </div>
 
                                 {!paymentSettings.onlinePaymentEnabled && !paymentSettings.codEnabled && (
-                                    <div className="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">
+                                    <div style={{ padding: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', borderRadius: '4px', color: 'var(--danger)', fontSize: '0.875rem' }}>
                                         No payment methods are currently available. Please contact support.
                                     </div>
                                 )}
@@ -741,11 +740,11 @@ export default function CheckoutPage() {
                                 <>
                                     <div className="summary-row">
                                         <span>Subtotal (MRP)</span>
-                                        <span style={{ textDecoration: totalSavings > 0 ? 'line-through' : 'none', color: totalSavings > 0 ? '#666' : 'inherit' }}>₹{mrpTotal}</span>
+                                        <span style={{ textDecoration: totalSavings > 0 ? 'line-through' : 'none', color: totalSavings > 0 ? 'var(--text-muted)' : 'inherit' }}>₹{mrpTotal}</span>
                                     </div>
 
                                     {totalSavings > 0 && (
-                                        <div className="summary-row text-success" style={{ fontWeight: 600, color: '#2e7d32' }}>
+                                        <div className="summary-row" style={{ fontWeight: 600, color: 'var(--success)' }}>
                                             <span>Total Savings</span>
                                             <span>-₹{totalSavings}</span>
                                         </div>
@@ -797,7 +796,7 @@ export default function CheckoutPage() {
                                                 </div>
                                                 <button onClick={handleRemoveCoupon} className="coupon-remove-btn">Remove</button>
                                             </div>
-                                            <div className="summary-row text-success mt-2" style={{ fontWeight: 600 }}>
+                                            <div className="summary-row" style={{ fontWeight: 600, color: 'var(--success)', marginTop: '0.5rem' }}>
                                                 <span>Coupon Discount</span>
                                                 <span>-₹{couponDiscount}</span>
                                             </div>

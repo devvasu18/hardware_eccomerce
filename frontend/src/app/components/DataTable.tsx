@@ -112,8 +112,8 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <div style={{ fontWeight: 600, fontSize: '1.1rem', color: '#1e293b' }}>
-                    {title || "Data Table"} <span style={{ color: '#94a3b8', fontSize: '0.9rem', marginLeft: '0.5rem', fontWeight: 400 }}>({data.length})</span>
+                <div style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                    {title || "Data Table"} <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginLeft: '0.5rem', fontWeight: 400 }}>({data.length})</span>
                 </div>
                 <div className={styles.controls}>
                     {searchable && (
@@ -144,7 +144,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         {col.header}
                                         {sortConfig && sortConfig.key === col.accessor && (
-                                            <span style={{ fontSize: '0.75rem', color: '#6366f1' }}>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--primary)' }}>
                                                 {sortConfig.direction === 'asc' ? '▲' : '▼'}
                                             </span>
                                         )}
@@ -174,7 +174,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
                                                     <button
                                                         onClick={() => onEdit(item)}
                                                         className={styles.btnIcon}
-                                                        style={{ color: '#3b82f6', background: '#eff6ff' }}
+                                                        style={{ color: 'var(--primary)', background: 'rgba(243, 112, 33, 0.1)' }}
                                                         title="Edit"
                                                     >
                                                         <FiEdit2 size={16} />
@@ -184,7 +184,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
                                                     <button
                                                         onClick={() => onDelete(item)}
                                                         className={styles.btnIcon}
-                                                        style={{ color: '#ef4444', background: '#fef2f2' }}
+                                                        style={{ color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)' }}
                                                         title="Delete"
                                                     >
                                                         <FiTrash2 size={16} />
@@ -202,7 +202,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
                                     className={styles.emptyState}
                                 >
                                     <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                                        <FiSearch size={24} color="#cbd5e1" />
+                                        <FiSearch size={24} color="var(--text-muted)" />
                                         <span>No records found matching your search.</span>
                                     </div>
                                 </td>
@@ -250,7 +250,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
                                 const p = uniquePages[i];
                                 if (i > 0 && p - uniquePages[i - 1] > 1) {
                                     renderedPages.push(
-                                        <span key={`ellipsis-${p}`} style={{ padding: '0.375rem 0.5rem', color: '#94a3b8' }}>...</span>
+                                        <span key={`ellipsis-${p}`} style={{ padding: '0.375rem 0.5rem', color: 'var(--text-muted)' }}>...</span>
                                     );
                                 }
                                 renderedPages.push(
@@ -258,7 +258,7 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
                                         key={p}
                                         className={`${styles.pageBtn} ${currentPage === p ? styles.active : ''}`}
                                         onClick={() => setCurrentPage(p)}
-                                        style={currentPage === p ? { background: '#6366f1', color: 'white', borderColor: '#6366f1' } : {}}
+                                        style={currentPage === p ? { background: 'var(--primary)', color: 'white', borderColor: 'var(--primary)' } : {}}
                                     >
                                         {p}
                                     </button>

@@ -197,12 +197,12 @@ export default function SubCategoryMaster() {
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
-                    <h1 className="page-title" style={{ margin: 0 }}>Sub-Category Manager</h1>
+                    <h1 className="page-title" style={{ margin: 0, color: 'var(--text-primary)' }}>Sub-Category Manager</h1>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ fontSize: '0.9rem', color: '#64748b', whiteSpace: 'nowrap' }}>Filter by Category:</span>
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Filter by Category:</span>
                         <select
                             className="form-select"
-                            style={{ padding: '0.4rem 2rem 0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.875rem' }}
+                            style={{ padding: '0.4rem 2rem 0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.875rem', background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
                             value={selectedCategory}
                             onChange={(e) => setSelectedCategory(e.target.value)}
                         >
@@ -252,7 +252,7 @@ export default function SubCategoryMaster() {
                         {
                             header: 'Image',
                             accessor: (item) => (
-                                <div className="img-preview" style={{ width: '50px', height: '50px', position: 'relative', overflow: 'hidden', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                                <div className="img-preview" style={{ width: '50px', height: '50px', position: 'relative', overflow: 'hidden', borderRadius: '4px', border: '1px solid var(--border)' }}>
                                     {item.image ? (
                                         <Image
                                             src={item.image.startsWith('http') ? item.image : `/api/${item.image}`}
@@ -261,7 +261,7 @@ export default function SubCategoryMaster() {
                                             style={{ objectFit: 'cover' }}
                                         />
                                     ) : (
-                                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#ccc', fontSize: '0.75rem' }}>N/A</span>
+                                        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', fontSize: '0.75rem' }}>N/A</span>
                                     )}
                                 </div>
                             ),
@@ -271,8 +271,8 @@ export default function SubCategoryMaster() {
                             header: 'Name',
                             accessor: (item) => (
                                 <div>
-                                    <div style={{ fontWeight: 600 }}>{item.name}</div>
-                                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{item.slug}</div>
+                                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.name}</div>
+                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.slug}</div>
                                 </div>
                             ),
                             sortable: true
@@ -280,7 +280,7 @@ export default function SubCategoryMaster() {
                         {
                             header: 'Parent Category',
                             accessor: (item) => (
-                                <span className="badge badge-warning" style={{ background: '#EFF6FF', color: '#1D4ED8', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem' }}>
+                                <span className="badge" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                                     {item.category_id?.name || 'Unknown'}
                                 </span>
                             ),
@@ -305,7 +305,7 @@ export default function SubCategoryMaster() {
                             <select
                                 {...register("category_id", { required: "Category is required" })}
                                 className="form-select"
-                                style={{ width: '100%', padding: '0.5rem' }}
+                                style={{ width: '100%', padding: '0.5rem', background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px' }}
                             >
                                 <option value="">-- Select Category --</option>
                                 {categories
@@ -329,7 +329,7 @@ export default function SubCategoryMaster() {
                                 {...register("name", { required: true })}
                                 className="form-input"
                                 placeholder="e.g. Cordless Drills"
-                                style={{ width: '100%', padding: '0.5rem' }}
+                                style={{ width: '100%', padding: '0.5rem', background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px' }}
                             />
                         </div>
                         <div className="form-group">
@@ -338,12 +338,12 @@ export default function SubCategoryMaster() {
                                 {...register("slug", { required: true })}
                                 className="form-input"
                                 readOnly
-                                style={{ width: '100%', padding: '0.5rem', backgroundColor: '#f9fafb' }}
+                                style={{ width: '100%', padding: '0.5rem', backgroundColor: 'var(--background)', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: '4px' }}
                             />
                         </div>
                         <div className="form-group">
                             <label className="form-label">Cover Image</label>
-                            <div className="upload-box" style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-start', border: '1px dashed #ccc', borderRadius: '4px' }}>
+                            <div className="upload-box" style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-start', border: '1px dashed var(--border)', borderRadius: '4px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
                                     <input
                                         type="file"
@@ -358,7 +358,7 @@ export default function SubCategoryMaster() {
                                     />
                                 </div>
                                 {previewImage && (
-                                    <div style={{ marginTop: '0.5rem', width: '200px', height: '120px', position: 'relative', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{ marginTop: '0.5rem', width: '200px', height: '120px', position: 'relative', border: '1px solid var(--border)', borderRadius: '4px', overflow: 'hidden' }}>
                                         <Image
                                             src={previewImage}
                                             alt="Preview"
@@ -371,7 +371,7 @@ export default function SubCategoryMaster() {
                         </div>
                     </div>
                     <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-                        <button type="button" onClick={handleCloseModal} className="btn" style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', padding: '0.5rem 1rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
+                        <button type="button" onClick={handleCloseModal} className="btn" style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '0.5rem 1rem', borderRadius: '0.25rem', cursor: 'pointer' }}>
                             Cancel
                         </button>
                         <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '0.25rem', cursor: 'pointer' }}>

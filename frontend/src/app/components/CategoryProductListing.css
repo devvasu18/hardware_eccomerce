@@ -1,6 +1,6 @@
 .category-products-section {
     padding: 80px 0;
-    background: #ffffff;
+    background: var(--background);
 }
 
 .category-products-container {
@@ -24,7 +24,7 @@
 .premium-title {
     font-size: 36px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--text-primary);
     letter-spacing: -0.02em;
     margin-bottom: 8px;
     line-height: 1.2;
@@ -32,7 +32,7 @@
 
 .premium-subtitle {
     font-size: 18px;
-    color: #64748b;
+    color: var(--text-muted);
     max-width: 600px;
     line-height: 1.6;
 }
@@ -42,13 +42,13 @@
     align-items: center;
     gap: 12px;
     padding: 14px 28px;
-    background: #f8fafc;
-    color: #334155;
+    background: var(--surface);
+    color: var(--text-primary);
     font-weight: 700;
     border-radius: 100px;
     text-decoration: none;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     white-space: nowrap;
 }
 
@@ -57,11 +57,11 @@
 }
 
 .premium-view-all-btn:hover {
-    background: #000000;
-    color: #ffffff;
-    border-color: #000000;
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
     transform: translateY(-3px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-orange);
 }
 
 .premium-view-all-btn svg {
@@ -81,16 +81,17 @@
 .empty-category-message {
     padding: 60px;
     text-align: center;
-    background: #f8fafc;
+    background: var(--surface);
     border-radius: 24px;
-    color: #64748b;
+    color: var(--text-muted);
     font-weight: 500;
+    border: 1px dashed var(--border);
 }
 
 /* Skeleton/Loading States */
 .skeleton-card-premium {
     height: 420px;
-    background: linear-gradient(90deg, #f1f5f9 25%, #f8fafc 50%, #f1f5f9 75%);
+    background: linear-gradient(90deg, var(--surface) 25%, var(--surface-hover) 50%, var(--surface) 75%);
     background-size: 200% 100%;
     border-radius: 24px;
     animation: shimmer 2s infinite linear;

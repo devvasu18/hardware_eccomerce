@@ -1,7 +1,8 @@
 .why-choose-us {
     padding: 6rem 0;
-    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 50%, #f8fafc 100%);
+    background: linear-gradient(180deg, var(--background) 0%, var(--surface) 50%, var(--background) 100%);
     position: relative;
+    transition: background-color var(--transition-base);
 }
 
 .section-header-center {
@@ -24,10 +25,16 @@
     border: 2px solid #fbbf24;
 }
 
+[data-theme='dark'] .section-badge {
+    background: linear-gradient(135deg, #451a03 0%, #78350f 100%);
+    color: #fde68a;
+    border-color: #92400e;
+}
+
 .section-title-center {
     font-size: 2.75rem;
     font-weight: 800;
-    color: var(--secondary);
+    color: var(--text-primary);
     margin-bottom: 1rem;
     line-height: 1.2;
 }
@@ -47,14 +54,15 @@
 }
 
 .feature-card {
-    background: white;
-    border: 2px solid #f1f5f9;
+    background: var(--surface);
+    border: 2px solid var(--border);
     border-radius: 20px;
     padding: 2.5rem;
     position: relative;
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
+    box-shadow: var(--shadow-sm);
 }
 
 .feature-card::before {
@@ -78,8 +86,9 @@
 .feature-card:hover,
 .feature-card.active {
     transform: translateY(-12px);
-    box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.15);
-    border-color: #e2e8f0;
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-light);
+    background: var(--surface-hover);
 }
 
 .feature-glow {
@@ -140,7 +149,7 @@
     font-size: 0.85rem;
     font-weight: 800;
     padding: 0.4rem 0.9rem;
-    background: white;
+    background: var(--surface);
     border-radius: 50px;
     border: 2px solid currentColor;
     white-space: nowrap;
@@ -156,7 +165,7 @@
 .feature-title {
     font-size: 1.35rem;
     font-weight: 700;
-    color: var(--secondary);
+    color: var(--text-primary);
     margin-bottom: 0.75rem;
     transition: color 0.3s ease;
 }
@@ -180,11 +189,17 @@
     align-items: center;
     gap: 3rem;
     padding: 3rem;
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    background: linear-gradient(135deg, var(--secondary-dark) 0%, var(--secondary) 100%);
     border-radius: 24px;
-    box-shadow: 0 20px 40px -12px rgba(15, 23, 42, 0.4);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-xl);
     position: relative;
     overflow: hidden;
+}
+
+[data-theme='dark'] .trust-indicators {
+    background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+    border-color: #1e293b;
 }
 
 .trust-indicators::before {
@@ -195,8 +210,8 @@
     right: 0;
     bottom: 0;
     background:
-        radial-gradient(circle at 20% 50%, rgba(243, 112, 33, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(243, 112, 33, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
     pointer-events: none;
 }
 
@@ -228,9 +243,13 @@
 .trust-divider {
     width: 1px;
     height: 60px;
-    background: linear-gradient(180deg, transparent, #334155, transparent);
+    background: linear-gradient(180deg, transparent, var(--border), transparent);
     position: relative;
     z-index: 1;
+}
+
+[data-theme='dark'] .trust-divider {
+    background: linear-gradient(180deg, transparent, #334155, transparent);
 }
 
 /* ========================================
@@ -296,7 +315,7 @@
     .trust-divider {
         width: 60px;
         height: 1px;
-        background: linear-gradient(90deg, transparent, #334155, transparent);
+        background: linear-gradient(90deg, transparent, var(--border), transparent);
     }
 
     .trust-item {

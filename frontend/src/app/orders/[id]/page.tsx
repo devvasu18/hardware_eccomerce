@@ -797,10 +797,10 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                         borderRadius: '6px',
                                         border: '1px solid #e2e8f0'
                                     }}>
-                                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                                             Current Location
                                         </div>
-                                        <div style={{ fontWeight: 600, color: '#1e293b' }}>
+                                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                                             📍 {shipment.currentLocation}
                                         </div>
                                     </div>
@@ -808,28 +808,28 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
 
                                 {shipment.notes && (
                                     <div style={{
-                                        background: '#fffbeb',
+                                        background: 'rgba(255, 193, 7, 0.1)',
                                         padding: '1rem',
                                         borderRadius: '6px',
-                                        border: '1px solid #fef3c7',
+                                        border: '1px solid rgba(255, 193, 7, 0.2)',
                                         marginTop: '1rem'
                                     }}>
-                                        <div style={{ fontSize: '0.75rem', color: '#92400e', marginBottom: '0.25rem' }}>
+                                        <div style={{ fontSize: '0.75rem', color: '#f59e0b', marginBottom: '0.25rem' }}>
                                             Note
                                         </div>
-                                        <div style={{ fontSize: '0.9rem', color: '#78350f' }}>
+                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)' }}>
                                             {shipment.notes}
                                         </div>
                                     </div>
                                 )}
                             </div>
                         ) : order.status === 'Order Placed' || order.status === 'Packed' ? (
-                            <div className="card" style={{ marginBottom: '2rem', textAlign: 'center', padding: '2rem' }}>
+                            <div className="card" style={{ marginBottom: '2rem', textAlign: 'center', padding: '2rem', background: 'var(--surface)', border: '1px solid var(--border)' }}>
                                 <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📦</div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                                     Preparing Your Order
                                 </h3>
-                                <p style={{ color: '#64748b', fontSize: '0.9rem' }}>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                                     Shipment details will be available once your order is assigned to a bus
                                 </p>
                             </div>
@@ -837,7 +837,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
 
                         {/* Order Summary */}
                         <div className="card">
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
                                 💰 Order Summary
                             </h3>
 
@@ -855,8 +855,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                 marginBottom: '0.75rem',
                                                 fontSize: '0.95rem'
                                             }}>
-                                                <span style={{ color: '#64748b' }}>Subtotal (MRP)</span>
-                                                <span style={{ fontWeight: 600, textDecoration: totalSavings > 0 ? 'line-through' : 'none', color: totalSavings > 0 ? '#64748b' : 'inherit' }}>
+                                                <span style={{ color: 'var(--text-secondary)' }}>Subtotal (MRP)</span>
+                                                <span style={{ fontWeight: 600, textDecoration: totalSavings > 0 ? 'line-through' : 'none', color: totalSavings > 0 ? 'var(--text-muted)' : 'var(--text-primary)' }}>
                                                     ₹{mrpTotal.toLocaleString('en-IN')}
                                                 </span>
                                             </div>
@@ -867,7 +867,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                     justifyContent: 'space-between',
                                                     marginBottom: '0.75rem',
                                                     fontSize: '0.95rem',
-                                                    color: '#10b981',
+                                                    color: 'var(--success)',
                                                     fontWeight: 600
                                                 }}>
                                                     <span>Total Savings</span>
@@ -881,8 +881,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                 marginBottom: '0.75rem',
                                                 fontSize: '0.95rem'
                                             }}>
-                                                <span style={{ color: '#64748b' }}>Selling Price</span>
-                                                <span style={{ fontWeight: 600 }}>
+                                                <span style={{ color: 'var(--text-secondary)' }}>Selling Price</span>
+                                                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                                                     ₹{sellingTotal.toLocaleString('en-IN')}
                                                 </span>
                                             </div>
@@ -893,7 +893,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                     justifyContent: 'space-between',
                                                     marginBottom: '0.75rem',
                                                     fontSize: '0.95rem',
-                                                    color: '#F37021',
+                                                    color: 'var(--primary)',
                                                     fontWeight: 600
                                                 }}>
                                                     <span>Coupon Discount ({order.couponCode})</span>
@@ -927,8 +927,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                 marginBottom: '0.75rem',
                                                 fontSize: '0.95rem'
                                             }}>
-                                                <span style={{ color: '#64748b' }}>Tax (GST)</span>
-                                                <span style={{ fontWeight: 600 }}>
+                                                <span style={{ color: 'var(--text-secondary)' }}>Tax (GST)</span>
+                                                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                                                     ₹{order.taxTotal?.toLocaleString('en-IN')}
                                                 </span>
                                             </div>
@@ -944,8 +944,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                     marginBottom: '0.5rem',
                                                     fontSize: '0.9rem'
                                                 }}>
-                                                    <span style={{ color: '#64748b' }}>IGST</span>
-                                                    <span style={{ fontWeight: 600 }}>₹{totalIGST.toLocaleString('en-IN')}</span>
+                                                    <span style={{ color: 'var(--text-secondary)' }}>IGST</span>
+                                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>₹{totalIGST.toLocaleString('en-IN')}</span>
                                                 </div>
                                             )}
                                             {totalCGST > 0 && (
@@ -955,8 +955,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                     marginBottom: '0.5rem',
                                                     fontSize: '0.9rem'
                                                 }}>
-                                                    <span style={{ color: '#64748b' }}>CGST</span>
-                                                    <span style={{ fontWeight: 600 }}>₹{totalCGST.toLocaleString('en-IN')}</span>
+                                                    <span style={{ color: 'var(--text-secondary)' }}>CGST</span>
+                                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>₹{totalCGST.toLocaleString('en-IN')}</span>
                                                 </div>
                                             )}
                                             {totalSGST > 0 && (
@@ -966,52 +966,55 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                     marginBottom: '0.75rem', // Extra margin for last item
                                                     fontSize: '0.9rem'
                                                 }}>
-                                                    <span style={{ color: '#64748b' }}>SGST</span>
-                                                    <span style={{ fontWeight: 600 }}>₹{totalSGST.toLocaleString('en-IN')}</span>
+                                                    <span style={{ color: 'var(--text-secondary)' }}>SGST</span>
+                                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>₹{totalSGST.toLocaleString('en-IN')}</span>
                                                 </div>
                                             )}
                                         </>
                                     );
                                 })()}
                                 <div style={{
-                                    borderTop: '2px solid #e2e8f0',
+                                    borderTop: '2px solid var(--border)',
                                     paddingTop: '0.75rem',
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     fontSize: '1.2rem',
-                                    fontWeight: 700
+                                    fontWeight: 700,
+                                    color: 'var(--text-primary)'
                                 }}>
                                     <span>Total</span>
-                                    <span style={{ color: '#F37021' }}>
+                                    <span style={{ color: 'var(--primary)' }}>
                                         ₹{order.totalAmount.toLocaleString('en-IN')}
                                     </span>
                                 </div>
                             </div>
 
                             <div style={{
-                                background: '#f8fafc',
+                                background: 'var(--surface-hover)',
                                 padding: '1rem',
                                 borderRadius: '6px',
-                                marginBottom: '1.5rem'
+                                marginBottom: '1.5rem',
+                                border: '1px solid var(--border)'
                             }}>
-                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                                     Payment Method
                                 </div>
-                                <div style={{ fontWeight: 600, color: '#1e293b' }}>
+                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
                                     {order.paymentMethod}
                                 </div>
                             </div>
 
                             <div style={{
-                                background: '#f8fafc',
+                                background: 'var(--surface-hover)',
                                 padding: '1rem',
                                 borderRadius: '6px',
-                                marginBottom: '1.5rem'
+                                marginBottom: '1.5rem',
+                                border: '1px solid var(--border)'
                             }}>
-                                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.5rem' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
                                     Delivery Address
                                 </div>
-                                <div style={{ fontSize: '0.9rem', color: '#1e293b', whiteSpace: 'pre-wrap' }}>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap' }}>
                                     {order.shippingAddress}
                                 </div>
                             </div>

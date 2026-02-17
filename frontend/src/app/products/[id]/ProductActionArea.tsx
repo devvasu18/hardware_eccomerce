@@ -451,14 +451,14 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                     <div className="price-display">
                         {effectiveMRP && effectiveMRP > finalPrice ? (
                             <>
-                                {!currentVariation && !selectedModel && hasVariations && <span style={{ fontSize: '0.9rem', color: '#64748B', display: 'block', marginBottom: '4px' }}>Starting from</span>}
+                                {!currentVariation && !selectedModel && hasVariations && <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Starting from</span>}
                                 <span className="price-original">₹{effectiveMRP}</span>
                                 <span className="price-separator">/</span>
                                 <span className="price-current">₹{finalPrice}</span>
                             </>
                         ) : (
                             <>
-                                {!currentVariation && !selectedModel && hasVariations && <span style={{ fontSize: '0.9rem', color: '#64748B', display: 'block', marginBottom: '4px' }}>Starting from</span>}
+                                {!currentVariation && !selectedModel && hasVariations && <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>Starting from</span>}
                                 <span className="price-current">₹{finalPrice}</span>
                             </>
                         )}

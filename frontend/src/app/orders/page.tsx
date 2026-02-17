@@ -81,12 +81,12 @@ export default function MyOrdersPage() {
     // but the getStatusColor suggests string classes. I'll use inline styles to be safe matching the design of other pages.
     const getStatusStyle = (status: string) => {
         switch (status) {
-            case 'Order Placed': return { background: '#dbeafe', color: '#1e40af', border: '1px solid #bfdbfe' };
-            case 'Packed': return { background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
-            case 'Assigned to Bus': return { background: '#f3e8ff', color: '#6b21a8', border: '1px solid #e9d5ff' };
-            case 'Delivered': return { background: '#dcfce7', color: '#166534', border: '1px solid #bbf7d0' };
-            case 'Cancelled': return { background: '#fee2e2', color: '#991b1b', border: '1px solid #fecaca' };
-            default: return { background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' };
+            case 'Order Placed': return { background: 'rgba(59, 130, 246, 0.1)', color: '#3182ce', border: '1px solid rgba(59, 130, 246, 0.2)' };
+            case 'Packed': return { background: 'rgba(245, 158, 11, 0.1)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.2)' };
+            case 'Assigned to Bus': return { background: 'rgba(139, 92, 246, 0.1)', color: '#7c3aed', border: '1px solid rgba(139, 92, 246, 0.2)' };
+            case 'Delivered': return { background: 'rgba(16, 185, 129, 0.1)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.2)' };
+            case 'Cancelled': return { background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.2)' };
+            default: return { background: 'var(--surface-hover)', color: 'var(--text-secondary)', border: '1px solid var(--border)' };
         }
     };
 

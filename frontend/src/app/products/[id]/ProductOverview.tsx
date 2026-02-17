@@ -257,10 +257,11 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
                             onClick={(e) => { e.stopPropagation(); setIsZoomOpen(false); }}
                             style={{
                                 position: 'absolute', top: '20px', right: '20px',
-                                background: 'white', color: 'black', border: 'none',
+                                background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)',
                                 borderRadius: '50%', width: '40px', height: '40px',
                                 fontSize: '1.5rem', cursor: 'pointer', display: 'flex',
-                                alignItems: 'center', justifyContent: 'center'
+                                alignItems: 'center', justifyContent: 'center',
+                                boxShadow: 'var(--shadow-md)'
                             }}
                         >
                             &times;
