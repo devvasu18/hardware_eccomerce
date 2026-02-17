@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import api from '../utils/api';
 import { FiSave, FiBell, FiGlobe, FiMoon, FiSun, FiMonitor, FiCheck, FiAlertCircle } from 'react-icons/fi';
 import Header from '../components/Header';
@@ -11,6 +12,7 @@ import Footer from '../components/Footer';
 export default function UserSettingsPage() {
     const { user, loadUser } = useAuth();
     const { theme: globalTheme, setTheme: setGlobalTheme } = useTheme();
+    const { t, language, changeLanguage } = useLanguage();
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -36,6 +38,10 @@ export default function UserSettingsPage() {
                 language: user.settings.language || 'en',
                 theme: (user.settings.theme as any) || 'system'
             });
+            // Ensure global language context matches user preference if set
+            if (user.settings.language && user.settings.language !== language) {
+                // We don't auto-switch here to avoid jarring UX, let them explicitly save
+            }
         }
     }, [user]);
 
@@ -54,6 +60,11 @@ export default function UserSettingsPage() {
         setGlobalTheme(newTheme); // Apply immediately
     };
 
+    const handleLanguageChange = (newLang: string) => {
+        setSettings(prev => ({ ...prev, language: newLang }));
+        changeLanguage(newLang); // Apply immediately for preview
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -61,10 +72,10 @@ export default function UserSettingsPage() {
 
         try {
             await api.put('/auth/settings', settings);
-            setMessage({ type: 'success', text: 'Settings updated successfully!' });
+            setMessage({ type: 'success', text: t('settings_saved') });
             await loadUser(); // Refresh user context
         } catch (error: any) {
-            setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to update settings' });
+            setMessage({ type: 'error', text: error.response?.data?.message || t('settings_failed') });
         } finally {
             setSaving(false);
         }
@@ -76,10 +87,10 @@ export default function UserSettingsPage() {
             <div className="container" style={{ padding: '8rem 2rem 2rem', maxWidth: '900px', margin: '0 auto', minHeight: '80vh' }}>
                 <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
                     <h1 style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-                        Account Settings
+                        {t('account_settings')}
                     </h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>
-                        Manage your preferences and notification settings.
+                        {t('manage_preferences')}
                     </p>
                 </div>
 
@@ -107,16 +118,16 @@ export default function UserSettingsPage() {
                             <div style={{ padding: '8px', background: 'var(--info-light)', borderRadius: '8px', color: 'var(--info)' }}>
                                 <FiBell size={20} />
                             </div>
-                            Notification Preferences
+                            {t('notification_preferences')}
                         </h2>
 
                         <div style={{ display: 'grid', gap: '1rem' }}>
                             {/* Email Notifications */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
                                 <div>
-                                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Email Notifications</p>
+                                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{t('email_notifications')}</p>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
-                                        Receive order updates, invoices, and promotions via email
+                                        {t('email_notifications_desc')}
                                     </p>
                                 </div>
                                 <label className="toggle-switch">
@@ -132,9 +143,9 @@ export default function UserSettingsPage() {
                             {/* WhatsApp Notifications */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
                                 <div>
-                                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>WhatsApp Notifications</p>
+                                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{t('whatsapp_notifications')}</p>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
-                                        Get real-time updates and delivery status on WhatsApp
+                                        {t('whatsapp_notifications_desc')}
                                     </p>
                                 </div>
                                 <label className="toggle-switch">
@@ -150,9 +161,9 @@ export default function UserSettingsPage() {
                             {/* SMS Notifications */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
                                 <div>
-                                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>SMS Notifications</p>
+                                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{t('sms_notifications')}</p>
                                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
-                                        Receive critical alerts and OTPs via SMS
+                                        {t('sms_notifications_desc')}
                                     </p>
                                 </div>
                                 <label className="toggle-switch">
@@ -173,13 +184,13 @@ export default function UserSettingsPage() {
                             <div style={{ padding: '8px', background: 'var(--success-light)', borderRadius: '8px', color: 'var(--success)' }}>
                                 <FiGlobe size={20} />
                             </div>
-                            Appearance & General
+                            {t('appearance_general')}
                         </h2>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-secondary)' }}>
-                                    Theme Mode
+                                    {t('theme_mode')}
                                 </label>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
                                     <div
@@ -195,7 +206,7 @@ export default function UserSettingsPage() {
                                         }}
                                     >
                                         <FiSun size={24} style={{ marginBottom: '0.5rem', color: settings.theme === 'light' ? 'var(--primary)' : 'var(--text-muted)' }} />
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Light</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t('light')}</div>
                                     </div>
                                     <div
                                         onClick={() => handleThemeChange('dark')}
@@ -210,7 +221,7 @@ export default function UserSettingsPage() {
                                         }}
                                     >
                                         <FiMoon size={24} style={{ marginBottom: '0.5rem', color: settings.theme === 'dark' ? 'var(--primary)' : 'var(--text-muted)' }} />
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Dark</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t('dark')}</div>
                                     </div>
                                     <div
                                         onClick={() => handleThemeChange('system')}
@@ -225,18 +236,18 @@ export default function UserSettingsPage() {
                                         }}
                                     >
                                         <FiMonitor size={24} style={{ marginBottom: '0.5rem', color: settings.theme === 'system' ? 'var(--primary)' : 'var(--text-muted)' }} />
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>System</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>{t('system')}</div>
                                     </div>
                                 </div>
                             </div>
 
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
-                                    Preferred Language
+                                    {t('preferred_language')}
                                 </label>
                                 <select
                                     value={settings.language}
-                                    onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value }))}
+                                    onChange={(e) => handleLanguageChange(e.target.value)}
                                     style={{
                                         width: '100%',
                                         padding: '0.875rem',
@@ -265,7 +276,7 @@ export default function UserSettingsPage() {
                             style={{ padding: '0.75rem 2.5rem' }}
                         >
                             <FiSave size={18} />
-                            {saving ? 'Saving...' : 'Save Settings'}
+                            {saving ? t('saving') : t('save_settings')}
                         </button>
                     </div>
                 </form>

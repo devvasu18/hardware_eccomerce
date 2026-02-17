@@ -425,7 +425,11 @@ async function fetchModifiedVouchers() {
         return { success: true, count: processedCount };
 
     } catch (error) {
-        console.error('[Tally Sync] Voucher Error:', error);
+        if (error.code === 'ECONNREFUSED' || (error.cause && error.cause.code === 'ECONNREFUSED')) {
+            console.warn('[Tally Sync] Tally server not reachable (ECONNREFUSED). Is Tally running?');
+            return { success: false, error: 'Tally unreachable' };
+        }
+        console.error('[Tally Sync] Voucher Error:', error.message);
         return { success: false, error: error.message };
     }
 }
