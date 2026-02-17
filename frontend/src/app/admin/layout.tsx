@@ -8,6 +8,10 @@ import { useEffect, useState } from 'react';
 import './admin.css';
 import './admin-responsive.css';
 
+// Force dynamic rendering for all admin pages to prevent build timeouts
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
     // Start with a local ready state to ensure we don't flash 404 while auth is initializing

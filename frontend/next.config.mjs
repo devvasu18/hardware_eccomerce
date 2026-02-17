@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    // Increase static generation timeout for pages that fetch data
-    staticPageGenerationTimeout: 180,
-  },
+  // Increase static generation timeout for pages that fetch data
+  staticGenerationTimeout: 180,
+  // Use standalone output for better deployment performance
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
