@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
 
 export default function ProductDetailsTabs({ product, brandName }: { product: any, brandName: any }) {
-    const { getLocalized } = useLanguage();
+    const { getLocalized, t } = useLanguage();
     const [activeTab, setActiveTab] = useState('DETAIL');
 
     const localizedBrand = getLocalized(brandName);
@@ -20,25 +20,25 @@ export default function ProductDetailsTabs({ product, brandName }: { product: an
                     className={`tab-btn ${activeTab === 'DETAIL' ? 'active' : ''}`}
                     onClick={() => setActiveTab('DETAIL')}
                 >
-                    DETAIL
+                    {t('detail')}
                 </button>
                 <button
                     className={`tab-btn ${activeTab === 'SIZE' ? 'active' : ''}`}
                     onClick={() => setActiveTab('SIZE')}
                 >
-                    SIZE DETAIL
+                    {t('size_detail')}
                 </button>
                 <button
                     className={`tab-btn ${activeTab === 'RETURN' ? 'active' : ''}`}
                     onClick={() => setActiveTab('RETURN')}
                 >
-                    RETURN POLICY
+                    {t('return_policy')}
                 </button>
                 <button
                     className={`tab-btn ${activeTab === 'DELIVERY' ? 'active' : ''}`}
                     onClick={() => setActiveTab('DELIVERY')}
                 >
-                    DELIVERY INFO
+                    {t('delivery_info')}
                 </button>
             </div>
 
@@ -46,34 +46,34 @@ export default function ProductDetailsTabs({ product, brandName }: { product: an
                 {activeTab === 'DETAIL' && (
                     <div className="detail-grid">
                         <div className="detail-item">
-                            <span className="detail-label">SKU</span>
+                            <span className="detail-label">{t('sku')}</span>
                             <span className="detail-value">IND-{product._id.slice(-6).toUpperCase()}</span>
                         </div>
                         {localizedBrand && (
                             <div className="detail-item">
-                                <span className="detail-label">Brand</span>
+                                <span className="detail-label">{t('brand')}</span>
                                 <span className="detail-value">{localizedBrand}</span>
                             </div>
                         )}
                         <div className="detail-item">
-                            <span className="detail-label">Country of Origin</span>
-                            <span className="detail-value">{localizedCountry || 'India'}</span>
+                            <span className="detail-label">{t('country_of_origin')}</span>
+                            <span className="detail-value">{localizedCountry || t('India')}</span>
                         </div>
                         {localizedMaterial && (
                             <div className="detail-item">
-                                <span className="detail-label">Material</span>
+                                <span className="detail-label">{t('material')}</span>
                                 <span className="detail-value">{localizedMaterial}</span>
                             </div>
                         )}
                         {localizedWarranty && (
                             <div className="detail-item">
-                                <span className="detail-label">Warranty</span>
+                                <span className="detail-label">{t('warranty')}</span>
                                 <span className="detail-value">{localizedWarranty}</span>
                             </div>
                         )}
                         {localizedDescription && (
                             <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
-                                <span className="detail-label">Description</span>
+                                <span className="detail-label">{t('description')}</span>
                                 <div
                                     className="detail-value ck-content"
                                     dangerouslySetInnerHTML={{ __html: localizedDescription }}
@@ -85,17 +85,17 @@ export default function ProductDetailsTabs({ product, brandName }: { product: an
                 )}
                 {activeTab === 'SIZE' && (
                     <div style={{ padding: '1rem' }}>
-                        <p>Standard sizing applies. Please refer to our size chart.</p>
+                        <p>{t('standard_sizing')}</p>
                     </div>
                 )}
                 {activeTab === 'RETURN' && (
                     <div style={{ padding: '1rem' }}>
-                        <p>7-day return policy for standard items. Customized items are non-returnable.</p>
+                        <p>{t('return_policy_text')}</p>
                     </div>
                 )}
                 {activeTab === 'DELIVERY' && (
                     <div style={{ padding: '1rem' }}>
-                        <p>Standard delivery: 3-5 business days across India.</p>
+                        <p>{t('delivery_text')}</p>
                     </div>
                 )}
             </div>

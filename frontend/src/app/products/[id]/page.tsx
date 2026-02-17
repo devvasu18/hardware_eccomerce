@@ -7,6 +7,7 @@ import ProductImage from '../../components/ProductImage';
 import ProductCard from '../../components/ProductCard';
 import ProductBreadcrumb from './ProductBreadcrumb';
 import ProductDetailsTabs from './ProductDetailsTabs';
+import RelatedProducts from './RelatedProducts';
 import './product-detail.css';
 
 interface Product {
@@ -150,16 +151,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                 <ProductDetailsTabs product={product} brandName={brandName} />
 
                 {/* Related Products */}
-                {relatedProducts.length > 0 && (
-                    <div className="related-products">
-                        <h2>RELATED PRODUCTS</h2>
-                        <div className="related-grid">
-                            {relatedProducts.map((relatedProduct) => (
-                                <ProductCard key={relatedProduct._id} product={relatedProduct} />
-                            ))}
-                        </div>
-                    </div>
-                )}
+                <RelatedProducts products={relatedProducts} />
             </div>
         </main >
     );

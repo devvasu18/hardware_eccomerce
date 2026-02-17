@@ -4,10 +4,39 @@ import { useState, useEffect } from 'react';
 import { FiAlertCircle, FiCheckCircle, FiRefreshCw, FiTrash2, FiActivity } from 'react-icons/fi';
 import api from '../../../utils/api';
 
+
+interface SessionData {
+    connected: boolean;
+    status: string;
+    number?: string;
+}
+
+interface QueueStats {
+    pending: number;
+    processing: number;
+    sent: number;
+    failed: number;
+}
+
+interface HealthData {
+    overall: string;
+    sessions: Record<string, SessionData>;
+    queue: QueueStats;
+}
+
+interface FailedMessage {
+    _id: string;
+    recipient: string;
+    messageBody: string;
+    error: string;
+    attempts: number;
+    failedAt: string;
+}
+
 export default function WhatsAppMonitoring() {
-    const [health, setHealth] = useState(null);
-    const [stats, setStats] = useState(null);
-    const [failedMessages, setFailedMessages] = useState([]);
+    const [health, setHealth] = useState<HealthData | null>(null);
+    const [stats, setStats] = useState<any>(null); // Keeping stats as any since usage isn't clear from snippet, but health covers the main error
+    const [failedMessages, setFailedMessages] = useState<FailedMessage[]>([]);
     const [loading, setLoading] = useState(true);
     const [retrying, setRetrying] = useState(false);
 
@@ -262,7 +291,7 @@ export default function WhatsAppMonitoring() {
     );
 }
 
-function StatCard({ label, value, color }) {
+function StatCard({ label, value, color }: { label: string, value: number, color: string }) {
     return (
         <div style={{
             background: 'white',

@@ -36,7 +36,7 @@ interface Props {
 }
 
 export default function ProductOverview({ product, categoryName, brandName }: Props) {
-    const { getLocalized } = useLanguage();
+    const { getLocalized, t } = useLanguage();
     const productName = getLocalized(product.title || product.name || 'Product');
 
     // Default Image Sequence: Main -> Gallery -> Model Images -> Main (Repeated)
@@ -202,7 +202,7 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
             {/* Right: Product Info */}
             <div className="product-info">
                 <div className="product-meta">
-                    <span className="product-code">PRODUCT CODE: IND-{product._id.slice(-6).toUpperCase()}</span>
+                    <span className="product-code">{t('product_code')}: IND-{product._id.slice(-6).toUpperCase()}</span>
                     <span className="separator">|</span>
                     <span className="product-category-tag">{getLocalized(categoryName)}</span>
                 </div>
@@ -215,7 +215,7 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
                             <span key={i} className={i < 4 ? 'star filled' : 'star'}>★</span>
                         ))}
                     </div>
-                    <span className="review-count">17 reviews</span>
+                    <span className="review-count">17 {t('reviews')}</span>
                 </div>
 
                 <div
@@ -228,13 +228,13 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
                 <ProductActionArea product={product} onVariationSelect={handleVariationSelect} />
 
                 <div className="size-guide">
-                    <Link href="#" className="size-guide-link">SIZE GUIDE</Link>
+                    <Link href="#" className="size-guide-link">{t('size_guide')}</Link>
                 </div>
 
                 <div className="delivery-estimate">
-                    <h4>DELIVERY ESTIMATE</h4>
-                    <p>{getLocalized(product.deliveryTime) || 'Standard delivery: 3-5 business days'}</p>
-                    <p>Express delivery available at checkout</p>
+                    <h4>{t('delivery_estimate')}</h4>
+                    <p>{getLocalized(product.deliveryTime) || t('standard_delivery')}</p>
+                    <p>{t('express_delivery')}</p>
                 </div>
             </div>
 
