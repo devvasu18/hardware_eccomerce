@@ -12,7 +12,7 @@ import Footer from '../components/Footer';
 export default function UserSettingsPage() {
     const { user, loadUser } = useAuth();
     const { theme: globalTheme, setTheme: setGlobalTheme } = useTheme();
-    const { t, language, changeLanguage } = useLanguage();
+    const { t, language, setLanguage } = useLanguage();
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -62,7 +62,7 @@ export default function UserSettingsPage() {
 
     const handleLanguageChange = (newLang: string) => {
         setSettings(prev => ({ ...prev, language: newLang }));
-        changeLanguage(newLang); // Apply immediately for preview
+        setLanguage(newLang as any); // Apply immediately for preview
     };
 
     const handleSave = async (e: React.FormEvent) => {

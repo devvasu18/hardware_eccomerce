@@ -40,7 +40,7 @@ export default function PaymentSuccessPage() {
             };
 
             try {
-                const response = await fetch('http://localhost:5000/api/payment/verify', {
+                const response = await fetch('/api/payment/verify', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payuData)

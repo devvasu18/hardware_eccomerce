@@ -31,7 +31,7 @@ export default function ProfilePage() {
         setMessage('');
         try {
             const token = localStorage.getItem('token');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+            const API_URL = '/api';
 
             const res = await fetch(`${API_URL}/auth/request-mobile-change`, {
                 method: 'POST',
@@ -88,7 +88,7 @@ export default function ProfilePage() {
 
         try {
             const token = localStorage.getItem('token');
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+            const API_URL = '/api';
 
             const res = await fetch(`${API_URL}/auth/profile`, {
                 method: 'PUT',

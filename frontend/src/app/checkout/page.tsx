@@ -159,7 +159,7 @@ export default function CheckoutPage() {
         if (!couponInput.trim()) return;
 
         try {
-            const res = await fetch('http://localhost:5000/api/coupons/validate', {
+            const res = await fetch('/api/coupons/validate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code: couponInput, cartTotal })
@@ -208,7 +208,7 @@ export default function CheckoutPage() {
 
             if (loading) return;
 
-            const res = await fetch('http://localhost:5000/api/auth/address', {
+            const res = await fetch('/api/auth/address', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -262,7 +262,7 @@ export default function CheckoutPage() {
             if (user) {
                 try {
                     const token = localStorage.getItem('token');
-                    await fetch('http://localhost:5000/api/auth/address', {
+                    await fetch('/api/auth/address', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -324,7 +324,7 @@ export default function CheckoutPage() {
                     couponCode: appliedCoupon?.code
                 };
 
-                const resOrder = await fetch('http://localhost:5000/api/orders/create', {
+                const resOrder = await fetch('/api/orders/create', {
                     method: 'POST',
                     headers,
                     body: JSON.stringify(orderData)
@@ -344,7 +344,7 @@ export default function CheckoutPage() {
             // 2. Process Requests
             if (requestItems.length > 0) {
                 const requestPromises = requestItems.map(item =>
-                    fetch('http://localhost:5000/api/requests', {
+                    fetch('/api/requests', {
                         method: 'POST',
                         headers, // Use headers with Auth token
                         body: JSON.stringify({
@@ -370,7 +370,7 @@ export default function CheckoutPage() {
 
             // PayU Integration
             if (results.orderSuccess && paymentMethod === 'Online' && results.orderId) {
-                const payuResponse = await fetch('http://localhost:5000/api/payment/create-order', {
+                const payuResponse = await fetch('/api/payment/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': token ? `Bearer ${token}` : '' }, // Pass token for opt auth
                     body: JSON.stringify({
