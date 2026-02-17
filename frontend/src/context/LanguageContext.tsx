@@ -8,7 +8,7 @@ type Language = 'en' | 'hi';
 interface LanguageContextType {
     language: Language;
     setLanguage: (lang: Language) => void;
-    t: (key: string) => string;
+    t: (key: string, params?: any) => string;
     getLocalized: (content: any) => string;
 }
 
@@ -49,7 +49,15 @@ export function useLanguage() {
         return {
             language: 'en' as Language,
             setLanguage: () => { },
-            t: (key: string) => key,
+            t: (key: string, params?: any) => {
+                // Simple interpolation for fallback
+                if (!params) return key;
+                let result = key;
+                Object.keys(params).forEach(paramKey => {
+                    result = result.replace(new RegExp(`{{${paramKey}}}`, 'g'), params[paramKey]);
+                });
+                return result;
+            },
             getLocalized: (content: any) => {
                 if (!content) return '';
                 if (typeof content === 'string') return content;
