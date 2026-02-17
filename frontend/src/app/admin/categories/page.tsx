@@ -18,8 +18,6 @@ import ReorderModal from "./ReorderModal";
 
 // Force dynamic rendering - prevent static generation
 export const dynamic = 'force-dynamic';
-export const dynamicParams = true;
-export const revalidate = 0;
 
 interface Category {
     _id: string;

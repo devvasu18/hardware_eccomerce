@@ -2,6 +2,10 @@
 const nextConfig = {
   // Skip trailing slash for cleaner URLs
   trailingSlash: false,
+  // Disable static optimization to prevent build timeouts
+  // Pages will be rendered on-demand at runtime
+  reactStrictMode: true,
+  output: 'standalone',
   images: {
     remotePatterns: [
       {

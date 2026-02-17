@@ -12,6 +12,11 @@ import BilingualInput from "../../../../../components/forms/BilingualInput";
 import LanguageToggle from "../../../../../components/LanguageToggle";
 import { useLanguage } from "../../../../../context/LanguageContext";
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+export const revalidate = 0;
+
 interface Banner {
     _id: string;
     title: string;

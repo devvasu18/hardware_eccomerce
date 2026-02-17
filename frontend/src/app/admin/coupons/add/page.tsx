@@ -8,6 +8,9 @@ import { useState } from "react";
 import Modal from "../../../components/Modal";
 import { useModal } from "../../../hooks/useModal";
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+
 export default function AddCouponPage() {
     const router = useRouter();
     const { register, handleSubmit, watch, setValue } = useForm({

@@ -10,6 +10,9 @@ import Modal from '../../components/Modal';
 import { useModal } from '../../hooks/useModal';
 import './home-builder.css';
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+
 // Types
 interface HomeLayoutItem {
     _id: string;

@@ -2,6 +2,9 @@
 
 import ProductForm from "../../components/ProductForm";
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+
 export default function AddProductPage() {
     return (
         <div className="container">

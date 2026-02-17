@@ -6,6 +6,9 @@ import Link from "next/link";
 import { FiEye, FiFilter } from "react-icons/fi";
 import ExportButton from "../../components/ExportButton";
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+
 interface Order {
     _id: string;
     user: { username: string };

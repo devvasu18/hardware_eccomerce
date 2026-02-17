@@ -8,6 +8,9 @@ import Image from "next/image";
 import DataTable from "../../../components/DataTable";
 import Modal from "../../../components/Modal";
 import { useModal } from "../../../hooks/useModal";
+
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
 import BilingualInput from "../../../../components/forms/BilingualInput";
 import LanguageToggle from "../../../../components/LanguageToggle";
 import { useLanguage } from "../../../../context/LanguageContext";

@@ -16,6 +16,9 @@ export const metadata: Metadata = {
     description: 'Industrial-grade mechanical parts and hardware e-commerce platform.',
 };
 
+// Force dynamic rendering for all pages to prevent build timeouts
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
     children,
 }: {

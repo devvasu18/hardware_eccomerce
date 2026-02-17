@@ -9,6 +9,9 @@ import Modal from "../../components/Modal";
 import { useModal } from "../../hooks/useModal";
 import ExportButton from "../../components/ExportButton";
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+
 interface User {
     _id: string;
     username: string;

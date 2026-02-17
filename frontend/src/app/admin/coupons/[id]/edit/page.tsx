@@ -8,6 +8,11 @@ import { useState, useEffect } from "react";
 import Modal from "../../../../components/Modal";
 import { useModal } from "../../../../hooks/useModal";
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+export const revalidate = 0;
+
 export default function EditCouponPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
     const [couponId, setCouponId] = useState<string | null>(null);

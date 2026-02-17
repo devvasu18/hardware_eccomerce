@@ -10,6 +10,9 @@ import { useModal } from "../../hooks/useModal";
 import { useLanguage } from "../../../context/LanguageContext";
 import LanguageToggle from "../../../components/LanguageToggle";
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+
 interface Variation {
     _id?: string;
     type: string;
