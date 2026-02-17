@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FiSearch, FiFilter, FiX } from 'react-icons/fi';
+import { useLanguage } from '../../context/LanguageContext';
 import './ProductFilters.css';
 
 interface Category {
@@ -31,6 +32,7 @@ interface ProductFiltersProps {
 export default function ProductFilters({ initialCategories = [], initialBrands = [] }: ProductFiltersProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { t } = useLanguage();
 
     // State from URL
     const currentCategory = searchParams.get('category');
@@ -108,12 +110,12 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
         <>
             {/* Mobile Filter Toggle */}
             <button className="mobile-filter-toggle" onClick={() => setIsMobileOpen(true)}>
-                <FiFilter /> Filters
+                <FiFilter /> {t('filters')}
             </button>
 
             <aside className={`filters-sidebar ${isMobileOpen ? 'open' : ''}`}>
                 <div className="filters-header">
-                    <h3>Filters</h3>
+                    <h3>{t('filters')}</h3>
                     <button className="close-filters" onClick={() => setIsMobileOpen(false)}>
                         <FiX />
                     </button>
@@ -124,18 +126,18 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                     <form onSubmit={handleSearchSubmit} className="refine-search-form">
                         <input
                             type="text"
-                            placeholder="Refine results..."
+                            placeholder={t('refine_results')}
                             value={localSearch}
                             onChange={(e) => setLocalSearch(e.target.value)}
                             className="refine-input"
                         />
-                        <button type="submit" className="refine-btn">Go</button>
+                        <button type="submit" className="refine-btn">{t('go')}</button>
                     </form>
                 </div>
 
                 {/* Sort By */}
                 <div className="filter-group">
-                    <h4>Sort By</h4>
+                    <h4>{t('sort_by')}</h4>
                     <select
                         className="filter-select"
                         value={sortBy}
@@ -144,16 +146,16 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                             updateFilter('sort', e.target.value);
                         }}
                     >
-                        <option value="newest">Newest First</option>
-                        <option value="price_asc">Price: Low to High</option>
-                        <option value="price_desc">Price: High to Low</option>
-                        <option value="name_asc">Name: A-Z</option>
+                        <option value="newest">{t('sort_newest')}</option>
+                        <option value="price_asc">{t('sort_price_low_high')}</option>
+                        <option value="price_desc">{t('sort_price_high_low')}</option>
+                        <option value="name_asc">{t('sort_name_az')}</option>
                     </select>
                 </div>
 
                 {/* Availability */}
                 <div className="filter-group">
-                    <h4>Availability</h4>
+                    <h4>{t('availability')}</h4>
                     <div
                         className="availability-toggle"
                         onClick={() => {
@@ -162,7 +164,7 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                             updateFilter('inStock', newValue ? 'true' : null);
                         }}
                     >
-                        <span className="toggle-label">In Stock Only</span>
+                        <span className="toggle-label">{t('in_stock_only')}</span>
                         <div className={`toggle-switch ${inStock ? 'on' : ''}`}>
                             <div className="toggle-knob"></div>
                         </div>
@@ -171,11 +173,11 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
 
                 {/* Price Range */}
                 <div className="filter-group">
-                    <h4>Price Range</h4>
+                    <h4>{t('price_range')}</h4>
                     <div className="price-range-container">
                         <div className="price-inputs">
                             <div className="price-input-field">
-                                <label>Min</label>
+                                <label>{t('min')}</label>
                                 <input
                                     type="number"
                                     value={minPrice}
@@ -186,7 +188,7 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                             </div>
                             <span className="price-separator">-</span>
                             <div className="price-input-field">
-                                <label>Max</label>
+                                <label>{t('max')}</label>
                                 <input
                                     type="number"
                                     value={maxPrice}
@@ -217,7 +219,7 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
 
                 {/* 2. Categories */}
                 <div className="filter-group">
-                    <h4>Categories</h4>
+                    <h4>{t('categories')}</h4>
                     <div className="filter-list">
                         <label className={`filter-item ${!currentCategory ? 'active' : ''}`}>
                             <input
@@ -226,7 +228,7 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                                 checked={!currentCategory}
                                 onChange={() => updateFilter('category', null)}
                             />
-                            <span>All Categories</span>
+                            <span>{t('all_categories')}</span>
                         </label>
                         {categories.map(cat => (
                             <React.Fragment key={cat._id}>
@@ -265,7 +267,7 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
 
                 {/* 3. Brands */}
                 <div className="filter-group">
-                    <h4>Brands</h4>
+                    <h4>{t('brands')}</h4>
                     <div className="filter-list">
                         <label className={`filter-item ${!currentBrand ? 'active' : ''}`}>
                             <input
@@ -274,7 +276,7 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                                 checked={!currentBrand}
                                 onChange={() => updateFilter('brand', null)}
                             />
-                            <span>All Brands</span>
+                            <span>{t('all_brands')}</span>
                         </label>
                         {brands.map(brand => (
                             <label key={brand._id} className={`filter-item ${currentBrand === (brand.slug || brand.name) || currentBrand === brand._id ? 'active' : ''}`}>

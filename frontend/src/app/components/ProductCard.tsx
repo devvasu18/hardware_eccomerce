@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import ProductImage from './ProductImage';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Product {
     _id: string;
-    title?: string;
-    name?: string;
+    title?: any;
+    name?: any;
     basePrice: number;
     discountedPrice: number;
     stock: number;
@@ -31,6 +32,7 @@ interface Product {
 }
 
 export default function ProductCard({ product }: { product: Product }) {
+    const { getLocalized, t } = useLanguage();
     const { user } = useAuth();
     const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
     const [isAddingToWishlist, setIsAddingToWishlist] = useState(false);
@@ -167,7 +169,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 {allImages.length > 0 ? (
                     <ProductImage
                         src={allImages[currentImageIndex]}
-                        alt={product.title || product.name || 'Product'}
+                        alt={getLocalized(product.title || product.name || 'Product')}
                         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     />
                 ) : (
@@ -211,7 +213,7 @@ export default function ProductCard({ product }: { product: Product }) {
                 {/* Discount Badge */}
                 {displayMRP && (displayMRP > finalPrice) && (
                     <div className="product-badge badge-sale">
-                        {Math.round(((displayMRP - finalPrice) / displayMRP) * 100)}% OFF
+                        {Math.round(((displayMRP - finalPrice) / displayMRP) * 100)}% {t('off')}
                     </div>
                 )}
             </div>
@@ -219,17 +221,17 @@ export default function ProductCard({ product }: { product: Product }) {
             <div className="product-card-content">
                 <p className="product-category">
                     {typeof product.category === 'object' && product.category?.name
-                        ? product.category.name
-                        : typeof product.category === 'string' && product.category.length > 10
+                        ? getLocalized(product.category.name)
+                        : (typeof product.category === 'string' && product.category.length > 10
                             ? 'Auto Part'
-                            : product.category}
+                            : getLocalized(product.category))}
                 </p>
-                <h3 className="product-title" title={product.title || product.name}>{product.title || product.name}</h3>
+                <h3 className="product-title" title={getLocalized(product.title || product.name)}>{getLocalized(product.title || product.name)}</h3>
 
                 <div className="product-card-footer">
                     <div className="product-price">
                         <>
-                            {showStartingAt && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>From</span>}
+                            {showStartingAt && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>{t('from')}</span>}
                             {(displayMRP && displayMRP > 0 && displayMRP > finalPrice) && (
                                 <span className="price-original">₹{displayMRP}</span>
                             )}
@@ -238,7 +240,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     </div>
 
                     <div className="product-action">
-                        <span className="btn-card-action">View</span>
+                        <span className="btn-card-action">{t('view')}</span>
                     </div>
                 </div>
             </div>

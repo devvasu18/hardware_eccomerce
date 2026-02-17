@@ -234,12 +234,20 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
     try {
-        const { slug, description, displayOrder, showInNav, imageUrl, gradient } = req.body;
+        const { slug, displayOrder, showInNav, imageUrl, gradient } = req.body;
         let { name } = req.body;
         if (typeof name === 'string') {
             try {
                 const parsedName = JSON.parse(name);
                 if (typeof parsedName === 'object' && parsedName !== null) name = parsedName;
+            } catch (e) { }
+        }
+
+        let { description } = req.body;
+        if (typeof description === 'string') {
+            try {
+                const parsedDesc = JSON.parse(description);
+                if (typeof parsedDesc === 'object' && parsedDesc !== null) description = parsedDesc;
             } catch (e) { }
         }
 
@@ -276,12 +284,20 @@ exports.createCategory = async (req, res) => {
 
 exports.updateCategory = async (req, res) => {
     try {
-        const { slug, description, displayOrder, showInNav, isActive, imageUrl, gradient } = req.body;
+        const { slug, displayOrder, showInNav, isActive, imageUrl, gradient } = req.body;
         let { name } = req.body;
         if (typeof name === 'string') {
             try {
                 const parsedName = JSON.parse(name);
                 if (typeof parsedName === 'object' && parsedName !== null) name = parsedName;
+            } catch (e) { }
+        }
+
+        let { description } = req.body;
+        if (typeof description === 'string') {
+            try {
+                const parsedDesc = JSON.parse(description);
+                if (typeof parsedDesc === 'object' && parsedDesc !== null) description = parsedDesc;
             } catch (e) { }
         }
 
@@ -565,7 +581,7 @@ exports.exportCategories = async (req, res) => {
             ID: c._id.toString(),
             Name: c.name?.en || (typeof c.name === 'string' ? c.name : 'N/A'),
             Slug: c.slug,
-            Description: c.description || '',
+            Description: c.description?.en || (typeof c.description === 'string' ? c.description : ''),
             DisplayOrder: c.displayOrder || 0,
             ShowInNav: c.showInNav ? 'Yes' : 'No',
             Status: c.isActive !== false ? 'Active' : 'Inactive'

@@ -8,10 +8,12 @@ import { useAuth } from '../../context/AuthContext'; // Import AuthContext
 import { useCart } from '../../context/CartContext'; // Import CartContext
 import { useWishlist } from '../../context/WishlistContext'; // Import WishlistContext
 import { useNotification, Notification } from '../../context/NotificationContext'; // Import NotificationContext
+import { useLanguage } from '../../context/LanguageContext';
 import { getSystemSettings } from '../utils/systemSettings';
 import './Header.css';
 
 const Header = () => {
+    const { t } = useLanguage();
     const { user, logout } = useAuth();
     const { cartCount, openCart } = useCart();
     const router = useRouter();
@@ -168,7 +170,7 @@ const Header = () => {
                         <input
                             type="text"
                             className="search-input"
-                            placeholder="Search for furniture, decor and more..."
+                            placeholder={t('search_placeholder')}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -188,7 +190,7 @@ const Header = () => {
                         <div className="search-dropdown">
                             {searchTerm.length >= 2 ? (
                                 <div className="suggestions-section">
-                                    <h4 className="dropdown-title">Suggestions</h4>
+                                    <h4 className="dropdown-title">{t('suggestions')}</h4>
                                     {suggestions.length > 0 ? (
                                         <div className="suggestions-list">
                                             {suggestions.map((product) => (
@@ -220,13 +222,13 @@ const Header = () => {
                                         </div>
                                     ) : (
                                         <div className="no-suggestions">
-                                            No products found matching "{searchTerm}"
+                                            {t('no_products_found')} "{searchTerm}"
                                         </div>
                                     )}
                                 </div>
                             ) : (
                                 <div className="popular-searches-section">
-                                    <h4 className="dropdown-title">Popular Categories</h4>
+                                    <h4 className="dropdown-title">{t('popular_categories')}</h4>
                                     <div className="tags-grid">
                                         {categories.slice(0, 5).map((category) => (
                                             <Link
@@ -276,8 +278,8 @@ const Header = () => {
                         {user ? (
                             <>
                                 <div className="action-text">
-                                    <span className="action-text-sub">Hello, {user.username}</span>
-                                    <span className="action-text-main">Account</span>
+                                    <span className="action-text-sub">{t('hello')}, {user.username}</span>
+                                    <span className="action-text-main">{t('account')}</span>
                                 </div>
                                 <svg className="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
@@ -287,29 +289,29 @@ const Header = () => {
                                 {/* User Dropdown */}
                                 {isUserDropdownOpen && (
                                     <div className="user-dropdown">
-                                        <div className="dropdown-item-text">Signed in as <br /><strong>{user.username}</strong></div>
+                                        <div className="dropdown-item-text">{t('sign_in_as')} <br /><strong>{user.username}</strong></div>
                                         <div className="dropdown-divider"></div>
                                         {user.role !== 'admin' && user.role !== 'super_admin' && (
                                             <>
-                                                <Link href="/profile" className="dropdown-item">My Profile</Link>
-                                                <Link href="/orders" className="dropdown-item">My Orders</Link>
-                                                <Link href="/change-password" className="dropdown-item">Change Password</Link>
-                                                <Link href="/settings" className="dropdown-item">Settings</Link>
+                                                <Link href="/profile" className="dropdown-item">{t('my_profile')}</Link>
+                                                <Link href="/orders" className="dropdown-item">{t('my_orders')}</Link>
+                                                <Link href="/change-password" className="dropdown-item">{t('change_password')}</Link>
+                                                <Link href="/settings" className="dropdown-item">{t('settings')}</Link>
                                             </>
                                         )}
                                         {(user.role === 'admin' || user.role === 'super_admin') && (
-                                            <Link href="/admin" className="dropdown-item">Admin Dashboard</Link>
+                                            <Link href="/admin" className="dropdown-item">{t('admin_dashboard')}</Link>
                                         )}
                                         <div className="dropdown-divider"></div>
-                                        <button onClick={logout} className="dropdown-item logout-btn">Logout</button>
+                                        <button onClick={logout} className="dropdown-item logout-btn">{t('logout')}</button>
                                     </div>
                                 )}
                             </>
                         ) : (
                             <Link href="/login" className="login-link-wrapper">
                                 <div className="action-text">
-                                    <span className="action-text-sub">Sign Up Now</span>
-                                    <span className="action-text-main">Login</span>
+                                    <span className="action-text-sub">{t('sign_up')}</span>
+                                    <span className="action-text-main">{t('login')}</span>
                                 </div>
                                 <svg className="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
@@ -412,7 +414,7 @@ const Header = () => {
                             );
                         })
                     ) : (
-                        <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>Loading categories...</span>
+                        <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('loading')}</span>
                     )}
                 </div>
             </div>
@@ -444,7 +446,7 @@ const Header = () => {
                     <input
                         type="text"
                         className="mobile-search-input"
-                        placeholder="Search products..."
+                        placeholder={t('search_mobile')}
                         value={mobileSearchTerm}
                         onChange={(e) => setMobileSearchTerm(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleMobileSearch()}

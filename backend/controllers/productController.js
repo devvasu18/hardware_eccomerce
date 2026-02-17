@@ -200,21 +200,34 @@ exports.createProduct = async (req, res) => {
             }
         }
 
-        // Parse JSON fields if they come as strings
-        let parsedSpecs = specifications;
-        if (typeof specifications === 'string') {
-            try {
-                parsedSpecs = JSON.parse(specifications);
-            } catch (e) {
-                console.error('Error parsing specifications:', e);
-                parsedSpecs = {};
+        // Helper to parse specifications (array of bilingual objects)
+        let parsedSpecs = [];
+        if (specifications) {
+            if (typeof specifications === 'string') {
+                try {
+                    parsedSpecs = JSON.parse(specifications);
+                } catch (e) {
+                    console.error("Error parsing specifications:", e);
+                    parsedSpecs = []; // Default to empty array on parse error
+                }
+            } else {
+                parsedSpecs = specifications;
             }
         }
 
-        // Parse Keywords if string
-        let parsedKeywords = keywords;
-        if (typeof keywords === 'string') {
-            parsedKeywords = keywords.split(',').map(k => k.trim());
+        // Parse Keywords (Bilingual Array)
+        let parsedKeywords = parseBilingual(keywords);
+        if (parsedKeywords) {
+            if (typeof parsedKeywords === 'object' && !Array.isArray(parsedKeywords)) {
+                if (typeof parsedKeywords.en === 'string') parsedKeywords.en = parsedKeywords.en.split(',').map(k => k.trim()).filter(k => k);
+                if (typeof parsedKeywords.hi === 'string') parsedKeywords.hi = parsedKeywords.hi.split(',').map(k => k.trim()).filter(k => k);
+            } else if (typeof parsedKeywords === 'string') {
+                // Legacy support
+                parsedKeywords = {
+                    en: parsedKeywords.split(',').map(k => k.trim()).filter(k => k),
+                    hi: []
+                };
+            }
         }
 
         let parsedSubCats = sub_category;
@@ -414,12 +427,31 @@ exports.updateProduct = async (req, res) => {
         }
 
         // Helper to parse if string
-        if (updates.specifications && typeof updates.specifications === 'string') {
-            try { updates.specifications = JSON.parse(updates.specifications); } catch (e) { }
+        if (updates.specifications) {
+            if (typeof updates.specifications === 'string') {
+                try {
+                    updates.specifications = JSON.parse(updates.specifications);
+                } catch (e) {
+                    console.error('Error parsing specifications:', e);
+                    updates.specifications = []; // Default to empty array on parse error
+                }
+            }
         }
 
-        if (updates.keywords && typeof updates.keywords === 'string') {
-            updates.keywords = updates.keywords.split(',').map(k => k.trim());
+        if (updates.keywords) {
+            let kw = parseBilingual(updates.keywords);
+            if (kw) {
+                if (typeof kw === 'object' && !Array.isArray(kw)) {
+                    if (typeof kw.en === 'string') kw.en = kw.en.split(',').map(k => k.trim()).filter(k => k);
+                    if (typeof kw.hi === 'string') kw.hi = kw.hi.split(',').map(k => k.trim()).filter(k => k);
+                    updates.keywords = kw;
+                } else if (typeof kw === 'string') {
+                    updates.keywords = {
+                        en: kw.split(',').map(k => k.trim()).filter(k => k),
+                        hi: []
+                    };
+                }
+            }
         }
 
         if (updates.sub_category && typeof updates.sub_category === 'string') {

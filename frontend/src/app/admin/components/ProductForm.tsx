@@ -16,6 +16,68 @@ import BilingualInput from "../../../components/forms/BilingualInput";
 import LanguageToggle from "../../../components/LanguageToggle";
 import { useLanguage } from "../../../context/LanguageContext";
 
+// --- Specifications Component ---
+function SpecificationManager({ control, register, errors }: any) {
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "specifications"
+    });
+
+    return (
+        <div className="card">
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>Specifications</span>
+                <button
+                    type="button"
+                    className="btn btn-sm btn-secondary"
+                    onClick={() => append({ key: { en: '', hi: '' }, value: { en: '', hi: '' } })}
+                >
+                    + Add Spec
+                </button>
+            </div>
+            {fields.length === 0 ? (
+                <div style={{ padding: '1.5rem', textAlign: 'center', color: '#94A3B8', border: '1px dashed #E2E8F0', borderRadius: '8px' }}>
+                    No specifications added. Add technical details like &quot;Material&quot;, &quot;Dimensions&quot;, etc.
+                </div>
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {fields.map((field, index) => (
+                        <div key={field.id} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', padding: '1rem', background: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                            <div style={{ flex: 1 }}>
+                                <BilingualInput
+                                    label="Specification Name (Key)"
+                                    registerEn={register(`specifications.${index}.key.en` as any, { required: "Required" })}
+                                    registerHi={register(`specifications.${index}.key.hi` as any)}
+                                    placeholderEn="e.g. Material"
+                                    placeholderHi="उदा. सामग्री"
+                                    errorEn={errors.specifications?.[index]?.key?.en}
+                                />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <BilingualInput
+                                    label="Specification Value"
+                                    registerEn={register(`specifications.${index}.value.en` as any, { required: "Required" })}
+                                    registerHi={register(`specifications.${index}.value.hi` as any)}
+                                    placeholderEn="e.g. Stainless Steel"
+                                    placeholderHi="उदा. स्टेनलेस स्टील"
+                                    errorEn={errors.specifications?.[index]?.value?.en}
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => remove(index)}
+                                style={{ marginTop: '1.8rem', color: '#EF4444', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem' }}
+                            >
+                                <FiTrash2 size={18} />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 // --- Nested Model Component ---
 function ModelVariationManager({ modelIndex, control, register, errors, watch, VARIATION_SUGGESTIONS }: any) {
     const { fields, append, remove } = useFieldArray({
@@ -80,8 +142,13 @@ function ModelVariationManager({ modelIndex, control, register, errors, watch, V
                                     <td style={{ padding: '0.4rem' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                             <input {...register(`models.${modelIndex}.variations.${index}.value.en`)} placeholder="Standard (En)" list={`model-${modelIndex}-suggestions-${index}`} style={{ padding: '0.2rem', fontSize: '0.75rem', border: '1px solid #E2E8F0', borderRadius: '4px' }} />
-                                            <input {...register(`models.${modelIndex}.variations.${index}.value.hi`)} placeholder="मानक (Hi)" style={{ padding: '0.2rem', fontSize: '0.75rem', border: '1px solid #E2E8F0', borderRadius: '4px' }} />
+                                            <input {...register(`models.${modelIndex}.variations.${index}.value.hi`)} placeholder="मानक (Hi)" list={`model-${modelIndex}-suggestions-hi-${index}`} style={{ padding: '0.2rem', fontSize: '0.75rem', border: '1px solid #E2E8F0', borderRadius: '4px' }} />
                                             <datalist id={`model-${modelIndex}-suggestions-${index}`}>
+                                                {VARIATION_SUGGESTIONS[watch(`models.${modelIndex}.variations.${index}.type`)]?.map((opt: string) => (
+                                                    <option key={opt} value={opt} />
+                                                ))}
+                                            </datalist>
+                                            <datalist id={`model-${modelIndex}-suggestions-hi-${index}`}>
                                                 {VARIATION_SUGGESTIONS[watch(`models.${modelIndex}.variations.${index}.type`)]?.map((opt: string) => (
                                                     <option key={opt} value={opt} />
                                                 ))}
@@ -342,7 +409,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
             isCancellable: true,
             isReturnable: true,
             deliveryTime: '3-5 business days',
-            returnWindow: 7
+            returnWindow: 7,
+            keywords: { en: '', hi: '' }
         }
     });
 
@@ -432,6 +500,10 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         size: product.size,
                         meta_title: (typeof product.meta_title === 'string' ? { en: product.meta_title, hi: '' } : product.meta_title),
                         meta_description: (typeof product.meta_description === 'string' ? { en: product.meta_description, hi: '' } : product.meta_description),
+                        keywords: {
+                            en: Array.isArray(product.keywords) ? product.keywords.join(', ') : (product.keywords?.en ? product.keywords.en.join(', ') : ''),
+                            hi: product.keywords?.hi ? product.keywords.hi.join(', ') : ''
+                        },
                         isFeatured: product.isFeatured || false,
                         isNewArrival: product.isNewArrival || false,
                         isTopSale: product.isTopSale || false,
@@ -453,7 +525,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                 ...mv,
                                 value: typeof mv.value === 'string' ? { en: mv.value, hi: '' } : mv.value
                             }))
-                        }))
+                        })),
+                        specifications: Array.isArray(product.specifications) ? product.specifications.map((s: any) => ({
+                            key: typeof s.key === 'string' ? { en: s.key, hi: '' } : s.key,
+                            value: typeof s.value === 'string' ? { en: s.value, hi: '' } : s.value
+                        })) : []
                     });
 
                     // Set Variation Mode
@@ -1221,6 +1297,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                                                 {...register(`variations.${index}.value.hi`)}
                                                                                 className="form-input"
                                                                                 placeholder="मूल्य (Hi)"
+                                                                                list={`suggestions-hi-${index}`}
                                                                                 style={{
                                                                                     fontSize: '0.85rem',
                                                                                     padding: '0.3rem',
@@ -1228,6 +1305,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                                                 }}
                                                                             />
                                                                             <datalist id={`suggestions-${index}`}>
+                                                                                {VARIATION_SUGGESTIONS[watch(`variations.${index}.type`)]?.map(opt => (
+                                                                                    <option key={opt} value={opt} />
+                                                                                ))}
+                                                                            </datalist>
+                                                                            <datalist id={`suggestions-hi-${index}`}>
                                                                                 {VARIATION_SUGGESTIONS[watch(`variations.${index}.type`)]?.map(opt => (
                                                                                     <option key={opt} value={opt} />
                                                                                 ))}
@@ -1341,6 +1423,8 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
                     </div>
 
+                    <SpecificationManager control={control} register={register} errors={errors} />
+
                     {/* SEO Settings */}
                     <div className="card">
                         <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1378,6 +1462,23 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                     Recommended length: 150-160 characters
                                 </span>
                             </div>
+                        </div>
+
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <BilingualInput
+                                label="Keywords (Comma Separated)"
+                                registerEn={register("keywords.en")}
+                                registerHi={register("keywords.hi")}
+                                errorEn={errors.keywords && (errors.keywords as any).en}
+                                errorHi={errors.keywords && (errors.keywords as any).hi}
+                                placeholderEn="e.g. tools, hammer, drill"
+                                placeholderHi="उदा. औजार, हथौड़ा, ड्रिल"
+                                multiline
+                                rows={2}
+                            />
+                            <span style={{ fontSize: '0.75rem', color: '#64748B', display: 'block', marginTop: '-0.5rem' }}>
+                                Separate keywords with commas
+                            </span>
                         </div>
                     </div>
 
@@ -1804,6 +1905,6 @@ export default function ProductForm({ productId }: ProductFormProps) {
                 onConfirm={modalState.onConfirm}
                 showCancel={modalState.showCancel}
             />
-        </div>
+        </div >
     );
 }

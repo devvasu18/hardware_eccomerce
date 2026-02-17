@@ -4,6 +4,17 @@ const fs = require('fs');
 const path = require('path');
 const { deleteFile } = require('../utils/fileHandler');
 
+// Helper to parse bilingual fields from FormData (JSON string or object)
+const parseBilingual = (value) => {
+    if (!value) return undefined;
+    if (typeof value === 'object' && value !== null) return value;
+    try {
+        return JSON.parse(value);
+    } catch (e) {
+        return { en: value, hi: '' }; // Fallback if simple string
+    }
+};
+
 // @desc    Get all banners
 // @route   GET /api/banners
 // @access  Public
@@ -24,7 +35,13 @@ exports.getBanners = async (req, res) => {
 // @access  Admin
 exports.createBanner = async (req, res) => {
     try {
-        const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink, showSecondaryButton, badgeText, secondaryButtonColor } = req.body;
+        let { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink, showSecondaryButton, badgeText, secondaryButtonColor } = req.body;
+
+        // Parse bilingual fields
+        title = parseBilingual(title);
+        description = parseBilingual(description);
+        buttonText = parseBilingual(buttonText);
+        badgeText = parseBilingual(badgeText);
 
         if (!req.file) {
             return res.status(400).json({ message: 'Image is required' });
@@ -92,15 +109,15 @@ exports.updateBanner = async (req, res) => {
         const { title, description, offer_id, manual_product_ids, position, textColor, buttonColor, buttonText, buttonLink, showSecondaryButton, badgeText, secondaryButtonColor } = req.body;
 
         // Update basic fields
-        if (title !== undefined) banner.title = title;
-        if (description !== undefined) banner.description = description;
+        if (title !== undefined) banner.title = parseBilingual(title);
+        if (description !== undefined) banner.description = parseBilingual(description);
         if (position) banner.position = position;
         if (textColor) banner.textColor = textColor;
         if (buttonColor) banner.buttonColor = buttonColor;
-        if (buttonText !== undefined) banner.buttonText = buttonText;
+        if (buttonText !== undefined) banner.buttonText = parseBilingual(buttonText);
         if (buttonLink) banner.buttonLink = buttonLink;
         if (showSecondaryButton !== undefined) banner.showSecondaryButton = showSecondaryButton === 'true' || showSecondaryButton === true;
-        if (badgeText !== undefined) banner.badgeText = badgeText;
+        if (badgeText !== undefined) banner.badgeText = parseBilingual(badgeText);
         if (secondaryButtonColor) banner.secondaryButtonColor = secondaryButtonColor;
 
         // Update image if provided

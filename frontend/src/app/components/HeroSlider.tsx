@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FiArrowRight, FiPlay, FiZap } from 'react-icons/fi';
 import './HeroSlider.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface Banner {
     _id: string;
@@ -29,6 +30,7 @@ interface Banner {
 }
 
 export default function HeroSlider() {
+    const { getLocalized } = useLanguage();
     const [slides, setSlides] = useState<Banner[]>([]);
     const [current, setCurrent] = useState(0);
     const [loading, setLoading] = useState(true);
@@ -68,6 +70,11 @@ export default function HeroSlider() {
             <div className="hero-float-element hero-float-3"></div>
 
             {slides.map((slide, index) => {
+                const title = getLocalized(slide.title);
+                const description = getLocalized(slide.description);
+                const badgeText = getLocalized(slide.badgeText);
+                const buttonText = getLocalized(slide.buttonText);
+
                 // Compute the explore products link
                 const exploreHref = slide.offer_id?.slug
                     ? `/products?offer=${slide.offer_id.slug}`
@@ -96,32 +103,32 @@ export default function HeroSlider() {
                         <div className="hero-content-wrapper">
                             <div className="container">
                                 <div className="hero-content" style={{ textAlign: slide.position?.includes('right') ? 'right' : slide.position?.includes('center') ? 'center' : 'left', marginLeft: slide.position?.includes('right') ? 'auto' : slide.position?.includes('center') ? 'auto' : '0', marginRight: slide.position?.includes('center') ? 'auto' : '0' }}>
-                                    {(slide.badgeText && slide.badgeText !== '') && (
+                                    {(badgeText && badgeText !== '') && (
                                         <div className="hero-badge">
                                             <FiZap />
-                                            <span>{slide.badgeText}</span>
+                                            <span>{badgeText}</span>
                                         </div>
                                     )}
 
                                     <h1 className="hero-title" style={{ color: slide.textColor }}>
-                                        {slide.title.split(' ').slice(0, -1).join(' ')}{' '}
+                                        {title.split(' ').slice(0, -1).join(' ')}{' '}
                                         <span className="hero-title-gradient">
-                                            {slide.title.split(' ').slice(-1)}
+                                            {title.split(' ').slice(-1)}
                                         </span>
                                     </h1>
 
                                     <p className="hero-description" style={{ color: slide.textColor }}>
-                                        {slide.description}
+                                        {description}
                                     </p>
 
                                     <div className="hero-buttons" style={{ justifyContent: slide.position?.includes('right') ? 'flex-end' : slide.position?.includes('center') ? 'center' : 'flex-start' }}>
-                                        {slide.buttonText && (
+                                        {buttonText && (
                                             <Link
                                                 href={slide.buttonLink || '/products'}
                                                 className="hero-btn-primary"
                                                 style={{ background: slide.buttonColor }}
                                             >
-                                                <span>{slide.buttonText}</span>
+                                                <span>{buttonText}</span>
                                                 <FiArrowRight />
                                             </Link>
                                         )}

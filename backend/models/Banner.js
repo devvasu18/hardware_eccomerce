@@ -2,16 +2,16 @@ const mongoose = require('mongoose');
 
 const bannerSchema = new mongoose.Schema({
     title: {
-        type: String,
-        required: false,
-        trim: true
+        en: { type: String, trim: true },
+        hi: { type: String, trim: true }
     },
     slug: {
         type: String,
         unique: true
     },
     description: {
-        type: String
+        en: { type: String },
+        hi: { type: String }
     },
     image: {
         type: String
@@ -43,8 +43,8 @@ const bannerSchema = new mongoose.Schema({
         default: '#0F172A'
     },
     buttonText: {
-        type: String,
-        default: 'Shop Now'
+        en: { type: String, default: 'Shop Now' },
+        hi: { type: String, default: 'अभी खरीदें' }
     },
     buttonLink: {
         type: String,
@@ -59,8 +59,8 @@ const bannerSchema = new mongoose.Schema({
         default: true
     },
     badgeText: {
-        type: String,
-        default: 'Premium Quality'
+        en: { type: String, default: 'Premium Quality' },
+        hi: { type: String, default: 'प्रीमियम गुणवत्ता' }
     }
 }, {
     timestamps: true // created_at logic
@@ -72,10 +72,10 @@ const { makeUniqueSlug, slugify } = require('../utils/slugify');
 bannerSchema.pre('save', async function (next) {
     if (this.isModified('title') || this.isModified('slug') || this.isNew) {
         let baseSlug = this.slug;
-        if (!baseSlug && this.title) {
-            baseSlug = slugify(this.title);
-        } else if (!baseSlug && !this.title) {
-            baseSlug = 'banner';
+        const titleEn = this.title?.en || (typeof this.title === 'string' ? this.title : '') || 'banner';
+
+        if (!baseSlug) {
+            baseSlug = slugify(titleEn);
         }
 
         this.slug = await makeUniqueSlug(this.constructor, baseSlug, this._id);

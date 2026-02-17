@@ -20,7 +20,7 @@ interface Category {
     _id: string;
     name: string | { en: string; hi: string };
     slug: string;
-    description: string;
+    description: string | { en: string; hi: string };
     imageUrl: string;
     displayOrder: number;
     isActive: boolean;
@@ -33,7 +33,8 @@ interface FormInputs {
     name_en: string;
     name_hi: string;
     slug: string;
-    description: string;
+    description_en: string;
+    description_hi: string;
     displayOrder: number;
     showInNav: boolean;
     imageUrl: string; // For manual URL
@@ -88,9 +89,13 @@ export default function CategoryManager() {
                 en: data.name_en,
                 hi: data.name_hi
             };
+            const descriptionObj = {
+                en: data.description_en,
+                hi: data.description_hi
+            };
             formData.append('name', JSON.stringify(nameObj));
             formData.append('slug', data.slug);
-            formData.append('description', data.description || '');
+            formData.append('description', JSON.stringify(descriptionObj));
             formData.append('displayOrder', data.displayOrder.toString());
             formData.append('showInNav', data.showInNav.toString());
 
@@ -127,7 +132,8 @@ export default function CategoryManager() {
             name_en: '',
             name_hi: '',
             slug: '',
-            description: '',
+            description_en: '',
+            description_hi: '',
             displayOrder: 0,
             showInNav: false,
             imageUrl: ''
@@ -143,10 +149,14 @@ export default function CategoryManager() {
         const nameEnVal = typeof cat.name === 'object' ? cat.name.en : cat.name;
         const nameHiVal = typeof cat.name === 'object' ? cat.name.hi || '' : '';
 
+        const descEnVal = typeof cat.description === 'object' ? cat.description?.en || '' : cat.description || '';
+        const descHiVal = typeof cat.description === 'object' ? cat.description?.hi || '' : '';
+
         setValue('name_en', nameEnVal);
         setValue('name_hi', nameHiVal);
         setValue('slug', cat.slug);
-        setValue('description', cat.description);
+        setValue('description_en', descEnVal);
+        setValue('description_hi', descHiVal);
         setValue('displayOrder', cat.displayOrder);
         setValue('showInNav', cat.showInNav);
         setValue('imageUrl', cat.imageUrl);
@@ -372,13 +382,14 @@ export default function CategoryManager() {
                     </div>
 
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                        <label className="form-label">Description</label>
-                        <textarea
-                            {...register("description")}
-                            className="form-input"
+                        <BilingualInput
+                            label="Description"
+                            registerEn={register("description_en")}
+                            registerHi={register("description_hi")}
+                            multiline
                             rows={3}
-                            placeholder="Brief description..."
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border)', fontFamily: 'inherit' }}
+                            placeholderEn="Brief description..."
+                            placeholderHi="संक्षिप्त विवरण..."
                         />
                     </div>
 

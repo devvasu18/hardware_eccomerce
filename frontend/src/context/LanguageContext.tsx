@@ -10,6 +10,7 @@ interface LanguageContextType {
     language: Language;
     setLanguage: (lang: Language) => void;
     t: (key: string) => string;
+    getLocalized: (content: any) => string;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -29,13 +30,23 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const getLocalized = (content: any) => {
+        if (!content) return '';
+        if (typeof content === 'string') return content;
+        // Check if it's bilingual object
+        const currentLang = i18n.language as Language || 'en';
+        const val = content[currentLang];
+        if (val) return val;
+        return content['en'] || '';
+    };
+
     // Prevent hydration mismatch
     if (!mounted) {
         return <div style={{ visibility: 'hidden' }}>{children}</div>;
     }
 
     return (
-        <LanguageContext.Provider value={{ language: i18n.language as Language || 'en', setLanguage, t }}>
+        <LanguageContext.Provider value={{ language: i18n.language as Language || 'en', setLanguage, t, getLocalized }}>
             {children}
         </LanguageContext.Provider>
     );

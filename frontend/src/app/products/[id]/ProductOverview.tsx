@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProductActionArea from './ProductActionArea';
 import ProductImage from '@/app/components/ProductImage';
+import { useLanguage } from '@/context/LanguageContext';
 
 // Reusing interfaces loosely or defining them
 interface Product {
@@ -30,12 +31,13 @@ interface Product {
 
 interface Props {
     product: Product;
-    categoryName: string;
-    brandName: string;
+    categoryName: any;
+    brandName: any;
 }
 
 export default function ProductOverview({ product, categoryName, brandName }: Props) {
-    const productName = product.title || product.name || 'Product';
+    const { getLocalized } = useLanguage();
+    const productName = getLocalized(product.title || product.name || 'Product');
 
     // Default Image Sequence: Main -> Gallery -> Model Images -> Main (Repeated)
     const defaultImages = [
@@ -202,7 +204,7 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
                 <div className="product-meta">
                     <span className="product-code">PRODUCT CODE: IND-{product._id.slice(-6).toUpperCase()}</span>
                     <span className="separator">|</span>
-                    <span className="product-category-tag">{categoryName}</span>
+                    <span className="product-category-tag">{getLocalized(categoryName)}</span>
                 </div>
 
                 <h1 className="product-name">{productName}</h1>
@@ -218,7 +220,7 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
 
                 <div
                     className="product-description ck-content"
-                    dangerouslySetInnerHTML={{ __html: product.description || "Premium quality industrial hardware component designed for professional use." }}
+                    dangerouslySetInnerHTML={{ __html: getLocalized(product.description) || "Premium quality industrial hardware component designed for professional use." }}
                 />
 
                 {/* Pricing & Action Area */}
@@ -231,7 +233,7 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
 
                 <div className="delivery-estimate">
                     <h4>DELIVERY ESTIMATE</h4>
-                    <p>{product.deliveryTime || 'Standard delivery: 3-5 business days'}</p>
+                    <p>{getLocalized(product.deliveryTime) || 'Standard delivery: 3-5 business days'}</p>
                     <p>Express delivery available at checkout</p>
                 </div>
             </div>

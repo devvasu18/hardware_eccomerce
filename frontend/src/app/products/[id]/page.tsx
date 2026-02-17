@@ -1,25 +1,31 @@
 import Link from 'next/link';
+import { Metadata } from 'next';
 
 import ProductOverview from './ProductOverview';
 import Header from '@/app/components/Header';
 import ProductImage from '../../components/ProductImage';
 import ProductCard from '../../components/ProductCard';
+import ProductBreadcrumb from './ProductBreadcrumb';
+import ProductDetailsTabs from './ProductDetailsTabs';
 import './product-detail.css';
 
 interface Product {
     _id: string;
-    title?: string;
-    name?: string;
-    description: string;
+    title?: any;
+    name?: any;
+    meta_title?: any;
+    meta_description?: any;
+    keywords?: any;
+    description: any;
     basePrice: number;
     discountedPrice: number;
     stock: number;
-    category: string | { _id: string; name: string };
+    category: string | { _id: string; name: any };
     featured_image?: string;
     gallery_images?: string[];
     images?: string[];
     isOnDemand: boolean;
-    brand?: string | { _id: string; name: string };
+    brand?: string | { _id: string; name: any };
     warranty?: string;
     material?: string;
     countryOfOrigin?: string;
@@ -71,6 +77,33 @@ async function getRelatedProducts(productId: string): Promise<Product[]> {
     }
 }
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+    const { id } = await params;
+    const product = await getProduct(id);
+    if (!product) return { title: 'Product Not Found' };
+
+    const getEn = (val: any) => {
+        if (!val) return '';
+        if (typeof val === 'string') return val;
+        return val.en || '';
+    };
+
+    const title = getEn(product.meta_title) || getEn(product.title) || getEn(product.name) || 'Product';
+    const description = getEn(product.meta_description) || (getEn(product.description) ? getEn(product.description).replace(/<[^>]*>/g, '').slice(0, 160) : '');
+
+    let keywords = '';
+    if (product.keywords) {
+        if (Array.isArray(product.keywords)) keywords = product.keywords.join(', ');
+        else if (typeof product.keywords === 'object') keywords = (product.keywords as any).en?.join(', ') || '';
+    }
+
+    return {
+        title,
+        description,
+        keywords
+    };
+}
+
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const product = await getProduct(id);
@@ -84,8 +117,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         )
     }
 
-    const categoryName = typeof product.category === 'object' && product.category !== null ? product.category.name : String(product.category);
-    const brandName = typeof product.brand === 'object' && product.brand !== null ? product.brand.name : String(product.brand || '');
+    const categoryName = typeof product.category === 'object' && product.category !== null ? product.category.name : product.category;
+    const brandName = typeof product.brand === 'object' && product.brand !== null ? product.brand.name : product.brand;
 
     const relatedProducts = await getRelatedProducts(product._id);
     const discountPercentage = product.discountedPrice && product.discountedPrice < product.basePrice
@@ -105,13 +138,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
             <div className="product-detail-container">
                 {/* Breadcrumb */}
-                <div className="breadcrumb">
-                    <Link href="/">HOME</Link>
-                    <span>/</span>
-                    <Link href="/products">PRODUCTS</Link>
-                    <span>/</span>
-                    <span className="current">{categoryName.toUpperCase()}</span>
-                </div>
+                <ProductBreadcrumb categoryName={categoryName} />
 
                 <ProductOverview
                     product={product}
@@ -120,55 +147,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                 />
 
                 {/* Product Details Tabs */}
-                <div className="product-tabs">
-                    <div className="tabs-header">
-                        <button className="tab-btn active">DETAIL</button>
-                        <button className="tab-btn">SIZE DETAIL</button>
-                        <button className="tab-btn">RETURN POLICY</button>
-                        <button className="tab-btn">DELIVERY INFO</button>
-                    </div>
-
-                    <div className="tab-content">
-                        <div className="detail-grid">
-                            <div className="detail-item">
-                                <span className="detail-label">SKU</span>
-                                <span className="detail-value">IND-{product._id.slice(-6).toUpperCase()}</span>
-                            </div>
-                            {product.brand && (
-                                <div className="detail-item">
-                                    <span className="detail-label">Brand</span>
-                                    <span className="detail-value">{brandName}</span>
-                                </div>
-                            )}
-                            <div className="detail-item">
-                                <span className="detail-label">Country of Origin</span>
-                                <span className="detail-value">{product.countryOfOrigin || 'India'}</span>
-                            </div>
-                            {product.material && (
-                                <div className="detail-item">
-                                    <span className="detail-label">Material</span>
-                                    <span className="detail-value">{product.material}</span>
-                                </div>
-                            )}
-                            {product.warranty && (
-                                <div className="detail-item">
-                                    <span className="detail-label">Warranty</span>
-                                    <span className="detail-value">{product.warranty}</span>
-                                </div>
-                            )}
-                            {product.description && (
-                                <div className="detail-item" style={{ gridColumn: '1 / -1' }}>
-                                    <span className="detail-label">Description</span>
-                                    <div
-                                        className="detail-value ck-content"
-                                        dangerouslySetInnerHTML={{ __html: product.description }}
-                                        style={{ lineHeight: '1.6' }}
-                                    />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+                <ProductDetailsTabs product={product} brandName={brandName} />
 
                 {/* Related Products */}
                 {relatedProducts.length > 0 && (

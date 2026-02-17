@@ -96,6 +96,15 @@ app.use('/api/admin', require('./routes/adminMasterRoutes')); // HSN, Categories
 
 app.use('/api/cart', require('./routes/cartRoutes')); // Cart Management
 
+// Uptime Robot / Health Check Endpoints
+app.get('/', (req, res) => {
+    res.status(200).send('Create Hardware Server is Running');
+});
+
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
+
 // Test endpoint to verify backend is working
 app.get('/api/test', (req, res) => {
     logger.info('🧪 TEST endpoint hit!');

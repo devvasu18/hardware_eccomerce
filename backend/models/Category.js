@@ -8,7 +8,10 @@ const categorySchema = new mongoose.Schema({
     },
     slug: { type: String, required: true, unique: true },
     imageUrl: { type: String }, // Renamed to match frontend
-    description: { type: String },
+    description: {
+        en: { type: String },
+        hi: { type: String }
+    },
     displayOrder: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
     showInNav: { type: Boolean, default: false },

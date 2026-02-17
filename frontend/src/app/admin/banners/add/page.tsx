@@ -8,6 +8,9 @@ import { FiSave, FiUploadCloud, FiX } from "react-icons/fi";
 import Image from "next/image";
 import Modal from "../../../components/Modal";
 import { useModal } from "../../../hooks/useModal";
+import BilingualInput from "../../../../components/forms/BilingualInput";
+import LanguageToggle from "../../../../components/LanguageToggle";
+import { useLanguage } from "../../../../context/LanguageContext";
 
 interface Offer {
     _id: string;
@@ -23,9 +26,10 @@ interface Product {
 
 export default function AddBannerPage() {
     const router = useRouter();
-    const { register, handleSubmit, watch, setValue } = useForm();
+    const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm();
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const [linkType, setLinkType] = useState<'offer' | 'products'>('offer');
+    const { language } = useLanguage();
 
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
 
@@ -96,18 +100,19 @@ export default function AddBannerPage() {
         setIsSubmitting(true);
 
         const formData = new FormData();
-        formData.append('title', data.title);
-        formData.append('description', data.description || '');
+
+        formData.append('title', JSON.stringify(data.title));
+        formData.append('description', JSON.stringify(data.description || { en: '', hi: '' }));
         if (data.image) formData.append('image', data.image);
 
         // Styles
         formData.append('position', data.position);
         formData.append('textColor', data.textColor);
         formData.append('buttonColor', data.buttonColor);
-        formData.append('buttonText', data.buttonText);
+        formData.append('buttonText', JSON.stringify(data.buttonText));
         formData.append('buttonLink', data.buttonLink);
         formData.append('showSecondaryButton', data.showSecondaryButton);
-        formData.append('badgeText', data.badgeText);
+        formData.append('badgeText', JSON.stringify(data.badgeText));
         formData.append('secondaryButtonColor', data.secondaryButtonColor);
 
         if (linkType === 'offer') {
@@ -144,7 +149,10 @@ export default function AddBannerPage() {
                 onConfirm={modalState.onConfirm}
                 showCancel={modalState.showCancel}
             />
-            <h1 className="page-title">Add New Banner</h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h1 className="page-title">Add New Banner</h1>
+                <LanguageToggle />
+            </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="form-grid" style={{ alignItems: 'start' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -153,12 +161,25 @@ export default function AddBannerPage() {
                     <div className="card">
                         <div className="card-header">Basic Details</div>
                         <div className="form-group" style={{ marginBottom: '1rem' }}>
-                            <label className="form-label">Banner Title</label>
-                            <input {...register("title")} className="form-input" placeholder="e.g. Summer Sale 2026" />
+                            <BilingualInput
+                                label="Banner Title"
+                                registerEn={register("title.en", { required: "Title is required" })}
+                                registerHi={register("title.hi")}
+                                errorEn={errors.title && (errors.title as any).en}
+                                placeholderEn="e.g. Summer Sale 2026"
+                                placeholderHi="उदा. गर्मी की सेल 2026"
+                            />
                         </div>
                         <div className="form-group">
-                            <label className="form-label">Description (Optional)</label>
-                            <textarea {...register("description")} className="form-input" rows={3} placeholder="Short text for the banner..."></textarea>
+                            <BilingualInput
+                                label="Description (Optional)"
+                                registerEn={register("description.en")}
+                                registerHi={register("description.hi")}
+                                multiline
+                                rows={3}
+                                placeholderEn="Short text for the banner..."
+                                placeholderHi="बैनर के लिए संक्षिप्त पाठ..."
+                            />
                         </div>
                     </div>
 
@@ -167,9 +188,15 @@ export default function AddBannerPage() {
                         <div className="card-header">Appearance</div>
                         <div className="form-grid-inner" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                             {/* Badge Text - Now at the top */}
+                            {/* Badge Text - Now at the top */}
                             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                                <label className="form-label">Badge Text</label>
-                                <input {...register("badgeText")} className="form-input" placeholder="e.g. Premium Quality, New Arrival" defaultValue="Premium Quality" />
+                                <BilingualInput
+                                    label="Badge Text"
+                                    registerEn={register("badgeText.en")}
+                                    registerHi={register("badgeText.hi")}
+                                    placeholderEn="e.g. Premium Quality"
+                                    placeholderHi="उदा. प्रीमियम गुणवत्ता"
+                                />
                             </div>
 
                             {/* Row 1: Text Pos & Color */}
@@ -197,8 +224,13 @@ export default function AddBannerPage() {
 
                             {/* Row 2: Button Text & Link */}
                             <div className="form-group">
-                                <label className="form-label">Button Text</label>
-                                <input {...register("buttonText")} className="form-input" placeholder="Shop Now" />
+                                <BilingualInput
+                                    label="Button Text"
+                                    registerEn={register("buttonText.en")}
+                                    registerHi={register("buttonText.hi")}
+                                    placeholderEn="Shop Now"
+                                    placeholderHi="अभी खरीदें"
+                                />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Button Link</label>

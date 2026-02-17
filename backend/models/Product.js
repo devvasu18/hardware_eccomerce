@@ -29,7 +29,16 @@ const productSchema = new mongoose.Schema({
         en: { type: String },
         hi: { type: String }
     }, // Rich Text
-    specifications: { type: Map, of: String }, // JSON key-value pairs
+    specifications: [{
+        key: {
+            en: { type: String, required: true },
+            hi: { type: String }
+        },
+        value: {
+            en: { type: String, required: true },
+            hi: { type: String }
+        }
+    }],
 
     // Pricing
     mrp: { type: Number, required: true },
@@ -73,7 +82,10 @@ const productSchema = new mongoose.Schema({
         en: { type: String },
         hi: { type: String }
     },
-    keywords: [{ type: String }],
+    keywords: {
+        en: [{ type: String }],
+        hi: [{ type: String }]
+    },
 
     // Status & Flags
     isActive: { type: Boolean, default: true },
@@ -152,8 +164,18 @@ productSchema.index({ isActive: 1 });
 productSchema.index({ isFeatured: 1 });
 productSchema.index({ isNewArrival: 1 });
 productSchema.index({ isOnDemand: 1 });
-// Text index for search (title & description)
-productSchema.index({ 'title.en': 'text', 'title.hi': 'text', description: 'text', part_number: 'text', 'variations.value': 'text' });
+// Text index for search (title & description & keywords)
+productSchema.index({
+    'title.en': 'text',
+    'title.hi': 'text',
+    'description.en': 'text',
+    'description.hi': 'text',
+    'keywords.en': 'text',
+    'keywords.hi': 'text',
+    part_number: 'text',
+    'variations.value.en': 'text',
+    'variations.value.hi': 'text'
+});
 
 // AUTO-CALCULATE LOWEST PRICE ON SAVE
 productSchema.pre('save', async function (next) {

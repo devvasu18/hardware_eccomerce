@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ProductCard from './ProductCard';
 import api from '../utils/api';
 import './CategoryProductListing.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface CategoryProductListingProps {
     config?: {
@@ -20,6 +21,7 @@ interface CategoryProductListingProps {
 }
 
 const CategoryProductListing: React.FC<CategoryProductListingProps> = ({ config }) => {
+    const { t } = useLanguage();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -79,7 +81,7 @@ const CategoryProductListing: React.FC<CategoryProductListingProps> = ({ config 
                             href={`/products?category=${categorySlug || categoryId}`}
                             className="premium-view-all-btn"
                         >
-                            <span>Explore All</span>
+                            <span>{t('explore_all')}</span>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                                 <path d="M5 12h14M12 5l7 7-7 7" />
                             </svg>
@@ -95,7 +97,7 @@ const CategoryProductListing: React.FC<CategoryProductListingProps> = ({ config 
                     </div>
                 ) : products.length === 0 ? (
                     <div className="empty-category-message">
-                        <p>No products found in this category.</p>
+                        <p>{t('no_products_found')}</p>
                     </div>
                 ) : (
                     <div className="products-grid">

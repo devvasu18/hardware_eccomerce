@@ -6,10 +6,12 @@ import Link from 'next/link';
 import { FiArrowRight } from 'react-icons/fi';
 import api from '../utils/api';
 import './CategorySection.css';
+import { useLanguage } from '../../context/LanguageContext';
 
 
 
 export default function CategorySection({ config }: { config?: any }) {
+    const { getLocalized, t } = useLanguage();
     const [categories, setCategories] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -60,11 +62,11 @@ export default function CategorySection({ config }: { config?: any }) {
             <div className="container">
                 <div className="category-header">
                     <div>
-                        <h2 className="category-title">{config?.title || 'Browse Categories'}</h2>
-                        <p className="category-subtitle">{config?.subtitle || 'Find exactly what you need from our wide range of categories'}</p>
+                        <h2 className="category-title">{config?.title || t('browse_categories')}</h2>
+                        <p className="category-subtitle">{config?.subtitle || t('categories_subtitle')}</p>
                     </div>
                     <Link href="/categories" className="view-all-btns">
-                        <span>View All Categories</span>
+                        <span>{t('view_all_categories')}</span>
                         <FiArrowRight />
                     </Link>
                 </div>
@@ -93,13 +95,13 @@ export default function CategorySection({ config }: { config?: any }) {
                                                         ? `http://localhost:5000/${cat.imageUrl.startsWith('/') ? cat.imageUrl.slice(1) : cat.imageUrl}`
                                                         : '/placeholder.png')}
                                                 fill
-                                                alt={cat.name}
+                                                alt={getLocalized(cat.name)}
                                                 unoptimized={true}
                                             />
                                         </div>
                                     </div>
 
-                                    <span className="category-name">{cat.name}</span>
+                                    <span className="category-name">{getLocalized(cat.name)}</span>
                                 </div>
                             </Link>
                         ))}

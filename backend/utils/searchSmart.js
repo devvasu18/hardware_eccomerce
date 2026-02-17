@@ -54,9 +54,12 @@ async function advancedSearch(keyword, queryOptions = {}) {
             _id: { $nin: existingIds },
             isVisible: true,
             $or: [
-                { title: partialRegex },
-                { title: fuzzyRegex },
-                { keywords: partialRegex }
+                { 'title.en': partialRegex },
+                { 'title.hi': partialRegex },
+                { 'title.en': fuzzyRegex },
+                { 'title.hi': fuzzyRegex },
+                { 'keywords.en': partialRegex },
+                { 'keywords.hi': partialRegex }
             ]
         })
             .populate('category', 'name')
