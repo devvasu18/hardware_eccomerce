@@ -1,12 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Increase static generation timeout for pages that fetch data
-  staticGenerationTimeout: 180,
-  // Use dynamic output to prevent static generation issues
-  output: process.env.BUILD_STANDALONE ? 'standalone' : undefined,
-  experimental: {
-    missingSuspenseWithCSRBailout: false,
-  },
   // Skip trailing slash for cleaner URLs
   trailingSlash: false,
   images: {
