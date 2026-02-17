@@ -16,6 +16,11 @@ import LanguageToggle from "../../../components/LanguageToggle";
 import { useLanguage } from "../../../context/LanguageContext";
 import ReorderModal from "./ReorderModal";
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+export const revalidate = 0;
+
 interface Category {
     _id: string;
     name: string | { en: string; hi: string };

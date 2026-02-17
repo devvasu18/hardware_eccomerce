@@ -7,6 +7,11 @@ import {
 } from 'recharts';
 import { FiTrendingUp, FiBox, FiAlertCircle, FiActivity, FiDollarSign } from 'react-icons/fi';
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+export const revalidate = 0;
+
 const COLORS = ['#10B981', '#F59E0B', '#EF4444']; // Green, Orange, Red
 
 export default function AdminDashboard() {

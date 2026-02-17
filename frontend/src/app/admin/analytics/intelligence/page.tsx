@@ -7,6 +7,11 @@ import {
 } from 'recharts';
 import { FiTrendingUp, FiPackage, FiShoppingBag, FiUsers, FiArrowUpRight, FiArrowDownRight } from 'react-icons/fi';
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+export const revalidate = 0;
+
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 export default function AnalyticsIntelligence() {

@@ -2,8 +2,13 @@
 const nextConfig = {
   // Increase static generation timeout for pages that fetch data
   staticGenerationTimeout: 180,
-  // Use standalone output for better deployment performance
-  output: 'standalone',
+  // Use dynamic output to prevent static generation issues
+  output: process.env.BUILD_STANDALONE ? 'standalone' : undefined,
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
+  // Skip trailing slash for cleaner URLs
+  trailingSlash: false,
   images: {
     remotePatterns: [
       {
@@ -48,6 +53,7 @@ const nextConfig = {
         hostname: 'new-ella-demo-07.myshopify.com',
       },
     ],
+    unoptimized: process.env.NODE_ENV === 'development',
   },
   async rewrites() {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
@@ -59,6 +65,20 @@ const nextConfig = {
       {
         source: '/uploads/:path*',
         destination: `${apiUrl}/uploads/:path*`,
+      },
+    ];
+  },
+  // Disable static optimization for admin routes
+  async headers() {
+    return [
+      {
+        source: '/admin/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, must-revalidate',
+          },
+        ],
       },
     ];
   },

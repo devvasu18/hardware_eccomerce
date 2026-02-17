@@ -8,6 +8,11 @@ import DataTable from "../../components/DataTable";
 import Modal from "../../components/Modal";
 import { useModal } from "../../hooks/useModal";
 
+// Force dynamic rendering - prevent static generation
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+export const revalidate = 0;
+
 interface Coupon {
     _id: string;
     code: string;
