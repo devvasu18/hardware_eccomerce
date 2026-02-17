@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    // Increase static generation timeout for pages that fetch data
+    staticPageGenerationTimeout: 180,
+  },
   images: {
     remotePatterns: [
       {
