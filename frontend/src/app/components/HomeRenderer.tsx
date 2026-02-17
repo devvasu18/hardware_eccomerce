@@ -73,7 +73,7 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
             const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
             // Fetch specific page layout
-            const response = await fetch(`http://localhost:5000/api/home-layout?page=${pageSlug}`, {
+            const response = await fetch(`/api/home-layout?page=${pageSlug}`, {
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
@@ -103,7 +103,7 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-            const res = await fetch('http://localhost:5000/api/products/featured', {
+            const res = await fetch('/api/products/featured', {
                 signal: controller.signal
             });
             clearTimeout(timeoutId);
@@ -128,11 +128,14 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
         if (previewLayout) {
             setLayout(previewLayout);
             setLoading(false);
-            return;
+            // Fetch featured products even if layout is provided
+            fetchFeatured();
+        } else {
+            fetchData();
+            fetchFeatured();
         }
-        fetchData();
-        fetchFeatured();
     }, [previewLayout, pageSlug]);
+
 
     if (loading) {
         return (

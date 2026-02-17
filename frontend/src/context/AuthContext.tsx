@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         try {
-            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+            const API_URL = '/api';
             const response = await fetch(`${API_URL}/auth/me`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const token = localStorage.getItem('token');
             if (token) {
                 // Determine API URL (using env or defaultlocalhost)
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+                const API_URL = '/api';
                 await fetch(`${API_URL}/auth/logout`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }

@@ -10,6 +10,8 @@ import ProductDetailsTabs from './ProductDetailsTabs';
 import RelatedProducts from './RelatedProducts';
 import './product-detail.css';
 
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/api$/, '') + '/api';
+
 interface Product {
     _id: string;
     title?: any;
@@ -44,7 +46,7 @@ interface Product {
 
 async function getProduct(id: string): Promise<Product | null> {
     try {
-        const res = await fetch(`http://localhost:5000/api/products/${id}`, { cache: 'no-store' });
+        const res = await fetch(`${API_URL}/products/${id}`, { cache: 'no-store' });
         if (!res.ok) return null;
         const data = await res.json();
         // Map backend fields to frontend interface
@@ -62,7 +64,7 @@ async function getProduct(id: string): Promise<Product | null> {
 
 async function getRelatedProducts(productId: string): Promise<Product[]> {
     try {
-        const res = await fetch(`http://localhost:5000/api/products/${productId}/recommendations?limit=4`, { cache: 'no-store' });
+        const res = await fetch(`${API_URL}/products/${productId}/recommendations?limit=4`, { cache: 'no-store' });
         if (!res.ok) return [];
         const productsRaw = await res.json();
 

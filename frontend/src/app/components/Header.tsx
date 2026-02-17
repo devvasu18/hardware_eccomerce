@@ -80,7 +80,7 @@ const Header = () => {
             if (searchTerm.length >= 2) {
                 try {
                     // We reuse the products API with keyword and limit 5
-                    const res = await fetch(`http://localhost:5000/api/products?keyword=${encodeURIComponent(searchTerm)}&limit=5`);
+                    const res = await fetch(`/api/products?keyword=${encodeURIComponent(searchTerm)}&limit=5`);
                     if (res.ok) {
                         const data = await res.json();
                         setSuggestions(Array.isArray(data) ? data : data.products || []);
@@ -100,7 +100,7 @@ const Header = () => {
         const fetchAllNavData = async () => {
             try {
                 // Fetch categories
-                const res = await fetch('http://localhost:5000/api/categories');
+                const res = await fetch('/api/categories');
                 if (!res.ok) throw new Error('Failed to fetch categories');
 
                 const data = await res.json();
@@ -110,7 +110,7 @@ const Header = () => {
                 const subCatMap: Record<string, any[]> = {};
                 await Promise.all(navCategories.map(async (cat: any) => {
                     try {
-                        const subRes = await fetch(`http://localhost:5000/api/categories/${cat.slug}/subcategories`);
+                        const subRes = await fetch(`/api/categories/${cat.slug}/subcategories`);
                         if (subRes.ok) {
                             subCatMap[cat._id] = await subRes.json();
                         }
@@ -207,7 +207,7 @@ const Header = () => {
                                                                 (product.featured_image || (product.gallery_images && product.gallery_images[0]))?.startsWith('http')
                                                                     ? (product.featured_image || (product.gallery_images && product.gallery_images[0]))
                                                                     : (product.featured_image || (product.gallery_images && product.gallery_images[0]))
-                                                                        ? `http://localhost:5000/${product.featured_image || (product.gallery_images && product.gallery_images[0])}`
+                                                                        ? `/${product.featured_image || (product.gallery_images && product.gallery_images[0])}`
                                                                         : '/placeholder.png'
                                                             }
                                                             alt={product.title}

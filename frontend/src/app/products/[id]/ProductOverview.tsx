@@ -73,7 +73,7 @@ export default function ProductOverview({ product, categoryName, brandName }: Pr
         // Actually, importing api is better practice. But let's check imports. 
         // No api import. I'd need to add it. 
         // For minimal diff, I'll use fetch with relative path or hardcoded local for now (or standard env).
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+        const apiUrl = '/api';
         fetch(`${apiUrl}/products/${product._id}/view`, { method: 'PUT' }).catch(console.error);
 
         // Update Local Storage for Recently Viewed

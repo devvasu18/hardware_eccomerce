@@ -105,7 +105,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/wishlist', {
+            const response = await fetch('/api/wishlist', {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                 },
@@ -135,7 +135,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
                 // Fetch details for these IDs
                 try {
-                    const res = await fetch(`http://localhost:5000/api/products?ids=${productIds.join(',')}&limit=100`);
+                    const res = await fetch(`/api/products?ids=${productIds.join(',')}&limit=100`);
                     if (res.ok) {
                         const data = await res.json();
                         const products = Array.isArray(data) ? data : data.products;
@@ -186,7 +186,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
             const productIds = JSON.parse(guestWishlist);
             const token = localStorage.getItem('token');
 
-            const response = await fetch('http://localhost:5000/api/wishlist/sync', {
+            const response = await fetch('/api/wishlist/sync', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -214,7 +214,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                 // Authenticated user - save to database
                 const token = localStorage.getItem('token');
 
-                const response = await fetch('http://localhost:5000/api/wishlist/add', {
+                const response = await fetch('/api/wishlist/add', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -267,7 +267,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
             if (user) {
                 // Authenticated user - remove from database
                 const token = localStorage.getItem('token');
-                const response = await fetch(`http://localhost:5000/api/wishlist/remove/${productId}`, {
+                const response = await fetch(`/api/wishlist/remove/${productId}`, {
                     method: 'DELETE',
                     headers: {
                         'Authorization': `Bearer ${token}`,
