@@ -234,7 +234,15 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
     try {
-        const { name, slug, description, displayOrder, showInNav, imageUrl, gradient } = req.body;
+        const { slug, description, displayOrder, showInNav, imageUrl, gradient } = req.body;
+        let { name } = req.body;
+        if (typeof name === 'string') {
+            try {
+                const parsedName = JSON.parse(name);
+                if (typeof parsedName === 'object' && parsedName !== null) name = parsedName;
+            } catch (e) { }
+        }
+
         const finalImageUrl = req.file ? req.file.path.replace(/\\/g, '/') : imageUrl;
 
         console.log('Create Category - File:', req.file ? 'Present' : 'None');
@@ -268,7 +276,14 @@ exports.createCategory = async (req, res) => {
 
 exports.updateCategory = async (req, res) => {
     try {
-        const { name, slug, description, displayOrder, showInNav, isActive, imageUrl, gradient } = req.body;
+        const { slug, description, displayOrder, showInNav, isActive, imageUrl, gradient } = req.body;
+        let { name } = req.body;
+        if (typeof name === 'string') {
+            try {
+                const parsedName = JSON.parse(name);
+                if (typeof parsedName === 'object' && parsedName !== null) name = parsedName;
+            } catch (e) { }
+        }
 
         console.log('Update Category - File:', req.file ? 'Present' : 'None');
         console.log('Update Category - imageUrl from body:', imageUrl);
@@ -425,7 +440,15 @@ exports.getSubCategories = async (req, res) => {
 
 exports.createSubCategory = async (req, res) => {
     try {
-        const { category_id, name, slug } = req.body;
+        const { category_id, slug } = req.body;
+        let { name } = req.body;
+        if (typeof name === 'string') {
+            try {
+                const parsedName = JSON.parse(name);
+                if (typeof parsedName === 'object' && parsedName !== null) name = parsedName;
+            } catch (e) { }
+        }
+
         const image = req.file ? req.file.path.replace(/\\/g, '/') : null;
         const subCategory = await SubCategory.create({ category_id, name, slug, image });
         res.status(201).json(subCategory);
@@ -449,7 +472,15 @@ exports.deleteSubCategory = async (req, res) => {
 
 exports.updateSubCategory = async (req, res) => {
     try {
-        const { category_id, name, slug } = req.body;
+        const { category_id, slug } = req.body;
+        let { name } = req.body;
+        if (typeof name === 'string') {
+            try {
+                const parsedName = JSON.parse(name);
+                if (typeof parsedName === 'object' && parsedName !== null) name = parsedName;
+            } catch (e) { }
+        }
+
         const updateData = { category_id, name, slug };
 
         if (req.file) {
@@ -532,7 +563,7 @@ exports.exportCategories = async (req, res) => {
 
         const data = categories.map(c => ({
             ID: c._id.toString(),
-            Name: c.name,
+            Name: c.name?.en || (typeof c.name === 'string' ? c.name : 'N/A'),
             Slug: c.slug,
             Description: c.description || '',
             DisplayOrder: c.displayOrder || 0,
@@ -577,7 +608,7 @@ exports.exportSubCategories = async (req, res) => {
         const data = subCategories.map(sc => ({
             ID: sc._id.toString(),
             Category: sc.category_id?.name || 'N/A',
-            Name: sc.name,
+            Name: sc.name?.en || (typeof sc.name === 'string' ? sc.name : 'N/A'),
             Slug: sc.slug
         }));
 

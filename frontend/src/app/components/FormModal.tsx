@@ -6,7 +6,7 @@ import { FiX } from 'react-icons/fi';
 interface FormModalProps {
     isOpen: boolean;
     onClose: () => void;
-    title: string;
+    title: ReactNode;
     children: ReactNode;
     maxWidth?: string;
 }
@@ -74,14 +74,15 @@ export default function FormModal({
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
-                    <h2 style={{
+                    <div role="heading" aria-level={2} style={{
                         fontSize: '1.25rem',
                         fontWeight: '600',
                         color: 'var(--text-primary)',
-                        margin: 0
+                        margin: 0,
+                        flex: 1
                     }}>
                         {title}
-                    </h2>
+                    </div>
                     <button
                         onClick={onClose}
                         style={{

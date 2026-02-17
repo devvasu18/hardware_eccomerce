@@ -1,21 +1,20 @@
 
 import type { Metadata } from 'next';
 import './globals.css';
-
-export const metadata: Metadata = {
-    title: 'Hardware Marketplace | Premium Quality Industrial Parts',
-    description: 'Industrial-grade mechanical parts and hardware e-commerce platform.',
-};
-
 import { NotificationProvider } from '@/context/NotificationContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { WishlistProvider } from '@/context/WishlistContext';
 import { ThemeProvider } from '@/context/ThemeContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import CartSidebar from './components/CartSidebar';
 import WishlistSidebar from './components/WishlistSidebar';
-
 import MobileBottomNav from './components/MobileBottomNav';
+
+export const metadata: Metadata = {
+    title: 'Hardware Marketplace | Premium Quality Industrial Parts',
+    description: 'Industrial-grade mechanical parts and hardware e-commerce platform.',
+};
 
 export default function RootLayout({
     children,
@@ -46,20 +45,22 @@ export default function RootLayout({
                 />
             </head>
             <body>
-                <AuthProvider>
-                    <ThemeProvider>
-                        <NotificationProvider>
-                            <CartProvider>
-                                <WishlistProvider>
-                                    {children}
-                                    <CartSidebar />
-                                    <WishlistSidebar />
-                                    <MobileBottomNav />
-                                </WishlistProvider>
-                            </CartProvider>
-                        </NotificationProvider>
-                    </ThemeProvider>
-                </AuthProvider>
+                <LanguageProvider>
+                    <AuthProvider>
+                        <ThemeProvider>
+                            <NotificationProvider>
+                                <CartProvider>
+                                    <WishlistProvider>
+                                        {children}
+                                        <CartSidebar />
+                                        <WishlistSidebar />
+                                        <MobileBottomNav />
+                                    </WishlistProvider>
+                                </CartProvider>
+                            </NotificationProvider>
+                        </ThemeProvider>
+                    </AuthProvider>
+                </LanguageProvider>
             </body>
         </html>
     );

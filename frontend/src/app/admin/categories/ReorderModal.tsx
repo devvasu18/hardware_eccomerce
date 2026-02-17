@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { Reorder } from 'framer-motion';
 import { FiX, FiSave, FiPlus, FiMove } from 'react-icons/fi';
 import api from '../../utils/api';
+import { useLanguage } from '../../../context/LanguageContext';
 
 interface Category {
     _id: string;
-    name: string;
+    name: string | { en: string; hi: string };
     slug: string;
     imageUrl: string;
     displayOrder: number;
@@ -33,6 +34,8 @@ export default function ReorderModal({
     const [isSaving, setIsSaving] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
     const [prevInitial, setPrevInitial] = useState<Category[]>([]);
+
+    const { language } = useLanguage();
 
     useEffect(() => {
         if (!isOpen) {
@@ -83,6 +86,11 @@ export default function ReorderModal({
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const getName = (name: string | { en: string; hi: string }) => {
+        if (typeof name === 'string') return name;
+        return name[language] || name['en'];
     };
 
     if (!isOpen) return null;
@@ -246,8 +254,8 @@ export default function ReorderModal({
                                     }}>
                                         {category.imageUrl ? (
                                             <img
-                                                src={category.imageUrl.startsWith('http') ? category.imageUrl : `http://localhost:5000/${category.imageUrl.startsWith('/') ? category.imageUrl.slice(1) : category.imageUrl}`}
-                                                alt={category.name}
+                                                src={category.imageUrl.startsWith('http') ? category.imageUrl : `/api/${category.imageUrl.startsWith('/') ? category.imageUrl.slice(1) : category.imageUrl}`}
+                                                alt={getName(category.name)}
                                                 style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }}
                                             />
                                         ) : (
@@ -263,7 +271,7 @@ export default function ReorderModal({
                                             color: '#1e293b',
                                             margin: 0,
                                             lineHeight: 1.2
-                                        }}>{category.name}</h3>
+                                        }}>{getName(category.name)}</h3>
                                         <p style={{
                                             fontSize: '0.75rem',
                                             color: '#64748b',

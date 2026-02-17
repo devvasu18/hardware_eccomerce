@@ -2,7 +2,10 @@ const mongoose = require('mongoose');
 const { makeUniqueSlug, slugify } = require('../utils/slugify');
 
 const categorySchema = new mongoose.Schema({
-    name: { type: String, required: true },
+    name: {
+        en: { type: String, required: true },
+        hi: { type: String }
+    },
     slug: { type: String, required: true, unique: true },
     imageUrl: { type: String }, // Renamed to match frontend
     description: { type: String },
@@ -15,7 +18,9 @@ const categorySchema = new mongoose.Schema({
 // Ensure unique slug before saving
 categorySchema.pre('save', async function (next) {
     if (this.isModified('slug') || this.isNew) {
-        const baseSlug = this.slug || slugify(this.name);
+        // Use English name for slug generation
+        const nameForSlug = this.name?.en || (typeof this.name === 'string' ? this.name : '');
+        const baseSlug = this.slug || slugify(nameForSlug);
         this.slug = await makeUniqueSlug(this.constructor, baseSlug, this._id);
     }
     next();

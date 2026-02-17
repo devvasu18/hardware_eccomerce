@@ -54,11 +54,16 @@ exports.getAdminProducts = async (req, res) => {
             const categoryIds = categories.map(c => c._id);
 
             query.$or = [
-                { title: searchRegex },
+                { 'title.en': searchRegex },
+                { 'title.hi': searchRegex },
                 { slug: searchRegex },
                 { part_number: searchRegex },
                 { 'variations.sku': searchRegex },
                 { 'models.variations.sku': searchRegex },
+                { 'variations.value.en': searchRegex },
+                { 'variations.value.hi': searchRegex },
+                { 'models.variations.value.en': searchRegex },
+                { 'models.variations.value.hi': searchRegex },
                 { brand: { $in: brandIds } },
                 { category: { $in: categoryIds } }
             ];
@@ -120,6 +125,14 @@ exports.createProduct = async (req, res) => {
             // console.log('Body:', req.body); // Too verbose/sensitive
         }
 
+        // Parse Title if JSON string
+        if (req.body.title && typeof req.body.title === 'string') {
+            try {
+                const parsedTitle = JSON.parse(req.body.title);
+                if (typeof parsedTitle === 'object') req.body.title = parsedTitle;
+            } catch (e) { }
+        }
+
         const {
             title, slug, subtitle, part_number,
             category, sub_category, brand, offers,
@@ -129,8 +142,26 @@ exports.createProduct = async (req, res) => {
             opening_stock, max_unit_buy, product_quantity, low_stock_threshold,
             color_name, color_hex, size,
             meta_title, meta_description, keywords,
-            isActive, isVisible, isFeatured, isNewArrival, isTopSale, isDailyOffer
+            isActive, isVisible, isFeatured, isNewArrival, isTopSale, isDailyOffer,
+            isOnDemand, isCancellable, isReturnable, deliveryTime, returnWindow
         } = req.body;
+
+        // Helper to parse bilingual fields
+        const parseBilingual = (field) => {
+            if (typeof field === 'string') {
+                try {
+                    const parsed = JSON.parse(field);
+                    return (typeof parsed === 'object') ? parsed : field;
+                } catch (e) { return field; }
+            }
+            return field;
+        };
+
+        const parsedMetaTitle = parseBilingual(meta_title);
+        const parsedMetaDesc = parseBilingual(meta_description);
+        const parsedSubtitle = parseBilingual(subtitle);
+        const parsedDescription = parseBilingual(description);
+        const parsedDeliveryTime = parseBilingual(deliveryTime);
 
         // Extract file paths from req.files (array)
         const getFile = (name) => req.files?.find(f => f.fieldname === name);
@@ -238,16 +269,20 @@ exports.createProduct = async (req, res) => {
         }
 
         const product = new Product({
-            title, slug, subtitle, part_number,
+            title, slug, subtitle: parsedSubtitle, part_number,
             category, sub_category: parsedSubCats, brand, offers: parsedOffers,
             hsn_code, gst_rate,
-            description, specifications: parsedSpecs,
+            description: parsedDescription, specifications: parsedSpecs,
             mrp, selling_price_a, selling_price_b, selling_price_c, delivery_charge,
             opening_stock, max_unit_buy, product_quantity, low_stock_threshold,
             color_name, color_hex, size,
             featured_image, featured_image_2, size_chart, gallery_images,
-            meta_title, meta_description, keywords: parsedKeywords,
+            meta_title: parsedMetaTitle, meta_description: parsedMetaDesc, keywords: parsedKeywords,
             isActive, isVisible, isFeatured, isNewArrival, isTopSale, isDailyOffer,
+            isOnDemand: isOnDemand === 'true' || isOnDemand === true,
+            isCancellable: isCancellable !== false && isCancellable !== 'false',
+            isReturnable: isReturnable !== false && isReturnable !== 'false',
+            deliveryTime: parsedDeliveryTime, returnWindow,
             variations: parsedVariations,
             models: parsedModels,
             images: parsedImages
@@ -292,6 +327,31 @@ exports.updateProduct = async (req, res) => {
         // ... Implementation of updates ...
         // Quick update implementation for core fields:
         const updates = { ...req.body };
+
+        // Helper to parse bilingual fields
+        const parseBilingual = (field) => {
+            if (typeof field === 'string') {
+                try {
+                    const parsed = JSON.parse(field);
+                    return (typeof parsed === 'object') ? parsed : field;
+                } catch (e) { return field; }
+            }
+            return field;
+        };
+
+        if (updates.meta_title) updates.meta_title = parseBilingual(updates.meta_title);
+        if (updates.meta_description) updates.meta_description = parseBilingual(updates.meta_description);
+        if (updates.subtitle) updates.subtitle = parseBilingual(updates.subtitle);
+        if (updates.description) updates.description = parseBilingual(updates.description);
+        if (updates.deliveryTime) updates.deliveryTime = parseBilingual(updates.deliveryTime);
+
+        // Parse Title if JSON string
+        if (updates.title && typeof updates.title === 'string') {
+            try {
+                const parsedTitle = JSON.parse(updates.title);
+                if (typeof parsedTitle === 'object') updates.title = parsedTitle;
+            } catch (e) { }
+        }
 
         // Helper to get file from array
         const getFile = (name) => req.files?.find(f => f.fieldname === name);
@@ -383,6 +443,9 @@ exports.updateProduct = async (req, res) => {
         if (updates.isNewArrival !== undefined) updates.isNewArrival = updates.isNewArrival === 'true' || updates.isNewArrival === true;
         if (updates.isTopSale !== undefined) updates.isTopSale = updates.isTopSale === 'true' || updates.isTopSale === true;
         if (updates.isDailyOffer !== undefined) updates.isDailyOffer = updates.isDailyOffer === 'true' || updates.isDailyOffer === true;
+        if (updates.isOnDemand !== undefined) updates.isOnDemand = updates.isOnDemand === 'true' || updates.isOnDemand === true;
+        if (updates.isCancellable !== undefined) updates.isCancellable = updates.isCancellable === 'true' || updates.isCancellable === true;
+        if (updates.isReturnable !== undefined) updates.isReturnable = updates.isReturnable === 'true' || updates.isReturnable === true;
 
         if (updates.variations && typeof updates.variations === 'string') {
             try {
@@ -720,7 +783,7 @@ exports.exportProducts = async (req, res) => {
 
         const data = products.map(p => ({
             ID: p._id.toString(),
-            Title: p.title,
+            Title: p.title?.en || (typeof p.title === 'string' ? p.title : ''),
             Slug: p.slug,
             PartNumber: p.part_number || '',
             Category: p.category?.name || '',

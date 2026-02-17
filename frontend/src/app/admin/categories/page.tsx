@@ -1,17 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Modal from '../../components/Modal';
-import FormModal from '../../components/FormModal';
-import api from '../../utils/api';
-import DataTable from '../../components/DataTable';
-import { useModal } from '../../hooks/useModal';
-import { FiPlus, FiGrid, FiDownload } from 'react-icons/fi';
-import ReorderModal from './ReorderModal';
+import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
+import api from "../../utils/api";
+import { FiEdit2, FiTrash2, FiPlus, FiDownload, FiGrid } from "react-icons/fi";
+import Image from "next/image";
+import FormModal from "../../components/FormModal";
+import DataTable from "../../components/DataTable";
+import Modal from "../../components/Modal";
+import ErrorState from "../../components/ErrorState";
+import Loader from "../../components/Loader";
+import { useModal } from "../../hooks/useModal";
+import BilingualInput from "../../../components/forms/BilingualInput";
+import LanguageToggle from "../../../components/LanguageToggle";
+import { useLanguage } from "../../../context/LanguageContext";
+import ReorderModal from "./ReorderModal";
 
 interface Category {
     _id: string;
-    name: string;
+    name: string | { en: string; hi: string };
     slug: string;
     description: string;
     imageUrl: string;
@@ -22,151 +29,139 @@ interface Category {
     productCount: number;
 }
 
+interface FormInputs {
+    name_en: string;
+    name_hi: string;
+    slug: string;
+    description: string;
+    displayOrder: number;
+    showInNav: boolean;
+    imageUrl: string; // For manual URL
+}
+
 export default function CategoryManager() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
-    const [formData, setFormData] = useState({
-        name: '',
-        slug: '',
-        description: '',
-        imageUrl: '',
-        displayOrder: 0,
-        gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        isActive: true,
-        showInNav: false
-    });
-    const [editId, setEditId] = useState<string | null>(null);
-    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-    const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [filePreview, setFilePreview] = useState<string | null>(null);
+    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+    const [isReorderModalOpen, setIsReorderModalOpen] = useState(false);
 
-    const { modalState, hideModal, showSuccess, showError, showModal } = useModal();
-    // Removed direct token usage as api utility handles it
-    // const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
+    const { language } = useLanguage();
+
+    const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormInputs>();
+    const nameEn = watch('name_en');
 
     useEffect(() => {
         fetchCategories();
     }, []);
 
+    // Slug generation from English name
+    useEffect(() => {
+        if (nameEn && !editingId) {
+            setValue('slug', nameEn.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
+        }
+    }, [nameEn, editingId, setValue]);
+
     const fetchCategories = async () => {
+        setLoading(true);
+        setError(null);
         try {
-            // Changed to use api utility and admin route
             const res = await api.get('/admin/categories');
             setCategories(res.data);
-            setLoading(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            setError(error.message || "Failed to load categories");
+        } finally {
             setLoading(false);
         }
     };
 
-    const startAdd = () => {
-        resetForm();
-        setIsFormModalOpen(true);
+    const onSubmit = async (data: FormInputs) => {
+        try {
+            const formData = new FormData();
+
+            const nameObj = {
+                en: data.name_en,
+                hi: data.name_hi
+            };
+            formData.append('name', JSON.stringify(nameObj));
+            formData.append('slug', data.slug);
+            formData.append('description', data.description || '');
+            formData.append('displayOrder', data.displayOrder.toString());
+            formData.append('showInNav', data.showInNav.toString());
+
+            // Image handling
+            if (selectedFile) {
+                formData.append('image', selectedFile);
+            } else if (data.imageUrl) {
+                formData.append('imageUrl', data.imageUrl);
+            }
+
+            if (editingId) {
+                await api.put(`/admin/categories/${editingId}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                showSuccess('Category updated successfully');
+            } else {
+                await api.post('/admin/categories', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+                showSuccess('Category created successfully');
+            }
+
+            handleCloseFormModal();
+            fetchCategories();
+        } catch (error: any) {
+            console.error(error);
+            showError(error.response?.data?.message || 'Operation failed');
+        }
     };
 
-    const handleAddFromReorder = () => {
-        resetForm();
-        setIsFormModalOpen(true);
-        // We don't close reorder modal, so after adding it shows up there
-    };
-
-    const handleEdit = (category: Category) => {
-        setFormData({
-            name: category.name,
-            slug: category.slug,
-            description: category.description,
-            imageUrl: category.imageUrl,
-            displayOrder: category.displayOrder,
-            gradient: category.gradient,
-            isActive: category.isActive,
-            showInNav: category.showInNav
-        });
-        setEditId(category._id);
-        setFilePreview(category.imageUrl ? (category.imageUrl.startsWith('http') ? category.imageUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/${category.imageUrl}`) : null);
-        setIsFormModalOpen(true);
-    };
-
-    const resetForm = () => {
-        setFormData({
-            name: '',
+    const handleAdd = () => {
+        setEditingId(null);
+        reset({
+            name_en: '',
+            name_hi: '',
             slug: '',
             description: '',
-            imageUrl: '',
             displayOrder: 0,
-            gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            isActive: true,
-            showInNav: false
+            showInNav: false,
+            imageUrl: ''
         });
-        setEditId(null);
         setSelectedFile(null);
         setFilePreview(null);
+        setIsFormModalOpen(true);
+    };
+
+    const handleEdit = (cat: Category) => {
+        setEditingId(cat._id);
+
+        const nameEnVal = typeof cat.name === 'object' ? cat.name.en : cat.name;
+        const nameHiVal = typeof cat.name === 'object' ? cat.name.hi || '' : '';
+
+        setValue('name_en', nameEnVal);
+        setValue('name_hi', nameHiVal);
+        setValue('slug', cat.slug);
+        setValue('description', cat.description);
+        setValue('displayOrder', cat.displayOrder);
+        setValue('showInNav', cat.showInNav);
+        setValue('imageUrl', cat.imageUrl);
+
+        setSelectedFile(null);
+        setFilePreview(cat.imageUrl ? (cat.imageUrl.startsWith('http') ? cat.imageUrl : `/api/${cat.imageUrl}`) : null);
+        setIsFormModalOpen(true);
     };
 
     const handleCloseFormModal = () => {
         setIsFormModalOpen(false);
-        resetForm();
-    };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setSelectedFile(file);
-            setFormData({ ...formData, imageUrl: '' }); // Clear manual URL if file is selected
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setFilePreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const name = e.target.value;
-        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-        setFormData({ ...formData, name, slug });
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        try {
-            const data = new FormData();
-            // Append all form data except imageUrl (handle separately)
-            Object.entries(formData).forEach(([key, value]) => {
-                if (key !== 'imageUrl') {
-                    data.append(key, value.toString());
-                }
-            });
-
-            // Handle image: either file upload or URL
-            if (selectedFile) {
-                data.append('image', selectedFile);
-                // Don't send imageUrl when uploading a file
-            } else if (formData.imageUrl) {
-                // Only send imageUrl if it has a value and no file is selected
-                data.append('imageUrl', formData.imageUrl);
-            }
-
-            if (editId) {
-                await api.put(`/admin/categories/${editId}`, data, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                showSuccess('Category updated successfully!');
-            } else {
-                await api.post('/admin/categories', data, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
-                });
-                showSuccess('Category created successfully!');
-            }
-
-            resetForm();
-            fetchCategories();
-            setIsFormModalOpen(false);
-        } catch (error: any) {
-            const msg = error.response?.data?.message || 'Operation failed';
-            showError(msg);
-        }
+        setEditingId(null);
+        reset();
+        setSelectedFile(null);
+        setFilePreview(null);
     };
 
     const handleDelete = async (id: string) => {
@@ -176,19 +171,32 @@ export default function CategoryManager() {
             'warning',
             {
                 showCancel: true,
-                confirmText: 'Delete',
+                confirmText: "Delete",
+                cancelText: "Cancel",
                 onConfirm: async () => {
                     try {
                         await api.delete(`/admin/categories/${id}`);
                         fetchCategories();
-                        showSuccess('Category deleted successfully!');
+                        showSuccess("Category deleted successfully");
                     } catch (error: any) {
-                        const msg = error.response?.data?.message || 'Failed to delete category';
-                        showError(msg);
+                        showError(error.response?.data?.message || 'Delete failed');
                     }
                 }
             }
         );
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+            setValue('imageUrl', ''); // Clear manual URL
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFilePreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const handleExport = async (format: 'csv' | 'excel') => {
@@ -212,102 +220,42 @@ export default function CategoryManager() {
     };
 
     return (
-        <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <h3 style={{ marginBottom: 0 }}>Category Management</h3>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+        <div className="container">
+            <Modal
+                isOpen={modalState.isOpen}
+                onClose={hideModal}
+                title={modalState.title}
+                message={modalState.message}
+                type={modalState.type}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+                onConfirm={modalState.onConfirm}
+                showCancel={modalState.showCancel}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+                <h1 className="page-title" style={{ margin: 0, color: 'var(--text-primary)' }}>Category Manager</h1>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <div className="btn-group" style={{ display: 'flex', gap: '0.2rem' }}>
-                        <button
-                            onClick={() => handleExport('csv')}
-                            className="btn"
-                            style={{
-                                background: 'white',
-                                border: '2px solid #e2e8f0',
-                                padding: '0.75rem 1rem',
-                                borderRadius: '6px',
-                                color: '#475569',
-                                fontWeight: 600,
-                                fontSize: '1rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem'
-                            }}
-                        >
-                            <FiDownload /> CSV
-                        </button>
-                        <button
-                            onClick={() => handleExport('excel')}
-                            className="btn"
-                            style={{
-                                background: 'white',
-                                border: '2px solid #e2e8f0',
-                                padding: '0.75rem 1rem',
-                                borderRadius: '6px',
-                                color: '#475569',
-                                fontWeight: 600,
-                                fontSize: '1rem',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.5rem'
-                            }}
-                        >
-                            <FiDownload /> Excel
-                        </button>
+                        <button onClick={() => handleExport('csv')} className="btn btn-outline" title="Export as CSV"><FiDownload /> CSV</button>
+                        <button onClick={() => handleExport('excel')} className="btn btn-outline" title="Export as Excel"><FiDownload /> Excel</button>
                     </div>
-
-                    <div style={{ borderLeft: '1px solid #eee', margin: '0 0.5rem' }}></div>
-
-                    <button
-                        onClick={() => setIsReorderModalOpen(true)}
-                        className="btn"
-                        style={{
-                            background: 'white',
-                            border: '2px solid #e2e8f0',
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: '6px',
-                            color: '#475569',
-                            fontWeight: 600,
-                            fontSize: '1rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            transition: 'all 0.2s'
-                        }}
-                        onMouseOver={(e) => e.currentTarget.style.borderColor = '#cbd5e1'}
-                        onMouseOut={(e) => e.currentTarget.style.borderColor = '#e2e8f0'}
-                    >
-                        <FiGrid /> Reorder
-                    </button>
-                    <button
-                        onClick={startAdd}
-                        className="btn btn-primary"
-                        style={{
-                            background: '#F37021',
-                            border: 'none',
-                            padding: '0.75rem 1.5rem',
-                            borderRadius: '6px',
-                            color: 'white',
-                            fontWeight: 600,
-                            fontSize: '1rem',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
-                        }}
-                    >
-                        <FiPlus /> Add Category
-                    </button>
+                    <div style={{ borderLeft: '1px solid var(--border)', margin: '0 0.5rem' }}></div>
+                    <button onClick={() => setIsReorderModalOpen(true)} className="btn btn-outline"><FiGrid /> Reorder</button>
+                    <button onClick={handleAdd} className="btn btn-primary"><FiPlus /> Add Category</button>
                 </div>
             </div>
 
-            <div style={{ marginTop: '2rem' }}>
+            {loading ? (
+                <div style={{ padding: '5rem 0' }}><Loader /></div>
+            ) : error ? (
+                <div style={{ padding: '2rem 0' }}>
+                    <ErrorState message={error} onRetry={fetchCategories} />
+                </div>
+            ) : (
                 <DataTable
                     title="All Categories"
                     data={categories}
-                    loading={loading}
                     columns={[
                         {
                             header: 'Image',
@@ -323,17 +271,29 @@ export default function CategoryManager() {
                                     overflow: 'hidden'
                                 }}>
                                     {item.imageUrl && (
-                                        <img
-                                            src={item.imageUrl.startsWith('http') ? item.imageUrl : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/${item.imageUrl}`}
-                                            alt={item.name}
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        <Image
+                                            src={item.imageUrl.startsWith('http') ? item.imageUrl : `/api/${item.imageUrl}`}
+                                            alt={typeof item.name === 'string' ? item.name : item.name?.en || 'Category'}
+                                            width={40}
+                                            height={40}
+                                            style={{ objectFit: 'cover' }}
                                         />
                                     )}
                                 </div>
                             ),
                             sortable: false
                         },
-                        { header: 'Name', accessor: 'name', sortable: true, className: "font-semibold" },
+                        {
+                            header: 'Name',
+                            accessor: (item) => (
+                                <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                                    {typeof item.name === 'object'
+                                        ? (item.name[language] || item.name['en'])
+                                        : item.name}
+                                </div>
+                            ),
+                            sortable: true
+                        },
                         { header: 'Slug', accessor: 'slug', sortable: true, className: "text-muted" },
                         {
                             header: 'Products',
@@ -363,61 +323,67 @@ export default function CategoryManager() {
                     onDelete={(item) => handleDelete(item._id)}
                     itemsPerPage={10}
                 />
-            </div>
-
-            <Modal
-                isOpen={modalState.isOpen}
-                onClose={hideModal}
-                title={modalState.title}
-                message={modalState.message}
-                type={modalState.type}
-                confirmText={modalState.confirmText}
-                cancelText={modalState.cancelText}
-                onConfirm={modalState.onConfirm}
-                showCancel={modalState.showCancel}
-            />
+            )}
 
             <FormModal
                 isOpen={isFormModalOpen}
                 onClose={handleCloseFormModal}
-                title={editId ? 'Edit Category' : 'Add New Category'}
+                title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: '2rem' }}>
+                        <span>{editingId ? 'Edit Category' : 'Add New Category'}</span>
+                        <LanguageToggle />
+                    </div>
+                }
                 maxWidth="800px"
             >
-                <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
-                    <div className="form-group">
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Category Name</label>
-                        <input
-                            className="input"
+                <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+                    {/* Bilingual Name Input */}
+                    <div style={{ gridColumn: '1 / -1' }}>
+                        <BilingualInput
+                            label="Category Name"
+                            registerEn={register("name_en", { required: "English name is required" })}
+                            registerHi={register("name_hi")}
+                            errorEn={errors.name_en}
+                            errorHi={errors.name_hi}
+                            placeholderEn="e.g. Safety Gear"
+                            placeholderHi="उदा. सुरक्षा उपकरण"
                             required
-                            value={formData.name}
-                            onChange={handleNameChange}
-                            placeholder="e.g. Safety Gear"
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
                         />
                     </div>
+
                     <div className="form-group">
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Slug (URL Friendly)</label>
+                        <label className="form-label">Slug</label>
                         <input
-                            className="input"
-                            required
-                            value={formData.slug}
-                            onChange={e => setFormData({ ...formData, slug: e.target.value })}
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#f8fafc', fontSize: '1rem' }}
+                            {...register("slug", { required: true })}
+                            className="form-input"
+                            readOnly
+                            style={{ width: '100%', padding: '0.75rem', backgroundColor: 'var(--background)', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: '6px' }}
                         />
                     </div>
+
+                    <div className="form-group">
+                        <label className="form-label">Display Order</label>
+                        <input
+                            type="number"
+                            {...register("displayOrder")}
+                            className="form-input"
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border)' }}
+                        />
+                    </div>
+
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Description</label>
+                        <label className="form-label">Description</label>
                         <textarea
-                            className="input"
+                            {...register("description")}
+                            className="form-input"
                             rows={3}
-                            value={formData.description}
-                            onChange={e => setFormData({ ...formData, description: e.target.value })}
-                            placeholder="Brief description of the category..."
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontFamily: 'inherit', fontSize: '1rem' }}
+                            placeholder="Brief description..."
+                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border)', fontFamily: 'inherit' }}
                         />
                     </div>
+
                     <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Category Image</label>
+                        <label className="form-label">Category Image</label>
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
                             <div style={{ flex: 1 }}>
                                 <input
@@ -433,66 +399,50 @@ export default function CategoryManager() {
                                         display: 'block',
                                         padding: '0.75rem',
                                         borderRadius: '6px',
-                                        border: '2px dashed #cbd5e1',
+                                        border: '2px dashed var(--border)',
                                         textAlign: 'center',
                                         cursor: 'pointer',
-                                        color: '#64748b',
+                                        color: 'var(--text-muted)',
                                         transition: 'all 0.2s'
-                                    }}
-                                    onMouseOver={(e) => {
-                                        e.currentTarget.style.borderColor = '#94a3b8';
-                                        e.currentTarget.style.background = '#f8fafc';
-                                    }}
-                                    onMouseOut={(e) => {
-                                        e.currentTarget.style.borderColor = '#cbd5e1';
-                                        e.currentTarget.style.background = 'transparent';
                                     }}
                                 >
                                     {selectedFile ? selectedFile.name : 'Click to upload image'}
                                 </label>
-                                <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#64748b' }}>
-                                    Or provide an external URL:
-                                </div>
                                 <input
-                                    className="input"
-                                    value={formData.imageUrl}
-                                    onChange={e => {
-                                        setFormData({ ...formData, imageUrl: e.target.value });
+                                    {...register("imageUrl")}
+                                    className="form-input"
+                                    placeholder="Or provide external URL..."
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--border)', marginTop: '0.5rem' }}
+                                    onChange={(e) => {
+                                        setValue('imageUrl', e.target.value);
                                         if (e.target.value) {
                                             setFilePreview(e.target.value);
                                             setSelectedFile(null);
                                         }
                                     }}
-                                    placeholder="https://..."
-                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem', marginTop: '0.25rem' }}
                                 />
                             </div>
                             {filePreview && (
-                                <div style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                                    <img src={filePreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div style={{ width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', position: 'relative' }}>
+                                    <Image
+                                        src={filePreview}
+                                        alt="Preview"
+                                        fill
+                                        style={{ objectFit: 'cover' }}
+                                    />
                                 </div>
                             )}
                         </div>
-                    </div>
-                    <div className="form-group">
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#475569' }}>Display Order</label>
-                        <input
-                            type="number"
-                            className="input"
-                            value={formData.displayOrder}
-                            onChange={e => setFormData({ ...formData, displayOrder: parseInt(e.target.value) })}
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '1rem' }}
-                        />
                     </div>
 
                     <div className="form-group" style={{ display: 'flex', alignItems: 'center' }}>
                         <input
                             type="checkbox"
-                            checked={formData.showInNav}
-                            onChange={e => setFormData({ ...formData, showInNav: e.target.checked })}
+                            {...register("showInNav")}
+                            id="showInNav"
                             style={{ width: '20px', height: '20px', marginRight: '10px', cursor: 'pointer' }}
                         />
-                        <label style={{ cursor: 'pointer', userSelect: 'none', fontWeight: 600, color: '#475569' }}>
+                        <label htmlFor="showInNav" style={{ cursor: 'pointer', userSelect: 'none', fontWeight: 600, color: 'var(--text-primary)' }}>
                             Show in Header Navigation (Max 10)
                         </label>
                     </div>
@@ -502,51 +452,31 @@ export default function CategoryManager() {
                             type="button"
                             onClick={handleCloseFormModal}
                             className="btn"
-                            style={{
-                                background: '#cbd5e1',
-                                border: 'none',
-                                padding: '0.75rem 1.5rem',
-                                borderRadius: '6px',
-                                color: '#475569',
-                                fontWeight: 600,
-                                fontSize: '1rem',
-                                cursor: 'pointer'
-                            }}
+                            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '0.75rem 1.5rem', borderRadius: '6px' }}
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             className="btn btn-primary"
-                            style={{
-                                background: '#F37021',
-                                border: 'none',
-                                padding: '0.75rem 2rem',
-                                borderRadius: '6px',
-                                color: 'white',
-                                fontWeight: 600,
-                                fontSize: '1rem',
-                                cursor: 'pointer',
-                                transition: 'background 0.2s'
-                            }}
-                            onMouseOver={(e) => e.currentTarget.style.background = '#e65e0d'}
-                            onMouseOut={(e) => e.currentTarget.style.background = '#F37021'}
+                            style={{ padding: '0.75rem 2rem', borderRadius: '6px' }}
                         >
-                            {editId ? 'Update Category' : 'Create Category'}
+                            {editingId ? 'Update Category' : 'Create Category'}
                         </button>
                     </div>
                 </form>
             </FormModal>
+
             <ReorderModal
                 isOpen={isReorderModalOpen}
                 onClose={() => setIsReorderModalOpen(false)}
-                initialCategories={categories}
+                initialCategories={categories.filter(c => typeof c.name === 'string' || (c.name && c.name.en))} // Type safety
                 onSaveSuccess={() => {
                     fetchCategories();
                     showSuccess('Categories reordered successfully!');
                 }}
-                onAddCategory={handleAddFromReorder}
+                onAddCategory={handleAdd} // Helper to open add modal
             />
-        </div >
+        </div>
     );
 }

@@ -12,6 +12,9 @@ import { useRouter } from "next/navigation";
 import FormModal from "../../components/FormModal";
 import Modal from "../../components/Modal";
 import { useModal } from "../../hooks/useModal";
+import BilingualInput from "../../../components/forms/BilingualInput";
+import LanguageToggle from "../../../components/LanguageToggle";
+import { useLanguage } from "../../../context/LanguageContext";
 
 // --- Nested Model Component ---
 function ModelVariationManager({ modelIndex, control, register, errors, watch, VARIATION_SUGGESTIONS }: any) {
@@ -28,7 +31,7 @@ function ModelVariationManager({ modelIndex, control, register, errors, watch, V
                     type="button"
                     className="btn btn-sm btn-secondary"
                     style={{ fontSize: '0.7rem', padding: '2px 8px' }}
-                    onClick={() => append({ type: 'Color', value: '', price: 0, mrp: 0, stock: 0, isActive: true })}
+                    onClick={() => append({ type: 'Color', value: { en: '', hi: '' } as any, price: 0, mrp: 0, stock: 0, isActive: true })}
                 >
                     + Add Selection
                 </button>
@@ -53,92 +56,48 @@ function ModelVariationManager({ modelIndex, control, register, errors, watch, V
                             </tr>
                         </thead>
                         <tbody>
-                            {fields.map((field, vIdx) => {
-                                const rowMrp = watch(`models.${modelIndex}.variations.${vIdx}.mrp`);
-                                const rowPrice = watch(`models.${modelIndex}.variations.${vIdx}.price`);
-                                const isInvalidPrice = Number(rowMrp) > 0 && Number(rowPrice) >= Number(rowMrp);
-
-                                return (
-                                    <tr key={field.id}>
-                                        <td style={{ padding: '0.4rem', width: '60px' }}>
-                                            <div style={{
-                                                position: 'relative', width: '40px', height: '40px',
-                                                border: errors.models?.[modelIndex]?.variations?.[vIdx]?.imageFile ? '1px solid var(--danger)' : '1px solid #ddd',
-                                                borderRadius: '4px', overflow: 'hidden'
-                                            }}>
-                                                {watch(`models.${modelIndex}.variations.${vIdx}.imageFile`)?.[0] ? (
-                                                    <Image src={URL.createObjectURL(watch(`models.${modelIndex}.variations.${vIdx}.imageFile`)[0])} alt="New" fill style={{ objectFit: 'cover' }} />
-                                                ) : watch(`models.${modelIndex}.variations.${vIdx}.image`) ? (
-                                                    <Image src={watch(`models.${modelIndex}.variations.${vIdx}.image`)?.startsWith('http') ? watch(`models.${modelIndex}.variations.${vIdx}.image`) : `http://localhost:5000/${watch(`models.${modelIndex}.variations.${vIdx}.image`)}`} alt="Ext" fill style={{ objectFit: 'cover' }} />
-                                                ) : (
-                                                    <div style={{ width: '100%', height: '100%', background: '#f1f1f1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        <span style={{ fontSize: '10px', color: '#999' }}>+</span>
-                                                    </div>
-                                                )}
-                                                <input type="file" {...register(`models.${modelIndex}.variations.${vIdx}.imageFile`)} accept="image/*" style={{ position: 'absolute', opacity: 0, top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-                                            </div>
-                                        </td>
-                                        <td style={{ padding: '0.4rem' }}>
-                                            <select {...register(`models.${modelIndex}.variations.${vIdx}.type`)} className="form-select" style={{ padding: '2px', fontSize: '0.75rem' }}>
-                                                <option value="Color">Color</option>
-                                                <option value="Size">Size</option>
-                                                <option value="Weight">Weight</option>
-                                                <option value="Volume">Volume</option>
-                                                <option value="Battery">Battery</option>
-                                                <option value="Range">Range</option>
-                                                <option value="Storage">Storage</option>
-                                                <option value="Pack">Pack</option>
-                                                <option value="Other">Other</option>
-                                            </select>
-                                        </td>
-                                        <td style={{ padding: '0.4rem' }}>
-                                            <input
-                                                {...register(`models.${modelIndex}.variations.${vIdx}.value`)}
-                                                className="form-input"
-                                                placeholder="Value"
-                                                list={`model-${modelIndex}-suggestions-${vIdx}`}
-                                                style={{ padding: '2px', fontSize: '0.75rem', borderColor: errors.models?.[modelIndex]?.variations?.[vIdx]?.value ? 'var(--danger)' : undefined }}
-                                            />
-                                            {errors.models?.[modelIndex]?.variations?.[vIdx]?.value && (
-                                                <span style={{ color: 'var(--danger)', fontSize: '0.65rem' }}>Required</span>
+                            {fields.map((field, index) => (
+                                <tr key={field.id} style={{ borderBottom: '1px solid #eee' }}>
+                                    <td style={{ padding: '0.4rem' }}>
+                                        {/* Simplified Image Upload for nested variation */}
+                                        <div style={{ position: 'relative', width: '36px', height: '36px', border: '1px solid #ddd', borderRadius: '4px', overflow: 'hidden' }}>
+                                            {watch(`models.${modelIndex}.variations.${index}.image`) ? (
+                                                <Image src={watch(`models.${modelIndex}.variations.${index}.image`)?.startsWith('http') ? watch(`models.${modelIndex}.variations.${index}.image`) : `http://localhost:5000/${watch(`models.${modelIndex}.variations.${index}.image`)}`} alt="Img" fill style={{ objectFit: 'cover' }} />
+                                            ) : (
+                                                <FiImage style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', color: '#cbd5e1' }} />
                                             )}
-                                            <datalist id={`model-${modelIndex}-suggestions-${vIdx}`}>
-                                                {VARIATION_SUGGESTIONS[watch(`models.${modelIndex}.variations.${vIdx}.type`)]?.map((opt: string) => (
+                                            <input type="file" {...register(`models.${modelIndex}.variations.${index}.imageFile`)} accept="image/*" style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '0.4rem' }}>
+                                        <select {...register(`models.${modelIndex}.variations.${index}.type`)} style={{ width: '80px', padding: '0.2rem', fontSize: '0.75rem', border: '1px solid #E2E8F0', borderRadius: '4px' }}>
+                                            <option value="Color">Color</option>
+                                            <option value="Size">Size</option>
+                                            <option value="Weight">Weight</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </td>
+                                    <td style={{ padding: '0.4rem' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                            <input {...register(`models.${modelIndex}.variations.${index}.value.en`)} placeholder="Standard (En)" list={`model-${modelIndex}-suggestions-${index}`} style={{ padding: '0.2rem', fontSize: '0.75rem', border: '1px solid #E2E8F0', borderRadius: '4px' }} />
+                                            <input {...register(`models.${modelIndex}.variations.${index}.value.hi`)} placeholder="मानक (Hi)" style={{ padding: '0.2rem', fontSize: '0.75rem', border: '1px solid #E2E8F0', borderRadius: '4px' }} />
+                                            <datalist id={`model-${modelIndex}-suggestions-${index}`}>
+                                                {VARIATION_SUGGESTIONS[watch(`models.${modelIndex}.variations.${index}.type`)]?.map((opt: string) => (
                                                     <option key={opt} value={opt} />
                                                 ))}
                                             </datalist>
-                                        </td>
-                                        <td style={{ padding: '0.4rem' }}>
-                                            <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.mrp`)} className="form-input" style={{ padding: '2px', width: '60px', fontSize: '0.75rem' }} />
-                                        </td>
-                                        <td style={{ padding: '0.4rem' }}>
-                                            <input
-                                                type="number"
-                                                {...register(`models.${modelIndex}.variations.${vIdx}.price`)}
-                                                className="form-input"
-                                                style={{
-                                                    padding: '2px',
-                                                    width: '60px',
-                                                    fontSize: '0.75rem',
-                                                    borderColor: (errors.models?.[modelIndex]?.variations?.[vIdx]?.price || isInvalidPrice) ? 'var(--danger)' : undefined
-                                                }}
-                                            />
-                                            {(errors.models?.[modelIndex]?.variations?.[vIdx]?.price?.message || isInvalidPrice) && (
-                                                <div style={{ color: 'var(--danger)', fontSize: '0.65rem', lineHeight: 1.1 }}>
-                                                    {errors.models?.[modelIndex]?.variations?.[vIdx]?.price?.message || "MRP > Price"}
-                                                </div>
-                                            )}
-                                        </td>
-
-                                        <td style={{ padding: '0.4rem' }}>
-                                            <input type="number" {...register(`models.${modelIndex}.variations.${vIdx}.stock`)} className="form-input" style={{ padding: '2px', width: '50px', fontSize: '0.75rem' }} />
-                                        </td>
-                                        <td style={{ padding: '0.4rem', textAlign: 'center' }}>
-                                            <button type="button" onClick={() => remove(vIdx)} style={{ color: 'var(--danger)', border: 'none', background: 'none' }}><FiTrash2 size={14} /></button>
-                                        </td>
-                                    </tr>
-                                )
-                            })}
+                                        </div>
+                                    </td>
+                                    <td style={{ padding: '0.4rem' }}><input type="number" {...register(`models.${modelIndex}.variations.${index}.mrp`)} placeholder="MRP" style={{ width: '60px', padding: '0.2rem', fontSize: '0.75rem', border: '1px solid #E2E8F0', borderRadius: '4px' }} /></td>
+                                    <td style={{ padding: '0.4rem' }}><input type="number" {...register(`models.${modelIndex}.variations.${index}.price`)} placeholder="Price" style={{ width: '60px', padding: '0.2rem', fontSize: '0.75rem', border: '1px solid #E2E8F0', borderRadius: '4px' }} /></td>
+                                    <td style={{ padding: '0.4rem' }}><input type="number" {...register(`models.${modelIndex}.variations.${index}.stock`)} placeholder="Qty" style={{ width: '50px', padding: '0.2rem', fontSize: '0.75rem', border: '1px solid #E2E8F0', borderRadius: '4px' }} /></td>
+                                    <td style={{ padding: '0.4rem' }}><input {...register(`models.${modelIndex}.variations.${index}.sku`)} placeholder="SKU" style={{ width: '80px', padding: '0.2rem', fontSize: '0.75rem', border: '1px solid #E2E8F0', borderRadius: '4px' }} /></td>
+                                    <td style={{ padding: '0.4rem', textAlign: 'center' }}><input type="checkbox" {...register(`models.${modelIndex}.variations.${index}.isActive`)} /></td>
+                                    <td style={{ padding: '0.4rem', textAlign: 'center' }}>
+                                        <button type="button" onClick={() => remove(index)} style={{ border: 'none', background: 'none', color: '#EF4444', cursor: 'pointer' }}><FiX /></button>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </div>
@@ -149,9 +108,21 @@ function ModelVariationManager({ modelIndex, control, register, errors, watch, V
 
 // --- Schema ---
 const productSchema = z.object({
-    title: z.string().min(3, "Title is required"),
+    title: z.union([
+        z.string().min(3, "Title is required"),
+        z.object({
+            en: z.string().min(3, "English title is required"),
+            hi: z.string().optional()
+        })
+    ]),
     slug: z.string().min(3, "Slug is required"),
-    subtitle: z.string().optional(),
+    subtitle: z.union([
+        z.string(),
+        z.object({
+            en: z.string().optional(),
+            hi: z.string().optional()
+        })
+    ]).optional(),
     part_number: z.string().optional(),
 
     category: z.string().min(1, "Category is required"),
@@ -171,14 +142,32 @@ const productSchema = z.object({
     low_stock_threshold: z.coerce.number().default(5),
     max_unit_buy: z.coerce.number().optional(),
 
-    description: z.string().optional(),
+    description: z.union([
+        z.string(),
+        z.object({
+            en: z.string().optional(),
+            hi: z.string().optional()
+        })
+    ]).optional(),
 
     color_name: z.string().optional(),
     color_hex: z.string().optional(),
     size: z.string().optional(),
 
-    meta_title: z.string().optional(),
-    meta_description: z.string().optional(),
+    meta_title: z.union([
+        z.string(),
+        z.object({
+            en: z.string().optional(),
+            hi: z.string().optional()
+        })
+    ]).optional(),
+    meta_description: z.union([
+        z.string(),
+        z.object({
+            en: z.string().optional(),
+            hi: z.string().optional()
+        })
+    ]).optional(),
 
     isFeatured: z.boolean().default(false),
     isNewArrival: z.boolean().default(false),
@@ -188,19 +177,32 @@ const productSchema = z.object({
     isOnDemand: z.boolean().default(false),
     isCancellable: z.boolean().default(true),
     isReturnable: z.boolean().default(true),
-    deliveryTime: z.string().optional(),
+    deliveryTime: z.union([
+        z.string(),
+        z.object({
+            en: z.string().optional(),
+            hi: z.string().optional()
+        })
+    ]).optional(),
     returnWindow: z.coerce.number().default(7),
 
     // Variations
     variations: z.array(z.object({
-        type: z.enum(['Color', 'Size', 'Weight', 'Volume', 'Pack', 'Battery', 'Range', 'Storage', 'Other']),
-        value: z.string().min(1, "Value is required"),
-        price: z.coerce.number().min(1, "Price is required"),
+        type: z.string(),
+        value: z.union([
+            z.string(),
+            z.object({
+                en: z.string().optional(),
+                hi: z.string().optional()
+            })
+        ]),
+        price: z.coerce.number(),
         mrp: z.coerce.number().optional(),
-        stock: z.coerce.number().default(0),
+        stock: z.coerce.number(),
         sku: z.string().optional(),
-        isActive: z.boolean().default(true),
         image: z.string().optional(),
+        isActive: z.boolean().default(true),
+        // helper for file upload
         imageFile: z.any().optional(),
         _id: z.string().optional()
     }).refine((data) => !data.mrp || Number(data.mrp) > Number(data.price), {
@@ -210,7 +212,13 @@ const productSchema = z.object({
     // Models
     models: z.array(z.object({
         _id: z.string().optional(),
-        name: z.string().min(1, "Model name is required"),
+        name: z.union([
+            z.string().min(1, "Model name is required"),
+            z.object({
+                en: z.string().min(1, "English model name is required"),
+                hi: z.string().optional()
+            })
+        ]),
         mrp: z.coerce.number().optional(),
         selling_price_a: z.coerce.number().optional(),
         isActive: z.boolean().default(true),
@@ -218,11 +226,17 @@ const productSchema = z.object({
         imageFile: z.any().optional(),
         variations: z.array(z.object({
             _id: z.string().optional(),
-            type: z.enum(['Color', 'Size', 'Weight', 'Volume', 'Pack', 'Battery', 'Range', 'Storage', 'Other']),
-            value: z.string().min(1, "Value is required"),
-            price: z.coerce.number().min(1, "Price is required"),
+            type: z.string(),
+            value: z.union([
+                z.string().min(1, "Value is required"),
+                z.object({
+                    en: z.string().min(1, "English value is required"),
+                    hi: z.string().optional()
+                })
+            ]),
+            price: z.coerce.number(),
             mrp: z.coerce.number().optional(),
-            stock: z.coerce.number().default(0),
+            stock: z.coerce.number(),
             sku: z.string().optional(),
             isActive: z.boolean().default(true),
             image: z.string().optional(),
@@ -263,6 +277,7 @@ interface ProductImage {
 export default function ProductForm({ productId }: ProductFormProps) {
     const router = useRouter();
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
+    const { language } = useLanguage();
 
     // Applied Offers Dropdown State
     const [isOfferDropdownOpen, setIsOfferDropdownOpen] = useState(false);
@@ -352,8 +367,11 @@ export default function ProductForm({ productId }: ProductFormProps) {
     // Auto Generate Slug (Only in Create Mode)
     useEffect(() => {
         if (!productId && productTitle) {
-            const slug = productTitle.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
-            setValue("slug", slug);
+            const titleStr = typeof productTitle === 'string' ? productTitle : productTitle?.en;
+            if (titleStr) {
+                const slug = titleStr.toLowerCase().replace(/ /g, "-").replace(/[^\w-]+/g, "");
+                setValue("slug", slug);
+            }
         }
     }, [productTitle, setValue, productId]);
 
@@ -390,9 +408,9 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
                     // Populate Form
                     reset({
-                        title: product.title,
+                        title: (typeof product.title === 'string' ? { en: product.title, hi: '' } : product.title),
                         slug: product.slug,
-                        subtitle: product.subtitle,
+                        subtitle: typeof product.subtitle === 'string' ? { en: product.subtitle, hi: '' } : product.subtitle,
                         part_number: product.part_number,
                         category: categoryId,
                         sub_category: Array.isArray(product.sub_category) ? (product.sub_category[0]?._id || product.sub_category[0]) : (product.sub_category?._id || product.sub_category),
@@ -408,12 +426,12 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         opening_stock: product.opening_stock,
                         low_stock_threshold: product.low_stock_threshold,
                         max_unit_buy: product.max_unit_buy,
-                        description: product.description,
+                        description: typeof product.description === 'string' ? { en: product.description, hi: '' } : product.description,
                         color_name: product.color_name,
                         color_hex: product.color_hex,
                         size: product.size,
-                        meta_title: product.meta_title,
-                        meta_description: product.meta_description,
+                        meta_title: (typeof product.meta_title === 'string' ? { en: product.meta_title, hi: '' } : product.meta_title),
+                        meta_description: (typeof product.meta_description === 'string' ? { en: product.meta_description, hi: '' } : product.meta_description),
                         isFeatured: product.isFeatured || false,
                         isNewArrival: product.isNewArrival || false,
                         isTopSale: product.isTopSale || false,
@@ -422,10 +440,20 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         isOnDemand: product.isOnDemand || false,
                         isCancellable: product.isCancellable !== false,
                         isReturnable: product.isReturnable !== false,
-                        deliveryTime: product.deliveryTime || '3-5 business days',
+                        deliveryTime: typeof product.deliveryTime === 'string' ? { en: product.deliveryTime, hi: '' } : (product.deliveryTime || { en: '3-5 business days', hi: '' }),
                         returnWindow: product.returnWindow || 7,
-                        variations: product.variations || [],
-                        models: product.models || []
+                        variations: (product.variations || []).map((v: any) => ({
+                            ...v,
+                            value: typeof v.value === 'string' ? { en: v.value, hi: '' } : v.value
+                        })),
+                        models: (product.models || []).map((m: any) => ({
+                            ...m,
+                            name: typeof m.name === 'string' ? { en: m.name, hi: '' } : m.name,
+                            variations: (m.variations || []).map((mv: any) => ({
+                                ...mv,
+                                value: typeof mv.value === 'string' ? { en: mv.value, hi: '' } : mv.value
+                            }))
+                        }))
                     });
 
                     // Set Variation Mode
@@ -885,12 +913,22 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
                     {/* Basic Info Card */}
                     <div className="card">
-                        <div className="card-header">Basic Details</div>
+                        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>Basic Details</span>
+                            <LanguageToggle />
+                        </div>
                         <div className="form-grid">
                             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                                <label className="form-label">Product Title *</label>
-                                <input {...register("title")} className="form-input" placeholder="e.g. Heavy Duty Drill" style={{ borderColor: errors.title ? 'var(--danger)' : undefined }} />
-                                {errors.title && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.title.message as string}</span>}
+                                <BilingualInput
+                                    label="Product Title *"
+                                    registerEn={register("title.en", { required: "English title is required" })}
+                                    registerHi={register("title.hi")}
+                                    errorEn={errors.title && (errors.title as any).en}
+                                    errorHi={errors.title && (errors.title as any).hi}
+                                    placeholderEn="e.g. Heavy Duty Drill"
+                                    placeholderHi="उदा. हैवी ड्यूटी ड्रिल"
+                                    required
+                                />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Slug</label>
@@ -901,22 +939,50 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                 <input {...register("part_number")} className="form-input" placeholder="MFG-001" />
                             </div>
                             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                                <label className="form-label">Subtitle</label>
-                                <input {...register("subtitle")} className="form-input" placeholder="Short description" />
+                                <BilingualInput
+                                    label="Subtitle"
+                                    registerEn={register("subtitle.en")}
+                                    registerHi={register("subtitle.hi")}
+                                    errorEn={errors.subtitle && (errors.subtitle as any).en}
+                                    errorHi={errors.subtitle && (errors.subtitle as any).hi}
+                                    placeholderEn="Short description"
+                                    placeholderHi="संक्षिप्त विवरण"
+                                />
                             </div>
                             <div className="form-group" style={{ gridColumn: '1 / -1' }}>
-                                <label className="form-label">Description</label>
-                                <Controller
-                                    name="description"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <RichTextEditor
-                                            value={field.value}
-                                            onChange={(data) => field.onChange(data)}
-                                            placeholder="Detailed product description..."
-                                        />
-                                    )}
-                                />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                    <label className="form-label">Description</label>
+                                    <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--primary)', backgroundColor: 'rgba(59, 130, 246, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                                        {language === 'en' ? 'English' : 'हिंदी'} Mode
+                                    </div>
+                                </div>
+                                <div style={{ display: language === 'en' ? 'block' : 'none' }}>
+                                    <Controller
+                                        name="description.en"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <RichTextEditor
+                                                value={field.value}
+                                                onChange={(data) => field.onChange(data)}
+                                                placeholder="Detailed product description in English..."
+                                            />
+                                        )}
+                                    />
+                                    {errors.description && (errors.description as any).en && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{(errors.description as any).en.message}</span>}
+                                </div>
+                                <div style={{ display: language === 'hi' ? 'block' : 'none' }}>
+                                    <Controller
+                                        name="description.hi"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <RichTextEditor
+                                                value={field.value}
+                                                onChange={(data) => field.onChange(data)}
+                                                placeholder="हिंदी में विस्तृत उत्पाद विवरण..."
+                                            />
+                                        )}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -991,7 +1057,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                         <button
                                             type="button"
                                             className="btn btn-sm btn-secondary"
-                                            onClick={() => appendModel({ name: '', variations: [], isActive: true })}
+                                            onClick={() => appendModel({ name: { en: '', hi: '' } as any, variations: [], isActive: true })}
                                         >
                                             + Add New Model
                                         </button>
@@ -999,7 +1065,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                     <div>
                                         {modelFields.length === 0 ? (
                                             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', border: '2px dashed var(--border)', borderRadius: '12px' }}>
-                                                <p style={{ margin: 0 }}>Click "+ Add New Model" to start building your product structure.</p>
+                                                <p style={{ margin: 0 }}>Click &quot;+ Add New Model&quot; to start building your product structure.</p>
                                             </div>
                                         ) : (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -1023,9 +1089,14 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                                 </div>
                                                                 <div style={{ flex: 1, paddingRight: '1rem' }}>
                                                                     <div className="form-group" style={{ marginBottom: 0 }}>
-                                                                        <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748B' }}>Model Name</label>
-                                                                        <input {...register(`models.${mIdx}.name`)} className="form-input" placeholder="e.g. Pro Edition" style={{ borderColor: errors.models?.[mIdx]?.name ? 'var(--danger)' : undefined }} />
-                                                                        {errors.models?.[mIdx]?.name && <span style={{ color: 'var(--danger)', fontSize: '0.7rem' }}>Title is required</span>}
+                                                                        <BilingualInput
+                                                                            label="Model Name"
+                                                                            registerEn={register(`models.${mIdx}.name.en` as any)}
+                                                                            registerHi={register(`models.${mIdx}.name.hi` as any)}
+                                                                            placeholderEn="e.g. Pro Edition"
+                                                                            placeholderHi="उदा. प्रो एडिशन"
+                                                                            required
+                                                                        />
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1051,7 +1122,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                         <button
                                             type="button"
                                             className="btn btn-sm btn-secondary"
-                                            onClick={() => append({ type: 'Size', value: '', price: sellingPrice || 0, mrp: mrp || 0, stock: 0, isActive: true })}
+                                            onClick={() => append({ type: 'Size', value: { en: '', hi: '' } as any, price: sellingPrice || 0, mrp: mrp || 0, stock: 0, isActive: true })}
                                         >
                                             + Add Selection
                                         </button>
@@ -1134,22 +1205,34 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                                                         <input type="hidden" {...register(`variations.${index}._id`)} />
                                                                     </td>
                                                                     <td style={{ padding: '0.5rem' }}>
-                                                                        <input
-                                                                            {...register(`variations.${index}.value`)}
-                                                                            className="form-input"
-                                                                            placeholder="Value"
-                                                                            style={{
-                                                                                fontSize: '0.85rem',
-                                                                                padding: '0.3rem',
-                                                                                borderColor: errors.variations?.[index]?.value ? 'var(--danger)' : undefined
-                                                                            }}
-                                                                            list={`suggestions-${index}`}
-                                                                        />
-                                                                        <datalist id={`suggestions-${index}`}>
-                                                                            {VARIATION_SUGGESTIONS[watch(`variations.${index}.type`)]?.map(opt => (
-                                                                                <option key={opt} value={opt} />
-                                                                            ))}
-                                                                        </datalist>
+                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                                                            <input
+                                                                                {...register(`variations.${index}.value.en`)}
+                                                                                className="form-input"
+                                                                                placeholder="Value (En)"
+                                                                                list={`suggestions-${index}`}
+                                                                                style={{
+                                                                                    fontSize: '0.8.5rem',
+                                                                                    padding: '0.3rem',
+                                                                                    borderColor: errors.variations?.[index]?.value ? 'var(--danger)' : undefined
+                                                                                }}
+                                                                            />
+                                                                            <input
+                                                                                {...register(`variations.${index}.value.hi`)}
+                                                                                className="form-input"
+                                                                                placeholder="मूल्य (Hi)"
+                                                                                style={{
+                                                                                    fontSize: '0.85rem',
+                                                                                    padding: '0.3rem',
+                                                                                    borderColor: errors.variations?.[index]?.value ? 'var(--danger)' : undefined
+                                                                                }}
+                                                                            />
+                                                                            <datalist id={`suggestions-${index}`}>
+                                                                                {VARIATION_SUGGESTIONS[watch(`variations.${index}.type`)]?.map(opt => (
+                                                                                    <option key={opt} value={opt} />
+                                                                                ))}
+                                                                            </datalist>
+                                                                        </div>
                                                                         {errors.variations?.[index]?.value && <span style={{ color: 'red', fontSize: '0.7rem' }}>Required</span>}
                                                                     </td>
                                                                     <td style={{ padding: '0.5rem' }}>
@@ -1258,6 +1341,46 @@ export default function ProductForm({ productId }: ProductFormProps) {
 
                     </div>
 
+                    {/* SEO Settings */}
+                    <div className="card">
+                        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <span>SEO & Metadata</span>
+                            <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 'normal' }}>Search Engine Optimization</span>
+                        </div>
+                        <div className="form-grid">
+                            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                <BilingualInput
+                                    label="Meta Title"
+                                    registerEn={register("meta_title.en")}
+                                    registerHi={register("meta_title.hi")}
+                                    errorEn={errors.meta_title && (errors.meta_title as any).en}
+                                    errorHi={errors.meta_title && (errors.meta_title as any).hi}
+                                    placeholderEn="Title for search engines (max 60 chars)"
+                                    placeholderHi="सर्च इंजन के लिए शीर्षक"
+                                />
+                                <span style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '-1rem', marginBottom: '1rem', display: 'block' }}>
+                                    Recommended length: 50-60 characters
+                                </span>
+                            </div>
+                            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                                <BilingualInput
+                                    label="Meta Description"
+                                    registerEn={register("meta_description.en")}
+                                    registerHi={register("meta_description.hi")}
+                                    errorEn={errors.meta_description && (errors.meta_description as any).en}
+                                    errorHi={errors.meta_description && (errors.meta_description as any).hi}
+                                    placeholderEn="Description for search results (max 160 chars)"
+                                    placeholderHi="खोज परिणामों के लिए विवरण"
+                                    multiline
+                                    rows={3}
+                                />
+                                <span style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '-1rem', display: 'block' }}>
+                                    Recommended length: 150-160 characters
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* Right Column (Sidebar Info) */}
@@ -1307,8 +1430,15 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         <div style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
                             <div className="form-grid">
                                 <div className="form-group">
-                                    <label className="form-label">Delivery Estimate</label>
-                                    <input type="text" {...register("deliveryTime")} className="form-input" placeholder="e.g. 3-5 business days" />
+                                    <BilingualInput
+                                        label="Delivery Estimate"
+                                        registerEn={register("deliveryTime.en")}
+                                        registerHi={register("deliveryTime.hi")}
+                                        errorEn={errors.deliveryTime && (errors.deliveryTime as any).en}
+                                        errorHi={errors.deliveryTime && (errors.deliveryTime as any).hi}
+                                        placeholderEn="e.g. 3-5 business days"
+                                        placeholderHi="उदा. 3-5 कार्य दिवस"
+                                    />
                                 </div>
                                 <div className="form-group">
                                     <label className="form-label">Return Window (Days)</label>
@@ -1326,7 +1456,9 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             <label className="form-label">Category *</label>
                             <select {...register("category")} className="form-select" style={{ borderColor: errors.category ? 'var(--danger)' : undefined }}>
                                 <option value="">-- Select Category --</option>
-                                {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                                {categories.map(c => <option key={c._id} value={c._id}>
+                                    {typeof c.name === 'string' ? c.name : (c.name[language] || c.name.en)}
+                                </option>)}
                             </select>
                             {errors.category && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.category.message as string}</span>}
                         </div>
@@ -1334,7 +1466,9 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             <label className="form-label">Sub-Category</label>
                             <select {...register("sub_category")} className="form-select">
                                 <option value="">-- Select Sub-Category --</option>
-                                {subCategories.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
+                                {subCategories.map(s => <option key={s._id} value={s._id}>
+                                    {typeof s.name === 'string' ? s.name : (s.name[language] || s.name.en)}
+                                </option>)}
                             </select>
                         </div>
                         <div className="form-group" style={{ marginBottom: '1rem' }}>
@@ -1514,7 +1648,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', marginTop: '1rem' }}>
                             {productImages.length === 0 ? (
                                 <div style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', padding: '1rem', border: '1px dashed #eee', borderRadius: '8px' }}>
-                                    No images added. Click "Manage Images" to add.
+                                    No images added. Click &quot;Manage Images&quot; to add.
                                 </div>
                             ) : (
                                 productImages.map((img, idx) => (

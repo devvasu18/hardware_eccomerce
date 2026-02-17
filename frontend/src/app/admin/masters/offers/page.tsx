@@ -9,10 +9,13 @@ import FormModal from "../../../components/FormModal";
 import DataTable from "../../../components/DataTable";
 import Modal from "../../../components/Modal";
 import { useModal } from "../../../hooks/useModal";
+import BilingualInput from "../../../../components/forms/BilingualInput";
+import LanguageToggle from "../../../../components/LanguageToggle";
+import { useLanguage } from "../../../../context/LanguageContext";
 
 interface Offer {
     _id: string;
-    title: string;
+    title: string | { en: string; hi: string };
     slug: string;
     percentage: number;
     banner_image: string;
@@ -20,7 +23,7 @@ interface Offer {
 }
 
 interface FormData {
-    title: string;
+    title: { en: string; hi: string };
     slug: string;
     percentage: number;
     isActive: boolean;
@@ -45,6 +48,7 @@ export default function OfferMaster() {
             isActive: true
         }
     });
+    const { language } = useLanguage();
     const title = watch('title');
 
     useEffect(() => {
@@ -52,10 +56,10 @@ export default function OfferMaster() {
     }, [statusFilter]);
 
     useEffect(() => {
-        if (title && !editingOffer) {
-            setValue('slug', title.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
+        if (title?.en && !editingOffer) {
+            setValue('slug', title.en.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
         }
-    }, [title, setValue, editingOffer]);
+    }, [title?.en, setValue, editingOffer]);
 
     const fetchOffers = async () => {
         try {
@@ -100,7 +104,7 @@ export default function OfferMaster() {
         setSubmitting(true);
         try {
             const formData = new FormData();
-            formData.append('title', data.title);
+            formData.append('title', JSON.stringify(data.title));
             formData.append('slug', data.slug);
             formData.append('percentage', data.percentage.toString());
             formData.append('isActive', data.isActive.toString());
@@ -132,7 +136,7 @@ export default function OfferMaster() {
     const handleAdd = () => {
         setEditingOffer(null);
         reset({
-            title: '',
+            title: { en: '', hi: '' },
             slug: '',
             percentage: 0,
             isActive: true
@@ -145,8 +149,9 @@ export default function OfferMaster() {
 
     const handleEdit = (offer: Offer) => {
         setEditingOffer(offer);
+        const titleVal = typeof offer.title === 'string' ? { en: offer.title, hi: '' } : offer.title;
         reset({
-            title: offer.title,
+            title: titleVal,
             slug: offer.slug,
             percentage: offer.percentage,
             isActive: offer.isActive
@@ -290,7 +295,7 @@ export default function OfferMaster() {
                                     {item.banner_image ? (
                                         <Image
                                             src={item.banner_image.startsWith('http') ? item.banner_image : `/api/${item.banner_image}`}
-                                            alt={item.title}
+                                            alt={typeof item.title === 'string' ? item.title : item.title.en}
                                             fill
                                             style={{ objectFit: 'cover' }}
                                         />
@@ -301,7 +306,15 @@ export default function OfferMaster() {
                             ),
                             sortable: false
                         },
-                        { header: 'Title', accessor: 'title', sortable: true, className: "font-medium" },
+                        {
+                            header: 'Title',
+                            accessor: (item) => (
+                                <span className="font-medium">
+                                    {typeof item.title === 'string' ? item.title : (item.title[language] || item.title.en)}
+                                </span>
+                            ),
+                            sortable: true
+                        },
                         {
                             header: 'Percentage',
                             accessor: (item) => (
@@ -343,21 +356,22 @@ export default function OfferMaster() {
                 onClose={handleCloseModal}
                 title={editingOffer ? "Edit Offer" : "Create New Offer Bucket"}
             >
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                    <LanguageToggle />
+                </div>
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <div className="form-group">
-                            <label className="form-label">Offer Title *</label>
-                            <input
-                                {...register("title", { required: true })}
-                                className="form-input"
-                                placeholder="e.g. Monsoon Sale"
-                                style={{
-                                    width: '100%',
-                                    padding: '0.5rem',
-                                    border: errors.title ? '1px solid #ef4444' : '1px solid #e2e8f0'
-                                }}
+                            <BilingualInput
+                                label="Offer Title *"
+                                registerEn={register("title.en", { required: "English title is required" })}
+                                registerHi={register("title.hi")}
+                                errorEn={errors.title?.en}
+                                errorHi={errors.title?.hi}
+                                placeholderEn="e.g. Monsoon Sale"
+                                placeholderHi="e.g. मानसून सेल"
+                                required
                             />
-                            {errors.title && <span style={{ color: '#ef4444', fontSize: '0.75rem' }}>Title is required</span>}
                         </div>
                         <div className="form-group">
                             <label className="form-label">Discount Percentage (%) *</label>

@@ -7,6 +7,8 @@ import Image from "next/image";
 import { FiEdit2, FiTrash2, FiPlus, FiEye, FiSearch, FiRefreshCw, FiChevronLeft, FiChevronRight, FiUpload, FiDownload, FiExternalLink, FiX } from "react-icons/fi";
 import Modal from "../../components/Modal";
 import { useModal } from "../../hooks/useModal";
+import { useLanguage } from "../../../context/LanguageContext";
+import LanguageToggle from "../../../components/LanguageToggle";
 
 interface Variation {
     _id?: string;
@@ -30,11 +32,11 @@ interface Model {
 
 interface Product {
     _id: string;
-    title: string;
+    title: string | { en: string; hi: string };
     slug: string;
     category: {
         _id: string;
-        name: string;
+        name: string | { en: string; hi: string };
     };
     brand: {
         _id: string;
@@ -57,6 +59,7 @@ interface Product {
 }
 
 export default function ProductList() {
+    const { language } = useLanguage();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -292,9 +295,9 @@ export default function ProductList() {
                 showCancel={modalState.showCancel}
             />
             <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-                <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <h1 className="page-title">Product Manager</h1>
-
+                    <LanguageToggle />
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <div className="btn-group" style={{ display: 'flex', gap: '0.2rem' }}>
@@ -481,7 +484,7 @@ export default function ProductList() {
                                                 {product.featured_image ? (
                                                     <Image
                                                         src={product.featured_image.startsWith('http') ? product.featured_image : `http://localhost:5000/${product.featured_image}`}
-                                                        alt={product.title}
+                                                        alt={typeof product.title === 'string' ? product.title : (product.title[language] || product.title.en)}
                                                         fill
                                                         unoptimized
                                                         style={{ objectFit: 'contain' }}
@@ -491,14 +494,18 @@ export default function ProductList() {
                                                 )}
                                             </div>
                                             <div>
-                                                <div style={{ fontWeight: 600, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={product.title}>{product.title}</div>
+                                                <div style={{ fontWeight: 600, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={typeof product.title === 'string' ? product.title : (product.title[language] || product.title.en)}>
+                                                    {typeof product.title === 'string' ? product.title : (product.title[language] || product.title.en)}
+                                                </div>
                                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>SKU: {product.slug}</div>
                                                 {!product.isActive && <span style={{ fontSize: '0.7rem', background: '#eee', padding: '2px 6px', borderRadius: '4px', color: '#666' }}>Inactive</span>}
                                             </div>
                                         </div>
                                     </td>
                                     <td data-label="Category & Brand">
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{product.category?.name || 'Uncategorized'}</div>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                                            {typeof product.category?.name === 'string' ? product.category.name : (product.category?.name?.[language] || product.category?.name?.en || 'Uncategorized')}
+                                        </div>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{product.brand?.name}</div>
                                     </td>
                                     <td style={{ textAlign: 'right' }} data-label="Pricing">
@@ -727,7 +734,9 @@ export default function ProductList() {
                         }}>
                             <div>
                                 <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>Product Details</h3>
-                                <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>{selectedProductForView.title}</p>
+                                <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
+                                    {typeof selectedProductForView.title === 'string' ? selectedProductForView.title : (selectedProductForView.title[language] || selectedProductForView.title.en)}
+                                </p>
                             </div>
                             <button
                                 onClick={() => setIsViewModalOpen(false)}

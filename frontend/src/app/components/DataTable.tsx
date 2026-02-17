@@ -58,6 +58,12 @@ export default function DataTable<T extends { _id?: string; id?: string }>({
                 searchKeys.some((key) => {
                     const val = item[key];
                     if (val == null) return false;
+                    if (typeof val === 'object' && val !== null && ('en' in val || 'hi' in val)) {
+                        const en = (val as any).en || '';
+                        const hi = (val as any).hi || '';
+                        return en.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            hi.toLowerCase().includes(searchTerm.toLowerCase());
+                    }
                     return String(val).toLowerCase().includes(searchTerm.toLowerCase());
                 })
             );

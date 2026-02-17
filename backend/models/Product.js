@@ -3,9 +3,15 @@ const { makeUniqueSlug, slugify } = require('../utils/slugify');
 
 const productSchema = new mongoose.Schema({
     // Core Info
-    title: { type: String, required: true },
+    title: {
+        en: { type: String, required: true },
+        hi: { type: String }
+    },
     slug: { type: String, required: true, unique: true },
-    subtitle: { type: String },
+    subtitle: {
+        en: { type: String },
+        hi: { type: String }
+    },
     part_number: { type: String },
 
     // Relationships
@@ -19,7 +25,10 @@ const productSchema = new mongoose.Schema({
     gst_rate: { type: Number }, // Percentage (auto-fetched or overridden)
 
     // Description
-    description: { type: String }, // Rich Text
+    description: {
+        en: { type: String },
+        hi: { type: String }
+    }, // Rich Text
     specifications: { type: Map, of: String }, // JSON key-value pairs
 
     // Pricing
@@ -56,8 +65,14 @@ const productSchema = new mongoose.Schema({
     size_chart: { type: String },
 
     // SEO
-    meta_title: { type: String },
-    meta_description: { type: String },
+    meta_title: {
+        en: { type: String },
+        hi: { type: String }
+    },
+    meta_description: {
+        en: { type: String },
+        hi: { type: String }
+    },
     keywords: [{ type: String }],
 
     // Status & Flags
@@ -65,7 +80,10 @@ const productSchema = new mongoose.Schema({
     isVisible: { type: Boolean, default: true },
     // Models & Variants System (Enhanced)
     models: [{
-        name: { type: String, required: true }, // e.g. "Pro Max"
+        name: {
+            en: { type: String, required: true },
+            hi: { type: String }
+        }, // e.g. "Pro Max"
         mrp: { type: Number }, // Base MRP for this model
         selling_price_a: { type: Number }, // Base Selling Price for this model
         featured_image: { type: String }, // Primary image for this model
@@ -73,7 +91,10 @@ const productSchema = new mongoose.Schema({
         isActive: { type: Boolean, default: true },
         variations: [{
             type: { type: String, enum: ['Color', 'Size', 'Weight', 'Volume', 'Pack', 'Battery', 'Range', 'Storage', 'Other'], required: true },
-            value: { type: String, required: true },
+            value: {
+                en: { type: String, required: true },
+                hi: { type: String }
+            },
             price: { type: Number, required: true }, // Absolute price for this selection
             mrp: { type: Number },
             stock: { type: Number, default: 0 },
@@ -86,7 +107,10 @@ const productSchema = new mongoose.Schema({
     // Legacy Variations (Still kept for non-model products)
     variations: [{
         type: { type: String, enum: ['Color', 'Size', 'Weight', 'Volume', 'Pack', 'Battery', 'Range', 'Storage', 'Other'], required: true },
-        value: { type: String, required: true },
+        value: {
+            en: { type: String, required: true },
+            hi: { type: String }
+        },
         price: { type: Number, required: true },
         mrp: { type: Number },
         stock: { type: Number, default: 0 },
@@ -103,7 +127,10 @@ const productSchema = new mongoose.Schema({
     isOnDemand: { type: Boolean, default: false }, // Made-to-order products that never show as out of stock
     isCancellable: { type: Boolean, default: true },
     isReturnable: { type: Boolean, default: true },
-    deliveryTime: { type: String, default: '3-5 business days' },
+    deliveryTime: {
+        en: { type: String },
+        hi: { type: String }
+    },
     returnWindow: { type: Number, default: 7 }, // Days within which return/refund is allowed
 
     // Metrics
@@ -126,14 +153,15 @@ productSchema.index({ isFeatured: 1 });
 productSchema.index({ isNewArrival: 1 });
 productSchema.index({ isOnDemand: 1 });
 // Text index for search (title & description)
-productSchema.index({ title: 'text', description: 'text', part_number: 'text', 'variations.value': 'text' });
+productSchema.index({ 'title.en': 'text', 'title.hi': 'text', description: 'text', part_number: 'text', 'variations.value': 'text' });
 
 // AUTO-CALCULATE LOWEST PRICE ON SAVE
 productSchema.pre('save', async function (next) {
     try {
         // Handle Slug Uniqueness
         if (this.isModified('slug') || this.isNew) {
-            const baseSlug = this.slug || slugify(this.title);
+            const titleForSlug = this.title?.en || (typeof this.title === 'string' ? this.title : '');
+            const baseSlug = this.slug || slugify(titleForSlug);
             this.slug = await makeUniqueSlug(this.constructor, baseSlug, this._id);
         }
 

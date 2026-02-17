@@ -11,18 +11,28 @@ import Modal from "../../../components/Modal";
 import ErrorState from "../../../components/ErrorState";
 import Loader from "../../../components/Loader";
 import { useModal } from "../../../hooks/useModal";
+import BilingualInput from "../../../../components/forms/BilingualInput";
+import LanguageToggle from "../../../../components/LanguageToggle";
+import { useLanguage } from "../../../../context/LanguageContext";
 
 interface Category {
     _id: string;
-    name: string;
+    name: string | { en: string; hi: string };
 }
 
 interface SubCategory {
     _id: string;
-    name: string;
+    name: string | { en: string; hi: string }; // Handle both for now
     slug: string;
-    category_id: Category;
+    category_id: Category | string;
     image: string;
+}
+
+interface FormInputs {
+    name_en: string;
+    name_hi: string;
+    slug: string;
+    category_id: string;
 }
 
 export default function SubCategoryMaster() {
@@ -38,25 +48,27 @@ export default function SubCategoryMaster() {
     const [categorySearch, setCategorySearch] = useState('');
 
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
+    const { language } = useLanguage();
 
-    const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<{ name: string; slug: string; category_id: string }>();
-    const name = watch('name');
+    const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormInputs>();
+    const nameEn = watch('name_en');
 
     useEffect(() => {
         fetchSubCategories();
         fetchCategories();
     }, []);
 
+    // Slug generation from English name
     useEffect(() => {
-        if (name && !editingId) {
-            setValue('slug', name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
+        if (nameEn && !editingId) {
+            setValue('slug', nameEn.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
         }
-    }, [name, editingId, setValue]);
+    }, [nameEn, editingId, setValue]);
 
     const filteredSubCategories = useMemo(() => {
         if (selectedCategory === 'all') return subCategories;
         return subCategories.filter(sc => {
-            const catId = typeof sc.category_id === 'string' ? sc.category_id : sc.category_id?._id;
+            const catId = typeof sc.category_id === 'string' ? sc.category_id : (sc.category_id as any)?._id;
             return catId === selectedCategory;
         });
     }, [subCategories, selectedCategory]);
@@ -84,10 +96,17 @@ export default function SubCategoryMaster() {
         }
     };
 
-    const onSubmit = async (data: { name: string; slug: string; category_id: string }) => {
+    const onSubmit = async (data: FormInputs) => {
         try {
             const formData = new FormData();
-            formData.append('name', data.name);
+
+            // Construct name object and stringify for backend parsing
+            const nameObj = {
+                en: data.name_en,
+                hi: data.name_hi
+            };
+            formData.append('name', JSON.stringify(nameObj));
+
             formData.append('slug', data.slug);
             formData.append('category_id', data.category_id);
             if (image) formData.append('image', image);
@@ -114,7 +133,12 @@ export default function SubCategoryMaster() {
 
     const handleAdd = () => {
         setEditingId(null);
-        reset();
+        reset({
+            name_en: '',
+            name_hi: '',
+            slug: '',
+            category_id: ''
+        });
         setImage(null);
         setPreviewImage(null);
         setIsModalOpen(true);
@@ -122,10 +146,18 @@ export default function SubCategoryMaster() {
 
     const handleEdit = (sc: SubCategory) => {
         setEditingId(sc._id);
-        setValue('name', sc.name);
+
+        // Handle name object
+        const nameEnVal = typeof sc.name === 'object' ? sc.name.en : sc.name;
+        const nameHiVal = typeof sc.name === 'object' ? sc.name.hi || '' : '';
+
+        setValue('name_en', nameEnVal);
+        setValue('name_hi', nameHiVal);
         setValue('slug', sc.slug);
+
         // Handle case where category_id might be populated object or ID string based on API response
-        setValue('category_id', sc.category_id?._id || (typeof sc.category_id === 'string' ? sc.category_id : ''));
+        setValue('category_id', (sc.category_id as any)?._id || (typeof sc.category_id === 'string' ? sc.category_id : ''));
+
         setImage(null);
         setPreviewImage(sc.image ? (sc.image.startsWith('http') ? sc.image : `/api/${sc.image}`) : null);
         setIsModalOpen(true);
@@ -208,7 +240,9 @@ export default function SubCategoryMaster() {
                         >
                             <option value="all">All Categories</option>
                             {categories.map(cat => (
-                                <option key={cat._id} value={cat._id}>{cat.name}</option>
+                                <option key={cat._id} value={cat._id}>
+                                    {typeof cat.name === 'string' ? cat.name : (cat.name[language] || cat.name.en)}
+                                </option>
                             ))}
                         </select>
                     </div>
@@ -256,7 +290,7 @@ export default function SubCategoryMaster() {
                                     {item.image ? (
                                         <Image
                                             src={item.image.startsWith('http') ? item.image : `/api/${item.image}`}
-                                            alt={item.name}
+                                            alt={typeof item.name === 'string' ? item.name : item.name?.en || 'Sub-Category'}
                                             fill
                                             style={{ objectFit: 'cover' }}
                                         />
@@ -271,7 +305,11 @@ export default function SubCategoryMaster() {
                             header: 'Name',
                             accessor: (item) => (
                                 <div>
-                                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{item.name}</div>
+                                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                        {typeof item.name === 'object'
+                                            ? (item.name[language] || item.name['en'])
+                                            : item.name}
+                                    </div>
                                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{item.slug}</div>
                                 </div>
                             ),
@@ -279,11 +317,17 @@ export default function SubCategoryMaster() {
                         },
                         {
                             header: 'Parent Category',
-                            accessor: (item) => (
-                                <span className="badge" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                                    {item.category_id?.name || 'Unknown'}
-                                </span>
-                            ),
+                            accessor: (item) => {
+                                const catName = (item.category_id as any)?.name;
+                                const display = typeof catName === 'object'
+                                    ? (catName[language] || catName['en'])
+                                    : (catName || 'Unknown');
+                                return (
+                                    <span className="badge" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--primary)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.8rem', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                        {display}
+                                    </span>
+                                );
+                            },
                             sortable: true
                         }
                     ]}
@@ -297,7 +341,12 @@ export default function SubCategoryMaster() {
             <FormModal
                 isOpen={isModalOpen}
                 onClose={handleCloseModal}
-                title={editingId ? 'Edit Sub-Category' : 'Add New Sub-Category'}
+                title={
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', paddingRight: '2rem' }}>
+                        <span>{editingId ? 'Edit Sub-Category' : 'Add New Sub-Category'}</span>
+                        <LanguageToggle />
+                    </div>
+                }
             >
                 <form onSubmit={handleSubmit(onSubmit)}>
                     <div className="form-grid" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -309,29 +358,39 @@ export default function SubCategoryMaster() {
                             >
                                 <option value="">-- Select Category --</option>
                                 {categories
-                                    .filter(c => c.name.toLowerCase().includes(categorySearch.toLowerCase()))
-                                    .map(c => <option key={c._id} value={c._id}>{c.name}</option>)
+                                    .filter(c => {
+                                        const name = typeof c.name === 'string' ? c.name : c.name.en;
+                                        return name.toLowerCase().includes(categorySearch.toLowerCase());
+                                    })
+                                    .map(c => (
+                                        <option key={c._id} value={c._id}>
+                                            {typeof c.name === 'string' ? c.name : (c.name[language] || c.name.en)}
+                                        </option>
+                                    ))
                                 }
                                 {/* Ensure selected category is always visible */}
                                 {watch('category_id') && !categories
-                                    .filter(c => c.name.toLowerCase().includes(categorySearch.toLowerCase()))
                                     .find(c => c._id === watch('category_id')) && (
                                         <option key={watch('category_id')} value={watch('category_id')}>
-                                            {categories.find(c => c._id === watch('category_id'))?.name || 'Selected Category'}
+                                            Selected Category
                                         </option>
                                     )}
                             </select>
                             {errors.category_id && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.category_id.message}</span>}
                         </div>
-                        <div className="form-group">
-                            <label className="form-label">Sub-Category Name</label>
-                            <input
-                                {...register("name", { required: true })}
-                                className="form-input"
-                                placeholder="e.g. Cordless Drills"
-                                style={{ width: '100%', padding: '0.5rem', background: 'var(--surface)', color: 'var(--text-primary)', border: '1px solid var(--border)', borderRadius: '4px' }}
-                            />
-                        </div>
+
+                        {/* Bilingual Name Input */}
+                        <BilingualInput
+                            label="Sub-Category Name"
+                            registerEn={register("name_en", { required: "English name is required" })}
+                            registerHi={register("name_hi")}
+                            errorEn={errors.name_en}
+                            errorHi={errors.name_hi}
+                            placeholderEn="e.g. Cordless Drills"
+                            placeholderHi="उदा. बिना तार वाली ड्रिल"
+                            required
+                        />
+
                         <div className="form-group">
                             <label className="form-label">Slug</label>
                             <input

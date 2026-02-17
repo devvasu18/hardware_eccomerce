@@ -2,16 +2,19 @@
 
 import { useForm } from "react-hook-form";
 import { useState, useEffect } from "react";
-import api from "../../../utils/api";
+import api from "../../../../utils/api";
 import { FiEdit2, FiTrash2, FiPlus, FiX, FiUploadCloud } from "react-icons/fi";
 import Image from "next/image";
 import DataTable from "../../../components/DataTable";
 import Modal from "../../../components/Modal";
 import { useModal } from "../../../hooks/useModal";
+import BilingualInput from "../../../../components/forms/BilingualInput";
+import LanguageToggle from "../../../../components/LanguageToggle";
+import { useLanguage } from "../../../../context/LanguageContext";
 
 interface Brand {
     _id: string;
-    name: string;
+    name: string | { en: string; hi: string };
     slug: string;
     logo_image: string;
 }
@@ -22,7 +25,8 @@ export default function BrandMaster() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [logo, setLogo] = useState<File | null>(null);
 
-    const { register, handleSubmit, reset, setValue, watch } = useForm<{ name: string; slug: string }>();
+    const { language } = useLanguage();
+    const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<{ name: { en: string; hi: string }; slug: string }>();
     const name = watch('name');
 
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -33,10 +37,10 @@ export default function BrandMaster() {
     }, []);
 
     useEffect(() => {
-        if (name && !editingId) {
-            setValue('slug', name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
+        if (name?.en && !editingId) {
+            setValue('slug', name.en.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, ''));
         }
-    }, [name, editingId, setValue]);
+    }, [name?.en, editingId, setValue]);
 
     const fetchBrands = async () => {
         try {
@@ -52,22 +56,27 @@ export default function BrandMaster() {
     const handleAddNew = () => {
         setEditingId(null);
         setLogo(null);
-        reset({ name: '', slug: '' });
+        setEditingId(null);
+        setLogo(null);
+        reset({ name: { en: '', hi: '' }, slug: '' });
+        setIsFormOpen(true);
         setIsFormOpen(true);
     };
 
     const handleEdit = (brand: Brand) => {
         setEditingId(brand._id);
         setLogo(null);
-        setValue('name', brand.name);
+        setLogo(null);
+        const nameVal = typeof brand.name === 'string' ? { en: brand.name, hi: '' } : brand.name;
+        setValue('name', nameVal);
         setValue('slug', brand.slug);
         setIsFormOpen(true);
     };
 
-    const onSubmit = async (data: { name: string; slug: string }) => {
+    const onSubmit = async (data: { name: { en: string; hi: string }; slug: string }) => {
         try {
             const formData = new FormData();
-            formData.append('name', data.name);
+            formData.append('name', JSON.stringify(data.name));
             formData.append('slug', data.slug);
             if (logo) formData.append('logo_image', logo);
 
@@ -148,19 +157,29 @@ export default function BrandMaster() {
                                     {item.logo_image ? (
                                         <Image
                                             src={item.logo_image.startsWith('http') ? item.logo_image : `/${item.logo_image}`}
-                                            alt={item.name}
+                                            alt={typeof item.name === 'string' ? item.name : item.name.en}
                                             fill
                                             unoptimized
                                             style={{ objectFit: 'contain' }}
                                         />
                                     ) : (
-                                        <div style={{ color: '#ccc', fontWeight: 800 }}>{item.name[0]}</div>
+                                        <div style={{ color: '#ccc', fontWeight: 800 }}>
+                                            {typeof item.name === 'string' ? item.name[0] : (item.name.en ? item.name.en[0] : 'B')}
+                                        </div>
                                     )}
                                 </div>
                             ),
                             sortable: false
                         },
-                        { header: 'Brand Name', accessor: 'name', sortable: true, className: "font-semibold" },
+                        {
+                            header: 'Brand Name',
+                            accessor: (item) => (
+                                <span className="font-semibold">
+                                    {typeof item.name === 'string' ? item.name : (item.name[language] || item.name.en)}
+                                </span>
+                            ),
+                            sortable: true
+                        },
                         { header: 'Slug', accessor: 'slug', sortable: true, className: "text-muted font-mono" }
                     ]}
                     searchKeys={['name', 'slug']}
@@ -179,7 +198,10 @@ export default function BrandMaster() {
                 }}>
                     <div className="card" style={{ width: '100%', maxWidth: '500px', margin: '20px' }}>
                         <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span>{editingId ? 'Edit Brand' : 'Add New Brand'}</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <span>{editingId ? 'Edit Brand' : 'Add New Brand'}</span>
+                                <LanguageToggle />
+                            </div>
                             <button onClick={() => setIsFormOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem' }}>
                                 <FiX />
                             </button>
@@ -187,11 +209,15 @@ export default function BrandMaster() {
                         <form onSubmit={handleSubmit(onSubmit)} style={{ padding: '1.5rem' }}>
                             <div className="form-grid">
                                 <div className="form-group">
-                                    <label className="form-label">Brand Name</label>
-                                    <input
-                                        {...register("name", { required: true })}
-                                        className="form-input"
-                                        placeholder="e.g. Bosch"
+                                    <BilingualInput
+                                        label="Brand Name *"
+                                        registerEn={register("name.en", { required: "English name is required" })}
+                                        registerHi={register("name.hi")}
+                                        errorEn={errors.name?.en}
+                                        errorHi={errors.name?.hi}
+                                        placeholderEn="e.g. Bosch"
+                                        placeholderHi="e.g. बॉश"
+                                        required
                                     />
                                 </div>
                                 <div className="form-group">
