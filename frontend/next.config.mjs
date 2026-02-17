@@ -49,6 +49,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'new-ella-demo-07.myshopify.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'hardware-eccomerce.onrender.com',
+      },
     ],
     unoptimized: process.env.NODE_ENV === 'development',
   },

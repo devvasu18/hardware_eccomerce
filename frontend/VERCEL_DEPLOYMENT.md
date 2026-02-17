@@ -26,9 +26,14 @@
 
 ## What `vercel.json` Does
 
-The `vercel.json` file configures:
-- **Rewrites**: Routes `/api/*` and `/uploads/*` to your backend
-- This works alongside the environment variable
+The `vercel.json` file is intentionally minimal (empty `{}`). This is because:
+- **Rewrites are handled by `next.config.mjs`**: The Next.js config uses environment variables to route requests
+- **Vercel-specific rewrites would override Next.js rewrites**: This causes issues with localhost access
+- **Environment variables control routing**: Set `NEXT_PUBLIC_API_URL` in Vercel Dashboard
+
+The routing works as follows:
+- **Development**: `next.config.mjs` uses `http://localhost:5000` (no env var set)
+- **Production**: `next.config.mjs` uses `NEXT_PUBLIC_API_URL` from Vercel environment variables
 
 ## Alternative: Deploy via CLI
 
