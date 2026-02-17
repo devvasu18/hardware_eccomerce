@@ -336,10 +336,10 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
 
     if (loading) {
         return (
-            <main>
+            <main style={{ background: 'var(--background)', minHeight: '100vh' }}>
                 <Header />
                 <div style={{ padding: '4rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.2rem', color: '#64748b' }}>Loading order details...</div>
+                    <div style={{ fontSize: '1.2rem', color: 'var(--text-secondary)' }}>Loading order details...</div>
                 </div>
             </main>
         );
@@ -347,10 +347,10 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
 
     if (!order) {
         return (
-            <main>
+            <main style={{ background: 'var(--background)', minHeight: '100vh' }}>
                 <Header />
                 <div style={{ padding: '4rem', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.2rem', color: '#ef4444', marginBottom: '1rem' }}>Order not found</div>
+                    <div style={{ fontSize: '1.2rem', color: 'var(--danger)', marginBottom: '1rem' }}>Order not found</div>
                     <Link href="/products" className="btn btn-primary">Continue Shopping</Link>
                 </div>
             </main>
@@ -360,34 +360,34 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
     const statusFlow = ['Order Placed', 'Packed', 'Assigned to Bus', 'Delivered'];
 
     return (
-        <main>
+        <main style={{ background: 'var(--background)', minHeight: '100vh', paddingBottom: '4rem' }}>
             <Header />
             <div className="container" style={{ padding: '3rem 0', maxWidth: '1200px', margin: '0 auto' }}>
                 {/* Header Section */}
                 <div style={{ marginBottom: '2rem' }}>
-                    <Link href="/products" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.9rem' }}>
-                        ← Back to Products
+                    <Link href="/orders" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>
+                        ← Back to My Orders
                     </Link>
-                    <h1 style={{ fontSize: '2rem', fontWeight: 700, marginTop: '1rem', marginBottom: '0.5rem' }}>
+                    <h1 style={{ fontSize: '2rem', fontWeight: 700, marginTop: '1rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
                         Order Tracking
                     </h1>
-                    <p style={{ color: '#64748b', fontSize: '1.1rem' }}>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>
                         Order #{order.invoiceNumber || order._id.slice(-8).toUpperCase()}
                     </p>
                 </div>
 
                 {/* Cancellation Alert if applicable */}
                 {order.status === 'Order Placed' && order.items.every((item: any) => item.product?.isCancellable !== false) && (
-                    <div className="card" style={{ marginBottom: '2rem', borderLeft: '4px solid #ef4444', backgroundColor: '#fef2f2' }}>
+                    <div className="card" style={{ marginBottom: '2rem', borderLeft: '4px solid var(--danger)', backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#991b1b', marginBottom: '0.25rem' }}>Need to cancel?</h3>
-                                <p style={{ fontSize: '0.9rem', color: '#b91c1c' }}>You can cancel your order before it gets packed.</p>
+                                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--danger)', marginBottom: '0.25rem' }}>Need to cancel?</h3>
+                                <p style={{ fontSize: '0.9rem', color: 'var(--danger)', opacity: 0.9 }}>You can cancel your order before it gets packed.</p>
                             </div>
                             <button
                                 onClick={handleCancelOrderClick}
                                 className="btn btn-outline"
-                                style={{ borderColor: '#ef4444', color: '#ef4444' }}
+                                style={{ borderColor: 'var(--danger)', color: 'var(--danger)' }}
                                 disabled={refundLoading}
                             >
                                 {refundLoading ? 'Processing...' : 'Cancel Entire Order'}
@@ -415,7 +415,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                             left: '0',
                             right: '0',
                             height: '4px',
-                            background: '#e2e8f0',
+                            background: 'var(--border)',
                             zIndex: 0
                         }}>
                             <div style={{
@@ -446,13 +446,13 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                         width: '40px',
                                         height: '40px',
                                         borderRadius: '50%',
-                                        background: isCompleted ? getStatusColor(status) : '#e2e8f0',
+                                        background: isCompleted ? getStatusColor(status) : 'var(--border)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         fontSize: '1.2rem',
                                         marginBottom: '0.75rem',
-                                        border: isCurrent ? '3px solid white' : 'none',
+                                        border: isCurrent ? '3px solid var(--surface)' : 'none',
                                         boxShadow: isCurrent ? `0 0 0 3px ${getStatusColor(status)}` : 'none',
                                         transition: 'all 0.3s ease'
                                     }}>
@@ -461,7 +461,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                     <div style={{
                                         fontSize: '0.85rem',
                                         fontWeight: isCurrent ? 700 : 600,
-                                        color: isCompleted ? '#1e293b' : '#94a3b8',
+                                        color: isCompleted ? 'var(--text-primary)' : 'var(--text-muted)',
                                         textAlign: 'center',
                                         maxWidth: '100px'
                                     }}>
@@ -480,7 +480,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                         padding: '1rem',
                         textAlign: 'center'
                     }}>
-                        <div style={{ fontSize: '0.9rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                        <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.25rem' }}>
                             Current Status
                         </div>
                         <div style={{
@@ -498,12 +498,12 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                     <div style={{ flex: '1 1 500px' }}>
                         {/* Status Timeline */}
                         <div className="card" style={{ marginBottom: '2rem' }}>
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
                                 📋 Status History
                             </h3>
 
                             {statusHistory.length === 0 ? (
-                                <p style={{ color: '#64748b', fontSize: '0.9rem' }}>No status updates yet</p>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>No status updates yet</p>
                             ) : (
                                 <div style={{ position: 'relative' }}>
                                     {/* Timeline Line */}
@@ -513,7 +513,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                         top: '10px',
                                         bottom: '10px',
                                         width: '2px',
-                                        background: '#e2e8f0'
+                                        background: 'var(--border)'
                                     }} />
 
                                     {/* Timeline Items */}
@@ -535,8 +535,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                 height: '14px',
                                                 borderRadius: '50%',
                                                 background: getStatusColor(log.status),
-                                                border: '3px solid white',
-                                                boxShadow: '0 0 0 2px #e2e8f0'
+                                                border: '3px solid var(--surface)',
+                                                boxShadow: '0 0 0 2px var(--border)'
                                             }} />
 
                                             {/* Content */}
@@ -544,19 +544,19 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                 <div style={{
                                                     fontWeight: 700,
                                                     fontSize: '0.95rem',
-                                                    color: '#1e293b',
+                                                    color: 'var(--text-primary)',
                                                     marginBottom: '0.25rem'
                                                 }}>
                                                     {getStatusIcon(log.status)} {log.status}
                                                 </div>
                                                 <div style={{
                                                     fontSize: '0.8rem',
-                                                    color: '#64748b',
+                                                    color: 'var(--text-secondary)',
                                                     marginBottom: '0.25rem'
                                                 }}>
                                                     {formatDateTime(log.timestamp)}
                                                 </div>
-                                                <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                                     Updated by: {log.updatedByName} ({log.updatedByRole})
                                                 </div>
                                                 {log.notes && (
@@ -578,7 +578,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
 
                         {/* Order Items */}
                         <div className="card">
-                            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
                                 📦 Order Items
                             </h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -590,16 +590,17 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                             justifyContent: 'space-between',
                                             alignItems: 'center',
                                             paddingBottom: '1rem',
-                                            borderBottom: idx < order.items.length - 1 ? '1px solid #e2e8f0' : 'none'
+                                            borderBottom: idx < order.items.length - 1 ? '1px solid var(--border)' : 'none'
                                         }}
                                     >
                                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                             <div style={{
                                                 width: '60px',
                                                 height: '60px',
-                                                background: '#f1f5f9',
+                                                background: 'var(--background)',
                                                 borderRadius: '6px',
-                                                overflow: 'hidden'
+                                                overflow: 'hidden',
+                                                border: '1px solid var(--border)'
                                             }}>
                                                 {item.product?.featured_image && (
                                                     <img
@@ -612,10 +613,10 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                 )}
                                             </div>
                                             <div>
-                                                <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                                                <div style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-primary)' }}>
                                                     {item.product?.name || 'Product'}
                                                 </div>
-                                                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
                                                     Qty: {item.quantity} {item.size ? `| Size: ${item.size}` : ''}
                                                 </div>
                                             </div>
@@ -732,18 +733,18 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                     marginBottom: '1.5rem'
                                 }}>
                                     <div>
-                                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                                             Bus Number
                                         </div>
-                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b' }}>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>
                                             {shipment.busNumber}
                                         </div>
                                     </div>
                                     <div>
-                                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>
                                             Driver Contact
                                         </div>
-                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: '#1e293b' }}>
+                                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>
                                             {shipment.driverContact}
                                         </div>
                                     </div>

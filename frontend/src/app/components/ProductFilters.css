@@ -3,14 +3,12 @@
 .filters-sidebar {
     width: 280px;
     flex-shrink: 0;
-    background: #fff;
-    /* border-right: 1px solid #e2e8f0; Removed for cleaner look */
+    background: var(--surface);
     padding: 2rem;
     height: fit-content;
     border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-    /* Subtle float */
-    border: 1px solid rgba(0, 0, 0, 0.03);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
 }
 
 /* Header */
@@ -26,7 +24,7 @@
 .filters-header h3 {
     font-size: 1.25rem;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--text-primary);
     margin: 0;
     letter-spacing: -0.02em;
 }
@@ -52,11 +50,11 @@
 .filter-group h4 {
     font-size: 0.85rem;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--text-primary);
     margin-bottom: 1.25rem;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
 /* Refine Search Input */
@@ -72,12 +70,12 @@
 .refine-input {
     width: 100%;
     padding: 0.75rem 1rem;
-    border: 2px solid #f1f5f9;
+    border: 2px solid var(--border);
     border-radius: 12px;
     font-size: 0.9rem;
-    background: #f8fafc;
+    background: var(--background);
     transition: all 0.2s;
-    color: #0f172a;
+    color: var(--text-primary);
 }
 
 .refine-input:focus {
@@ -159,7 +157,7 @@
 
 .sub-item {
     font-size: 0.85rem;
-    color: #94a3b8;
+    color: var(--text-muted);
 }
 
 .sub-item.active {
@@ -194,10 +192,11 @@
 .price-input-field input {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 0.85rem;
-    color: #0f172a;
+    color: var(--text-primary);
+    background: var(--background);
 }
 
 .price-separator {
@@ -222,11 +221,11 @@
 .filter-select {
     width: 100%;
     padding: 0.75rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid var(--border);
     border-radius: 12px;
     font-size: 0.9rem;
-    color: #0f172a;
-    background: #f8fafc;
+    color: var(--text-primary);
+    background: var(--background);
     cursor: pointer;
     outline: none;
     transition: all 0.2s;
@@ -285,11 +284,11 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background: #fff;
-    border: 1px solid #e2e8f0;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--text-primary);
     margin-bottom: 1rem;
     cursor: pointer;
     width: 100%;

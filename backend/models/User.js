@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema({
             sms: { type: Boolean, default: true }
         },
         language: { type: String, default: 'en' },
-        theme: { type: String, default: 'light' }
+        theme: { type: String, default: 'system' }
     },
     passwordHistory: [{
         password: { type: String, required: true },

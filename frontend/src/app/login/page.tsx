@@ -45,20 +45,20 @@ export default function LoginPage() {
     };
 
     return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'linear-gradient(135deg, #0F172A 0%, #1e293b 100%)' }}>
-            <div className="card" style={{ width: '100%', maxWidth: '400px', padding: '2rem', background: 'white' }}>
-                <h1 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.5rem', color: '#1E293B' }}>Industrial Login</h1>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--gradient-secondary)' }}>
+            <div className="card" style={{ width: '100%', maxWidth: '400px', padding: '2rem', background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
+                <h1 style={{ textAlign: 'center', marginBottom: '1.5rem', fontSize: '1.5rem', color: 'var(--text-primary)' }}>Industrial Login</h1>
 
-                {error && <div style={{ background: '#fee2e2', color: '#dc2626', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</div>}
+                {error && <div style={{ background: 'var(--danger-light)', color: 'var(--danger)', padding: '0.75rem', borderRadius: '4px', marginBottom: '1rem', fontSize: '0.9rem', border: '1px solid var(--danger)' }}>{error}</div>}
 
                 <form onSubmit={handleSubmit}>
                     <div style={{ marginBottom: '1rem' }}>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Mobile Number</label>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Mobile Number</label>
                         <input
                             type="tel"
                             value={mobile}
                             onChange={e => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                            style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                            style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--background)', color: 'var(--text-primary)' }}
                             placeholder="9876543210"
                             pattern="[0-9]{10}"
                             maxLength={10}
@@ -68,13 +68,13 @@ export default function LoginPage() {
                     </div>
 
                     <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' }}>Password</label>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>Password</label>
                         <div style={{ position: 'relative' }}>
                             <input
                                 type={showPassword ? "text" : "password"}
                                 value={password}
                                 onChange={e => setPassword(e.target.value)}
-                                style={{ width: '100%', padding: '0.75rem', paddingRight: '2.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                style={{ width: '100%', padding: '0.75rem', paddingRight: '2.5rem', border: '1px solid var(--border)', borderRadius: '4px', background: 'var(--background)', color: 'var(--text-primary)' }}
                                 placeholder="********"
                                 required
                             />
@@ -89,7 +89,7 @@ export default function LoginPage() {
                                     background: 'none',
                                     border: 'none',
                                     cursor: 'pointer',
-                                    color: '#64748B'
+                                    color: 'var(--text-muted)'
                                 }}
                             >
                                 {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
@@ -98,11 +98,11 @@ export default function LoginPage() {
                     </div>
 
                     <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>Secure Login</button>
-                    <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.85rem', color: '#64748B' }}>
-                        Don't have an account? <a href="/signup" style={{ color: '#F37021', textDecoration: 'none', fontWeight: 600 }}>Sign up</a>
+                    <p style={{ textAlign: 'center', marginTop: '1rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        Don't have an account? <a href="/signup" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>Sign up</a>
                     </p>
-                    <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
-                        <a href="/forgot-password" style={{ color: '#64748B', textDecoration: 'none' }}>Forgot Password?</a>
+                    <p style={{ textAlign: 'center', marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        <a href="/forgot-password" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Forgot Password?</a>
                     </p>
                 </form>
             </div>

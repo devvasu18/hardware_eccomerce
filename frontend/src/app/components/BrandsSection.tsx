@@ -32,7 +32,7 @@ export default function BrandsSection({ config }: { config?: any }) {
             <div className="container">
                 <div className="brands-container">
                     <h2 className="brands-title">{config?.title || 'Our Partner Brands'}</h2>
-                    {config?.subtitle && <p className="brands-subtitle" style={{ textAlign: 'center', marginBottom: '2rem', opacity: 0.7 }}>{config.subtitle}</p>}
+                    {config?.subtitle && <p className="brands-subtitle">{config.subtitle}</p>}
 
                     <div className="brands-grid-wrapper">
                         {brands.map((brand, idx) => (

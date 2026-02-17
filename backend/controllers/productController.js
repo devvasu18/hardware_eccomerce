@@ -274,6 +274,10 @@ exports.updateProduct = async (req, res) => {
     try {
         if (process.env.NODE_ENV !== 'production') {
             console.log(`Update Product Request: ${req.params.id}`);
+            console.log('Request Body Keys:', Object.keys(req.body));
+            if (!req.body.category) console.warn('⚠️ Category missing in request body!');
+            if (!req.body.mrp) console.warn('⚠️ MRP missing in request body!');
+            console.log('Files uploaded:', req.files?.map(f => f.fieldname));
         }
 
         const product = await Product.findById(req.params.id);
@@ -442,16 +446,8 @@ exports.updateProduct = async (req, res) => {
         });
 
         // Parse and Sanitize Models
-        if (updates.models && typeof updates.models === 'string') {
-            try {
-                updates.models = JSON.parse(updates.models);
-                if (req.files) {
-                    // ... (image logic existing in previous block, we need to preserve or re-include it. 
-                    // Wait, the previous block ALREADY parsed and updated `updates.models`. 
-                    // I must reuse `updates.models` which is already parsed object array from lines 306-337)
-                }
-            } catch (e) { console.error('Error parsing models:', e); }
-        }
+        // Note: Already parsed above at line 403-434, no need to re-parse.
+        // We just ensure updates.models is an array for the following sanitation logic.
 
         // Since the previous code block (lines 306-337) ALREADY processed models/variations and images, 
         // `updates.models` and `updates.variations` are already Objects (if they were present).
@@ -481,12 +477,18 @@ exports.updateProduct = async (req, res) => {
         // Apply updates
         product.set(updates);
 
+        console.log('Product object before save:', product);
         const updatedProduct = await product.save();
         await logAction({ action: 'UPDATE_PRODUCT_ADMIN', req, targetResource: 'Product', targetId: req.params.id, details: { title: updatedProduct.title } });
         res.json(updatedProduct);
 
     } catch (error) {
         console.error('Error updating product:', error);
+        if (error.name === 'ValidationError') {
+            // Mongoose validation error
+            const details = Object.values(error.errors).map(e => e.message).join(', ');
+            return res.status(400).json({ message: 'Validation Failed', detail: details, error: error.message });
+        }
         res.status(400).json({ message: 'Product update failed', error: error.message });
     }
 };

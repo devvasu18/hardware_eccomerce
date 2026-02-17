@@ -3,8 +3,8 @@
    ======================================== */
 
 .category-section {
-    padding: 3rem 0;
-    background: #ffffff;
+    padding: var(--space-4xl) 0;
+    background: var(--background);
     position: relative;
     margin-top: 0 !important;
 }
@@ -21,24 +21,24 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
+    padding: 0.75rem 1.75rem;
     background: var(--primary);
-    color: rgb(34, 33, 33);
-    border-radius: 50px;
-    font-weight: 600;
+    color: white;
+    border-radius: var(--radius-full);
+    font-weight: 700;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: var(--transition-base);
 }
 
 .view-all-btns:hover {
     transform: translateX(5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-orange);
 }
 
 .category-title {
     font-size: clamp(1.75rem, 4vw, 2.5rem);
     font-weight: 800;
-    color: var(--secondary);
+    color: var(--text-primary);
     margin-bottom: var(--space-xs);
     position: relative;
 }
@@ -59,29 +59,29 @@
 .category-track {
     display: flex;
     width: 100%;
-    transition: transform 0.5s ease-in-out;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;
 }
 
 .category-card-wrapper {
-    padding: 0 8px;
+    padding: 0 10px;
     box-sizing: border-box;
     text-decoration: none;
 }
 
 .category-card {
-    background: #ffffff;
-    border-radius: 12px;
-    padding: 1.25rem 1rem;
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem 1rem;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width: 140px;
-    height: 150px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    transition: all 0.3s ease;
-    border: 1px solid #e5e7eb;
+    width: 100%;
+    aspect-ratio: 0.9 / 1;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-base);
+    border: 1px solid var(--border);
     position: relative;
     overflow: hidden;
     text-decoration: none;
@@ -89,18 +89,21 @@
 
 .category-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-xl);
     border-color: var(--primary);
 }
 
 .category-image-wrapper {
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
     position: relative;
-    margin-bottom: 0.75rem;
+    margin-bottom: 1rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: var(--background);
+    border-radius: 50%;
+    padding: 10px;
 }
 
 .category-image-inner {
@@ -112,7 +115,6 @@
 .category-image-inner img {
     object-fit: contain;
     transition: transform 0.3s ease;
-    filter: grayscale(0%);
 }
 
 .category-card:hover .category-image-inner img {
@@ -120,15 +122,20 @@
 }
 
 .category-name {
-    font-size: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 700;
-    color: #1f2937;
+    color: var(--text-primary);
     text-align: center;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
     line-height: 1.2;
     max-width: 100%;
     word-wrap: break-word;
+    transition: color 0.3s ease;
+}
+
+.category-card:hover .category-name {
+    color: var(--primary);
 }
 
 /* ========================================

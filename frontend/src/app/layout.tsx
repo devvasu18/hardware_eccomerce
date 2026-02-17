@@ -11,6 +11,7 @@ import { NotificationProvider } from '@/context/NotificationContext';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
 import { WishlistProvider } from '@/context/WishlistContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import CartSidebar from './components/CartSidebar';
 import WishlistSidebar from './components/WishlistSidebar';
 
@@ -22,19 +23,42 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
+            <head>
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme') || 'system';
+                  var resolvedTheme = theme;
+                  if (theme === 'system') {
+                    resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                  }
+                  document.documentElement.setAttribute('data-theme', resolvedTheme);
+                  if (resolvedTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+                    }}
+                />
+            </head>
             <body>
                 <AuthProvider>
-                    <NotificationProvider>
-                        <CartProvider>
-                            <WishlistProvider>
-                                {children}
-                                <CartSidebar />
-                                <WishlistSidebar />
-                                <MobileBottomNav />
-                            </WishlistProvider>
-                        </CartProvider>
-                    </NotificationProvider>
+                    <ThemeProvider>
+                        <NotificationProvider>
+                            <CartProvider>
+                                <WishlistProvider>
+                                    {children}
+                                    <CartSidebar />
+                                    <WishlistSidebar />
+                                    <MobileBottomNav />
+                                </WishlistProvider>
+                            </CartProvider>
+                        </NotificationProvider>
+                    </ThemeProvider>
                 </AuthProvider>
             </body>
         </html>

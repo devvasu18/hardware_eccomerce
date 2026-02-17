@@ -19,6 +19,15 @@ interface User {
         landmark?: string;
         isDefault?: boolean;
     }>;
+    settings?: {
+        theme: string;
+        language: string;
+        notifications: {
+            email: boolean;
+            whatsapp: boolean;
+            sms: boolean;
+        };
+    };
 }
 
 interface AuthContextType {
@@ -28,6 +37,7 @@ interface AuthContextType {
     loading: boolean;
     onLoginCallbacks: Array<() => void>;
     registerLoginCallback: (callback: () => void) => void;
+    loadUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,19 +47,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [loginCallbacks, setLoginCallbacks] = useState<Array<() => void>>([]);
 
-    useEffect(() => {
-        // Check localStorage on mount
+    const loadUser = useCallback(async () => {
         const token = localStorage.getItem('token');
-        if (token) {
-            // Validate token logic could go here
-            // For now, assume if token exists, we try to fetch 'me' or just use stored user
-            const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-                setUser(JSON.parse(storedUser));
-            }
+        if (!token) {
+            setLoading(false);
+            return;
         }
-        setLoading(false);
+
+        try {
+            const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+            const response = await fetch(`${API_URL}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const userData = await response.json();
+                setUser(userData);
+                localStorage.setItem('user', JSON.stringify(userData));
+            } else {
+                // If token is invalid, clear it
+                if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    setUser(null);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load user:', error);
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        loadUser();
+    }, [loadUser]);
 
     const registerLoginCallback = useCallback((callback: () => void) => {
         setLoginCallbacks(prev => [...prev, callback]);
@@ -99,7 +131,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             logout,
             loading,
             onLoginCallbacks: loginCallbacks,
-            registerLoginCallback
+            registerLoginCallback,
+            loadUser
         }}>
             {children}
         </AuthContext.Provider>

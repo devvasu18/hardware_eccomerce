@@ -63,24 +63,16 @@ export default function AllCategories({ config }: { config?: any }) {
     }
 
     return (
-        <section className="all-categories-section py-12" style={{ width: '100%', maxWidth: '100vw' }}>
-            <div className="container mx-auto px-4" style={{ maxWidth: '1200px' }}>
+        <section className="all-categories-section">
+            <div className="container">
                 {config?.title && (
-                    <div className="mb-10">
-                        <h2 className="text-3xl font-extrabold text-gray-900">{config.title}</h2>
-                        {config.subtitle && <p className="mt-2 text-gray-600">{config.subtitle}</p>}
+                    <div className="all-categories-header">
+                        <h2 className="all-categories-title">{config.title}</h2>
+                        {config.subtitle && <p className="all-categories-subtitle">{config.subtitle}</p>}
                     </div>
                 )}
 
-                <div
-                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-                    style={{
-                        display: 'grid',
-                        width: '100%',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                        gap: '1.5rem'
-                    }}
-                >
+                <div className="all-categories-grid">
                     {categories.map((category) => {
                         // Construct proper image URL
                         let imageUrl = category.imageUrl;
@@ -94,51 +86,34 @@ export default function AllCategories({ config }: { config?: any }) {
                             <Link
                                 key={category._id}
                                 href={`/products?category=${category.slug}`}
-                                className="group block bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-xl hover:border-blue-100 transition-all duration-300"
-                                style={{
-                                    maxWidth: '100%',
-                                    width: '100%'
-                                }}
+                                className="category-item-card"
                             >
-                                <div
-                                    className="relative aspect-square overflow-hidden rounded-xl bg-gray-50 mb-4"
-                                    style={{
-                                        aspectRatio: '1 / 1',
-                                        width: '100%',
-                                        maxWidth: '100%',
-                                        position: 'relative'
-                                    }}
-                                >
+                                <div className="category-item-image-container">
                                     {imageUrl ? (
                                         <Image
                                             src={imageUrl}
                                             alt={category.name || 'Category'}
                                             fill
-                                            className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
+                                            className="category-item-image"
                                             unoptimized
                                             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                                            style={{
-                                                objectFit: 'contain',
-                                                padding: '1rem'
-                                            }}
                                             onError={(e) => {
                                                 console.error(`Failed to load image for ${category.name}:`, imageUrl);
-                                                // Hide broken image
                                                 (e.target as HTMLImageElement).style.display = 'none';
                                             }}
                                         />
                                     ) : (
-                                        <div className="flex items-center justify-center h-full text-4xl opacity-20">
+                                        <div className="category-item-placeholder">
                                             📦
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="text-center">
-                                    <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                                <div className="category-item-content">
+                                    <h3 className="category-item-name">
                                         {category.name}
                                     </h3>
-                                    <p className="text-sm text-gray-500 mt-1">
+                                    <p className="category-item-count">
                                         {category.productCount || 0} Product{category.productCount !== 1 ? 's' : ''}
                                     </p>
                                 </div>
@@ -148,8 +123,8 @@ export default function AllCategories({ config }: { config?: any }) {
                 </div>
 
                 {categories.length === 0 && (
-                    <div className="text-center py-20 bg-gray-50 rounded-3xl">
-                        <p className="text-gray-500 text-lg">No categories available at the moment.</p>
+                    <div className="all-categories-empty">
+                        <p>No categories available at the moment.</p>
                     </div>
                 )}
             </div>

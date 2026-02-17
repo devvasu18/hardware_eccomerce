@@ -160,9 +160,8 @@ const productSchema = z.object({
     offers: z.array(z.string()).optional(),
 
     hsn_code: z.string().optional(),
-    gst_rate: z.number().optional(),
-
-    mrp: z.coerce.number().optional(),
+    gst_rate: z.coerce.number().optional(),
+    mrp: z.coerce.number().min(0, "MRP is required"),
     selling_price_a: z.coerce.number().optional(),
     selling_price_b: z.coerce.number().optional(),
     selling_price_c: z.coerce.number().optional(),
@@ -746,7 +745,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
             router.push('/admin/products');
         } catch (err: any) {
             console.error(err);
-            console.error("Product Save Error Details:", err.response?.data); // Log full error for debugging
+            console.error("Product Save Error Details:", JSON.stringify(err.response?.data || {}, null, 2)); // Log full error for debugging
 
             let msg = err.response?.data?.message || err.message;
             const backendError = err.response?.data?.error;
@@ -759,8 +758,10 @@ export default function ProductForm({ productId }: ProductFormProps) {
                     msg = `Duplicate Entry Error: ${backendError}`;
                 }
             } else if (err.response?.data?.errors) {
-                const details = err.response.data.errors.map((e: any) => `${e.path || e.param}: ${e.msg}`).join(', ');
+                const details = err.response.data.errors.map((e: any) => `${e.path || e.param || 'field'}: ${e.msg}`).join(', ');
                 msg += ": " + details;
+            } else if (err.response?.data?.detail) {
+                msg += ": " + err.response.data.detail;
             }
 
             showError('Error saving product: ' + msg);

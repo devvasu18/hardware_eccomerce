@@ -26,8 +26,8 @@
     width: 450px;
     max-width: 90vw;
     height: 100%;
-    background: #ffffff;
-    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+    background: var(--surface);
+    box-shadow: var(--shadow-xl);
     display: flex;
     flex-direction: column;
     transform: translateX(100%);
@@ -45,8 +45,8 @@
     align-items: center;
     justify-content: space-between;
     padding: 1.5rem 1.5rem;
-    border-bottom: 1px solid #e5e7eb;
-    background: #f37021;
+    border-bottom: 1px solid var(--border);
+    background: var(--primary);
     color: white;
 }
 
@@ -160,8 +160,8 @@
     display: flex;
     gap: 1rem;
     padding: 1rem;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
     margin-bottom: 1rem;
     transition: all 0.2s ease;
@@ -207,7 +207,7 @@
     font-size: 0.95rem;
     font-weight: 600;
     margin: 0 0 0.5rem 0;
-    color: #1e293b;
+    color: var(--text-primary);
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -297,8 +297,8 @@
 /* Footer */
 .wishlist-sidebar-footer {
     padding: 1.5rem;
-    border-top: 1px solid #e5e7eb;
-    background: #f8fafc;
+    border-top: 1px solid var(--border);
+    background: var(--background);
 }
 
 .wishlist-footer-text {

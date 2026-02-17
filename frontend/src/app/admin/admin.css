@@ -7,11 +7,19 @@
     --sidebar-width: 280px;
     --sidebar-width-collapsed: 80px;
     --header-height: 70px;
-    --admin-bg: #F1F5F9;
+    --admin-bg: var(--background);
     --sidebar-bg: #0F172A;
+    /* Stay dark or adapt? Usually stays dark for contrast */
     --sidebar-item-hover: rgba(255, 255, 255, 0.05);
     --sidebar-item-active: var(--primary);
-    --card-bg: #FFFFFF;
+    --card-bg: var(--surface);
+    --text-admin-primary: var(--text-primary);
+    --text-admin-secondary: var(--text-secondary);
+}
+
+[data-theme="dark"] {
+    --sidebar-bg: #020617;
+    /* Even darker for admin */
 }
 
 /* ========================================
@@ -190,6 +198,15 @@
     border: 1px solid transparent;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: var(--text-primary);
+}
+
 .nav-item:hover {
     background: rgba(255, 255, 255, 0.05);
     color: #F8FAFC;
@@ -350,7 +367,7 @@
 .dashboard-title {
     font-size: 1.875rem;
     font-weight: 800;
-    color: var(--secondary);
+    color: var(--text-primary);
     font-family: 'Poppins', sans-serif;
     position: relative;
     display: inline-block;
@@ -380,7 +397,7 @@
 }
 
 .kpi-card {
-    background: white;
+    background: var(--surface);
     border-radius: 16px;
     padding: 1.5rem;
     display: flex;
@@ -388,7 +405,7 @@
     gap: 1.25rem;
     box-shadow: var(--shadow-sm);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--border);
 }
 
 .kpi-card:hover {
@@ -411,13 +428,13 @@
 .kpi-content h3 {
     font-size: 1.75rem;
     font-weight: 700;
-    color: var(--secondary);
+    color: var(--text-primary);
     margin: 0;
     line-height: 1.1;
 }
 
 .kpi-content p {
-    color: #64748B;
+    color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
     margin: 0 0 0.25rem 0;
@@ -425,8 +442,8 @@
 
 /* Variations */
 .kpi-green .kpi-icon-wrapper {
-    background: #DCFCE7;
-    color: #166534;
+    background: rgba(22, 101, 52, 0.1);
+    color: #10b981;
 }
 
 .kpi-blue .kpi-icon-wrapper {
@@ -459,11 +476,11 @@
 }
 
 .chart-card {
-    background: white;
+    background: var(--surface);
     border-radius: 16px;
     padding: 1.5rem;
     box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--border);
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -479,7 +496,7 @@
 .chart-title {
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--secondary);
+    color: var(--text-primary);
     margin: 0;
 }
 
@@ -531,11 +548,11 @@
    ======================================== */
 
 .admin-card {
-    background: white;
+    background: var(--surface);
     border-radius: 16px;
     box-shadow: var(--shadow-sm);
     padding: 1.5rem;
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--border);
 }
 
 /* ========================================
@@ -543,10 +560,10 @@
    ======================================== */
 
 .table-container {
-    background: white;
+    background: var(--surface);
     border-radius: 16px;
     box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--border);
     overflow: hidden;
     margin-bottom: 2rem;
 }
@@ -558,15 +575,15 @@
 }
 
 .data-table thead {
-    background: #F8FAFC;
-    border-bottom: 2px solid var(--border-light);
+    background: var(--background);
+    border-bottom: 2px solid var(--border);
 }
 
 .data-table th {
     padding: 1rem 1.5rem;
     text-align: left;
     font-weight: 600;
-    color: #64748B;
+    color: var(--text-secondary);
     font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -575,7 +592,7 @@
 .data-table td {
     padding: 1rem 1.5rem;
     color: var(--text-primary);
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border);
     vertical-align: middle;
 }
 
@@ -584,7 +601,7 @@
 }
 
 .data-table tr:hover td {
-    background: #F8FAFC;
+    background: var(--surface-hover);
 }
 
 .img-preview {
@@ -666,8 +683,8 @@
 
 .admin-topbar {
     height: var(--header-height);
-    background: white;
-    border-bottom: 1px solid var(--border-light);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -699,7 +716,7 @@
 }
 
 .sidebar-toggle:hover {
-    background: #F1F5F9;
+    background: var(--surface-hover);
     color: var(--primary);
 }
 
@@ -746,10 +763,10 @@
     top: 100%;
     right: 0;
     width: 320px;
-    background: white;
+    background: var(--surface);
     border-radius: 12px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
     z-index: 100;
     margin-top: 0.5rem;
     overflow: hidden;
@@ -773,9 +790,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border);
     font-weight: 600;
-    color: var(--secondary);
+    color: var(--text-primary);
 }
 
 .text-btn-small {
@@ -796,7 +813,7 @@
     padding: 1rem;
     display: flex;
     gap: 1rem;
-    border-bottom: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border);
     cursor: pointer;
     transition: background 0.2s;
 }

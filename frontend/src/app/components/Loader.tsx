@@ -13,8 +13,8 @@ const Loader = ({ text: propText, status = 'loading', onRetry }: LoaderProps) =>
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Colors based on status
-  const primaryColor = status === 'error' ? '#ef4444' : '#F37021'; // Red for error, Orange for default
-  const secondaryColor = status === 'error' ? '#7f1d1d' : '#334155';
+  const primaryColor = status === 'error' ? '#ef4444' : 'var(--primary)';
+  const secondaryColor = status === 'error' ? '#7f1d1d' : 'var(--secondary-lighter)';
 
   useEffect(() => {
     // If error, stop progress at random point or show 0
@@ -106,8 +106,8 @@ const Loader = ({ text: propText, status = 'loading', onRetry }: LoaderProps) =>
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          background-color: #0F172A;
-          color: white;
+          background-color: var(--background);
+          color: var(--text-primary);
           overflow: hidden;
         }
         .grid-background {

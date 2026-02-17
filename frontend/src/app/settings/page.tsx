@@ -2,12 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import api from '../utils/api';
-// Using standard HTML elements or Lucide/Feather icons if available, assuming standard react-icons are used in project
-import { FiSave, FiBell, FiGlobe, FiMoon, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiSave, FiBell, FiGlobe, FiMoon, FiSun, FiMonitor, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 
 export default function UserSettingsPage() {
     const { user, loadUser } = useAuth();
+    const { theme: globalTheme, setTheme: setGlobalTheme } = useTheme();
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -18,7 +21,7 @@ export default function UserSettingsPage() {
             sms: true
         },
         language: 'en',
-        theme: 'light'
+        theme: 'system' as 'light' | 'dark' | 'system'
     });
 
     // Load settings from user context when available
@@ -31,7 +34,7 @@ export default function UserSettingsPage() {
                     sms: user.settings.notifications?.sms ?? true
                 },
                 language: user.settings.language || 'en',
-                theme: user.settings.theme || 'light'
+                theme: (user.settings.theme as any) || 'system'
             });
         }
     }, [user]);
@@ -46,6 +49,11 @@ export default function UserSettingsPage() {
         }));
     };
 
+    const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
+        setSettings(prev => ({ ...prev, theme: newTheme }));
+        setGlobalTheme(newTheme); // Apply immediately
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
@@ -54,7 +62,7 @@ export default function UserSettingsPage() {
         try {
             await api.put('/auth/settings', settings);
             setMessage({ type: 'success', text: 'Settings updated successfully!' });
-            await loadUser(); // Refresh user context to apply settings globally if needed
+            await loadUser(); // Refresh user context
         } catch (error: any) {
             setMessage({ type: 'error', text: error.response?.data?.message || 'Failed to update settings' });
         } finally {
@@ -63,169 +71,206 @@ export default function UserSettingsPage() {
     };
 
     return (
-        <div className="container" style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto', minHeight: '80vh' }}>
-            <div style={{ marginBottom: '2rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '1rem' }}>
-                <h1 style={{ fontSize: '1.8rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.5rem' }}>
-                    Account Settings
-                </h1>
-                <p style={{ color: '#64748B', fontSize: '1rem' }}>
-                    Manage your preferences and notification settings.
-                </p>
-            </div>
-
-            {message && (
-                <div style={{
-                    padding: '1rem',
-                    borderRadius: '8px',
-                    marginBottom: '1.5rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.75rem',
-                    backgroundColor: message.type === 'success' ? '#ecfdf5' : '#fef2f2',
-                    color: message.type === 'success' ? '#065f46' : '#991b1b',
-                    border: `1px solid ${message.type === 'success' ? '#10b981' : '#f87171'}`
-                }}>
-                    {message.type === 'success' ? <FiCheck size={20} /> : <FiAlertCircle size={20} />}
-                    {message.text}
+        <>
+            <Header />
+            <div className="container" style={{ padding: '8rem 2rem 2rem', maxWidth: '900px', margin: '0 auto', minHeight: '80vh' }}>
+                <div style={{ marginBottom: '2rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                        Account Settings
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '1rem' }}>
+                        Manage your preferences and notification settings.
+                    </p>
                 </div>
-            )}
 
-            <form onSubmit={handleSave}>
-                {/* Notification Settings */}
-                <div className="card" style={{ padding: '1.5rem', borderRadius: '12px', background: 'white', border: '1px solid #e2e8f0', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1E293B', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{ padding: '8px', background: '#eff6ff', borderRadius: '8px', color: '#3b82f6' }}>
-                            <FiBell size={20} />
-                        </div>
-                        Notification Preferences
-                    </h2>
+                {message && (
+                    <div style={{
+                        padding: '1rem',
+                        borderRadius: '8px',
+                        marginBottom: '1.5rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        backgroundColor: message.type === 'success' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                        color: message.type === 'success' ? 'var(--success)' : 'var(--danger)',
+                        border: `1px solid ${message.type === 'success' ? 'var(--success)' : 'var(--danger)'}`
+                    }}>
+                        {message.type === 'success' ? <FiCheck size={20} /> : <FiAlertCircle size={20} />}
+                        {message.text}
+                    </div>
+                )}
 
-                    <div style={{ display: 'grid', gap: '1rem' }}>
-                        {/* Email Notifications */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
-                            <div>
-                                <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>Email Notifications</p>
-                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
-                                    Receive order updates, invoices, and promotions via email
-                                </p>
+                <form onSubmit={handleSave}>
+                    {/* Notification Settings */}
+                    <div className="card" style={{ padding: '1.5rem', borderRadius: '12px', background: 'var(--surface)', border: '1px solid var(--border)', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ padding: '8px', background: 'var(--info-light)', borderRadius: '8px', color: 'var(--info)' }}>
+                                <FiBell size={20} />
                             </div>
-                            <label className="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    checked={settings.notifications.email}
-                                    onChange={(e) => handleNotificationChange('email', e.target.checked)}
-                                />
-                                <span className="slider round"></span>
-                            </label>
-                        </div>
+                            Notification Preferences
+                        </h2>
 
-                        {/* WhatsApp Notifications */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
-                            <div>
-                                <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>WhatsApp Notifications</p>
-                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
-                                    Get real-time updates and delivery status on WhatsApp
-                                </p>
+                        <div style={{ display: 'grid', gap: '1rem' }}>
+                            {/* Email Notifications */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                                <div>
+                                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Email Notifications</p>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
+                                        Receive order updates, invoices, and promotions via email
+                                    </p>
+                                </div>
+                                <label className="toggle-switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.notifications.email}
+                                        onChange={(e) => handleNotificationChange('email', e.target.checked)}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
                             </div>
-                            <label className="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    checked={settings.notifications.whatsapp}
-                                    onChange={(e) => handleNotificationChange('whatsapp', e.target.checked)}
-                                />
-                                <span className="slider round"></span>
-                            </label>
-                        </div>
 
-                        {/* SMS Notifications */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
-                            <div>
-                                <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>SMS Notifications</p>
-                                <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
-                                    Receive critical alerts and OTPs via SMS
-                                </p>
+                            {/* WhatsApp Notifications */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                                <div>
+                                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>WhatsApp Notifications</p>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
+                                        Get real-time updates and delivery status on WhatsApp
+                                    </p>
+                                </div>
+                                <label className="toggle-switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.notifications.whatsapp}
+                                        onChange={(e) => handleNotificationChange('whatsapp', e.target.checked)}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
                             </div>
-                            <label className="toggle-switch">
-                                <input
-                                    type="checkbox"
-                                    checked={settings.notifications.sms}
-                                    onChange={(e) => handleNotificationChange('sms', e.target.checked)}
-                                />
-                                <span className="slider round"></span>
-                            </label>
+
+                            {/* SMS Notifications */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--background)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                                <div>
+                                    <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>SMS Notifications</p>
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
+                                        Receive critical alerts and OTPs via SMS
+                                    </p>
+                                </div>
+                                <label className="toggle-switch">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.notifications.sms}
+                                        onChange={(e) => handleNotificationChange('sms', e.target.checked)}
+                                    />
+                                    <span className="slider round"></span>
+                                </label>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Preferences Section */}
-                <div className="card" style={{ padding: '1.5rem', borderRadius: '12px', background: 'white', border: '1px solid #e2e8f0', marginBottom: '1.5rem', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#1E293B', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <div style={{ padding: '8px', background: '#f0fdf4', borderRadius: '8px', color: '#16a34a' }}>
-                            <FiGlobe size={20} />
-                        </div>
-                        General Preferences
-                    </h2>
+                    {/* Appearance & General Section */}
+                    <div className="card" style={{ padding: '1.5rem', borderRadius: '12px', background: 'var(--surface)', border: '1px solid var(--border)', marginBottom: '1.5rem', boxShadow: 'var(--shadow-sm)' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ padding: '8px', background: 'var(--success-light)', borderRadius: '8px', color: 'var(--success)' }}>
+                                <FiGlobe size={20} />
+                            </div>
+                            Appearance & General
+                        </h2>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem', color: '#475569' }}>
-                                Language
-                            </label>
-                            <select
-                                value={settings.language}
-                                onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value }))}
-                                style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.95rem' }}
-                            >
-                                <option value="en">English (default)</option>
-                                <option value="hi">Hindi</option>
-                                <option value="gu">Gujarati</option>
-                            </select>
-                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '2rem' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-secondary)' }}>
+                                    Theme Mode
+                                </label>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
+                                    <div
+                                        onClick={() => handleThemeChange('light')}
+                                        style={{
+                                            padding: '1rem',
+                                            borderRadius: '12px',
+                                            border: `2px solid ${settings.theme === 'light' ? 'var(--primary)' : 'var(--border)'}`,
+                                            background: settings.theme === 'light' ? 'var(--surface-hover)' : 'var(--background)',
+                                            cursor: 'pointer',
+                                            textAlign: 'center',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <FiSun size={24} style={{ marginBottom: '0.5rem', color: settings.theme === 'light' ? 'var(--primary)' : 'var(--text-muted)' }} />
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Light</div>
+                                    </div>
+                                    <div
+                                        onClick={() => handleThemeChange('dark')}
+                                        style={{
+                                            padding: '1rem',
+                                            borderRadius: '12px',
+                                            border: `2px solid ${settings.theme === 'dark' ? 'var(--primary)' : 'var(--border)'}`,
+                                            background: settings.theme === 'dark' ? 'var(--surface-hover)' : 'var(--background)',
+                                            cursor: 'pointer',
+                                            textAlign: 'center',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <FiMoon size={24} style={{ marginBottom: '0.5rem', color: settings.theme === 'dark' ? 'var(--primary)' : 'var(--text-muted)' }} />
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>Dark</div>
+                                    </div>
+                                    <div
+                                        onClick={() => handleThemeChange('system')}
+                                        style={{
+                                            padding: '1rem',
+                                            borderRadius: '12px',
+                                            border: `2px solid ${settings.theme === 'system' ? 'var(--primary)' : 'var(--border)'}`,
+                                            background: settings.theme === 'system' ? 'var(--surface-hover)' : 'var(--background)',
+                                            cursor: 'pointer',
+                                            textAlign: 'center',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                    >
+                                        <FiMonitor size={24} style={{ marginBottom: '0.5rem', color: settings.theme === 'system' ? 'var(--primary)' : 'var(--text-muted)' }} />
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>System</div>
+                                    </div>
+                                </div>
+                            </div>
 
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem', color: '#475569' }}>
-                                Theme
-                            </label>
-                            <select
-                                value={settings.theme}
-                                onChange={(e) => setSettings(prev => ({ ...prev, theme: e.target.value }))}
-                                style={{ width: '100%', padding: '0.75rem', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.95rem' }}
-                            >
-                                <option value="light">Light Mode</option>
-                                <option value="dark">Dark Mode</option>
-                            </select>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.9rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>
+                                    Preferred Language
+                                </label>
+                                <select
+                                    value={settings.language}
+                                    onChange={(e) => setSettings(prev => ({ ...prev, language: e.target.value }))}
+                                    style={{
+                                        width: '100%',
+                                        padding: '0.875rem',
+                                        border: '1px solid var(--border)',
+                                        borderRadius: '8px',
+                                        fontSize: '0.95rem',
+                                        background: 'var(--background)',
+                                        color: 'var(--text-primary)',
+                                        outline: 'none'
+                                    }}
+                                >
+                                    <option value="en">English (default)</option>
+                                    <option value="hi">Hindi</option>
+                                    <option value="gu">Gujarati</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
-                    <button
-                        type="submit"
-                        disabled={saving}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.75rem 2rem',
-                            borderRadius: '8px',
-                            fontSize: '1rem',
-                            fontWeight: 600,
-                            backgroundColor: '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            cursor: saving ? 'not-allowed' : 'pointer',
-                            opacity: saving ? 0.7 : 1,
-                            transition: 'all 0.2s ease'
-                        }}
-                    >
-                        <FiSave size={18} />
-                        {saving ? 'Saving Changes...' : 'Save Settings'}
-                    </button>
-                </div>
-            </form>
+                    {/* Action Buttons */}
+                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
+                        <button
+                            type="submit"
+                            disabled={saving}
+                            className="btn btn-primary"
+                            style={{ padding: '0.75rem 2.5rem' }}
+                        >
+                            <FiSave size={18} />
+                            {saving ? 'Saving...' : 'Save Settings'}
+                        </button>
+                    </div>
+                </form>
 
-            <style jsx>{`
+                <style jsx>{`
                 .toggle-switch {
                     position: relative;
                     display: inline-block;
@@ -244,7 +289,7 @@ export default function UserSettingsPage() {
                     left: 0;
                     right: 0;
                     bottom: 0;
-                    background-color: #cbd5e1;
+                    background-color: var(--text-light);
                     transition: .4s;
                 }
                 .slider:before {
@@ -258,10 +303,7 @@ export default function UserSettingsPage() {
                     transition: .4s;
                 }
                 input:checked + .slider {
-                    background-color: #3b82f6;
-                }
-                input:focus + .slider {
-                    box-shadow: 0 0 1px #3b82f6;
+                    background-color: var(--primary);
                 }
                 input:checked + .slider:before {
                     transform: translateX(24px);
@@ -273,6 +315,8 @@ export default function UserSettingsPage() {
                     border-radius: 50%;
                 }
             `}</style>
-        </div>
+            </div>
+            <Footer />
+        </>
     );
 }
