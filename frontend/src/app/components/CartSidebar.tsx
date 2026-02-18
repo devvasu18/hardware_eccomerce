@@ -8,7 +8,7 @@ import './CartSidebar.css';
 import { useLanguage } from '../../context/LanguageContext';
 
 const CartSidebar = () => {
-    const { t } = useLanguage();
+    const { t, getLocalized } = useLanguage();
     const pathname = usePathname();
     const {
         isCartOpen,
@@ -55,7 +55,7 @@ const CartSidebar = () => {
                             <div key={`${item.productId}-${item.modelId || 'nm'}-${item.variationId || item.size || 'def'}`} className="sidebar-cart-item">
                                 <div className="cart-item-image">
                                     {item.image ? (
-                                        <img src={item.image} alt={item.name} />
+                                        <img src={item.image} alt={getLocalized(item.name)} />
                                     ) : (
                                         <div className="cart-item-placeholder" />
                                     )}

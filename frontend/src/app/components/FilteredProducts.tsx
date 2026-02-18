@@ -28,10 +28,9 @@ interface Product {
 
 interface ProductGridContentProps {
     offerInfo?: any;
-    config?: any;
 }
 
-function ProductGridContent({ offerInfo, config }: ProductGridContentProps) {
+function ProductGridContent({ offerInfo }: ProductGridContentProps) {
     const { t } = useLanguage();
     const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>([]);
@@ -94,23 +93,7 @@ function ProductGridContent({ offerInfo, config }: ProductGridContentProps) {
     }, [category, brand, keyword, subcategory, offerSlug, offerInfo]); // Re-run when offerInfo changes
 
     return (
-        <div className="container products-content-container pt-4 pb-10 md:py-10">
-            {/* Mobile Title - Only shown when hero is hidden */}
-            <div className="md:hidden pb-4 border-b border-gray-100 mb-4">
-                <h1 className="text-xl font-bold text-slate-900">
-                    {offerInfo ? (
-                        <>
-                            {offerInfo.title} <span className="text-orange-600">({offerInfo.percentage}% {t('off')})</span>
-                        </>
-                    ) : keyword ? `${t('search_results')}: "${keyword}"` : (brand ? `${t('brand_label')}: ${brand}` : (category ? `${t('category_label')}: ${category}` : (config?.title || t('industrial_catalog'))))}
-                </h1>
-                {offerInfo && (
-                    <p className="text-sm text-slate-500 mt-1">
-                        {t('discover_promotion', { title: offerInfo.title, percentage: offerInfo.percentage })}
-                    </p>
-                )}
-            </div>
-
+        <div className="container products-content-container py-10">
             <div className="products-page-layout flex gap-8">
                 {/* Sidebar Filters */}
                 <ProductFilters initialCategories={categories} initialBrands={brands} />
@@ -136,7 +119,7 @@ function ProductGridContent({ offerInfo, config }: ProductGridContentProps) {
                                 <ProductCard key={item._id} product={{
                                     ...item,
                                     category: item.category
-                                        ? (typeof item.category === 'object' && item.category !== null ? item.category.name : (String(item.category).length > 10 ? t('auto_part') : item.category))
+                                        ? (typeof item.category === 'object' && item.category !== null ? getLocalized(item.category.name) : (String(item.category).length > 10 ? t('auto_part') : getLocalized(item.category)))
                                         : t('uncategorized')
                                 }} />
                             ))}
@@ -179,27 +162,27 @@ export default function FilteredProducts({ config }: { config?: any }) {
     return (
         <section className="filtered-products-section">
             {/* dynamic hero based on filter */}
-            <div className="products-hero hidden md:block py-16 bg-slate-50 border-b border-gray-100">
+            <div className="products-hero">
                 <div className="container">
                     <h3 className="text-4xl font-extrabold text-slate-900 mb-4">
                         {offerInfo ? (
                             <>
-                                {offerInfo.title} <span className="text-orange-600">({offerInfo.percentage}% {t('off')})</span>
+                                {getLocalized(offerInfo.title)} <span className="text-orange-600">({offerInfo.percentage}% {t('off')})</span>
                             </>
-                        ) : keyword ? `${t('search_results')}: "${keyword}"` : (brand ? `${t('brand_label')}: ${brand}` : (category ? `${t('category_label')}: ${category}` : (config?.title || t('industrial_catalog'))))}
+                        ) : keyword ? `${t('search_results')}: "${keyword}"` : (brand ? `${t('brand_label')}: ${brand}` : (category ? `${t('category_label')}: ${category}` : (getLocalized(config?.title) || t('industrial_catalog'))))}
                     </h3>
                     <p className="text-lg text-slate-500 max-w-2xl">
                         {offerInfo
-                            ? t('discover_promotion', { title: offerInfo.title, percentage: offerInfo.percentage })
+                            ? t('discover_promotion', { title: getLocalized(offerInfo.title), percentage: offerInfo.percentage })
                             : category
                                 ? t('explore_category', { category: category })
-                                : (config?.subtitle || t('browse_catalog'))}
+                                : (getLocalized(config?.subtitle) || t('browse_catalog'))}
                     </p>
                 </div>
             </div>
 
             <Suspense fallback={<div className="p-20 text-center">{t('loading_component')}</div>}>
-                <ProductGridContent offerInfo={offerInfo} config={config} />
+                <ProductGridContent offerInfo={offerInfo} />
             </Suspense>
         </section>
     );

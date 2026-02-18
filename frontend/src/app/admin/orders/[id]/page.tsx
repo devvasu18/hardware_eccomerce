@@ -8,12 +8,14 @@ import { FiArrowLeft, FiPrinter, FiCheckCircle, FiXCircle, FiTruck, FiInfo, FiUp
 import { useRouter } from "next/navigation";
 import Modal from "../../../components/Modal";
 import { useModal } from "../../../hooks/useModal";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter();
     const [id, setId] = useState<string | null>(null);
     const [order, setOrder] = useState<any>(null);
     const [timeline, setTimeline] = useState<any[]>([]);
+    const { getLocalized, language } = useLanguage();
 
     // Action State
     const [processing, setProcessing] = useState(false);
@@ -583,12 +585,12 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
                                                         <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                            <span style={{ fontWeight: 500 }}>{item.product?.title || 'Unknown Product'}</span>
+                                                            <span style={{ fontWeight: 500 }}>{getLocalized(item.product?.title) || 'Unknown Product'}</span>
                                                             {(item.modelName || item.variationText) && (
                                                                 <span style={{ fontSize: '0.8rem', color: '#64748B' }}>
-                                                                    {item.modelName ? `${item.modelName}` : ''}
+                                                                    {item.modelName ? `${getLocalized(item.modelName)}` : ''}
                                                                     {item.modelName && item.variationText ? ' - ' : ''}
-                                                                    {item.variationText}
+                                                                    {getLocalized(item.variationText)}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -645,7 +647,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                                             <td style={{ textAlign: 'center' }} className="no-print">
                                                 {item.status === 'Active' && order.status !== 'Cancelled' && order.items.length > 1 && (
                                                     <button
-                                                        onClick={() => handleCancelItem(item._id, item.product?.title || 'Product')}
+                                                        onClick={() => handleCancelItem(item._id, getLocalized(item.product?.title) || 'Product')}
                                                         style={{
                                                             background: 'none',
                                                             border: '1px solid #FECACA',

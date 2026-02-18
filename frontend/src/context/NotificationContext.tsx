@@ -99,14 +99,19 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             return;
         }
 
-        // Determine backend URL for direct connection (Rewrites don't work for WS on Vercel)
+        // Determine backend URL for direct connection
         let backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
-        // If it's relative, we fallback to window.location.origin
-        if (backendUrl && backendUrl.startsWith('http')) {
-            backendUrl = backendUrl.replace(/\/api$/, '').replace(/\/api\/$/, '');
+        // If it's relative or empty in development, we fallback to localhost:5000
+        if (!backendUrl || !backendUrl.startsWith('http')) {
+            if (process.env.NODE_ENV === 'development') {
+                backendUrl = 'http://localhost:5000';
+            } else {
+                backendUrl = ''; // Fallback to window.location.origin for relative paths
+            }
         } else {
-            backendUrl = '';
+            // Remove /api suffix if present to get the base URL
+            backendUrl = backendUrl.replace(/\/api$/, '').replace(/\/api\/$/, '');
         }
 
         console.log('📡 Initializing Socket.IO connection to:', backendUrl || 'relative origin');
@@ -114,7 +119,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         const newSocket = io(backendUrl || undefined, {
             path: '/socket.io',
             withCredentials: true,
-            transports: ['polling', 'websocket'], // Start with polling for better compatibility 
+            transports: ['websocket', 'polling'], // Prefer websocket as it's more stable for proxies/rewrites
             reconnectionAttempts: 10,
             reconnectionDelay: 1000,
             timeout: 20000

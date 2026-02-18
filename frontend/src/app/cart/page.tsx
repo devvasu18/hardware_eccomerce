@@ -5,9 +5,11 @@ import Link from 'next/link';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function CartPage() {
     const { items, loading, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
+    const { getLocalized, t } = useLanguage();
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
 
     if (loading) {
@@ -52,10 +54,10 @@ export default function CartPage() {
                                     style={{ width: '80px', height: '80px', background: 'var(--background)', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--border)' }}
                                     onClick={() => setZoomedImage(item.image)}
                                 >
-                                    {item.image ? <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : null}
+                                    {item.image ? <img src={item.image} alt={getLocalized(item.name)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : null}
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <h4 style={{ marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{item.name}</h4>
+                                    <h4 style={{ marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{getLocalized(item.name)}</h4>
                                     {item.size && <p style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>Size: {item.size}</p>}
                                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Unit Price: ₹{item.price}</p>
                                 </div>

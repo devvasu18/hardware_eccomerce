@@ -44,11 +44,15 @@
 }
 
 @media (max-width: 767px) {
-    .products-page-layout {
-        display: block;
+    .products-hero {
+        display: none !important;
     }
 
-    .products-hero {
-        padding: var(--space-2xl) 0;
+    .products-content-container {
+        padding-top: var(--space-xs) !important;
+    }
+
+    .products-page-layout {
+        display: block;
     }
 }

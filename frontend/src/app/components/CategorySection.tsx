@@ -18,11 +18,11 @@ export default function CategorySection({ config }: { config?: any }) {
 
     const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
         ? config.titleHindi
-        : (config?.title || t('browse_categories'));
+        : (getLocalized(config?.title) || t('browse_categories'));
 
     const displaySubtitle = (language === 'hi' && config?.showHindi && config?.subtitleHindi)
         ? config.subtitleHindi
-        : (config?.subtitle || t('categories_subtitle'));
+        : (getLocalized(config?.subtitle) || t('categories_subtitle'));
 
     // Fetch Categories
     useEffect(() => {

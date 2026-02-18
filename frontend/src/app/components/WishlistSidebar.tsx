@@ -8,7 +8,7 @@ import './WishlistSidebar.css';
 import { useLanguage } from '../../context/LanguageContext';
 
 const WishlistSidebar = () => {
-    const { t } = useLanguage();
+    const { t, getLocalized } = useLanguage();
     const {
         isWishlistOpen,
         closeWishlist,
@@ -77,14 +77,14 @@ const WishlistSidebar = () => {
                             <div key={item._id} className="sidebar-wishlist-item">
                                 <div className="wishlist-item-image">
                                     {(item.product.featured_image || item.product.gallery_images?.[0]) ? (
-                                        <img src={item.product.featured_image || item.product.gallery_images[0]} alt={item.product.title} />
+                                        <img src={item.product.featured_image || item.product.gallery_images[0]} alt={getLocalized(item.product.title)} />
                                     ) : (
                                         <div className="no-image-placeholder">{t('no_image')}</div>
                                     )}
                                 </div>
                                 <div className="wishlist-item-details">
                                     <div>
-                                        <h4 className="wishlist-item-name">{item.product.title}</h4>
+                                        <h4 className="wishlist-item-name">{getLocalized(item.product.title)}</h4>
                                         <div className="wishlist-item-meta">
                                             <span className="wishlist-item-category">{item.product.category}</span>
                                         </div>

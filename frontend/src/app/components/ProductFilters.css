@@ -327,8 +327,9 @@
 
     .mobile-filter-toggle {
         display: inline-flex;
-        padding: 0.875rem 1.25rem;
-        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
     }
 
     .close-filters {

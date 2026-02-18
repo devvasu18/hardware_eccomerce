@@ -9,6 +9,7 @@ import { useModal } from '@/app/hooks/useModal';
 import { FaArrowLeft, FaCreditCard, FaMoneyBillWave } from 'react-icons/fa';
 import { getSystemSettings } from '@/app/utils/systemSettings';
 import Header from '@/app/components/Header';
+import { useLanguage } from '@/context/LanguageContext';
 import './checkout.css';
 
 const INDIAN_STATES = [
@@ -22,6 +23,7 @@ const INDIAN_STATES = [
 export default function CheckoutPage() {
     const { items, clearCart, loading: cartLoading } = useCart();
     const { user, login } = useAuth();
+    const { getLocalized } = useLanguage();
     const router = useRouter();
 
     // Split items into Available and On-Demand
@@ -713,7 +715,7 @@ export default function CheckoutPage() {
                                     <h4 className="summary-header">Items for Purchase</h4>
                                     {availableItems.map(item => (
                                         <div key={`${item.productId}-${item.size || 'default'}`} className="summary-item">
-                                            <span>{item.name} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
+                                            <span>{getLocalized(item.name)} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
                                             <span style={{ fontWeight: 600 }}>₹{item.price * item.quantity}</span>
                                         </div>
                                     ))}
@@ -727,7 +729,7 @@ export default function CheckoutPage() {
                                     <h4 className={`summary-header ${availableItems.length > 0 ? 'mt-1-5' : 'mt-0'}`}>Procurement Request Items</h4>
                                     {requestItems.map(item => (
                                         <div key={`${item.productId}-${item.size || 'default'}`} className="summary-item text-request">
-                                            <span>{item.name} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
+                                            <span>{getLocalized(item.name)} {item.size ? `(${item.size})` : ''} x {item.quantity}</span>
                                             <span className="request-tag">REQUEST ONLY</span>
                                         </div>
                                     ))}

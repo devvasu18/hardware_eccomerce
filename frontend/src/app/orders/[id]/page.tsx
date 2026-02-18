@@ -6,6 +6,7 @@ import Link from 'next/link';
 import RefundModal from '@/app/components/RefundModal';
 import { useModal } from '@/app/hooks/useModal';
 import Modal from '@/app/components/Modal';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface StatusLog {
     _id: string;
@@ -58,6 +59,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
     const [viewImage, setViewImage] = useState<string | null>(null);
 
     const { modalState, showModal, showSuccess, showError, hideModal } = useModal();
+    const { getLocalized, t } = useLanguage();
 
     useEffect(() => {
         fetchOrderDetails();
@@ -120,7 +122,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
     const handleRefundClick = (item: any) => {
         setRefundItem({
             id: item.product._id,
-            name: item.product.productTitle || item.product.title || item.product.name,
+            name: getLocalized(item.product.productTitle || item.product.title || item.product.name),
             unitPrice: item.priceAtBooking,
             quantity: item.quantity - (item.quantityReturned || 0)
         });
@@ -614,10 +616,10 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                             </div>
                                             <div>
                                                 <div style={{ fontWeight: 600, marginBottom: '0.25rem', color: 'var(--text-primary)' }}>
-                                                    {item.product?.name || 'Product'}
+                                                    {getLocalized(item.product?.name || item.productTitle) || 'Product'}
                                                 </div>
                                                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                                                    Qty: {item.quantity} {item.size ? `| Size: ${item.size}` : ''}
+                                                    Qty: {item.quantity} {item.size ? `| ${t ? t('size') : 'Size'}: ${getLocalized(item.size)}` : ''}
                                                 </div>
                                             </div>
                                         </div>
@@ -647,7 +649,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                                                 {/* Cancel Item Button */}
                                                 {order.status === 'Order Placed' && item.status === 'Active' && item.product?.isCancellable !== false && (
                                                     <button
-                                                        onClick={() => cancelItem(item._id, item.productTitle)}
+                                                        onClick={() => cancelItem(item._id, getLocalized(item.product?.name || item.productTitle))}
                                                         style={{
                                                             fontSize: '0.75rem',
                                                             color: '#64748b',
