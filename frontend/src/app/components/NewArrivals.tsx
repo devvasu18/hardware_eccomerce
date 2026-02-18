@@ -58,18 +58,20 @@ export default function NewArrivals({ config }: { config?: any }) {
     if (products.length === 0) return null;
 
     return (
-        <section className="container new-arrivals-section" style={{ overflow: 'visible' }}>
-            <div className="new-arrivals-header">
-                <div>
-                    <h2 className="new-arrivals-title">{displayTitle}</h2>
-                    <p className="new-arrivals-subtitle">{displaySubtitle}</p>
+        <section className="new-arrivals-section" style={{ overflow: 'visible' }}>
+            <div className="container">
+                <div className="new-arrivals-header">
+                    <div>
+                        <h2 className="new-arrivals-title">{displayTitle}</h2>
+                        <p className="new-arrivals-subtitle">{displaySubtitle}</p>
+                    </div>
+                    <Link href="/new-arrivals" className="view-all-btn">
+                        {t('view_all')} &rarr;
+                    </Link>
                 </div>
-                <Link href="/new-arrivals" className="view-all-btn">
-                    {t('view_all')} &rarr;
-                </Link>
-            </div>
 
-            <NewArrivalsSlider products={products} />
+                <NewArrivalsSlider products={products} />
+            </div>
         </section>
     );
 }

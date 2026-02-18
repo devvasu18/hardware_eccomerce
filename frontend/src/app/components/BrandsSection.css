@@ -3,7 +3,7 @@
    ======================================== */
 
 .brands-section {
-    padding: var(--space-4xl) 0;
+    padding: var(--space-2xl) 0;
     background: var(--background);
     position: relative;
     overflow: hidden;
@@ -133,7 +133,7 @@
 /* Small Mobile (320px - 480px) */
 @media (max-width: 480px) {
     .brands-section {
-        padding: 2rem 0;
+        padding: 1.5rem 0;
     }
 
     .brands-header {
@@ -171,7 +171,7 @@
 /* Large Mobile (481px - 767px) */
 @media (min-width: 481px) and (max-width: 767px) {
     .brands-section {
-        padding: 2.5rem 0;
+        padding: 2rem 0;
     }
 
     .brands-header {

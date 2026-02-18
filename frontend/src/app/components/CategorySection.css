@@ -3,7 +3,7 @@
    ======================================== */
 
 .category-section {
-    padding: var(--space-4xl) 0;
+    padding: var(--space-2xl) 0;
     background: var(--background);
     position: relative;
     margin-top: 0 !important;
@@ -145,7 +145,7 @@
 /* Small Mobile (320px - 480px) */
 @media (max-width: 480px) {
     .category-section {
-        padding: 2rem 0;
+        padding: 1.5rem 0;
     }
 
     .category-header {
@@ -194,7 +194,7 @@
 /* Large Mobile (481px - 767px) */
 @media (min-width: 481px) and (max-width: 767px) {
     .category-section {
-        padding: 2.5rem 0;
+        padding: 2rem 0;
     }
 
     .category-header {

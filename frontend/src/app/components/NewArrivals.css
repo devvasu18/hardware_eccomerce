@@ -1,5 +1,5 @@
 .new-arrivals-section {
-    padding: 4rem 0;
+    padding: 2rem 0;
 }
 
 .new-arrivals-header {
@@ -107,7 +107,7 @@
 /* Small Mobile (320px - 480px) */
 @media (max-width: 480px) {
     .new-arrivals-section {
-        padding: 2rem 0;
+        padding: 1.5rem 0;
     }
 
     .new-arrivals-header {
@@ -152,7 +152,7 @@
 /* Large Mobile (481px - 767px) */
 @media (min-width: 481px) and (max-width: 767px) {
     .new-arrivals-section {
-        padding: 2.5rem 0;
+        padding: 2rem 0;
     }
 
     .slider-item {
