@@ -1,9 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import io, { Socket } from 'socket.io-client';
 import { useAuth } from './AuthContext';
-import { toast } from 'react-hot-toast'; // Assuming toast exists or can be added
+import { toast } from 'react-hot-toast';
 
 export interface Notification {
     _id: string;
@@ -37,6 +37,13 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const [loading, setLoading] = useState(true);
 
     const [soundSettings, setSoundSettings] = useState({ enabled: true, sound: 'default' });
+    const settingsRef = useRef(soundSettings);
+    const [audioUnlocked, setAudioUnlocked] = useState(false);
+
+    // Keep ref in sync
+    useEffect(() => {
+        settingsRef.current = soundSettings;
+    }, [soundSettings]);
 
     // Fetch System Settings (Sound)
     useEffect(() => {
@@ -61,19 +68,49 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         fetchSettings();
     }, []);
 
+    // Unlock Audio on first interaction
+    useEffect(() => {
+        const unlockAudio = () => {
+            if (audioUnlocked) return;
+
+            // Create a silent buffer and play it to unlock audio context
+            const audio = new Audio();
+            audio.play().then(() => {
+                console.log('🔊 Audio Context Unlocked');
+                setAudioUnlocked(true);
+                window.removeEventListener('click', unlockAudio);
+                window.removeEventListener('touchstart', unlockAudio);
+            }).catch(() => {
+                // Ignore failure, will try again on next click
+            });
+        };
+
+        window.addEventListener('click', unlockAudio);
+        window.addEventListener('touchstart', unlockAudio);
+
+        return () => {
+            window.removeEventListener('click', unlockAudio);
+            window.removeEventListener('touchstart', unlockAudio);
+        };
+    }, [audioUnlocked]);
+
     const playSound = (type: string) => {
-        if (!soundSettings.enabled) return;
+        const settings = settingsRef.current;
+        if (!settings.enabled) {
+            console.log('🔊 Sound is disabled in settings');
+            return;
+        }
 
         let audioPath = '/sounds/order_alert.mp3'; // Default fallback
 
-        if (soundSettings.sound && soundSettings.sound !== 'default') {
-            audioPath = soundSettings.sound;
+        if (settings.sound && settings.sound !== 'default') {
+            audioPath = settings.sound;
         } else {
             // Default logic based on type if 'default' is selected
             audioPath = type === 'ORDER' ? '/sounds/order_alert.mp3' : '/sounds/notification.mp3';
         }
 
-        console.log(`🔊 Attempting to play sound: ${audioPath}`);
+        console.log(`🔊 [${type}] Attempting to play sound: ${audioPath}`);
 
         try {
             const audio = new Audio(audioPath);
@@ -86,7 +123,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                         console.log('✅ Audio played successfully');
                     })
                     .catch((error) => {
-                        console.warn('❌ Audio playback prevented by browser:', error);
+                        console.warn('❌ Audio playback prevented by browser. User must click on page first.', error);
                     });
             }
         } catch (err) {
@@ -94,9 +131,44 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         }
     };
 
+    // Use a ref for the latest notification handler to avoid stale closure issues
+    const handleNotification = (notification: Notification) => {
+        console.log('🔔 RECEIVED:', notification.title, 'Type:', notification.type);
+
+        // Avoid duplicates if same notification received multiple times (e.g. from role + user rooms)
+        setNotifications((prev) => {
+            const exists = prev.some(n => n._id === notification._id);
+            if (exists) return prev;
+
+            // Increment unread count only for NEW notifications
+            setUnreadCount((count) => count + 1);
+            return [notification, ...prev];
+        });
+
+        // Play Sound
+        playSound(notification.type);
+
+        // Show Toast
+        if (typeof toast !== 'undefined') {
+            toast(notification.message, {
+                icon: notification.type === 'ORDER' ? '🛒' : '🔔',
+                duration: 5000
+            });
+        }
+    };
+
+    const handlerRef = useRef(handleNotification);
+    useEffect(() => {
+        handlerRef.current = handleNotification;
+    });
+
     // Initialize Socket & Fetch Data
     useEffect(() => {
         if (!user) {
+            if (socket) {
+                socket.disconnect();
+                setSocket(null);
+            }
             setNotifications([]);
             setUnreadCount(0);
             setLoading(false);
@@ -123,7 +195,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         const newSocket = io(backendUrl || undefined, {
             path: '/socket.io',
             withCredentials: true,
-            transports: ['websocket', 'polling'], // Prefer websocket as it's more stable for proxies/rewrites
+            transports: ['websocket', 'polling'],
             reconnectionAttempts: 10,
             reconnectionDelay: 1000,
             timeout: 20000
@@ -163,30 +235,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             syncNotifications();
         });
 
-        newSocket.on('notification', (notification: Notification) => {
-            console.log('🔔 RECEIVED:', notification.title);
-
-            // Avoid duplicates if same notification received multiple times (e.g. from role + user rooms)
-            setNotifications((prev) => {
-                const exists = prev.some(n => n._id === notification._id);
-                if (exists) return prev;
-
-                // Increment unread count only for NEW notifications
-                setUnreadCount((count) => count + 1);
-                return [notification, ...prev];
-            });
-
-            // Play Sound
-            playSound(notification.type);
-
-            // Show Toast
-            if (typeof toast !== 'undefined') {
-                toast(notification.message, {
-                    icon: notification.type === 'ORDER' ? '🛒' : '🔔',
-                    duration: 5000
-                });
-            }
-        });
+        // This ensures the socket always calls the LATEST version of handleNotification via ref
+        newSocket.on('notification', (n: Notification) => handlerRef.current(n));
 
         newSocket.on('disconnect', (reason) => {
             console.warn('❌ Socket Disconnected:', reason);
@@ -246,7 +296,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             const token = localStorage.getItem('token');
             if (!token) return;
 
-            // Optimistic Update
             setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
             const notif = notifications.find(n => n._id === id);
             if (notif && !notif.isRead) {
@@ -260,7 +309,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         } catch (error) {
             console.error('Mark read failed', error);
-            // Revert on error? overly complex for now
         }
     };
 

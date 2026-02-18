@@ -364,7 +364,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
     return (
         <main style={{ background: 'var(--background)', minHeight: '100vh', paddingBottom: '4rem' }}>
             <Header />
-            <div className="container" style={{ padding: '3rem 0', maxWidth: '1200px', margin: '0 auto' }}>
+            <div className="container" style={{ paddingTop: '3rem', paddingBottom: '3rem', maxWidth: '1200px', margin: '0 auto' }}>
                 {/* Header Section */}
                 <div style={{ marginBottom: '2rem' }}>
                     <Link href="/orders" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: '0.9rem' }}>

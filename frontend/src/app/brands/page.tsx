@@ -29,7 +29,7 @@ export default function BrandsPage() {
     return (
         <>
             <Header />
-            <section className="container" style={{ padding: '3rem 0', minHeight: '60vh' }}>
+            <section className="container" style={{ paddingTop: '3rem', paddingBottom: '3rem', minHeight: '60vh' }}>
                 <div className="page-header" style={{ textAlign: 'center', marginBottom: '3rem' }}>
                     <h1 className="page-title" style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Our Partner Brands</h1>
                     <p style={{ color: 'var(--text-muted)', maxWidth: '600px', margin: '0 auto' }}>

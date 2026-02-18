@@ -64,7 +64,7 @@ export default function PaymentSuccessPage() {
     }, [searchParams, router]);
 
     return (
-        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+        <div className="container" style={{ paddingTop: '4rem', paddingBottom: '4rem', textAlign: 'center' }}>
             <div className="card" style={{ maxWidth: '600px', margin: '0 auto', padding: '3rem' }}>
                 {verifying ? (
                     <>

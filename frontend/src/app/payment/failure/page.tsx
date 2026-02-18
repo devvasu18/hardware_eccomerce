@@ -13,7 +13,7 @@ export default function PaymentFailurePage() {
     const amount = searchParams.get('amount');
 
     return (
-        <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+        <div className="container" style={{ paddingTop: '4rem', paddingBottom: '4rem', textAlign: 'center' }}>
             <div className="card" style={{ maxWidth: '600px', margin: '0 auto', padding: '3rem' }}>
                 <FiXCircle style={{ fontSize: '4rem', color: '#ef4444', margin: '0 auto 2rem' }} />
                 <h1 style={{ marginBottom: '1rem', color: '#ef4444' }}>Payment Failed</h1>

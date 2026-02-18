@@ -16,7 +16,7 @@ export default function CartPage() {
         return (
             <>
                 <Header />
-                <div className="container" style={{ padding: '4rem 0', textAlign: 'center', minHeight: '60vh' }}>
+                <div className="container" style={{ paddingTop: '4rem', paddingBottom: '4rem', textAlign: 'center', minHeight: '60vh' }}>
                     <div className="loading-spinner" style={{ margin: '0 auto 1rem' }}></div>
                     <p>Loading your cart...</p>
                 </div>
@@ -29,7 +29,7 @@ export default function CartPage() {
         return (
             <>
                 <Header />
-                <div className="container" style={{ padding: '4rem 0', textAlign: 'center', minHeight: '60vh' }}>
+                <div className="container" style={{ paddingTop: '4rem', paddingBottom: '4rem', textAlign: 'center', minHeight: '60vh' }}>
                     <h1 style={{ color: 'var(--text-primary)' }}>Your Cart is Empty</h1>
                     <p style={{ marginBottom: '2rem', color: 'var(--text-secondary)' }}>Looks like you haven't added any industrial parts yet.</p>
                     <Link href="/products" className="btn btn-primary">Browse Catalog</Link>
@@ -42,7 +42,7 @@ export default function CartPage() {
     return (
         <>
             <Header />
-            <div className="container" style={{ padding: '4rem 0', minHeight: '80vh' }}>
+            <div className="container" style={{ paddingTop: '4rem', paddingBottom: '4rem', minHeight: '80vh' }}>
                 <h1>Shopping Cart</h1>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', marginTop: '2rem' }}>

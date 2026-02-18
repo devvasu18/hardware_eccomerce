@@ -113,7 +113,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
 
     if (!product) {
         return (
-            <div className="container" style={{ padding: '4rem 0', textAlign: 'center' }}>
+            <div className="container" style={{ paddingTop: '4rem', paddingBottom: '4rem', textAlign: 'center' }}>
                 <h1>Product Not Found</h1>
                 <Link href="/products" className="btn btn-primary">Back to Catalog</Link>
             </div>

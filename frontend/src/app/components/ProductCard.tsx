@@ -226,19 +226,24 @@ export default function ProductCard({ product }: { product: Product }) {
                             ? t('auto_part')
                             : getLocalized(product.category))}
                 </p>
-                <h3 className="product-title" title={getLocalized(product.title || product.name)} suppressHydrationWarning>{getLocalized(product.title || product.name)}</h3>
+                <div className="product-info-row">
+                    <h3 className="product-title" title={getLocalized(product.title) || getLocalized(product.name)} suppressHydrationWarning>
+                        {(() => {
+                            const rawTitle = getLocalized(product.title) || getLocalized(product.name);
+                            const finalTitle = rawTitle || (typeof product.title === 'string' ? product.title : '') || (typeof product.name === 'string' ? product.name : '') || t('name') || 'Product';
+                            return finalTitle.length > 50 ? finalTitle.substring(0, 50) + '...' : finalTitle;
+                        })()}
+                    </h3>
+                    <div className="product-price" suppressHydrationWarning>
+                        {showStartingAt && <span className="price-from" suppressHydrationWarning>{t('from')}</span>}
+                        {(displayMRP && displayMRP > 0 && displayMRP > finalPrice) && (
+                            <span className="price-original">₹{displayMRP}</span>
+                        )}
+                        <span className="price-current">₹{finalPrice}</span>
+                    </div>
+                </div>
 
                 <div className="product-card-footer">
-                    <div className="product-price" suppressHydrationWarning>
-                        <>
-                            {showStartingAt && <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginRight: '4px' }} suppressHydrationWarning>{t('from')}</span>}
-                            {(displayMRP && displayMRP > 0 && displayMRP > finalPrice) && (
-                                <span className="price-original">₹{displayMRP}</span>
-                            )}
-                            <span className="price-current">₹{finalPrice}</span>
-                        </>
-                    </div>
-
                     <div className="product-action">
                         <span className="btn-card-action" suppressHydrationWarning>{t('view')}</span>
                     </div>
