@@ -8,16 +8,24 @@
     background: var(--surface);
     border-top: 1px solid var(--border);
     z-index: 9999;
-    padding: 0.5rem 0;
-    box-shadow: var(--shadow-xl);
+    padding: 0.75rem 0;
+    /* Increased padding */
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+    /* Support for physical bottom bar */
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 /* Show only on small screens (mobile/tablet) */
 @media (max-width: 1024px) {
     .mobile-bottom-nav {
-        display: flex;
+        display: flex !important;
         justify-content: space-around;
         align-items: center;
+        width: 100%;
+        min-height: 70px;
+        /* Explicit height */
     }
 }
 

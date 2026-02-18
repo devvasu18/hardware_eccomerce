@@ -37,7 +37,10 @@ export default function HeroSlider() {
 
     useEffect(() => {
         fetch('/api/banners')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                return res.json();
+            })
             .then(data => {
                 if (data && data.length > 0) {
                     console.log('Banners loaded:', data);

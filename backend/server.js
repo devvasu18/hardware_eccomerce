@@ -50,11 +50,16 @@ app.use(xssSanitize);
 // Prevent Parameter Pollution
 app.use(hpp());
 
+// Enable trust proxy for environments like Vercel/Heroku/Render
+app.set('trust proxy', 1);
+
 // Global Rate Limiting
 const globalLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000, // 1 hour
-    max: 500, // Limit each IP to 100 requests per windowMs
-    message: 'Too many requests from this IP, please try again in an hour!'
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 1000, // Limit each IP to 1000 requests per 15 mins
+    message: { message: 'Too many requests from this IP, please try again later.' },
+    standardHeaders: true,
+    legacyHeaders: false
 });
 app.use('/api', globalLimiter);
 

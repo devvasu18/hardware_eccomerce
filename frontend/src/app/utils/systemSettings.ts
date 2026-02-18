@@ -21,6 +21,7 @@ export async function getSystemSettings() {
         const res = await fetch('/api/public/settings');
 
         if (!res.ok) {
+            console.warn(`System settings fetch failed: ${res.status}`);
             throw new Error('Failed to fetch settings');
         }
 

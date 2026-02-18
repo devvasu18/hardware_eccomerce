@@ -43,6 +43,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         const fetchSettings = async () => {
             try {
                 const res = await fetch(`/api/public/settings`);
+                if (!res.ok) {
+                    console.warn(`System settings fetch failed: ${res.status}`);
+                    return;
+                }
                 const data = await res.json();
                 if (data) {
                     setSoundSettings({
@@ -220,6 +224,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                     if (countData.success) {
                         setUnreadCount(countData.count);
                     }
+                } else {
+                    console.warn(`Notifications fetch failed: ${notifsRes.status} / ${countRes.status}`);
                 }
             } catch (error) {
                 console.error('Failed to fetch notifications', error);
