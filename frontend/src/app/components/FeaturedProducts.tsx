@@ -23,14 +23,24 @@ interface FeaturedProductsProps {
 }
 
 export default function FeaturedProducts({ products, config }: FeaturedProductsProps) {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
+
+    // Determine title and subtitle based on language
+    const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
+        ? config.titleHindi
+        : (config?.title || t('featured_products'));
+
+    const displaySubtitle = (language === 'hi' && config?.showHindi && config?.subtitleHindi)
+        ? config.subtitleHindi
+        : (config?.subtitle || t('featured_subtitle'));
+
     return (
         <section className="featured-section">
             <div className="container">
                 <div className="featured-header">
                     <div className="featured-title-group">
-                        <h2 className="featured-title">{config?.title || t('featured_products')}</h2>
-                        <p className="featured-subtitle">{config?.subtitle || t('featured_subtitle')}</p>
+                        <h2 className="featured-title">{displayTitle}</h2>
+                        <p className="featured-subtitle">{displaySubtitle}</p>
                     </div>
                     <Link href="/products" className="featured-view-all">
                         {t('view_all_products')}

@@ -265,5 +265,6 @@
     "notification_type_success": "Success",
     "notification_type_warning": "Warning",
     "notification_type_error": "Error",
-    "notification_type_info": "Info"
+    "notification_type_info": "Info",
+    "new_order_received": "New Order Received"
 }

@@ -20,12 +20,20 @@ interface TrustIndicator {
     value: string;
 }
 
-export default function WhyChooseUs() {
-    const { t } = useLanguage();
+export default function WhyChooseUs({ config }: { config?: any }) {
+    const { t, language } = useLanguage();
     const [features, setFeatures] = useState<Feature[]>([]);
     const [trustIndicators, setTrustIndicators] = useState<TrustIndicator[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+
+    const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
+        ? config.titleHindi
+        : (config?.title || t('trusted_hardware_partner'));
+
+    const displaySubtitle = (language === 'hi' && config?.showHindi && config?.subtitleHindi)
+        ? config.subtitleHindi
+        : (config?.subtitle || t('why_choose_us_desc'));
 
     useEffect(() => {
         async function fetchData() {
@@ -113,9 +121,9 @@ export default function WhyChooseUs() {
             <div className="container">
                 <div className="section-header-center">
                     <span className="section-badge">{t('why_choose_us')}</span>
-                    <h2 className="section-title-center">{t('trusted_hardware_partner')}</h2>
+                    <h2 className="section-title-center">{displayTitle}</h2>
                     <p className="section-description">
-                        {t('why_choose_us_desc')}
+                        {displaySubtitle}
                     </p>
                 </div>
 

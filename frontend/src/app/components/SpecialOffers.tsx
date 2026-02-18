@@ -35,13 +35,18 @@ interface SpecialOffer {
 }
 
 export default function SpecialOffers({ config }: { config?: any }) {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [offers, setOffers] = useState<SpecialOffer[]>([]);
     const [timeLeft, setTimeLeft] = useState<{ [key: string]: string }>({});
     const [loading, setLoading] = useState(true);
 
-    const displayTitle = config?.title || t('special_deals_title');
-    const displaySubtitle = config?.subtitle || t('special_deals_subtitle');
+    const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
+        ? config.titleHindi
+        : (config?.title || t('special_deals_title'));
+
+    const displaySubtitle = (language === 'hi' && config?.showHindi && config?.subtitleHindi)
+        ? config.subtitleHindi
+        : (config?.subtitle || t('special_deals_subtitle'));
 
     useEffect(() => {
         // Fetch special offers from API

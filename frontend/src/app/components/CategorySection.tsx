@@ -11,10 +11,18 @@ import { useLanguage } from '../../context/LanguageContext';
 
 
 export default function CategorySection({ config }: { config?: any }) {
-    const { getLocalized, t } = useLanguage();
+    const { getLocalized, t, language } = useLanguage();
     const [categories, setCategories] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(8);
+
+    const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
+        ? config.titleHindi
+        : (config?.title || t('browse_categories'));
+
+    const displaySubtitle = (language === 'hi' && config?.showHindi && config?.subtitleHindi)
+        ? config.subtitleHindi
+        : (config?.subtitle || t('categories_subtitle'));
 
     // Fetch Categories
     useEffect(() => {
@@ -62,8 +70,8 @@ export default function CategorySection({ config }: { config?: any }) {
             <div className="container">
                 <div className="category-header">
                     <div>
-                        <h2 className="category-title">{config?.title || t('browse_categories')}</h2>
-                        <p className="category-subtitle">{config?.subtitle || t('categories_subtitle')}</p>
+                        <h2 className="category-title">{displayTitle}</h2>
+                        <p className="category-subtitle">{displaySubtitle}</p>
                     </div>
                     <Link href="/categories" className="view-all-btns">
                         <span>{t('view_all_categories')}</span>

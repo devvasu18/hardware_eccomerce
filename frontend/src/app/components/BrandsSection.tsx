@@ -11,8 +11,16 @@ import { useLanguage } from '../../context/LanguageContext';
 
 
 export default function BrandsSection({ config }: { config?: any }) {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [brands, setBrands] = useState<any[]>([]);
+
+    const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
+        ? config.titleHindi
+        : (config?.title || t('our_partner_brands'));
+
+    const displaySubtitle = (language === 'hi' && config?.showHindi && config?.subtitleHindi)
+        ? config.subtitleHindi
+        : (config?.subtitle || '');
 
     useEffect(() => {
         const fetchBrandsFromPublic = async () => {
@@ -35,8 +43,8 @@ export default function BrandsSection({ config }: { config?: any }) {
                 <div className="brands-container">
                     <div className="brands-header">
                         <div>
-                            <h2 className="brands-title">{config?.title || t('our_partner_brands')}</h2>
-                            {config?.subtitle && <p className="brands-subtitle">{config.subtitle}</p>}
+                            <h2 className="brands-title">{displayTitle}</h2>
+                            {displaySubtitle && <p className="brands-subtitle">{displaySubtitle}</p>}
                         </div>
                         <Link href="/brands" className="brands-view-all-btn">
                             <span>{t('view_all_brands')}</span>

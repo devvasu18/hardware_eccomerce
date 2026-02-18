@@ -102,28 +102,35 @@ export default function NotificationsPage() {
                         </div>
                     ) : (
                         <div className="notifications-list">
-                            {filteredNotifications.map((notif) => (
-                                <div
-                                    key={notif._id}
-                                    className={`notification-card ${!notif.isRead ? 'unread' : ''}`}
-                                    onClick={() => handleNotificationClick(notif)}
-                                >
-                                    <div className="card-icon">
-                                        {getIcon(notif.type)}
-                                    </div>
-                                    <div className="card-content">
-                                        <div className="card-header-row">
-                                            <span className="notif-title">{notif.title}</span>
-                                            <span className="notif-time">
-                                                <FiClock size={12} style={{ marginRight: 4 }} />
-                                                {new Date(notif.createdAt).toLocaleString(language === 'hi' ? 'hi-IN' : 'en-US')}
-                                            </span>
+                            {filteredNotifications.map((notif) => {
+                                // Localize "New Order Received" message if applicable
+                                let displayMessage = notif.message;
+                                if (notif.type === 'ORDER' && notif.title === 'Order Update' && notif.message === 'New Order Received') {
+                                    displayMessage = t('new_order_received');
+                                }
+
+                                return (
+                                    <div
+                                        key={notif._id}
+                                        className={`notification-card ${!notif.isRead ? 'unread' : ''}`}
+                                        onClick={() => handleNotificationClick(notif)}
+                                    >
+                                        <div className="card-icon">
+                                            {getIcon(notif.type)}
                                         </div>
-                                        <p className="notif-message">{notif.message}</p>
+                                        <div className="card-content">
+                                            <div className="card-header-row">
+                                                <span className="notif-title">{notif.title}</span>
+                                                <span className="notif-time">
+                                                    <FiClock size={12} style={{ marginRight: 4 }} />
+                                                    {new Date(notif.createdAt).toLocaleString(language === 'hi' ? 'hi-IN' : 'en-US')}
+                                                </span>
+                                            </div>
+                                            <p className="notif-message">{displayMessage}</p>
+                                        </div>
+                                        {!notif.isRead && <div className="unread-dot"></div>}
                                     </div>
-                                    {!notif.isRead && <div className="unread-dot"></div>}
-                                </div>
-                            ))}
+                                ))}
                         </div>
                     )}
                 </div>

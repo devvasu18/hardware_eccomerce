@@ -14,6 +14,9 @@ interface CategoryProductListingProps {
         categorySlug?: string;
         title?: string;
         subtitle?: string;
+        titleHindi?: string;
+        subtitleHindi?: string;
+        showHindi?: boolean;
         sortBy?: 'most_viewed' | 'most_purchased' | 'newest';
         limit?: number;
         showViewAll?: boolean;
@@ -21,7 +24,7 @@ interface CategoryProductListingProps {
 }
 
 const CategoryProductListing: React.FC<CategoryProductListingProps> = ({ config }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -30,8 +33,15 @@ const CategoryProductListing: React.FC<CategoryProductListingProps> = ({ config 
     const sortBy = config?.sortBy || 'newest';
     const limit = config?.limit || 4;
     const showViewAll = config?.showViewAll !== false;
-    const displayTitle = config?.title || config?.categoryName || t('featured_category');
-    const displaySubtitle = config?.subtitle || '';
+
+    // Localize title and subtitle
+    const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
+        ? config.titleHindi
+        : (config?.title || config?.categoryName || t('featured_category'));
+
+    const displaySubtitle = (language === 'hi' && config?.showHindi && config?.subtitleHindi)
+        ? config.subtitleHindi
+        : (config?.subtitle || '');
 
     useEffect(() => {
         const fetchProducts = async () => {

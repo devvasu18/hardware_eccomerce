@@ -18,9 +18,17 @@ interface Product {
 }
 
 export default function NewArrivals({ config }: { config?: any }) {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
+        ? config.titleHindi
+        : (config?.title || t('new_arrivals'));
+
+    const displaySubtitle = (language === 'hi' && config?.showHindi && config?.subtitleHindi)
+        ? config.subtitleHindi
+        : (config?.subtitle || t('check_out_latest'));
 
     useEffect(() => {
         const fetchNewArrivals = async () => {
@@ -53,8 +61,8 @@ export default function NewArrivals({ config }: { config?: any }) {
         <section className="container new-arrivals-section" style={{ overflow: 'visible' }}>
             <div className="new-arrivals-header">
                 <div>
-                    <h2 className="new-arrivals-title">{config?.title || t('new_arrivals')}</h2>
-                    <p className="new-arrivals-subtitle">{config?.subtitle || t('check_out_latest')}</p>
+                    <h2 className="new-arrivals-title">{displayTitle}</h2>
+                    <p className="new-arrivals-subtitle">{displaySubtitle}</p>
                 </div>
                 <Link href="/new-arrivals" className="view-all-btn">
                     {t('view_all')} &rarr;

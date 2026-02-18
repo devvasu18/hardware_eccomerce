@@ -6,10 +6,18 @@ import './FeaturedProducts.css'; // Reuse CSS
 import api from '@/app/utils/api';
 import { useLanguage } from '../../context/LanguageContext';
 
-export default function DealOfTheDay() {
-    const { t } = useLanguage();
+export default function DealOfTheDay({ config }: { config?: any }) {
+    const { t, language } = useLanguage();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
+        ? config.titleHindi
+        : (config?.title || t('deal_of_the_day'));
+
+    const displaySubtitle = (language === 'hi' && config?.showHindi && config?.subtitleHindi)
+        ? config.subtitleHindi
+        : (config?.subtitle || t('limited_time_offers'));
 
     useEffect(() => {
         const fetchDeals = async () => {
@@ -38,8 +46,8 @@ export default function DealOfTheDay() {
             <div className="container">
                 <div className="featured-header">
                     <div className="featured-title-group">
-                        <h2 className="featured-title">{t('deal_of_the_day')}</h2>
-                        <p className="featured-subtitle">{t('limited_time_offers')}</p>
+                        <h2 className="featured-title">{displayTitle}</h2>
+                        <p className="featured-subtitle">{displaySubtitle}</p>
                     </div>
                 </div>
                 <div className="featured-grid">

@@ -6,10 +6,18 @@ import './FeaturedProducts.css'; // Reuse CSS
 import api from '@/app/utils/api';
 import { useLanguage } from '../../context/LanguageContext';
 
-export default function RecentlyViewed() {
-    const { t } = useLanguage();
+export default function RecentlyViewed({ config }: { config?: any }) {
+    const { t, language } = useLanguage();
     const [products, setProducts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
+        ? config.titleHindi
+        : (config?.title || t('recently_viewed'));
+
+    const displaySubtitle = (language === 'hi' && config?.showHindi && config?.subtitleHindi)
+        ? config.subtitleHindi
+        : (config?.subtitle || t('recently_viewed_subtitle'));
 
     useEffect(() => {
         const fetchRecentlyViewed = async () => {
@@ -63,8 +71,8 @@ export default function RecentlyViewed() {
             <div className="container">
                 <div className="featured-header">
                     <div className="featured-title-group">
-                        <h2 className="featured-title">{t('recently_viewed')}</h2>
-                        <p className="featured-subtitle">{t('recently_viewed_subtitle')}</p>
+                        <h2 className="featured-title">{displayTitle}</h2>
+                        <p className="featured-subtitle">{displaySubtitle}</p>
                     </div>
                 </div>
                 <div className="featured-grid">
