@@ -42,7 +42,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     useEffect(() => {
         const fetchSettings = async () => {
             try {
-                const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
                 const res = await fetch(`/api/public/settings`);
                 const data = await res.json();
                 if (data) {
@@ -100,10 +99,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             return;
         }
 
-        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
-
-        // Connect Socket
-        const newSocket = io(backendUrl, {
+        // Connect Socket using relative path (handled by Next.js rewrites)
+        const newSocket = io({
             withCredentials: true,
             transports: ['websocket', 'polling']
         });
@@ -190,7 +187,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
     const markAsRead = async (id: string) => {
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
             const token = localStorage.getItem('token');
             if (!token) return;
 
@@ -214,7 +210,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
     const markAllAsRead = async () => {
         try {
-            const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000';
             const token = localStorage.getItem('token');
             if (!token) return;
 

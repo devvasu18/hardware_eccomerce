@@ -162,24 +162,7 @@ export default function FilteredProducts({ config }: { config?: any }) {
     return (
         <section className="filtered-products-section">
             {/* dynamic hero based on filter */}
-            <div className="products-hero py-16 bg-slate-50 border-b border-gray-100">
-                <div className="container">
-                    <h3 className="text-4xl font-extrabold text-slate-900 mb-4">
-                        {offerInfo ? (
-                            <>
-                                {offerInfo.title} <span className="text-orange-600">({offerInfo.percentage}% {t('off')})</span>
-                            </>
-                        ) : keyword ? `${t('search_results')}: "${keyword}"` : (brand ? `${t('brand_label')}: ${brand}` : (category ? `${t('category_label')}: ${category}` : (config?.title || t('industrial_catalog'))))}
-                    </h3>
-                    <p className="text-lg text-slate-500 max-w-2xl">
-                        {offerInfo
-                            ? t('discover_promotion', { title: offerInfo.title, percentage: offerInfo.percentage })
-                            : category
-                                ? t('explore_category', { category: category })
-                                : (config?.subtitle || t('browse_catalog'))}
-                    </p>
-                </div>
-            </div>
+
 
             <Suspense fallback={<div className="p-20 text-center">{t('loading_component')}</div>}>
                 <ProductGridContent offerInfo={offerInfo} />

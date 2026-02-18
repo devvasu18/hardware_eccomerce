@@ -166,7 +166,19 @@ const server = app.listen(PORT, () => {
 const { Server } = require('socket.io');
 const io = new Server(server, {
     cors: {
-        origin: [process.env.FRONTEND_URL, 'http://localhost:3000', 'http://127.0.0.1:3000'],
+        origin: function (origin, callback) {
+            const allowedOrigins = [
+                process.env.FRONTEND_URL,
+                'http://localhost:3000',
+                'http://127.0.0.1:3000'
+            ].filter(Boolean);
+
+            if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         methods: ["GET", "POST"],
         credentials: true
     }
