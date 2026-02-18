@@ -4,12 +4,13 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { useLanguage } from '@/context/LanguageContext';
 import Modal from '@/app/components/Modal';
 import { useModal } from '@/app/hooks/useModal';
 
 interface Variation {
     type: string;
-    value: string;
+    value: any;
     price: number;
     stock: number;
     sku?: string;
@@ -21,7 +22,7 @@ interface Variation {
 
 interface Model {
     _id: string;
-    name: string;
+    name: any;
     mrp?: number;
     selling_price_a?: number;
     featured_image?: string;
@@ -31,8 +32,8 @@ interface Model {
 
 interface Product {
     _id: string;
-    title?: string;
-    name?: string;
+    title?: any;
+    name?: any;
     basePrice: number;
     discountedPrice: number;
     stock: number;
@@ -45,7 +46,7 @@ interface Product {
     models?: Model[];
 
     mrp?: number;
-    offers?: { percentage: number; title: string;[key: string]: any }[];
+    offers?: { percentage: number; title: any;[key: string]: any }[];
 }
 
 // ... imports
@@ -58,6 +59,7 @@ interface ProductActionAreaProps {
 export default function ProductActionArea({ product, onVariationSelect }: ProductActionAreaProps) {
     const { user } = useAuth();
     const { addToCart } = useCart();
+    const { getLocalized } = useLanguage();
     const [quantity, setQuantity] = useState(1);
     const { modalState, hideModal, showSuccess, showError } = useModal();
 
@@ -397,11 +399,11 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             return;
         }
 
-        const productName = product.title || product.name || 'Product';
-        const variationText = currentVariation ? `${currentVariation.type}: ${currentVariation.value}` : undefined;
+        const productName = getLocalized(product.title || product.name || 'Product');
+        const variationText = currentVariation ? `${currentVariation.type}: ${getLocalized(currentVariation.value)}` : undefined;
 
         const cartItemName = currentVariation
-            ? `${productName} (${currentVariation.value})`
+            ? `${productName} (${getLocalized(currentVariation.value)})`
             : productName;
 
         const productImage = currentVariation?.image ||
@@ -418,7 +420,7 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
             image: productImage,
             variationId: currentVariation?._id,
             modelId: selectedModel?._id,
-            modelName: selectedModel?.name,
+            modelName: getLocalized(selectedModel?.name),
             variationText: variationText, // For Tally
             isOnDemand: (isStrictlyOnDemand && stock < 1) || (stock < quantity)
         });
@@ -439,7 +441,7 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                                     className={`model-btn ${selectedModel?._id === m._id ? 'active' : ''}`}
                                     onClick={() => handleModelSelect(m)}
                                 >
-                                    {m.name}
+                                    {getLocalized(m.name)}
                                 </button>
                             ))}
                         </div>
@@ -470,7 +472,7 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                 {bestOffer.percentage > 0 && (
                     <div className="offer-banner">
                         <span className="offer-tag">
-                            {bestOffer.title} ({bestOffer.percentage}% OFF Applied)
+                            {getLocalized(bestOffer.title)} ({bestOffer.percentage}% OFF Applied)
                         </span>
                     </div>
                 )}
@@ -487,10 +489,10 @@ export default function ProductActionArea({ product, onVariationSelect }: Produc
                                             key={v._id}
                                             className={`variation-btn ${currentVariation?._id === v._id ? 'active' : ''} ${type.toLowerCase()}-variation`}
                                             onClick={() => handleSelect(type, v.value)}
-                                            style={type === 'Color' ? { '--variation-color': v.value.toLowerCase() } as React.CSSProperties : {}}
-                                            title={`${v.value} - ₹${v.price}`}
+                                            style={type === 'Color' ? { '--variation-color': getLocalized(v.value).toLowerCase() } as React.CSSProperties : {}}
+                                            title={`${getLocalized(v.value)} - ₹${v.price}`}
                                         >
-                                            {v.value}
+                                            {getLocalized(v.value)}
                                         </button>
                                     ))}
                                 </div>

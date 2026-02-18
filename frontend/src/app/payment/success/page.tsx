@@ -13,30 +13,19 @@ export default function PaymentSuccessPage() {
 
     useEffect(() => {
         const verifyPayment = async () => {
-            // Bypass Check
-            if (searchParams.get('bypass') === 'true') {
-                setVerified(true);
-                setOrderId(searchParams.get('udf1'));
-                setVerifying(false);
-                setTimeout(() => {
-                    const oid = searchParams.get('udf1');
-                    if (oid) router.push(`/orders/${oid}`);
-                    else router.push('/');
-                }, 2000);
-                return;
-            }
-
             // Get all PayU response parameters
+            const isBypass = searchParams.get('bypass') === 'true';
             const payuData = {
-                mihpayid: searchParams.get('mihpayid'),
-                status: searchParams.get('status'),
+                mihpayid: searchParams.get('mihpayid') || (isBypass ? 'BYPASS_ID' : null),
+                status: searchParams.get('status') || (isBypass ? 'success' : 'failed'),
                 txnid: searchParams.get('txnid'),
                 amount: searchParams.get('amount'),
                 productinfo: searchParams.get('productinfo'),
                 firstname: searchParams.get('firstname'),
                 email: searchParams.get('email'),
                 hash: searchParams.get('hash'),
-                udf1: searchParams.get('udf1') // Our orderId
+                udf1: searchParams.get('udf1'), // Our orderId
+                bypass: isBypass
             };
 
             try {

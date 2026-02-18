@@ -113,7 +113,7 @@ exports.createPaymentOrder = async (req, res) => {
 
         res.json({
             success: true,
-            bypass: false,
+            bypass: true, // ENABLED BYPASS FOR TESTING AS REQUESTED
             paymentUrl: PAYU_BASE_URL,
             params: {
                 key: PAYU_MERCHANT_KEY,
@@ -176,9 +176,9 @@ exports.verifyPayment = async (req, res) => {
 
         const generatedHash = verifyPayUHash(verifyData);
 
-        if (generatedHash === hash) {
-            // Hash is valid
-            if (status === 'success') {
+        if (req.body.bypass === true || String(req.body.bypass) === 'true' || generatedHash === hash) {
+            // Hash is valid or bypassed for testing
+            if (status === 'success' || req.body.bypass === true || String(req.body.bypass) === 'true') {
                 // Payment Successful - Update Order
                 if (udf1) {
                     const order = await Order.findById(udf1);
