@@ -24,8 +24,8 @@ const Header = () => {
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-    const [categories, setCategories] = useState<{ _id: string, name: string, slug: string, showInNav: boolean }[]>([]);
-    const [subCategories, setSubCategories] = useState<Record<string, { _id: string, name: string, slug: string }[]>>({});
+    const [categories, setCategories] = useState<any[]>([]);
+    const [subCategories, setSubCategories] = useState<Record<string, any[]>>({});
     const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
@@ -41,6 +41,15 @@ const Header = () => {
 
     const [isVisible, setIsVisible] = useState(true);
     const lastScrollY = useRef(0);
+
+    // Helper to get localized name
+    const getLocalizedName = (name: any) => {
+        if (typeof name === 'string') return name;
+        if (name && typeof name === 'object') {
+            return name[language] || name['en'] || '';
+        }
+        return '';
+    };
 
     useEffect(() => {
         const handleScroll = () => {
@@ -210,14 +219,14 @@ const Header = () => {
                                                                         ? `/${product.featured_image || (product.gallery_images && product.gallery_images[0])}`
                                                                         : '/placeholder.png'
                                                             }
-                                                            alt={product.title}
+                                                            alt={getLocalizedName(product.title)}
                                                             width={40}
                                                             height={40}
                                                             className="suggestion-image"
                                                             style={{ objectFit: 'cover', borderRadius: '4px' }}
                                                         />
                                                     </div>
-                                                    <span className="suggestion-text">{product.title}</span>
+                                                    <span className="suggestion-text">{getLocalizedName(product.title)}</span>
                                                 </Link>
                                             ))}
                                         </div>
@@ -238,7 +247,7 @@ const Header = () => {
                                                 className="search-tag"
                                                 onClick={() => setIsSearchFocused(false)}
                                             >
-                                                <span className="trend-icon">↗</span> {category.name}
+                                                <span className="trend-icon">↗</span> {getLocalizedName(category.name)}
                                             </Link>
                                         ))}
                                     </div>
@@ -423,7 +432,7 @@ const Header = () => {
                                             if (hasSubCategories) setHoveredCategory(String(category._id));
                                         }}
                                     >
-                                        {category.name}
+                                        {getLocalizedName(category.name)}
                                         {hasSubCategories && (
                                             <span className="nav-link-arrow">▼</span>
                                         )}
@@ -441,7 +450,7 @@ const Header = () => {
                                                         onClick={() => setHoveredCategory(null)}
                                                     >
                                                         <span className="subcategory-icon">→</span>
-                                                        {subCat.name}
+                                                        {getLocalizedName(subCat.name)}
                                                     </Link>
                                                 ))}
                                             </div>
@@ -471,7 +480,7 @@ const Header = () => {
                             className="mobile-nav-link"
                             onClick={() => setIsMobileMenuOpen(false)}
                         >
-                            {category.name}
+                            {getLocalizedName(category.name)}
                         </Link>
                     ))}
                 </nav>

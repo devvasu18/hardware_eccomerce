@@ -316,12 +316,81 @@ export default function HomeBuilder() {
                             </button>
                         </div>
 
-                        <div className="p-6">
+                        <div className="p-6 h-[60vh] overflow-y-auto custom-scrollbar">
+                            {/* General Section Settings */}
+                            <div className="mb-6 border-b border-gray-100 pb-6">
+                                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Section Headings</h4>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Section Title</label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                            placeholder="e.g. Featured Products"
+                                            value={tempConfig.sectionTitle || ''}
+                                            onChange={(e) => setTempConfig({ ...tempConfig, sectionTitle: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Section Subtitle</label>
+                                        <input
+                                            type="text"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                                            placeholder="e.g. Handpicked for you"
+                                            value={tempConfig.sectionSubtitle || ''}
+                                            onChange={(e) => setTempConfig({ ...tempConfig, sectionSubtitle: e.target.value })}
+                                        />
+                                    </div>
+
+                                    {/* Hindi Support Toggle */}
+                                    <div className="pt-2">
+                                        <label className="relative inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only peer"
+                                                checked={tempConfig.showHindi || false}
+                                                onChange={(e) => setTempConfig({ ...tempConfig, showHindi: e.target.checked })}
+                                            />
+                                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                            <span className="ml-3 text-sm font-medium text-gray-900">Enable Hindi Translations</span>
+                                        </label>
+                                    </div>
+
+                                    {tempConfig.showHindi && (
+                                        <div className="p-4 bg-orange-50 border border-orange-100 rounded-lg space-y-4 animate-fade-in">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Section Title (Hindi)</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                                                    placeholder="Example: विशेष उत्पाद"
+                                                    value={tempConfig.sectionTitleHindi || ''}
+                                                    onChange={(e) => setTempConfig({ ...tempConfig, sectionTitleHindi: e.target.value })}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Section Subtitle (Hindi)</label>
+                                                <input
+                                                    type="text"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition-all"
+                                                    placeholder="Example: आपके लिए चुना गया"
+                                                    value={tempConfig.sectionSubtitleHindi || ''}
+                                                    onChange={(e) => setTempConfig({ ...tempConfig, sectionSubtitleHindi: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Component Settings</h4>
+
                             {editingItem.componentType === 'CATEGORY_PRODUCTS' ? (
-                                <div className="config-modal-body">
+                                <div className="config-modal-body space-y-4">
                                     <div className="form-group">
-                                        <label>Select Category</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Select Category</label>
                                         <select
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                             value={tempConfig.categoryId || ''}
                                             onChange={(e) => setTempConfig({ ...tempConfig, categoryId: e.target.value })}
                                         >
@@ -332,8 +401,9 @@ export default function HomeBuilder() {
                                         </select>
                                     </div>
                                     <div className="form-group">
-                                        <label>Sort By</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
                                         <select
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                             value={tempConfig.sortBy || 'newest'}
                                             onChange={(e) => setTempConfig({ ...tempConfig, sortBy: e.target.value })}
                                         >
@@ -343,9 +413,10 @@ export default function HomeBuilder() {
                                         </select>
                                     </div>
                                     <div className="form-group">
-                                        <label>Product Limit</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Product Limit</label>
                                         <input
                                             type="number"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                             min="4"
                                             max="12"
                                             value={tempConfig.limit || 4}
@@ -354,9 +425,8 @@ export default function HomeBuilder() {
                                     </div>
                                 </div>
                             ) : (
-                                <div className="text-center py-8 text-gray-500">
-                                    <p>No specific configuration available for this component yet.</p>
-                                    <p className="text-sm mt-2">Visibility and ordering can be managed from the main list.</p>
+                                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                    <p>No additional settings available for this component.</p>
                                 </div>
                             )}
                         </div>

@@ -252,5 +252,18 @@
     "save_settings": "Save Settings",
     "saving": "Saving...",
     "settings_saved": "Settings updated successfully!",
-    "settings_failed": "Failed to update settings"
+    "settings_failed": "Failed to update settings",
+    "notifications_page_title": "Notifications",
+    "notifications_all": "All",
+    "notifications_unread": "Unread",
+    "notifications_mark_all_read": "Mark all as read",
+    "notifications_empty_title": "No notifications found",
+    "notifications_empty_desc": "You're all caught up!",
+    "notifications_loading": "Loading notifications...",
+    "notifications_login_required": "Please login to view notifications",
+    "notification_type_order": "Order Update",
+    "notification_type_success": "Success",
+    "notification_type_warning": "Warning",
+    "notification_type_error": "Error",
+    "notification_type_info": "Info"
 }

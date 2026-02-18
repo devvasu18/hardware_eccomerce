@@ -431,6 +431,47 @@ export default function PageBuilder({ params }: { params: Promise<{ slug: string
                                 />
                             </div>
 
+                            {/* Hindi Support Toggle */}
+                            <div className="form-field-premium pt-2">
+                                <label className="relative inline-flex items-center cursor-pointer" style={{ marginBottom: 0, flexDirection: 'row', alignItems: 'center', gap: '12px', display: 'flex' }}>
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked={tempConfig.showHindi || false}
+                                        onChange={(e) => setTempConfig({ ...tempConfig, showHindi: e.target.checked })}
+                                    />
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    <span className="text-sm font-bold text-slate-600 uppercase tracking-widest">Enable Hindi Translations</span>
+                                </label>
+                            </div>
+
+                            {tempConfig.showHindi && (
+                                <div className="p-4 bg-orange-50 border border-orange-100 rounded-lg space-y-4 mb-6 animate-fade-in">
+                                    <div className="form-field-premium">
+                                        <label style={{ color: '#c2410c' }}>Section Title (Hindi)</label>
+                                        <input
+                                            type="text"
+                                            className="input-premium"
+                                            style={{ borderColor: '#fdba74' }}
+                                            value={tempConfig.titleHindi || ''}
+                                            onChange={(e) => setTempConfig({ ...tempConfig, titleHindi: e.target.value })}
+                                            placeholder="Example: विशेष उत्पाद"
+                                        />
+                                    </div>
+                                    <div className="form-field-premium" style={{ marginBottom: 0 }}>
+                                        <label style={{ color: '#c2410c' }}>Section Subtitle (Hindi)</label>
+                                        <textarea
+                                            className="input-premium min-h-[80px]"
+                                            style={{ borderColor: '#fdba74' }}
+                                            value={tempConfig.subtitleHindi || ''}
+                                            onChange={(e) => setTempConfig({ ...tempConfig, subtitleHindi: e.target.value })}
+                                            placeholder="Example: आपके लिए चुना गया"
+                                            rows={2}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Category Specific Config */}
                             {editingItem?.componentType === 'CATEGORY_PRODUCTS' && (
                                 <div className="form-field-premium">

@@ -7,12 +7,14 @@ import { useRouter } from 'next/navigation';
 import { FiClock, FiCheck, FiInfo, FiAlertCircle, FiBox } from 'react-icons/fi';
 import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
+import { useLanguage } from '@/context/LanguageContext';
 import './notifications.css';
 
 export default function NotificationsPage() {
     const { user, loading: authLoading } = useAuth();
     const { notifications, markAsRead, markAllAsRead, loading: notifLoading } = useNotification();
     const router = useRouter();
+    const { t, language } = useLanguage();
     const [filter, setFilter] = useState<'ALL' | 'UNREAD'>('ALL');
 
     const filteredNotifications = filter === 'ALL'
@@ -33,7 +35,7 @@ export default function NotificationsPage() {
             <>
                 <Header />
                 <div className="loading-state" style={{ minHeight: '60vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                    Loading notifications...
+                    {t('notifications_loading')}
                 </div>
                 <Footer />
             </>
@@ -45,7 +47,7 @@ export default function NotificationsPage() {
             <>
                 <Header />
                 <div className="auth-required" style={{ minHeight: '60vh', display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
-                    Please login to view notifications
+                    {t('notifications_login_required')}
                 </div>
                 <Footer />
             </>
@@ -67,25 +69,25 @@ export default function NotificationsPage() {
             <Header />
             <div className="notifications-page-container">
                 <div className="notifications-header">
-                    <h1>Notifications</h1>
+                    <h1>{t('notifications_page_title')}</h1>
                     <div className="header-actions">
                         <div className="filter-tabs">
                             <button
                                 className={`filter-tab ${filter === 'ALL' ? 'active' : ''}`}
                                 onClick={() => setFilter('ALL')}
                             >
-                                All
+                                {t('notifications_all')}
                             </button>
                             <button
                                 className={`filter-tab ${filter === 'UNREAD' ? 'active' : ''}`}
                                 onClick={() => setFilter('UNREAD')}
                             >
-                                Unread
+                                {t('notifications_unread')}
                             </button>
                         </div>
                         {notifications.some(n => !n.isRead) && (
                             <button className="mark-all-btn" onClick={() => markAllAsRead()}>
-                                Mark all as read
+                                {t('notifications_mark_all_read')}
                             </button>
                         )}
                     </div>
@@ -95,8 +97,8 @@ export default function NotificationsPage() {
                     {filteredNotifications.length === 0 ? (
                         <div className="empty-state">
                             <div className="empty-icon">🔕</div>
-                            <h3>No notifications found</h3>
-                            <p>You're all caught up!</p>
+                            <h3>{t('notifications_empty_title')}</h3>
+                            <p>{t('notifications_empty_desc')}</p>
                         </div>
                     ) : (
                         <div className="notifications-list">
@@ -114,7 +116,7 @@ export default function NotificationsPage() {
                                             <span className="notif-title">{notif.title}</span>
                                             <span className="notif-time">
                                                 <FiClock size={12} style={{ marginRight: 4 }} />
-                                                {new Date(notif.createdAt).toLocaleString()}
+                                                {new Date(notif.createdAt).toLocaleString(language === 'hi' ? 'hi-IN' : 'en-US')}
                                             </span>
                                         </div>
                                         <p className="notif-message">{notif.message}</p>

@@ -252,5 +252,18 @@
     "save_settings": "सेटिंग्स सहेजें",
     "saving": "सहेजा जा रहा है...",
     "settings_saved": "सेटिंग्स सफलतापूर्वक अपडेट की गईं!",
-    "settings_failed": "सेटिंग्स अपडेट करने में विफल"
+    "settings_failed": "सेटिंग्स अपडेट करने में विफल",
+    "notifications_page_title": "सूचनाएं",
+    "notifications_all": "सभी",
+    "notifications_unread": "अपठित",
+    "notifications_mark_all_read": "सभी को पढ़ा हुआ चिह्नित करें",
+    "notifications_empty_title": "कोई सूचना नहीं मिली",
+    "notifications_empty_desc": "आपने सब कुछ देख लिया है!",
+    "notifications_loading": "सूचनाएं लोड की जा रही हैं...",
+    "notifications_login_required": "सूचनाएं देखने के लिए कृपया लॉगिन करें",
+    "notification_type_order": "ऑर्डर अपडेट",
+    "notification_type_success": "सफलता",
+    "notification_type_warning": "चेतावनी",
+    "notification_type_error": "त्रुटि",
+    "notification_type_info": "जानकारी"
 }
