@@ -170,12 +170,17 @@ const io = new Server(server, {
             const allowedOrigins = [
                 process.env.FRONTEND_URL,
                 'http://localhost:3000',
+                'http://localhost:3001',
                 'http://127.0.0.1:3000'
             ].filter(Boolean);
 
-            if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV !== 'production') {
+            // In production, additionally allow if it's a vercel app for this project
+            const isVercel = origin && origin.includes('.vercel.app');
+
+            if (!origin || allowedOrigins.indexOf(origin) !== -1 || isVercel || process.env.NODE_ENV !== 'production') {
                 callback(null, true);
             } else {
+                logger.warn(`🚫 Socket CORS Blocked for origin: ${origin}`);
                 callback(new Error('Not allowed by CORS'));
             }
         },
