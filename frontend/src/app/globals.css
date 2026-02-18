@@ -645,7 +645,7 @@ button {
 .product-title {
   font-size: 14px;
   font-weight: 600;
-  color: red !important;
+  color: black !important;
   /* Debug color */
   margin-bottom: 0px;
   line-height: 1.4;
