@@ -1,5 +1,5 @@
 .new-arrivals-section {
-    padding: 2rem 0;
+    padding: 1.5rem 0;
 }
 
 .new-arrivals-header {
@@ -49,9 +49,9 @@
     -ms-overflow-style: none;
     /* IE/Edge */
     display: flex;
-    gap: 1.5rem;
-    padding: 1rem 0.5rem;
-    /* Padding for shadows */
+    gap: var(--space-xl);
+    padding: 1rem 0;
+    /* Padding for shadows - horizontal padding removed to align with container */
 }
 
 .slider-track-wrapper::-webkit-scrollbar {
@@ -99,9 +99,13 @@
    📱 RESPONSIVE DESIGN - MOBILE FIRST
    ======================================== */
 
+/* ========================================
+   📱 RESPONSIVE DESIGN - MOBILE FIRST
+   ======================================== */
+
 .slider-item {
-    flex: 0 0 260px;
-    /* Base for mobile */
+    flex: 0 0 100%;
+    /* Mobile First: Full width to match Featured Products */
 }
 
 /* Small Mobile (320px - 480px) */
@@ -113,37 +117,37 @@
     .new-arrivals-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 0.5rem;
+        gap: 1rem;
+        /* Match Featured header gap */
         margin-bottom: 1.5rem;
     }
 
     .new-arrivals-title {
         font-size: 1.75rem;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.5rem;
+        /* Match Featured title margin */
     }
 
     .new-arrivals-subtitle {
         font-size: 0.95rem;
+        margin-top: 0.5rem;
+        /* Match Featured subtitle margin */
     }
 
     .view-all-btn {
-        padding: 0.6rem 1.25rem;
-        font-size: 0.85rem;
-        margin-top: 0.5rem;
-    }
-
-    .slider-track-wrapper {
-        gap: 1rem;
-        padding: 0.5rem 0.25rem;
-    }
-
-    .slider-arrow {
-        width: 36px;
-        height: 36px;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding: 0.75rem 1.5rem;
         font-size: 0.9rem;
     }
 
-    /* Hide arrows on mobile if touch scroll implies content */
+    .slider-track-wrapper {
+        gap: 1.5rem;
+        /* Match Featured */
+        padding: 0.5rem 0;
+    }
+
     .slider-arrow {
         display: none;
     }
@@ -155,8 +159,19 @@
         padding: 2rem 0;
     }
 
+    .new-arrivals-header {
+        gap: 1.25rem;
+    }
+
+    .slider-track-wrapper {
+        gap: 1.25rem;
+        /* Match Featured */
+    }
+
     .slider-item {
-        flex: 0 0 280px;
+        /* Match Featured: repeat(2, 1fr) with 1.25rem gap */
+        /* Formula: (100% - 1.25rem) / 2 */
+        flex: 0 0 calc(50% - 0.625rem);
     }
 
     .slider-arrow {
@@ -167,25 +182,43 @@
 
 /* Tablets (768px - 1024px) */
 @media (min-width: 768px) and (max-width: 1024px) {
+    .slider-track-wrapper {
+        gap: 1.5rem;
+        /* Match Featured */
+    }
+
     .slider-item {
-        flex: 0 0 calc(50% - 1rem);
-        /* 2 items visible */
+        /* Match Featured: repeat(3, 1fr) with 1.5rem gap */
+        /* Formula: (100% - 2 * 1.5rem) / 3 = (100% - 3rem) / 3 */
+        flex: 0 0 calc(33.333% - 1rem);
     }
 }
 
 /* Small Laptops (1025px - 1366px) */
 @media (min-width: 1025px) and (max-width: 1366px) {
+    .slider-track-wrapper {
+        gap: 2rem;
+        /* Match Featured */
+    }
+
     .slider-item {
-        flex: 0 0 calc(33.333% - 1rem);
-        /* 3 items visible */
+        /* Match Featured: repeat(3, 1fr) with 2rem gap */
+        /* Formula: (100% - 2 * 2rem) / 3 = (100% - 4rem) / 3 */
+        flex: 0 0 calc(33.333% - 1.333rem);
     }
 }
 
 /* Large Desktops (1367px+) */
 @media (min-width: 1367px) {
+    .slider-track-wrapper {
+        gap: 2rem;
+        /* Match Featured */
+    }
+
     .slider-item {
-        flex: 0 0 calc(25% - 1.125rem);
-        /* 4 items visible */
+        /* Match Featured: repeat(4, 1fr) with 2rem gap */
+        /* Formula: (100% - 3 * 2rem) / 4 = (100% - 6rem) / 4 */
+        flex: 0 0 calc(25% - 1.5rem);
     }
 }
 

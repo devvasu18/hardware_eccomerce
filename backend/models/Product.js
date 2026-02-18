@@ -178,7 +178,7 @@ productSchema.index({
 });
 
 // AUTO-CALCULATE LOWEST PRICE ON SAVE
-productSchema.pre('save', async function (next) {
+productSchema.pre('save', async function () {
     try {
         // Handle Slug Uniqueness
         if (this.isModified('slug') || this.isNew) {
@@ -262,10 +262,9 @@ productSchema.pre('save', async function (next) {
             // Sync gallery (all images)
             this.gallery_images = this.images.map(img => img.url);
         }
-        next();
     } catch (err) {
         console.error('Error in pre-save price calculation:', err);
-        next(err);
+        throw err;
     }
 });
 

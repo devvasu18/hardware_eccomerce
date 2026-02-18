@@ -173,7 +173,7 @@ export default function ProductCard({ product }: { product: Product }) {
                         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                     />
                 ) : (
-                    <div className="no-image-placeholder">
+                    <div className="no-image-placeholder" suppressHydrationWarning>
                         {t('no_image')}
                     </div>
                 )}
@@ -212,26 +212,26 @@ export default function ProductCard({ product }: { product: Product }) {
 
                 {/* Discount Badge */}
                 {displayMRP && (displayMRP > finalPrice) && (
-                    <div className="product-badge badge-sale">
+                    <div className="product-badge badge-sale" suppressHydrationWarning>
                         {Math.round(((displayMRP - finalPrice) / displayMRP) * 100)}% {t('off')}
                     </div>
                 )}
             </div>
 
             <div className="product-card-content">
-                <p className="product-category">
+                <p className="product-category" suppressHydrationWarning>
                     {typeof product.category === 'object' && product.category?.name
                         ? getLocalized(product.category.name)
                         : (typeof product.category === 'string' && product.category.length > 10
                             ? t('auto_part')
                             : getLocalized(product.category))}
                 </p>
-                <h3 className="product-title" title={getLocalized(product.title || product.name)}>{getLocalized(product.title || product.name)}</h3>
+                <h3 className="product-title" title={getLocalized(product.title || product.name)} suppressHydrationWarning>{getLocalized(product.title || product.name)}</h3>
 
                 <div className="product-card-footer">
-                    <div className="product-price">
+                    <div className="product-price" suppressHydrationWarning>
                         <>
-                            {showStartingAt && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }}>{t('from')}</span>}
+                            {showStartingAt && <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block', marginBottom: '2px' }} suppressHydrationWarning>{t('from')}</span>}
                             {(displayMRP && displayMRP > 0 && displayMRP > finalPrice) && (
                                 <span className="price-original">₹{displayMRP}</span>
                             )}
@@ -240,7 +240,7 @@ export default function ProductCard({ product }: { product: Product }) {
                     </div>
 
                     <div className="product-action">
-                        <span className="btn-card-action">{t('view')}</span>
+                        <span className="btn-card-action" suppressHydrationWarning>{t('view')}</span>
                     </div>
                 </div>
             </div>

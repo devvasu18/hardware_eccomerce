@@ -19,7 +19,7 @@ interface Category {
 }
 
 export default function AllCategories({ config }: { config?: any }) {
-    const { t } = useLanguage();
+    const { t, getLocalized } = useLanguage();
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -94,7 +94,7 @@ export default function AllCategories({ config }: { config?: any }) {
                                     {imageUrl ? (
                                         <Image
                                             src={imageUrl}
-                                            alt={category.name || t('category_placeholder')}
+                                            alt={getLocalized(category.name) || t('category_placeholder')}
                                             fill
                                             className="category-item-image"
                                             unoptimized
@@ -113,7 +113,7 @@ export default function AllCategories({ config }: { config?: any }) {
 
                                 <div className="category-item-content">
                                     <h3 className="category-item-name">
-                                        {category.name}
+                                        {getLocalized(category.name)}
                                     </h3>
                                     <p className="category-item-count">
                                         {category.productCount || 0} {t(category.productCount !== 1 ? 'products_suffix' : 'product_suffix')}

@@ -47,7 +47,7 @@ export default function LanguageToggle() {
                     x: language === 'en' ? 0 : 32
                 }}
             >
-                {language.toUpperCase()}
+                {(language || 'en').toUpperCase()}
             </motion.div>
             <div style={{
                 position: 'absolute',

@@ -333,6 +333,61 @@ exports.updateProduct = async (req, res) => {
             return res.status(404).json({ message: 'Product not found' });
         }
 
+        // --- Fix legacy data formats to prevent Mongoose/MongoDB update errors with bilingual fields ---
+        if (Array.isArray(product.keywords)) {
+            product.keywords = { en: [], hi: [] };
+            product.markModified('keywords');
+        }
+        if (typeof product.title === 'string') {
+            product.title = { en: product.title, hi: '' };
+            product.markModified('title');
+        }
+        if (typeof product.subtitle === 'string') {
+            product.subtitle = { en: product.subtitle, hi: '' };
+            product.markModified('subtitle');
+        }
+        if (typeof product.description === 'string') {
+            product.description = { en: product.description, hi: '' };
+            product.markModified('description');
+        }
+        if (typeof product.meta_title === 'string') {
+            product.meta_title = { en: product.meta_title, hi: '' };
+            product.markModified('meta_title');
+        }
+        if (typeof product.meta_description === 'string') {
+            product.meta_description = { en: product.meta_description, hi: '' };
+            product.markModified('meta_description');
+        }
+        if (typeof product.deliveryTime === 'string') {
+            product.deliveryTime = { en: product.deliveryTime, hi: '' };
+            product.markModified('deliveryTime');
+        }
+        if (Array.isArray(product.specifications)) {
+            product.specifications.forEach((spec) => {
+                if (typeof spec.key === 'string') spec.key = { en: spec.key, hi: '' };
+                if (typeof spec.value === 'string') spec.value = { en: spec.value, hi: '' };
+            });
+            product.markModified('specifications');
+        }
+        if (Array.isArray(product.variations)) {
+            product.variations.forEach((v) => {
+                if (typeof v.value === 'string') v.value = { en: v.value, hi: '' };
+            });
+            product.markModified('variations');
+        }
+        if (Array.isArray(product.models)) {
+            product.models.forEach((m) => {
+                if (typeof m.name === 'string') m.name = { en: m.name, hi: '' };
+                if (Array.isArray(m.variations)) {
+                    m.variations.forEach((v) => {
+                        if (typeof v.value === 'string') v.value = { en: v.value, hi: '' };
+                    });
+                }
+            });
+            product.markModified('models');
+        }
+        // -------------------------------------------------------------------------------------------
+
         // Update fields (Similar extraction as Create)
         // Note: For files, if new file uploaded, delete old one and set new path.
         // This logic can be complex, for brevity I'll handle key images.
@@ -440,17 +495,31 @@ exports.updateProduct = async (req, res) => {
 
         if (updates.keywords) {
             let kw = parseBilingual(updates.keywords);
-            if (kw) {
-                if (typeof kw === 'object' && !Array.isArray(kw)) {
-                    if (typeof kw.en === 'string') kw.en = kw.en.split(',').map(k => k.trim()).filter(k => k);
-                    if (typeof kw.hi === 'string') kw.hi = kw.hi.split(',').map(k => k.trim()).filter(k => k);
-                    updates.keywords = kw;
-                } else if (typeof kw === 'string') {
-                    updates.keywords = {
-                        en: kw.split(',').map(k => k.trim()).filter(k => k),
-                        hi: []
-                    };
+
+            // If kw is explicitly empty object or null, set defaults
+            if (!kw) kw = { en: [], hi: [] };
+
+            if (typeof kw === 'object' && !Array.isArray(kw)) {
+                // Ensure en/hi are arrays if they are strings
+                if (typeof kw.en === 'string') {
+                    kw.en = kw.en.split(',').map(k => k.trim()).filter(k => k);
+                } else if (!Array.isArray(kw.en)) {
+                    kw.en = [];
                 }
+
+                if (typeof kw.hi === 'string') {
+                    kw.hi = kw.hi.split(',').map(k => k.trim()).filter(k => k);
+                } else if (!Array.isArray(kw.hi)) {
+                    kw.hi = [];
+                }
+
+                updates.keywords = kw;
+            } else if (typeof kw === 'string') {
+                // Legacy support
+                updates.keywords = {
+                    en: kw.split(',').map(k => k.trim()).filter(k => k),
+                    hi: []
+                };
             }
         }
 
@@ -646,13 +715,18 @@ exports.bulkImportProducts = async (req, res) => {
                         if (row.part_number) {
                             product = await Product.findOne({ part_number: row.part_number });
                         } else {
-                            product = await Product.findOne({ title: row.title });
+                            product = await Product.findOne({
+                                $or: [
+                                    { 'title.en': row.title },
+                                    { title: row.title } // Legacy fallback
+                                ]
+                            });
                         }
 
                         const productData = {
-                            title: row.title,
+                            title: { en: row.title, hi: '' },
                             slug: row.slug || row.title.toLowerCase().split(' ').join('-').replace(/[^a-z0-9-]/g, ''),
-                            subtitle: row.subtitle,
+                            subtitle: { en: row.subtitle || '', hi: '' },
                             part_number: row.part_number,
                             mrp: Number(row.mrp),
                             basePrice: Number(row.mrp),
@@ -662,12 +736,12 @@ exports.bulkImportProducts = async (req, res) => {
                             selling_price_c: row.selling_price_c ? Number(row.selling_price_c) : undefined,
                             opening_stock: Number(row.stock || 0),
                             stock: Number(row.stock || 0),
-                            description: row.description,
-                            deliveryTime: row.delivery_time || '3-5 business days',
+                            description: { en: row.description || '', hi: '' },
+                            deliveryTime: { en: row.delivery_time || '3-5 business days', hi: '' },
                             returnWindow: row.return_window ? Number(row.return_window) : 7,
-                            meta_title: row.meta_title,
-                            meta_description: row.meta_description,
-                            keywords: row.keywords ? row.keywords.split(',').map(k => k.trim()) : undefined,
+                            meta_title: { en: row.meta_title || '', hi: '' },
+                            meta_description: { en: row.meta_description || '', hi: '' },
+                            keywords: { en: row.keywords ? row.keywords.split(',').map(k => k.trim()) : [], hi: [] },
                             isActive: true,
                             isVisible: true
                         };

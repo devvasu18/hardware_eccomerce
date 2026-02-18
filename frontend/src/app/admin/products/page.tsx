@@ -43,7 +43,7 @@ interface Product {
     };
     brand: {
         _id: string;
-        name: string;
+        name: string | { en: string; hi: string };
     };
     mrp: number;
     selling_price_a: number;
@@ -62,7 +62,7 @@ interface Product {
 }
 
 export default function ProductList() {
-    const { language } = useLanguage();
+    const { language, getLocalized } = useLanguage();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -76,8 +76,8 @@ export default function ProductList() {
     const [totalProducts, setTotalProducts] = useState(0);
 
     // Filter State
-    const [categories, setCategories] = useState<{ _id: string, name: string }[]>([]);
-    const [subCategories, setSubCategories] = useState<{ _id: string, name: string }[]>([]);
+    const [categories, setCategories] = useState<{ _id: string, name: string | { en: string; hi: string } }[]>([]);
+    const [subCategories, setSubCategories] = useState<{ _id: string, name: string | { en: string; hi: string } }[]>([]);
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedSubCategory, setSelectedSubCategory] = useState('');
 
@@ -411,7 +411,9 @@ export default function ProductList() {
                     >
                         <option value="">All Categories</option>
                         {categories.map(cat => (
-                            <option key={cat._id} value={cat._id}>{cat.name}</option>
+                            <option key={cat._id} value={cat._id}>
+                                {getLocalized(cat.name)}
+                            </option>
                         ))}
                     </select>
 
@@ -432,7 +434,9 @@ export default function ProductList() {
                     >
                         <option value="">All Sub-Categories</option>
                         {subCategories.map(sub => (
-                            <option key={sub._id} value={sub._id}>{sub.name}</option>
+                            <option key={sub._id} value={sub._id}>
+                                {getLocalized(sub.name)}
+                            </option>
                         ))}
                     </select>
 
@@ -487,7 +491,7 @@ export default function ProductList() {
                                                 {product.featured_image ? (
                                                     <Image
                                                         src={product.featured_image.startsWith('http') ? product.featured_image : `http://localhost:5000/${product.featured_image}`}
-                                                        alt={typeof product.title === 'string' ? product.title : (product.title[language] || product.title.en)}
+                                                        alt={getLocalized(product.title)}
                                                         fill
                                                         unoptimized
                                                         style={{ objectFit: 'contain' }}
@@ -497,8 +501,8 @@ export default function ProductList() {
                                                 )}
                                             </div>
                                             <div>
-                                                <div style={{ fontWeight: 600, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={typeof product.title === 'string' ? product.title : (product.title[language] || product.title.en)}>
-                                                    {typeof product.title === 'string' ? product.title : (product.title[language] || product.title.en)}
+                                                <div style={{ fontWeight: 600, color: 'var(--text-main)', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={getLocalized(product.title)}>
+                                                    {getLocalized(product.title)}
                                                 </div>
                                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>SKU: {product.slug}</div>
                                                 {!product.isActive && <span style={{ fontSize: '0.7rem', background: '#eee', padding: '2px 6px', borderRadius: '4px', color: '#666' }}>Inactive</span>}
@@ -507,9 +511,11 @@ export default function ProductList() {
                                     </td>
                                     <td data-label="Category & Brand">
                                         <div style={{ fontSize: '0.9rem', fontWeight: 500 }}>
-                                            {typeof product.category?.name === 'string' ? product.category.name : (product.category?.name?.[language] || product.category?.name?.en || 'Uncategorized')}
+                                            {getLocalized(product.category?.name) || 'Uncategorized'}
                                         </div>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{product.brand?.name}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                            {getLocalized(product.brand?.name)}
+                                        </div>
                                     </td>
                                     <td style={{ textAlign: 'right' }} data-label="Pricing">
                                         <div style={{ fontWeight: 700, color: 'var(--text-main)' }}>
@@ -738,7 +744,7 @@ export default function ProductList() {
                             <div>
                                 <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700 }}>Product Details</h3>
                                 <p style={{ margin: 0, color: '#666', fontSize: '0.9rem' }}>
-                                    {typeof selectedProductForView.title === 'string' ? selectedProductForView.title : (selectedProductForView.title[language] || selectedProductForView.title.en)}
+                                    {getLocalized(selectedProductForView.title)}
                                 </p>
                             </div>
                             <button

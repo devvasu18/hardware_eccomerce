@@ -70,11 +70,11 @@ export default function CategorySection({ config }: { config?: any }) {
             <div className="container">
                 <div className="category-header">
                     <div>
-                        <h2 className="category-title">{displayTitle}</h2>
-                        <p className="category-subtitle">{displaySubtitle}</p>
+                        <h2 className="category-title" suppressHydrationWarning>{displayTitle}</h2>
+                        <p className="category-subtitle" suppressHydrationWarning>{displaySubtitle}</p>
                     </div>
-                    <Link href="/categories" className="view-all-btns">
-                        <span>{t('view_all_categories')}</span>
+                    <Link href="/categories" className="view-all-btns" suppressHydrationWarning>
+                        <span suppressHydrationWarning>{t('view_all_categories')}</span>
                         <FiArrowRight />
                     </Link>
                 </div>
@@ -94,22 +94,23 @@ export default function CategorySection({ config }: { config?: any }) {
                                 style={{ flex: `0 0 ${100 / itemsPerPage}%` }}
                             >
                                 <div className="category-card">
-                                    <div className="category-image-wrapper">
-                                        <div className="category-image-inner">
-                                            <Image
-                                                src={cat.imageUrl?.startsWith('http')
-                                                    ? cat.imageUrl
-                                                    : (cat.imageUrl
-                                                        ? `/${cat.imageUrl.startsWith('/') ? cat.imageUrl.slice(1) : cat.imageUrl}`
-                                                        : '/placeholder.png')}
-                                                fill
-                                                alt={getLocalized(cat.name)}
-                                                unoptimized={true}
-                                            />
-                                        </div>
+                                    <div className="category-image-area">
+                                        <Image
+                                            src={cat.imageUrl?.startsWith('http')
+                                                ? cat.imageUrl
+                                                : (cat.imageUrl
+                                                    ? `/${cat.imageUrl.startsWith('/') ? cat.imageUrl.slice(1) : cat.imageUrl}`
+                                                    : '/placeholder.png')}
+                                            fill
+                                            sizes="(max-width: 768px) 100vw, 33vw"
+                                            alt={getLocalized(cat.name)}
+                                            unoptimized={true}
+                                        />
                                     </div>
-
-                                    <span className="category-name">{getLocalized(cat.name)}</span>
+                                    <div className="category-info">
+                                        <h3 className="category-name" suppressHydrationWarning>{getLocalized(cat.name)}</h3>
+                                        <span className="shop-now" suppressHydrationWarning>{t('shop_now') || 'Shop Now'} <FiArrowRight /></span>
+                                    </div>
                                 </div>
                             </Link>
                         ))}

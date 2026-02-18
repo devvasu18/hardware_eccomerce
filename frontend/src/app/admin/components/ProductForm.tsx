@@ -344,7 +344,7 @@ interface ProductImage {
 export default function ProductForm({ productId }: ProductFormProps) {
     const router = useRouter();
     const { modalState, showModal, hideModal, showSuccess, showError } = useModal();
-    const { language } = useLanguage();
+    const { language, getLocalized, t } = useLanguage();
 
     // Applied Offers Dropdown State
     const [isOfferDropdownOpen, setIsOfferDropdownOpen] = useState(false);
@@ -1032,30 +1032,34 @@ export default function ProductForm({ productId }: ProductFormProps) {
                                         {language === 'en' ? 'English' : 'हिंदी'} Mode
                                     </div>
                                 </div>
-                                <div style={{ display: language === 'en' ? 'block' : 'none' }}>
+                                <div key="desc-en" style={{ display: language === 'en' ? 'block' : 'none' }}>
                                     <Controller
                                         name="description.en"
                                         control={control}
                                         render={({ field }) => (
-                                            <RichTextEditor
-                                                value={field.value}
-                                                onChange={(data) => field.onChange(data)}
-                                                placeholder="Detailed product description in English..."
-                                            />
+                                            language === 'en' ? (
+                                                <RichTextEditor
+                                                    value={field.value}
+                                                    onChange={(data) => field.onChange(data)}
+                                                    placeholder="Detailed product description in English..."
+                                                />
+                                            ) : <div style={{ minHeight: '150px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px' }}></div>
                                         )}
                                     />
                                     {errors.description && (errors.description as any).en && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{(errors.description as any).en.message}</span>}
                                 </div>
-                                <div style={{ display: language === 'hi' ? 'block' : 'none' }}>
+                                <div key="desc-hi" style={{ display: language === 'hi' ? 'block' : 'none' }}>
                                     <Controller
                                         name="description.hi"
                                         control={control}
                                         render={({ field }) => (
-                                            <RichTextEditor
-                                                value={field.value}
-                                                onChange={(data) => field.onChange(data)}
-                                                placeholder="हिंदी में विस्तृत उत्पाद विवरण..."
-                                            />
+                                            language === 'hi' ? (
+                                                <RichTextEditor
+                                                    value={field.value}
+                                                    onChange={(data) => field.onChange(data)}
+                                                    placeholder="हिंदी में विस्तृत उत्पाद विवरण..."
+                                                />
+                                            ) : <div style={{ minHeight: '150px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '4px' }}></div>
                                         )}
                                     />
                                 </div>
@@ -1558,7 +1562,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             <select {...register("category")} className="form-select" style={{ borderColor: errors.category ? 'var(--danger)' : undefined }}>
                                 <option value="">-- Select Category --</option>
                                 {categories.map(c => <option key={c._id} value={c._id}>
-                                    {typeof c.name === 'string' ? c.name : (c.name[language] || c.name.en)}
+                                    {getLocalized(c.name) || 'Unnamed Category'}
                                 </option>)}
                             </select>
                             {errors.category && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>{errors.category.message as string}</span>}
@@ -1568,7 +1572,7 @@ export default function ProductForm({ productId }: ProductFormProps) {
                             <select {...register("sub_category")} className="form-select">
                                 <option value="">-- Select Sub-Category --</option>
                                 {subCategories.map(s => <option key={s._id} value={s._id}>
-                                    {typeof s.name === 'string' ? s.name : (s.name[language] || s.name.en)}
+                                    {getLocalized(s.name) || 'Unnamed Sub-Category'}
                                 </option>)}
                             </select>
                         </div>

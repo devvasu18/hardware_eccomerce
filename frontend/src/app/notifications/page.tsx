@@ -130,7 +130,8 @@ export default function NotificationsPage() {
                                         </div>
                                         {!notif.isRead && <div className="unread-dot"></div>}
                                     </div>
-                                ))}
+                                );
+                            })}
                         </div>
                     )}
                 </div>

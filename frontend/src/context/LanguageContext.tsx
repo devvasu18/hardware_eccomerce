@@ -18,24 +18,40 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const { i18n, t } = useTranslation();
 
     const setLanguage = (lang: Language) => {
-        i18n.changeLanguage(lang);
+        console.log(`[LanguageContext] Changing language to: ${lang}`);
+        i18n.changeLanguage(lang).then(() => {
+            console.log(`[LanguageContext] Language changed to: ${i18n.language}`);
+        }).catch(err => {
+            console.error(`[LanguageContext] Error changing language:`, err);
+        });
         if (typeof window !== 'undefined') {
             localStorage.setItem('i18nextLng', lang);
         }
     };
 
+    const currentLanguage = ((i18n.resolvedLanguage || i18n.language || 'en').startsWith('hi') ? 'hi' : 'en') as Language;
+
     const getLocalized = (content: any) => {
         if (!content) return '';
         if (typeof content === 'string') return content;
-        // Check if it's bilingual object
-        const currentLang = i18n.language as Language || 'en';
-        const val = content[currentLang];
+
+        // Handle bilingual objects like { en: "...", hi: "..." }
+        const val = content[currentLanguage];
         if (val) return val;
-        return content['en'] || '';
+
+        // Fallback to "en" if current language is not found in object
+        return content['en'] || (typeof content === 'object' ? (Object.values(content).find(v => typeof v === 'string') || '') : '') || '';
     };
 
+    // Update HTML lang attribute whenever language changes
+    React.useEffect(() => {
+        if (typeof document !== 'undefined') {
+            document.documentElement.lang = currentLanguage;
+        }
+    }, [currentLanguage]);
+
     return (
-        <LanguageContext.Provider value={{ language: i18n.language as Language || 'en', setLanguage, t, getLocalized }}>
+        <LanguageContext.Provider value={{ language: currentLanguage, setLanguage, t, getLocalized }}>
             {children}
         </LanguageContext.Provider>
     );
@@ -61,7 +77,7 @@ export function useLanguage() {
             getLocalized: (content: any) => {
                 if (!content) return '';
                 if (typeof content === 'string') return content;
-                return content['en'] || content || '';
+                return content['en'] || (typeof content === 'object' ? (Object.values(content).find(v => typeof v === 'string') || '') : '') || '';
             }
         };
     }

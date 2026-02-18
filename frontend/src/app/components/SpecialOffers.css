@@ -473,7 +473,7 @@
 /* Small Mobile (320px - 480px) */
 @media (max-width: 480px) {
     .special-offers {
-        padding: 2rem 0;
+        padding: 1rem 0;
     }
 
     .offers-title {

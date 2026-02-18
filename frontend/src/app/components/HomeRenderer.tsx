@@ -23,12 +23,12 @@ const Recommended = lazy(() => import('@/app/components/RecommendedProducts'));
 const DealOfTheDay = lazy(() => import('@/app/components/DealOfTheDay'));
 const FlashSale = () => {
     const { t } = useLanguage();
-    return <div className="p-10 text-center bg-gray-100 my-4 rounded-xl">{t('flash_sale_coming_soon')}</div>;
+    return <div className="p-10 text-center bg-gray-100 my-4 rounded-xl" suppressHydrationWarning>{t('flash_sale_coming_soon')}</div>;
 };
 const TrustBadges = lazy(() => import('@/app/components/WhyChooseUs')); // Reuse WhyChooseUs or separate? WhyChooseUs seems to handle trust badges.
 const Testimonials = () => {
     const { t } = useLanguage();
-    return <div className="p-10 text-center bg-gray-100 my-4 rounded-xl">{t('testimonials_coming_soon')}</div>;
+    return <div className="p-10 text-center bg-gray-100 my-4 rounded-xl" suppressHydrationWarning>{t('testimonials_coming_soon')}</div>;
 };
 
 const componentMap: Record<string, React.ComponentType<any>> = {
@@ -167,8 +167,8 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
                 <Header />
                 <div className="flex-grow flex items-center justify-center min-h-[50vh]">
                     <div className="text-center">
-                        <h2 className="text-2xl font-bold text-gray-400">{t('under_maintenance')}</h2>
-                        <p className="text-gray-500 mt-2">{t('maintenance_desc')}</p>
+                        <h2 className="text-2xl font-bold text-gray-400" suppressHydrationWarning>{t('under_maintenance')}</h2>
+                        <p className="text-gray-500 mt-2" suppressHydrationWarning>{t('maintenance_desc')}</p>
                     </div>
                 </div>
                 <Footer />

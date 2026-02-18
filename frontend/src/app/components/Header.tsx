@@ -158,7 +158,7 @@ const Header = () => {
 
                 {/* Left: Brand Logo */}
                 <div className="header-logo-area">
-                    <Link href="/" className="logo-text">
+                    <Link href="/" className="logo-text" suppressHydrationWarning>
                         {companyName}
                     </Link>
                 </div>
@@ -167,7 +167,8 @@ const Header = () => {
                 <button
                     className={`hamburger-menu ${isMobileMenuOpen ? 'open' : ''}`}
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    aria-label="Toggle menu"
+                    aria-label={t('toggle_menu')}
+                    suppressHydrationWarning
                 >
                     <span className="hamburger-line"></span>
                     <span className="hamburger-line"></span>
@@ -186,6 +187,7 @@ const Header = () => {
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                             onFocus={() => setIsSearchFocused(true)}
                             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)} // Delay to allow click
+                            suppressHydrationWarning
                         />
                         <button className="search-icon-btn" onClick={handleSearch}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -271,8 +273,8 @@ const Header = () => {
                             <line x1="2" y1="12" x2="22" y2="12"></line>
                             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
                         </svg>
-                        <span style={{ fontSize: '0.85rem', fontWeight: 700, marginLeft: '0.2rem' }}>
-                            {language === 'en' ? 'EN' : 'HI'}
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, marginLeft: '0.2rem', color: 'var(--text-primary)' }} suppressHydrationWarning>
+                            {language === 'hi' ? 'HI' : 'EN'}
                         </span>
 
                         {isLangDropdownOpen && (
@@ -324,8 +326,8 @@ const Header = () => {
                         {user ? (
                             <>
                                 <div className="action-text">
-                                    <span className="action-text-sub">{t('hello')}, {user.username}</span>
-                                    <span className="action-text-main">{t('account')}</span>
+                                    <span className="action-text-sub" suppressHydrationWarning>{t('hello')}, {user.username}</span>
+                                    <span className="action-text-main" suppressHydrationWarning>{t('account')}</span>
                                 </div>
                                 <svg className="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
@@ -335,29 +337,29 @@ const Header = () => {
                                 {/* User Dropdown */}
                                 {isUserDropdownOpen && (
                                     <div className="user-dropdown">
-                                        <div className="dropdown-item-text">{t('sign_in_as')} <br /><strong>{user.username}</strong></div>
+                                        <div className="dropdown-item-text" suppressHydrationWarning>{t('sign_in_as')} <br /><strong>{user.username}</strong></div>
                                         <div className="dropdown-divider"></div>
                                         {user.role !== 'admin' && user.role !== 'super_admin' && (
                                             <>
-                                                <Link href="/profile" className="dropdown-item">{t('my_profile')}</Link>
-                                                <Link href="/orders" className="dropdown-item">{t('my_orders')}</Link>
-                                                <Link href="/change-password" className="dropdown-item">{t('change_password')}</Link>
-                                                <Link href="/settings" className="dropdown-item">{t('settings')}</Link>
+                                                <Link href="/profile" className="dropdown-item" suppressHydrationWarning>{t('my_profile')}</Link>
+                                                <Link href="/orders" className="dropdown-item" suppressHydrationWarning>{t('my_orders')}</Link>
+                                                <Link href="/change-password" className="dropdown-item" suppressHydrationWarning>{t('change_password')}</Link>
+                                                <Link href="/settings" className="dropdown-item" suppressHydrationWarning>{t('settings')}</Link>
                                             </>
                                         )}
                                         {(user.role === 'admin' || user.role === 'super_admin') && (
-                                            <Link href="/admin" className="dropdown-item">{t('admin_dashboard')}</Link>
+                                            <Link href="/admin" className="dropdown-item" suppressHydrationWarning>{t('admin_dashboard')}</Link>
                                         )}
                                         <div className="dropdown-divider"></div>
-                                        <button onClick={logout} className="dropdown-item logout-btn">{t('logout')}</button>
+                                        <button onClick={logout} className="dropdown-item logout-btn" suppressHydrationWarning>{t('logout')}</button>
                                     </div>
                                 )}
                             </>
                         ) : (
                             <Link href="/login" className="login-link-wrapper">
                                 <div className="action-text">
-                                    <span className="action-text-sub">{t('sign_up')}</span>
-                                    <span className="action-text-main">{t('login')}</span>
+                                    <span className="action-text-sub" suppressHydrationWarning>{t('sign_up')}</span>
+                                    <span className="action-text-main" suppressHydrationWarning>{t('login')}</span>
                                 </div>
                                 <svg className="action-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
@@ -431,6 +433,7 @@ const Header = () => {
                                         onMouseEnter={() => {
                                             if (hasSubCategories) setHoveredCategory(String(category._id));
                                         }}
+                                        suppressHydrationWarning
                                     >
                                         {getLocalizedName(category.name)}
                                         {hasSubCategories && (
@@ -448,6 +451,7 @@ const Header = () => {
                                                         href={`/products?category=${category.slug}&subcategory=${subCat.slug}`}
                                                         className="subcategory-item"
                                                         onClick={() => setHoveredCategory(null)}
+                                                        suppressHydrationWarning
                                                     >
                                                         <span className="subcategory-icon">→</span>
                                                         {getLocalizedName(subCat.name)}
@@ -460,7 +464,7 @@ const Header = () => {
                             );
                         })
                     ) : (
-                        <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{t('loading')}</span>
+                        <span style={{ color: '#94a3b8', fontSize: '0.9rem' }} suppressHydrationWarning>{t('loading')}</span>
                     )}
                 </div>
             </div>
@@ -469,7 +473,7 @@ const Header = () => {
             <div className={`mobile-nav-overlay ${isMobileMenuOpen ? 'open' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
             <div className={`mobile-nav-menu ${isMobileMenuOpen ? 'open' : ''}`}>
                 <div className="mobile-nav-header">
-                    <span className="mobile-nav-logo">{companyName}</span>
+                    <span className="mobile-nav-logo" suppressHydrationWarning>{companyName}</span>
                     <button className="mobile-nav-close" onClick={() => setIsMobileMenuOpen(false)}>×</button>
                 </div>
                 <nav className="mobile-nav-links">
@@ -479,6 +483,7 @@ const Header = () => {
                             href={`/products?category=${category.slug}`}
                             className="mobile-nav-link"
                             onClick={() => setIsMobileMenuOpen(false)}
+                            suppressHydrationWarning
                         >
                             {getLocalizedName(category.name)}
                         </Link>
@@ -496,6 +501,7 @@ const Header = () => {
                         value={mobileSearchTerm}
                         onChange={(e) => setMobileSearchTerm(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleMobileSearch()}
+                        suppressHydrationWarning
                     />
                     <button className="mobile-search-btn" onClick={handleMobileSearch}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

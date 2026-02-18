@@ -20,23 +20,23 @@ const MobileBottomNav = () => {
         <div className="mobile-bottom-nav">
             <Link href="/" className={`nav-link ${isActive('/') ? 'active' : ''}`}>
                 <FiHome className="nav-icon" />
-                <span>{t('nav_home')}</span>
+                <span suppressHydrationWarning>{t('nav_home')}</span>
             </Link>
             <Link href="/products" className={`nav-link ${isActive('/products') ? 'active' : ''}`}>
                 <FiGrid className="nav-icon" />
-                <span>{t('nav_products')}</span>
+                <span suppressHydrationWarning>{t('nav_products')}</span>
             </Link>
             <Link href="/brands" className={`nav-link ${isActive('/brands') ? 'active' : ''}`}>
                 <FiTag className="nav-icon" />
-                <span>{t('nav_brands')}</span>
+                <span suppressHydrationWarning>{t('nav_brands')}</span>
             </Link>
             <Link href="/orders" className={`nav-link ${isActive('/orders') ? 'active' : ''}`}>
                 <FiShoppingBag className="nav-icon" />
-                <span>{t('nav_orders')}</span>
+                <span suppressHydrationWarning>{t('nav_orders')}</span>
             </Link>
             <Link href="/profile" className={`nav-link ${isActive('/profile') ? 'active' : ''}`}>
                 <FiUser className="nav-icon" />
-                <span>{t('nav_profile')}</span>
+                <span suppressHydrationWarning>{t('nav_profile')}</span>
             </Link>
         </div>
     );

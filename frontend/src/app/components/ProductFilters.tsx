@@ -32,7 +32,7 @@ interface ProductFiltersProps {
 export default function ProductFilters({ initialCategories = [], initialBrands = [] }: ProductFiltersProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { t } = useLanguage();
+    const { t, getLocalized } = useLanguage();
 
     // State from URL
     const currentCategory = searchParams.get('category');
@@ -240,7 +240,7 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                                         onChange={() => { }}
                                         onClick={() => updateFilter('category', currentCategory === cat.slug ? null : cat.slug)}
                                     />
-                                    <span>{cat.name}</span>
+                                    <span>{getLocalized(cat.name)}</span>
                                 </label>
 
                                 {/* Render Subcategories if this category is selected */}
@@ -255,7 +255,7 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                                                     onChange={() => { }}
                                                     onClick={() => updateFilter('subcategory', currentSubCategory === sub.slug ? null : sub.slug)}
                                                 />
-                                                <span>{sub.name}</span>
+                                                <span>{getLocalized(sub.name)}</span>
                                             </label>
                                         ))}
                                     </div>
@@ -290,7 +290,7 @@ export default function ProductFilters({ initialCategories = [], initialBrands =
                                         updateFilter('brand', isSelected ? null : (brand.slug || brand.name));
                                     }}
                                 />
-                                <span>{brand.name}</span>
+                                <span>{getLocalized(brand.name)}</span>
                             </label>
                         ))}
                     </div>
