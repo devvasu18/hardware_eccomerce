@@ -31,7 +31,7 @@ interface ProductGridContentProps {
 }
 
 function ProductGridContent({ offerInfo }: ProductGridContentProps) {
-    const { t } = useLanguage();
+    const { t, getLocalized } = useLanguage();
     const searchParams = useSearchParams();
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<any[]>([]);
@@ -132,7 +132,7 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
 }
 
 export default function FilteredProducts({ config }: { config?: any }) {
-    const { t } = useLanguage();
+    const { t, getLocalized } = useLanguage();
     const searchParams = useSearchParams();
     const [offerInfo, setOfferInfo] = useState<any>(null);
     const category = searchParams.get('category');
@@ -164,7 +164,7 @@ export default function FilteredProducts({ config }: { config?: any }) {
             {/* dynamic hero based on filter */}
             <div className="products-hero">
                 <div className="container">
-                    <h3 className="text-4xl font-extrabold text-slate-900 mb-4">
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2">
                         {offerInfo ? (
                             <>
                                 {getLocalized(offerInfo.title)} <span className="text-orange-600">({offerInfo.percentage}% {t('off')})</span>
