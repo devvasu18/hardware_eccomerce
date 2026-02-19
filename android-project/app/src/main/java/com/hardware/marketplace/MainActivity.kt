@@ -18,6 +18,12 @@ import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.ContextCompat
 
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.install.model.UpdateAvailability
+import com.google.android.play.core.appupdate.AppUpdateInfo
+import com.google.android.play.core.appupdate.AppUpdateOptions
 
 class MainActivity : AppCompatActivity() {
 
@@ -31,6 +37,8 @@ class MainActivity : AppCompatActivity() {
     private val USER_AGENT_SUFFIX = " AndroidApp/1.0"
 
     private val REQUEST_NOTIFICATION_PERMISSION = 1001
+    private val UPDATE_REQUEST_CODE = 1002
+    private lateinit var appUpdateManager: AppUpdateManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -47,7 +55,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Check for updates
+        // Initialize Play Store update manager
+        appUpdateManager = AppUpdateManagerFactory.create(this)
+        
+        // Start check for updates (Both Play Store and GitHub Fallback)
         checkForUpdates()
 
         // Handle Deep Links
@@ -81,7 +92,57 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Check for updates that might be "stalled" or in progress
+        appUpdateManager.appUpdateInfo.addOnSuccessListener { appUpdateInfo ->
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS) {
+                // Resume the update if it's an immediate one
+                appUpdateManager.startUpdateFlowForResult(
+                    appUpdateInfo,
+                    this,
+                    AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build(),
+                    UPDATE_REQUEST_CODE
+                )
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == UPDATE_REQUEST_CODE) {
+            if (resultCode != RESULT_OK) {
+                // Update failed or cancelled by user
+                // You can log this or show a message if it was a "Force Update"
+            }
+        }
+    }
+
     private fun checkForUpdates() {
+        // 1. Try Google Play Store Updates First (Production)
+        val appUpdateInfoTask = appUpdateManager.appUpdateInfo
+        appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
+                && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
+            ) {
+                // Request the update
+                appUpdateManager.startUpdateFlowForResult(
+                    appUpdateInfo,
+                    this,
+                    AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build(),
+                    UPDATE_REQUEST_CODE
+                )
+            } else {
+                // 2. Fallback to GitHub check (Development/Sideload)
+                checkGitHubUpdates()
+            }
+        }.addOnFailureListener {
+            // Play Store check failed (likely not installed from Play Store), use GitHub fallback
+            checkGitHubUpdates()
+        }
+    }
+
+    private fun checkGitHubUpdates() {
         Thread {
             try {
                 val url = java.net.URL("https://$APP_DOMAIN/app-version.json")
@@ -97,6 +158,7 @@ class MainActivity : AppCompatActivity() {
                     
                     val json = org.json.JSONObject(jsonStr)
                     val remoteVersion = json.getInt("versionCode")
+                    val forceUpdate = json.optBoolean("forceUpdate", false)
                     val downloadUrl = json.getString("downloadUrl")
                     val messages = json.getJSONObject("messageData")
                     
@@ -111,7 +173,7 @@ class MainActivity : AppCompatActivity() {
 
                     if (remoteVersion > currentVersion) {
                         runOnUiThread {
-                            showUpdateDialog(downloadUrl, messages)
+                            showUpdateDialog(downloadUrl, messages, forceUpdate)
                         }
                     }
                 }
@@ -121,20 +183,26 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun showUpdateDialog(downloadUrl: String, messages: org.json.JSONObject) {
+    private fun showUpdateDialog(downloadUrl: String, messages: org.json.JSONObject, isForce: Boolean) {
         val lang = java.util.Locale.getDefault().language
         val isHindi = lang == "hi"
         val msgObj = if (isHindi && messages.has("hi")) messages.getJSONObject("hi") else messages.getJSONObject("en")
         
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle(msgObj.getString("title"))
             .setMessage(msgObj.getString("message"))
             .setPositiveButton(msgObj.getString("button")) { _, _ ->
                 val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
                 startActivity(intent)
             }
-            .setCancelable(false) // Force user to see it, though back button dismisses
-            .show()
+        
+        if (isForce) {
+            builder.setCancelable(false)
+        } else {
+            builder.setNegativeButton(if (isHindi) "बाद में" else "Later", null)
+        }
+        
+        builder.show()
     }
 
     override fun onNewIntent(intent: Intent?) {
