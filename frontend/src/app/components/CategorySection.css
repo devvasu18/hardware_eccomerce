@@ -193,8 +193,10 @@
     }
 
     .view-all-btns {
-        padding: 0.6rem 1.25rem;
-        font-size: 0.8rem;
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+        width: 100%;
+        justify-content: center;
     }
 
     .category-card-wrapper {
