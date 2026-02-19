@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
     
     // Configure your domain here
-    private val APP_DOMAIN = "hardware-marketplace.com" // Replace with actual domain
+    private val APP_DOMAIN = "hardware-eccomerce.vercel.app"
     private val START_URL = "https://$APP_DOMAIN"
     
     // User Agent suffix for detection
