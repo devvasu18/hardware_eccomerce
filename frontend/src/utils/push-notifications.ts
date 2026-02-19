@@ -37,7 +37,7 @@ const saveTokenToBackend = async (token: string) => {
         const authToken = localStorage.getItem('token');
         if (!authToken) return;
 
-        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/register-token`, {
+        await fetch(`/api/notifications/register-token`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

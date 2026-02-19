@@ -20,6 +20,11 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
                 remoteMessage.notification?.title ?: "Hardware Marketplace",
                 remoteMessage.notification?.body ?: "New Notification"
             )
+        } else if (remoteMessage.data.isNotEmpty()) {
+            // Handle Data messages (even if application is in background/killed)
+            val title = remoteMessage.data["title"] ?: "Hardware Marketplace"
+            val body = remoteMessage.data["body"] ?: "New Notification"
+            sendNotification(title, body)
         }
     }
 
@@ -38,11 +43,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val channelId = "hardware_notification_channel"
         val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher) // Ensure this icon exists
+            .setSmallIcon(R.mipmap.ic_launcher) // Use mipmap for better scaling
             .setContentTitle(title)
             .setContentText(messageBody)
             .setAutoCancel(true)
             .setSound(defaultSoundUri)
+            .setPriority(NotificationCompat.PRIORITY_HIGH) // For older versions
             .setContentIntent(pendingIntent)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -52,7 +58,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             val channel = NotificationChannel(
                 channelId,
                 "General Notifications",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             )
             notificationManager.createNotificationChannel(channel)
         }

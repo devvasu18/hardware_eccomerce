@@ -30,6 +30,8 @@ class MainActivity : AppCompatActivity() {
     // User Agent suffix for detection
     private val USER_AGENT_SUFFIX = " AndroidApp/1.0"
 
+    private val REQUEST_NOTIFICATION_PERMISSION = 1001
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
@@ -38,6 +40,13 @@ class MainActivity : AppCompatActivity() {
         webView = findViewById(R.id.webview)
         setupWebView()
         
+        // Request Notification Permission for Android 13+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATION_PERMISSION)
+            }
+        }
+
         // Check for updates
         checkForUpdates()
 
@@ -58,6 +67,17 @@ class MainActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) {
             webView.loadUrl(START_URL)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_NOTIFICATION_PERMISSION) {
+            if (grantResults.isNotEmpty() && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                // Permission granted, request token now
+                val jsBridge = WebAppInterface(this)
+                jsBridge.requestFCMToken()
+            }
         }
     }
 

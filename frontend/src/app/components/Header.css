@@ -1325,3 +1325,42 @@
         display: none !important;
     }
 }
+
+/* Mobile Search Dropdown Support */
+.mobile-dropdown {
+    top: calc(100% + 8px);
+    width: 100%;
+    max-height: 60vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    z-index: 1002;
+    /* Ensure it's above other elements */
+}
+
+.mobile-dropdown::-webkit-scrollbar {
+    width: 4px;
+}
+
+.mobile-dropdown::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+@media (max-width: 600px) {
+    .search-dropdown {
+        padding: 1rem;
+    }
+
+    .suggestion-item {
+        padding: 0.5rem;
+    }
+
+    .suggestion-image-wrapper {
+        width: 32px;
+        height: 32px;
+    }
+
+    .suggestion-text {
+        font-size: 0.85rem;
+    }
+}

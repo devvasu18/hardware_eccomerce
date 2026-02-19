@@ -54,6 +54,7 @@ class WebAppInterface(private val context: Context) {
                 // Call back into WebView
                 if (context is MainActivity) {
                     context.runOnUiThread {
+                        Toast.makeText(context, "Ready for notifications", Toast.LENGTH_SHORT).show() 
                         context.sendTokenToWeb(token)
                     }
                 }
