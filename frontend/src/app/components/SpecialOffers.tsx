@@ -200,7 +200,7 @@ export default function SpecialOffers({ config }: { config?: any }) {
                 <div className="view-all-deals">
                     <Link href="/special-deals" className="view-all-deals-btn">
                         {t('view_all_offers')}
-                        <span className="btn-shine" />
+                        <span>→</span>
                     </Link>
                 </div>
             </div>

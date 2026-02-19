@@ -45,6 +45,21 @@
     border-radius: 12px;
 }
 
+
+/* Wrapper for profile item to handle absolute positioning of menu if needed */
+.nav-link-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+/* Ensure inner nav-link fills the wrapper */
+.nav-link-wrapper .nav-link {
+    width: 100%;
+}
+
+
 .nav-link:hover {
     color: #F37021;
     /* primary */

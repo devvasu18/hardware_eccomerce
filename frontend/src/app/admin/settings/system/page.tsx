@@ -30,7 +30,8 @@ export default function SystemSettingsPage() {
         onlinePaymentEnabled: true,
         codEnabled: false,
         notificationSoundEnabled: true,
-        notificationSound: '/sounds/order_alert.mp3'
+        notificationSound: '/sounds/order_alert.mp3',
+        orderNotificationSound: '/sounds/payment_success.mp3'
     });
 
     useEffect(() => {
@@ -55,8 +56,9 @@ export default function SystemSettingsPage() {
     };
 
     const [uploadingSound, setUploadingSound] = useState(false);
+    const [uploadingOrderSound, setUploadingOrderSound] = useState(false);
 
-    const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'notificationSound' | 'orderNotificationSound') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -76,7 +78,9 @@ export default function SystemSettingsPage() {
         const formData = new FormData();
         formData.append('sound', file);
 
-        setUploadingSound(true);
+        if (field === 'notificationSound') setUploadingSound(true);
+        else setUploadingOrderSound(true);
+
         try {
             const res = await api.post('/admin/settings/upload-sound', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -85,7 +89,7 @@ export default function SystemSettingsPage() {
             if (res.data.success) {
                 setSettings(prev => ({
                     ...prev,
-                    notificationSound: res.data.url
+                    [field]: res.data.url
                 }));
                 showSuccess('Sound uploaded successfully! Don\'t forget to save settings.');
             }
@@ -93,7 +97,8 @@ export default function SystemSettingsPage() {
             console.error('Sound upload failed:', error);
             showError(error.response?.data?.message || 'Failed to upload sound');
         } finally {
-            setUploadingSound(false);
+            if (field === 'notificationSound') setUploadingSound(false);
+            else setUploadingOrderSound(false);
             e.target.value = ''; // Reset input
         }
     };
@@ -534,7 +539,7 @@ export default function SystemSettingsPage() {
                                             id="sound-upload"
                                             accept=".mp3,.wav"
                                             style={{ display: 'none' }}
-                                            onChange={handleSoundUpload}
+                                            onChange={(e) => handleSoundUpload(e, 'notificationSound')}
                                         />
                                         <button
                                             type="button"
@@ -553,6 +558,99 @@ export default function SystemSettingsPage() {
                                             }}
                                         >
                                             {uploadingSound ? <FiRefreshCw className="spin" /> : <FiPhone />}
+                                            Upload
+                                        </button>
+                                    </>
+                                )}
+
+                                <label style={{ position: 'relative', display: 'inline-block', width: '60px', height: '30px', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.notificationSoundEnabled !== false} // Default to true if undefined
+                                        onChange={(e) => handleChange('notificationSoundEnabled', e.target.checked)}
+                                        style={{ opacity: 0, width: 0, height: 0 }}
+                                    />
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: settings.notificationSoundEnabled !== false ? '#10B981' : '#cbd5e1',
+                                        borderRadius: '30px',
+                                        transition: '0.3s',
+                                        cursor: 'pointer'
+                                    }}>
+                                        <span style={{
+                                            position: 'absolute',
+                                            content: '""',
+                                            height: '22px',
+                                            width: '22px',
+                                            left: settings.notificationSoundEnabled !== false ? '34px' : '4px',
+                                            bottom: '4px',
+                                            backgroundColor: 'white',
+                                            borderRadius: '50%',
+                                            transition: '0.3s'
+                                        }}></span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Order Placed Sound Setting */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <FiBell size={20} color="#10B981" />
+                                <div>
+                                    <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>Order Notification Sound</p>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
+                                        Specific ringtone for "Order Placed" success notifications
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                {settings.notificationSoundEnabled && (
+                                    <select
+                                        value={settings.orderNotificationSound || 'default'}
+                                        onChange={(e) => handleChange('orderNotificationSound', e.target.value)}
+                                        style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', maxWidth: '150px' }}
+                                    >
+                                        <option value="default">Default</option>
+                                        <option value="/sounds/payment_success.mp3">Payment Success</option>
+                                        <option value="/sounds/order_alert.mp3">Order Alert</option>
+                                        <option value="custom">Custom Sound</option>
+                                        {settings.orderNotificationSound && !['default', '/sounds/payment_success.mp3', '/sounds/order_alert.mp3', 'custom'].includes(settings.orderNotificationSound) && (
+                                            <option value={settings.orderNotificationSound}>Uploaded Sound</option>
+                                        )}
+                                    </select>
+                                )}
+
+                                {settings.notificationSoundEnabled && (
+                                    <>
+                                        <input
+                                            type="file"
+                                            id="order-sound-upload"
+                                            accept=".mp3,.wav"
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => handleSoundUpload(e, 'orderNotificationSound')}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => document.getElementById('order-sound-upload')?.click()}
+                                            disabled={uploadingOrderSound}
+                                            style={{
+                                                padding: '0.4rem 0.8rem',
+                                                borderRadius: '6px',
+                                                border: '1px solid #cbd5e1',
+                                                background: '#fff',
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem'
+                                            }}
+                                        >
+                                            {uploadingOrderSound ? <FiRefreshCw className="spin" /> : <FiPhone />}
                                             Upload
                                         </button>
                                     </>

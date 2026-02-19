@@ -6,14 +6,31 @@ import { FiHome, FiGrid, FiTag, FiShoppingBag, FiUser } from 'react-icons/fi'; /
 import { MdOutlineDashboard } from 'react-icons/md';
 import './MobileBottomNav.css';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 
 const MobileBottomNav = () => {
     const { t } = useLanguage();
     const pathname = usePathname();
+    const { user } = useAuth();
+    const [currentPath, setCurrentPath] = React.useState('');
+
+    React.useEffect(() => {
+        if (pathname) setCurrentPath(pathname);
+    }, [pathname]);
 
     const isActive = (path: string) => {
-        if (path === '/') return pathname === '/';
-        return pathname?.startsWith(path);
+        if (!currentPath) return false;
+        if (path === '/') return currentPath === '/';
+        // Highlight profile icon for any account related pages
+        if (path === '/account') {
+            return currentPath === '/account' ||
+                currentPath.startsWith('/profile') ||
+                currentPath.startsWith('/orders') ||
+                currentPath.startsWith('/change-password') ||
+                currentPath.startsWith('/settings') ||
+                currentPath.startsWith('/admin');
+        }
+        return currentPath.startsWith(path);
     };
 
     return (
@@ -34,10 +51,18 @@ const MobileBottomNav = () => {
                 <FiShoppingBag className="nav-icon" />
                 <span suppressHydrationWarning>{t('nav_orders')}</span>
             </Link>
-            <Link href="/profile" className={`nav-link ${isActive('/profile') ? 'active' : ''}`}>
-                <FiUser className="nav-icon" />
-                <span suppressHydrationWarning>{t('nav_profile')}</span>
-            </Link>
+
+            {user ? (
+                <Link href="/account" className={`nav-link ${isActive('/account') ? 'active' : ''}`}>
+                    <FiUser className="nav-icon" />
+                    <span suppressHydrationWarning>{t('nav_profile')}</span>
+                </Link>
+            ) : (
+                <Link href="/login" className={`nav-link ${isActive('/login') ? 'active' : ''}`}>
+                    <FiUser className="nav-icon" />
+                    <span suppressHydrationWarning>{t('login')}</span>
+                </Link>
+            )}
         </div>
     );
 };

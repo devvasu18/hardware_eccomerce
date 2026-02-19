@@ -66,7 +66,7 @@ export default function NewArrivals({ config }: { config?: any }) {
                         <p className="new-arrivals-subtitle">{displaySubtitle}</p>
                     </div>
                     <Link href="/new-arrivals" className="view-all-btn">
-                        {t('view_all')} &rarr;
+                        {t('view_all')} <span>→</span>
                     </Link>
                 </div>
 

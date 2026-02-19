@@ -236,5 +236,8 @@
     "notification_type_warning": "Warning",
     "notification_type_error": "Error",
     "notification_type_info": "Info",
-    "new_order_received": "New Order Received"
+    "new_order_received": "New Order Received",
+    "account_actions": "Account Actions",
+    "sign_out": "Sign Out",
+    "sign_out_desc": "Securely log out of your account on this device."
 }

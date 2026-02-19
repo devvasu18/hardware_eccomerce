@@ -236,5 +236,8 @@
     "notification_type_warning": "चेतावनी",
     "notification_type_error": "त्रुटि",
     "notification_type_info": "जानकारी",
-    "new_order_received": "नया ऑर्डर प्राप्त हुआ"
+    "new_order_received": "नया ऑर्डर प्राप्त हुआ",
+    "account_actions": "खाता क्रियाएं",
+    "sign_out": "साइन आउट",
+    "sign_out_desc": "इस डिवाइस से अपने खाते से सुरक्षित रूप से लॉग आउट करें।"
 }

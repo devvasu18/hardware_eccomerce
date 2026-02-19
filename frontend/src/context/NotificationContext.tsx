@@ -36,7 +36,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const [socket, setSocket] = useState<Socket | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const [soundSettings, setSoundSettings] = useState({ enabled: true, sound: 'default' });
+    const [soundSettings, setSoundSettings] = useState({ enabled: true, sound: 'default', orderSound: 'default' });
     const settingsRef = useRef(soundSettings);
     const [audioUnlocked, setAudioUnlocked] = useState(false);
 
@@ -58,7 +58,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
                 if (data) {
                     setSoundSettings({
                         enabled: data.notificationSoundEnabled !== false,
-                        sound: data.notificationSound || 'default'
+                        sound: data.notificationSound || 'default',
+                        orderSound: data.orderNotificationSound || 'default'
                     });
                 }
             } catch (error) {
@@ -101,13 +102,20 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             return;
         }
 
-        let audioPath = '/sounds/order_alert.mp3'; // Default fallback
+        let audioPath = '/sounds/notification.mp3'; // Default fallback
 
-        if (settings.sound && settings.sound !== 'default') {
-            audioPath = settings.sound;
+        if (type === 'ORDER') {
+            if (settings.orderSound && settings.orderSound !== 'default') {
+                audioPath = settings.orderSound;
+            } else {
+                audioPath = '/sounds/payment_success.mp3';
+            }
         } else {
-            // Default logic based on type if 'default' is selected
-            audioPath = type === 'ORDER' ? '/sounds/order_alert.mp3' : '/sounds/notification.mp3';
+            if (settings.sound && settings.sound !== 'default') {
+                audioPath = settings.sound;
+            } else {
+                audioPath = '/sounds/notification.mp3';
+            }
         }
 
         console.log(`🔊 [${type}] Attempting to play sound: ${audioPath}`);

@@ -227,13 +227,15 @@ export default function ProductCard({ product }: { product: Product }) {
                             : getLocalized(product.category))}
                 </p>
                 <div className="product-info-row">
-                    <h3 className="product-title" title={getLocalized(product.title) || getLocalized(product.name)} suppressHydrationWarning>
-                        {(() => {
-                            const rawTitle = getLocalized(product.title) || getLocalized(product.name);
-                            const finalTitle = rawTitle || (typeof product.title === 'string' ? product.title : '') || (typeof product.name === 'string' ? product.name : '') || t('name') || 'Product';
-                            return finalTitle.length > 50 ? finalTitle.substring(0, 50) + '...' : finalTitle;
-                        })()}
-                    </h3>
+                    <div className="product-title-wrapper">
+                        <h3 className="product-title" title={getLocalized(product.title) || getLocalized(product.name)} suppressHydrationWarning>
+                            {(() => {
+                                const rawTitle = getLocalized(product.title) || getLocalized(product.name);
+                                const finalTitle = rawTitle || (typeof product.title === 'string' ? product.title : '') || (typeof product.name === 'string' ? product.name : '') || t('name') || 'Product';
+                                return finalTitle.length > 50 ? finalTitle.substring(0, 50) + '...' : finalTitle;
+                            })()}
+                        </h3>
+                    </div>
                     <div className="product-price" suppressHydrationWarning>
                         {showStartingAt && <span className="price-from" suppressHydrationWarning>{t('from')}</span>}
                         {(displayMRP && displayMRP > 0 && displayMRP > finalPrice) && (

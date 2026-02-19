@@ -90,7 +90,7 @@ export default function AdminHeader({ isSidebarCollapsed, setIsSidebarCollapsed 
 
     return (
         <header className="admin-topbar">
-            <div className="topbar-left">
+            <div className="topbar-left" onClick={() => router.push('/')} style={{ cursor: 'pointer' }}>
 
                 {isSidebarCollapsed && <span className="header-brand">{companyName}</span>}
             </div>

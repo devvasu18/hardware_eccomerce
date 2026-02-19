@@ -70,7 +70,8 @@ router.put('/system', protect, admin, async (req, res) => {
             onlinePaymentEnabled,
             codEnabled,
             notificationSoundEnabled,
-            notificationSound
+            notificationSound,
+            orderNotificationSound
         } = req.body;
 
         // Security Check: Only Super Admin can change system settings
@@ -105,6 +106,7 @@ router.put('/system', protect, admin, async (req, res) => {
         if (codEnabled !== undefined) settings.codEnabled = codEnabled;
         if (notificationSoundEnabled !== undefined) settings.notificationSoundEnabled = notificationSoundEnabled;
         if (notificationSound !== undefined) settings.notificationSound = notificationSound;
+        if (orderNotificationSound !== undefined) settings.orderNotificationSound = orderNotificationSound;
 
         await settings.save();
 

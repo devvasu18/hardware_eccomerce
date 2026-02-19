@@ -48,6 +48,10 @@ const systemSettingsSchema = new mongoose.Schema({
         type: String,
         default: 'default' // 'default' or 'custom' (future proofing) or a URL
     },
+    orderNotificationSound: {
+        type: String,
+        default: 'default'
+    },
     passwordResetNotificationsEnabled: {
         type: Boolean,
         default: true

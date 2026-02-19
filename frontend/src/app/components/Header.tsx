@@ -14,7 +14,7 @@ import './Header.css';
 
 const Header = () => {
     const { t, language, setLanguage } = useLanguage();
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const { cartCount, openCart } = useCart();
     const router = useRouter();
     const pathname = usePathname();
@@ -38,6 +38,18 @@ const Header = () => {
     useEffect(() => {
         setIsMobileMenuOpen(false);
     }, [pathname]);
+
+    // Lock body scroll when mobile menu is open
+    useEffect(() => {
+        if (isMobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isMobileMenuOpen]);
 
     const [isVisible, setIsVisible] = useState(true);
     const lastScrollY = useRef(0);
@@ -318,7 +330,7 @@ const Header = () => {
 
                     {/* Login / Profile */}
                     <div
-                        className="action-item relative-wrapper"
+                        className="action-item relative-wrapper profile-btn-wrapper"
                         onMouseEnter={() => setIsUserDropdownOpen(true)}
                         onMouseLeave={() => setIsUserDropdownOpen(false)}
                         onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
@@ -350,8 +362,6 @@ const Header = () => {
                                         {(user.role === 'admin' || user.role === 'super_admin') && (
                                             <Link href="/admin" className="dropdown-item" suppressHydrationWarning>{t('admin_dashboard')}</Link>
                                         )}
-                                        <div className="dropdown-divider"></div>
-                                        <button onClick={logout} className="dropdown-item logout-btn" suppressHydrationWarning>{t('logout')}</button>
                                     </div>
                                 )}
                             </>

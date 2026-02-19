@@ -3,6 +3,10 @@
    Industrial Orange | Clean | Professional
    ======================================== */
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap');
 @import url('./responsive-utilities.css');
 
@@ -642,17 +646,33 @@ button {
   width: 100%;
 }
 
+.product-title-wrapper {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* Critical for flex truncation */
+  width: 100%;
+  max-width: 100%;
+}
+
 .product-title {
   font-size: 14px;
   font-weight: 600;
-  color: black !important;
-  /* Debug color */
-  margin-bottom: 0px;
+  color: var(--text-primary);
+  margin-bottom: 0;
   line-height: 1.4;
+
+  /* Truncation logic */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  /* Reset previous fix attempt */
   height: auto;
-  overflow: visible;
-  flex: 1;
-  min-width: 0;
+  max-height: 2.8em;
+  /* 1.4em * 2 lines */
 }
 
 .product-card-footer {
@@ -668,6 +688,9 @@ button {
   align-items: flex-end;
   text-align: right;
   flex-shrink: 0;
+  flex-grow: 0;
+  max-width: 45%;
+  /* Prevent price from taking more than ~half the card width */
 }
 
 .price-from {

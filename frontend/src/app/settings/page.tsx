@@ -1,16 +1,18 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import api from '../utils/api';
-import { FiSave, FiBell, FiGlobe, FiMoon, FiSun, FiMonitor, FiCheck, FiAlertCircle } from 'react-icons/fi';
+import { FiSave, FiBell, FiGlobe, FiMoon, FiSun, FiMonitor, FiCheck, FiAlertCircle, FiLogOut } from 'react-icons/fi';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 export default function UserSettingsPage() {
-    const { user, loadUser } = useAuth();
+    const { user, loadUser, logout } = useAuth();
+    const router = useRouter();
     const { theme: globalTheme, setTheme: setGlobalTheme } = useTheme();
     const { t, language, setLanguage } = useLanguage();
     const [saving, setSaving] = useState(false);
@@ -44,6 +46,18 @@ export default function UserSettingsPage() {
             }
         }
     }, [user]);
+
+    const hasChanges = useMemo(() => {
+        if (!user?.settings) return false;
+
+        return (
+            settings.notifications.email !== (user.settings.notifications?.email ?? true) ||
+            settings.notifications.whatsapp !== (user.settings.notifications?.whatsapp ?? true) ||
+            settings.notifications.sms !== (user.settings.notifications?.sms ?? true) ||
+            settings.language !== (user.settings.language || 'en') ||
+            settings.theme !== ((user.settings.theme as any) || 'system')
+        );
+    }, [settings, user]);
 
     const handleNotificationChange = (field: string, value: boolean) => {
         setSettings(prev => ({
@@ -79,6 +93,11 @@ export default function UserSettingsPage() {
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleLogout = async () => {
+        await logout();
+        router.push('/login');
     };
 
     return (
@@ -269,17 +288,65 @@ export default function UserSettingsPage() {
 
                     {/* Action Buttons */}
                     <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '2rem' }}>
-                        <button
-                            type="submit"
-                            disabled={saving}
-                            className="btn btn-primary"
-                            style={{ padding: '0.75rem 2.5rem' }}
-                        >
-                            <FiSave size={18} />
-                            {saving ? t('saving') : t('save_settings')}
-                        </button>
+                        {hasChanges && (
+                            <button
+                                type="submit"
+                                disabled={saving}
+                                className="btn btn-primary"
+                                style={{ padding: '0.75rem 2.5rem' }}
+                            >
+                                <FiSave size={18} />
+                                {saving ? t('saving') : t('save_settings')}
+                            </button>
+                        )}
                     </div>
                 </form>
+
+                {/* Account Actions */}
+                <div className="card" style={{ marginTop: '2rem', padding: '1.5rem', borderRadius: '12px', background: 'var(--surface)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ padding: '8px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', color: '#ef4444' }}>
+                            <FiLogOut size={20} />
+                        </div>
+                        {t('account_actions')}
+                    </h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <p style={{ fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{t('sign_out')}</p>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0' }}>
+                                {t('sign_out_desc')}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            style={{
+                                padding: '0.75rem 1.5rem',
+                                borderRadius: '8px',
+                                border: '1px solid #ef4444',
+                                background: 'transparent',
+                                color: '#ef4444',
+                                cursor: 'pointer',
+                                fontWeight: 600,
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#ef4444';
+                                e.currentTarget.style.color = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = '#ef4444';
+                            }}
+                        >
+                            <FiLogOut size={18} />
+                            {t('logout')}
+                        </button>
+                    </div>
+                </div>
 
                 <style jsx>{`
                 .toggle-switch {
