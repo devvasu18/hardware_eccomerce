@@ -131,6 +131,30 @@ const sendNotification = async ({ userId, role, title, message, type, redirectUr
     }
 };
 
+// Restore missing getter/setter functions
+const markAsRead = async (notificationId, userId) => {
+    return await Notification.findOneAndUpdate(
+        { _id: notificationId, userId },
+        { isRead: true },
+        { new: true }
+    );
+};
+
+const getUnreadCount = async (userId) => {
+    return await Notification.countDocuments({ userId, isRead: false });
+};
+
+const getNotifications = async (userId, limit = 50, skip = 0) => {
+    return await Notification.find({ userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+};
+
+const markAllAsRead = async (userId) => {
+    return await Notification.updateMany({ userId, isRead: false }, { isRead: true });
+};
+
 // ... existing exports ...
 
 module.exports = {

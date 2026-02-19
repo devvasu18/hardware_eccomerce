@@ -25,7 +25,6 @@ const MobileBottomNav = () => {
         if (path === '/account') {
             return currentPath === '/account' ||
                 currentPath.startsWith('/profile') ||
-                currentPath.startsWith('/orders') ||
                 currentPath.startsWith('/change-password') ||
                 currentPath.startsWith('/settings') ||
                 currentPath.startsWith('/admin');
