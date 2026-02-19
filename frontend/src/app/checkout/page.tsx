@@ -457,9 +457,7 @@ export default function CheckoutPage() {
         <>
             <Header />
             <div className="container checkout-container">
-                <button onClick={() => router.back()} className="back-btn">
-                    <FaArrowLeft /> Back
-                </button>
+
                 <h1 className="checkout-title">
                     {availableItems.length > 0 ? 'Secure Checkout' : 'Submit Procurement Request'}
                 </h1>
