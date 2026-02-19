@@ -1,0 +1,52 @@
+
+// Helper for Android Bridge
+declare global {
+    interface Window {
+        Android: {
+            showToast(message: string): void;
+            openExternalLink(url: string): void;
+            getAppVersion(): string;
+            requestFCMToken(): void;
+        };
+        onReceiveFCMToken: (token: string) => void;
+    }
+}
+
+export const requestNotificationPermission = () => {
+    if (typeof window !== 'undefined' && window.Android) {
+        // Native Android Flow
+        window.Android.requestFCMToken();
+
+        // Listen for the callback
+        window.onReceiveFCMToken = async (token) => {
+            console.log("🔥 FCM Token Received from Native:", token);
+            await saveTokenToBackend(token);
+        };
+    } else if ('Notification' in window) {
+        // Web Push Flow (if you add PWA push later)
+        Notification.requestPermission().then((permission) => {
+            if (permission === 'granted') {
+                console.log('Web Notification permission granted.');
+            }
+        });
+    }
+};
+
+const saveTokenToBackend = async (token: string) => {
+    try {
+        const authToken = localStorage.getItem('token');
+        if (!authToken) return;
+
+        await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/register-token`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${authToken}`
+            },
+            body: JSON.stringify({ token, platform: 'android' })
+        });
+        console.log('✅ FCM Token saved to backend');
+    } catch (e) {
+        console.error('Failed to save FCM token', e);
+    }
+};

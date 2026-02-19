@@ -129,6 +129,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun sendTokenToWeb(token: String) {
+        val js = "javascript:window.onReceiveFCMToken('$token')"
+        webView.evaluateJavascript(js, null)
+    }
+
     private fun openInCustomTab(url: String) {
         try {
             val builder = CustomTabsIntent.Builder()
