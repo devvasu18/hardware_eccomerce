@@ -7,7 +7,7 @@ const notificationSchema = new mongoose.Schema({
     message: { type: String, required: true },
     type: {
         type: String,
-        enum: ['ORDER', 'SYSTEM', 'INFO', 'SUCCESS', 'WARNING', 'ERROR', 'PAYMENT', 'STOCK', 'CMS'],
+        enum: ['ORDER', 'ORDER_PLACED', 'ORDER_UPDATE', 'SYSTEM', 'INFO', 'SUCCESS', 'WARNING', 'ERROR', 'PAYMENT', 'STOCK', 'CMS'],
         required: true
     },
     entityId: { type: String }, // Flexible ID (could be order ID string or ObjectId)

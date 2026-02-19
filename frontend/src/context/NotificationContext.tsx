@@ -11,7 +11,7 @@ export interface Notification {
     role: string;
     title: string;
     message: string;
-    type: 'ORDER' | 'SYSTEM' | 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'PAYMENT' | 'STOCK' | 'CMS';
+    type: 'ORDER' | 'ORDER_PLACED' | 'ORDER_UPDATE' | 'SYSTEM' | 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR' | 'PAYMENT' | 'STOCK' | 'CMS';
     entityId?: string;
     redirectUrl: string;
     isRead: boolean;
@@ -104,11 +104,17 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         let audioPath = '/sounds/notification.mp3'; // Default fallback
 
-        if (type === 'ORDER') {
+        if (type === 'ORDER_PLACED') {
             if (settings.orderSound && settings.orderSound !== 'default') {
                 audioPath = settings.orderSound;
             } else {
                 audioPath = '/sounds/payment_success.mp3';
+            }
+        } else if (type === 'ORDER' || type === 'ORDER_UPDATE') {
+            if (settings.sound && settings.sound !== 'default') {
+                audioPath = settings.sound;
+            } else {
+                audioPath = '/sounds/notification.mp3';
             }
         } else {
             if (settings.sound && settings.sound !== 'default') {
@@ -159,7 +165,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         // Show Toast
         if (typeof toast !== 'undefined') {
             toast(notification.message, {
-                icon: notification.type === 'ORDER' ? '🛒' : '🔔',
+                icon: (notification.type === 'ORDER' || notification.type === 'ORDER_PLACED' || notification.type === 'ORDER_UPDATE') ? '🛒' : '🔔',
                 duration: 5000
             });
         }

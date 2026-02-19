@@ -156,11 +156,11 @@ const sendNotification = async ({ userId, role, title, message, type, redirectUr
         const settings = await getSystemSettings();
         let sound = 'default';
         if (settings && settings.notificationSoundEnabled) {
-            // Apply special "Order Placed" sound ONLY to Customers (USER role)
-            const isOrder = type === 'ORDER' || type === 'ORDER_PLACED';
+            // Apply special "Order Placed" sound ONLY to Customers (USER role) when an order is first placed
+            const isOrderPlaced = type === 'ORDER_PLACED';
             const isCustomer = role === 'USER';
 
-            if (isOrder && isCustomer) {
+            if (isOrderPlaced && isCustomer) {
                 sound = settings.orderNotificationSound || 'default';
             } else {
                 sound = settings.notificationSound || 'default';

@@ -438,7 +438,7 @@ exports.createOrder = async (req, res) => {
                         role: 'USER',
                         title: 'Order Placed',
                         message: `Your order #${order.invoiceNumber || order._id} has been placed successfully.`,
-                        type: 'ORDER',
+                        type: 'ORDER_PLACED',
                         entityId: order._id,
                         redirectUrl: `/orders/${order._id}`,
                         priority: 'NORMAL'
@@ -453,7 +453,7 @@ exports.createOrder = async (req, res) => {
                         role: 'ADMIN',
                         title: 'New Order Received',
                         message: `New order #${order.invoiceNumber || order._id} worth ₹${finalGrandTotal}`,
-                        type: 'ORDER',
+                        type: 'ORDER_PLACED',
                         entityId: order._id,
                         redirectUrl: `/admin/orders/${order._id}`,
                         priority: 'HIGH'
@@ -683,7 +683,7 @@ exports.updateOrderStatus = async (req, res) => {
                 role: 'USER',
                 title: `Order ${status}`,
                 message: `Your order #${order.invoiceNumber || order._id} status updated to: ${status}`,
-                type: 'ORDER',
+                type: 'ORDER_UPDATE',
                 entityId: order._id,
                 redirectUrl: `/orders/${order._id}`,
                 priority: 'NORMAL'
