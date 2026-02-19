@@ -12,7 +12,17 @@
     .breadcrumb {
         font-size: 0.7rem;
         margin-bottom: 1rem;
-        flex-wrap: wrap;
+        white-space: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        display: flex;
+        /* Ensure it stays flex */
+        align-items: center;
+    }
+
+    .breadcrumb::-webkit-scrollbar {
+        display: none;
     }
 
     .product-detail-grid {

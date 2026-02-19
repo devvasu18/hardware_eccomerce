@@ -41,6 +41,14 @@
     font-size: 0.875rem;
     color: var(--text-muted);
     margin-bottom: 1.5rem;
+    white-space: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.breadcrumb::-webkit-scrollbar {
+    display: none;
 }
 
 .breadcrumb a {
