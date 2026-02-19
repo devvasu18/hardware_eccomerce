@@ -541,7 +541,6 @@ export default function CheckoutPage() {
                                                 value={addr._id}
                                                 checked={selectedAddressId === addr._id}
                                                 onChange={() => setSelectedAddressId(addr._id)}
-                                                style={{ marginTop: '0.25rem' }}
                                             />
                                             <div>
                                                 <div className="address-street">{addr.street}, {addr.city}</div>
