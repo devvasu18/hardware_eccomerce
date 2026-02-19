@@ -30,6 +30,31 @@ const init = (socketIo) => {
 
 const Device = require('../models/Device');
 const { admin, isInitialized } = require('../config/firebaseAdmin');
+const SystemSettings = require('../models/SystemSettings');
+
+// Cache for system settings
+let cachedSettings = null;
+let lastFetch = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+const getSystemSettings = async () => {
+    const now = Date.now();
+    if (cachedSettings && (now - lastFetch) < CACHE_DURATION) {
+        return cachedSettings;
+    }
+    try {
+        let settings = await SystemSettings.findById('system_settings');
+        if (!settings) {
+            settings = await SystemSettings.create({ _id: 'system_settings' });
+        }
+        cachedSettings = settings;
+        lastFetch = now;
+        return settings;
+    } catch (error) {
+        console.error('Error fetching system settings:', error);
+        return null;
+    }
+};
 
 // ... existing socket init ...
 
@@ -46,7 +71,7 @@ const registerDeviceToken = async (userId, token, platform = 'android') => {
     }
 };
 
-const sendPushNotification = async (userId, title, body, data = {}) => {
+const sendPushNotification = async (userId, title, body, data = {}, sound = 'default') => {
     if (!isInitialized()) return;
 
     try {
@@ -55,14 +80,27 @@ const sendPushNotification = async (userId, title, body, data = {}) => {
 
         const tokens = devices.map(d => d.token);
 
+        // Clean sound name (remove extension and path)
+        let soundName = 'default';
+        if (sound && sound !== 'default') {
+            soundName = sound.split('/').pop().split('.')[0];
+        }
+
         // Construct message payload
         const message = {
             notification: {
                 title,
                 body
             },
+            android: {
+                notification: {
+                    sound: soundName === 'default' ? 'default' : soundName,
+                    channelId: soundName === 'default' ? "hardware_notification_channel" : `channel_${soundName}`
+                }
+            },
             data: {
                 ...data, // Custom data like orderId, type
+                sound: soundName, // Also send in data for manual handling
                 click_action: "FLUTTER_NOTIFICATION_CLICK" // Standard action
             },
             tokens: tokens
@@ -114,16 +152,32 @@ const sendNotification = async ({ userId, role, title, message, type, redirectUr
             logger.info(`🔔 SOCKET: Sent to "${userIdStr}"`);
         }
 
+        // 2. Fetch Settings for Sound
+        const settings = await getSystemSettings();
+        let sound = 'default';
+        if (settings && settings.notificationSoundEnabled) {
+            // Apply special "Order Placed" sound ONLY to Customers (USER role)
+            const isOrder = type === 'ORDER' || type === 'ORDER_PLACED';
+            const isCustomer = role === 'USER';
+
+            if (isOrder && isCustomer) {
+                sound = settings.orderNotificationSound || 'default';
+            } else {
+                sound = settings.notificationSound || 'default';
+            }
+        }
+
         // 2. Send via Push (Background)
         // Convert dynamic data to string for FCM data payload
         const pushData = {
             type: type || 'INFO',
             id: savedNotif._id.toString(),
-            url: redirectUrl || ''
+            url: redirectUrl || '',
+            sound: sound // Include sound name in data
         };
 
         // Fire and forget push notification
-        sendPushNotification(userId, title, message, pushData);
+        sendPushNotification(userId, title, message, pushData, sound);
 
         return savedNotif;
     } catch (error) {

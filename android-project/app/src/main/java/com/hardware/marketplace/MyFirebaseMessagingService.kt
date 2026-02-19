@@ -5,7 +5,9 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.media.AudioAttributes
 import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -15,24 +17,18 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         // Handle FCM messages here.
-        if (remoteMessage.notification != null) {
-            sendNotification(
-                remoteMessage.notification?.title ?: "Hardware Marketplace",
-                remoteMessage.notification?.body ?: "New Notification"
-            )
-        } else if (remoteMessage.data.isNotEmpty()) {
-            // Handle Data messages (even if application is in background/killed)
-            val title = remoteMessage.data["title"] ?: "Hardware Marketplace"
-            val body = remoteMessage.data["body"] ?: "New Notification"
-            sendNotification(title, body)
-        }
+        val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "Hardware Marketplace"
+        val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "New Notification"
+        val sound = remoteMessage.data["sound"] ?: remoteMessage.notification?.sound ?: "default"
+        
+        sendNotification(title, body, sound)
     }
 
     override fun onNewToken(token: String) {
         // Send token to server if needed
     }
 
-    private fun sendNotification(title: String, messageBody: String) {
+    private fun sendNotification(title: String, messageBody: String, soundName: String) {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pendingIntent = PendingIntent.getActivity(
@@ -40,29 +36,56 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val channelId = "hardware_notification_channel"
-        val defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        // Determine sound URI
+        var soundUri: Uri? = null
+        val channelId: String
+        
+        if (soundName != "default" && soundName.isNotEmpty()) {
+            val resId = resources.getIdentifier(soundName, "raw", packageName)
+            if (resId != 0) {
+                soundUri = Uri.parse("android.resource://$packageName/$resId")
+                // Use a specific channel for this sound to ensure it plays correctly
+                channelId = "channel_$soundName"
+            } else {
+                soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                channelId = "hardware_notification_channel"
+            }
+        } else {
+            soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            channelId = "hardware_notification_channel"
+        }
+
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher) // Reverted to drawable
+            .setSmallIcon(R.drawable.ic_launcher)
             .setContentTitle(title)
             .setContentText(messageBody)
             .setAutoCancel(true)
-            .setSound(defaultSoundUri)
-            .setPriority(NotificationCompat.PRIORITY_HIGH) // For older versions
+            .setSound(soundUri)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Since android Oreo notification channel is needed.
+        // Create Channel for Oreo+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelName = if (channelId.startsWith("channel_")) "Special Notifications" else "General Notifications"
             val channel = NotificationChannel(
                 channelId,
-                "General Notifications",
+                channelName,
                 NotificationManager.IMPORTANCE_HIGH
-            )
+            ).apply {
+                description = "Notifications for $channelName"
+                if (soundUri != null) {
+                    val audioAttributes = AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                        .build()
+                    setSound(soundUri, audioAttributes)
+                }
+            }
             notificationManager.createNotificationChannel(channel)
         }
 
-        notificationManager.notify(0, notificationBuilder.build())
+        notificationManager.notify(System.currentTimeMillis().toInt(), notificationBuilder.build())
     }
 }

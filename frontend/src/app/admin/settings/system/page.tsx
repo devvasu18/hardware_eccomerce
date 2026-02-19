@@ -656,7 +656,7 @@ export default function SystemSettingsPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <FiBell size={20} color="#10B981" />
                                 <div>
-                                    <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>Order Notification Sound</p>
+                                    <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>Order placed Notification Sound (only customer)</p>
                                     <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
                                         Specific ringtone for "Order Placed" success notifications
                                     </p>
