@@ -50,3 +50,19 @@ exports.markAllAsRead = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to mark all as read' });
     }
 };
+exports.registerToken = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { token, platform } = req.body;
+
+        if (!token) {
+            return res.status(400).json({ success: false, message: 'Token is required' });
+        }
+
+        await notificationService.registerDeviceToken(userId, token, platform);
+        res.json({ success: true, message: 'Device token registered' });
+    } catch (error) {
+        console.error('Register Token Error:', error);
+        res.status(500).json({ success: false, message: 'Failed to register token' });
+    }
+};

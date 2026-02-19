@@ -17,6 +17,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.ContextCompat
 
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
@@ -29,22 +31,25 @@ class MainActivity : AppCompatActivity() {
     private val USER_AGENT_SUFFIX = " AndroidApp/1.0"
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webview)
         setupWebView()
+        
+        // Check for updates
+        checkForUpdates()
 
         // Handle Deep Links
         handleIntent(intent)
-
-        // Back Button Logic
+        
+        // ... existing back button logic ...
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (webView.canGoBack()) {
                     webView.goBack()
                 } else {
-                    // If no history, exit app
                     finish()
                 }
             }
@@ -54,6 +59,62 @@ class MainActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             webView.loadUrl(START_URL)
         }
+    }
+
+    private fun checkForUpdates() {
+        Thread {
+            try {
+                val url = java.net.URL("https://$APP_DOMAIN/app-version.json")
+                val connection = url.openConnection() as java.net.HttpURLConnection
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                
+                if (connection.responseCode == 200) {
+                    val stream = connection.inputStream
+                    val reader = java.io.BufferedReader(java.io.InputStreamReader(stream))
+                    val jsonStr = reader.readText()
+                    reader.close()
+                    
+                    val json = org.json.JSONObject(jsonStr)
+                    val remoteVersion = json.getInt("versionCode")
+                    val downloadUrl = json.getString("downloadUrl")
+                    val messages = json.getJSONObject("messageData")
+                    
+                    // Get current app version
+                    val packageInfo = packageManager.getPackageInfo(packageName, 0)
+                    val currentVersion = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                        packageInfo.longVersionCode.toInt()
+                    } else {
+                        @Suppress("DEPRECATION")
+                        packageInfo.versionCode
+                    }
+
+                    if (remoteVersion > currentVersion) {
+                        runOnUiThread {
+                            showUpdateDialog(downloadUrl, messages)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
+    }
+
+    private fun showUpdateDialog(downloadUrl: String, messages: org.json.JSONObject) {
+        val lang = java.util.Locale.getDefault().language
+        val isHindi = lang == "hi"
+        val msgObj = if (isHindi && messages.has("hi")) messages.getJSONObject("hi") else messages.getJSONObject("en")
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle(msgObj.getString("title"))
+            .setMessage(msgObj.getString("message"))
+            .setPositiveButton(msgObj.getString("button")) { _, _ ->
+                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
+                startActivity(intent)
+            }
+            .setCancelable(false) // Force user to see it, though back button dismisses
+            .show()
     }
 
     override fun onNewIntent(intent: Intent?) {
@@ -116,7 +177,14 @@ class MainActivity : AppCompatActivity() {
 
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
-                // Hide loader
+                // Hide loader logic if implemented
+            }
+
+            override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: android.webkit.WebResourceError?) {
+                 // Check if it's a main frame error (not just a missing image)
+                 if (request?.isForMainFrame == true) {
+                     view?.loadUrl("file:///android_asset/offline.html")
+                 }
             }
         }
         

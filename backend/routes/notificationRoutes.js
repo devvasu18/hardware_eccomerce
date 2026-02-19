@@ -9,5 +9,6 @@ router.get('/', notificationController.getNotifications);
 router.get('/unread-count', notificationController.getUnreadCount);
 router.put('/:id/read', notificationController.markAsRead);
 router.put('/read-all', notificationController.markAllAsRead);
+router.post('/register-token', notificationController.registerToken);
 
 module.exports = router;

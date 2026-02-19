@@ -1,0 +1,17 @@
+{
+    "versionCode": 1,
+    "forceUpdate": false,
+    "downloadUrl": "https://github.com/vasudev18/hardware-eccomerce/releases/latest/download/app-release.apk",
+    "messageData": {
+        "en": {
+            "title": "Update Available",
+            "message": "A new version of Hardware Marketplace is available. Please update for the best experience.",
+            "button": "Update Now"
+        },
+        "hi": {
+            "title": "अपडेट उपलब्ध है",
+            "message": "हार्डवेयर मार्केटप्लेस का एक नया संस्करण उपलब्ध है। कृपया बेहतर अनुभव के लिए अपडेट करें।",
+            "button": "अभी अपडेट करें"
+        }
+    }
+}
