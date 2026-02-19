@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '../../../utils/api';
 import { useModal } from '../../../hooks/useModal';
 import Modal from '../../../components/Modal';
-import { FiSave, FiRefreshCw, FiSettings, FiMail, FiMessageSquare, FiClock, FiGlobe, FiPhone, FiPackage, FiBell, FiCreditCard } from 'react-icons/fi';
+import { FiSave, FiRefreshCw, FiSettings, FiMail, FiMessageSquare, FiClock, FiGlobe, FiPhone, FiPackage, FiBell, FiCreditCard, FiPlay } from 'react-icons/fi';
 
 export default function SystemSettingsPage() {
     const { modalState, showSuccess, showError, hideModal } = useModal();
@@ -57,6 +57,35 @@ export default function SystemSettingsPage() {
 
     const [uploadingSound, setUploadingSound] = useState(false);
     const [uploadingOrderSound, setUploadingOrderSound] = useState(false);
+    const [playingSound, setPlayingSound] = useState<string | null>(null);
+
+    const playPreview = (url: string) => {
+        if (!url || url === 'custom') {
+            showError('Please select or upload a sound first');
+            return;
+        }
+
+        let soundUrl = url;
+        if (url === 'default') {
+            // Determine default based on which field might be calling (simplified for now)
+            // If it's the notification section, maybe use /sounds/notification.mp3
+            soundUrl = '/sounds/notification.mp3';
+        }
+
+        try {
+            const audio = new Audio(soundUrl);
+            setPlayingSound(url);
+            audio.play().catch(error => {
+                console.error('Error playing sound:', error);
+                showError('Could not play sound preview');
+                setPlayingSound(null);
+            });
+            audio.onended = () => setPlayingSound(null);
+        } catch (error) {
+            console.error('Audio creation error:', error);
+            showError('Audio playback not supported or invalid file');
+        }
+    };
 
     const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'notificationSound' | 'orderNotificationSound') => {
         const file = e.target.files?.[0];
@@ -523,6 +552,7 @@ export default function SystemSettingsPage() {
                                         style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', maxWidth: '150px' }}
                                     >
                                         <option value="default">Default</option>
+                                        <option value="/sounds/payment_success_chime.mp3">Modern Payment Chime</option>
                                         <option value="/sounds/order_alert.mp3">Cash Register (Cha-Ching)</option>
                                         <option value="/sounds/notification.mp3">Subtle Chime</option>
                                         <option value="custom">Custom Sound</option>
@@ -530,6 +560,30 @@ export default function SystemSettingsPage() {
                                             <option value={settings.notificationSound}>Uploaded Sound</option>
                                         )}
                                     </select>
+                                )}
+
+                                {settings.notificationSoundEnabled && (
+                                    <button
+                                        type="button"
+                                        onClick={() => playPreview(settings.notificationSound)}
+                                        disabled={playingSound === settings.notificationSound}
+                                        style={{
+                                            padding: '0.4rem 0.6rem',
+                                            borderRadius: '6px',
+                                            border: '1px solid #cbd5e1',
+                                            background: '#fff',
+                                            fontSize: '0.85rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem',
+                                            color: '#3b82f6'
+                                        }}
+                                        title="Test Sound"
+                                    >
+                                        {playingSound === settings.notificationSound ? <FiRefreshCw className="spin" /> : <FiPlay />}
+                                        Test
+                                    </button>
                                 )}
 
                                 {settings.notificationSoundEnabled && (
@@ -616,6 +670,7 @@ export default function SystemSettingsPage() {
                                         style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', maxWidth: '150px' }}
                                     >
                                         <option value="default">Default</option>
+                                        <option value="/sounds/payment_success_chime.mp3">Modern Payment Chime</option>
                                         <option value="/sounds/payment_success.mp3">Payment Success</option>
                                         <option value="/sounds/order_alert.mp3">Order Alert</option>
                                         <option value="custom">Custom Sound</option>
@@ -623,6 +678,30 @@ export default function SystemSettingsPage() {
                                             <option value={settings.orderNotificationSound}>Uploaded Sound</option>
                                         )}
                                     </select>
+                                )}
+
+                                {settings.notificationSoundEnabled && (
+                                    <button
+                                        type="button"
+                                        onClick={() => playPreview(settings.orderNotificationSound)}
+                                        disabled={playingSound === settings.orderNotificationSound}
+                                        style={{
+                                            padding: '0.4rem 0.6rem',
+                                            borderRadius: '6px',
+                                            border: '1px solid #cbd5e1',
+                                            background: '#fff',
+                                            fontSize: '0.85rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem',
+                                            color: '#3b82f6'
+                                        }}
+                                        title="Test Sound"
+                                    >
+                                        {playingSound === settings.orderNotificationSound ? <FiRefreshCw className="spin" /> : <FiPlay />}
+                                        Test
+                                    </button>
                                 )}
 
                                 {settings.notificationSoundEnabled && (
