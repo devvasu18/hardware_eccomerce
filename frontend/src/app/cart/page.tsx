@@ -6,11 +6,16 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
+import './cart.css';
 
 export default function CartPage() {
     const { items, loading, removeFromCart, updateQuantity, cartTotal, clearCart } = useCart();
     const { getLocalized, t } = useLanguage();
     const [zoomedImage, setZoomedImage] = useState<string | null>(null);
+
+    const TrashIcon = () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+    );
 
     if (loading) {
         return (
@@ -42,35 +47,49 @@ export default function CartPage() {
     return (
         <>
             <Header />
-            <div className="container" style={{ paddingTop: '4rem', paddingBottom: '4rem', minHeight: '80vh' }}>
-                <h1>Shopping Cart</h1>
+            <div className="container cart-container">
+                <h1 className="cart-title">Shopping Cart</h1>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem', marginTop: '2rem' }}>
+                <div className="cart-layout">
                     {/* Cart Items */}
-                    <div className="card">
+                    <div className="card cart-items-card">
                         {items.map((item) => (
-                            <div key={`${item.productId}-${item.modelId || 'nm'}-${item.variationId || item.size || 'default'}`} style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                            <div key={`${item.productId}-${item.modelId || 'nm'}-${item.variationId || item.size || 'default'}`} className="cart-item">
                                 <div
-                                    style={{ width: '80px', height: '80px', background: 'var(--background)', borderRadius: '4px', overflow: 'hidden', cursor: 'pointer', border: '1px solid var(--border)' }}
+                                    className="cart-item-image-wrapper"
                                     onClick={() => setZoomedImage(item.image)}
                                 >
-                                    {item.image ? <img src={item.image} alt={getLocalized(item.name)} style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : null}
+                                    {item.image ? <img src={item.image} alt={getLocalized(item.name)} /> : null}
                                 </div>
-                                <div style={{ flex: 1 }}>
-                                    <h4 style={{ marginBottom: '0.25rem', color: 'var(--text-primary)' }}>{getLocalized(item.name)}</h4>
-                                    {item.size && <p style={{ color: 'var(--primary)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.25rem' }}>Size: {item.size}</p>}
-                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Unit Price: ₹{item.price}</p>
+
+                                <div className="cart-item-details">
+                                    <div className="cart-item-info-top">
+                                        <h4 className="cart-item-name">{getLocalized(item.name)}</h4>
+                                        <div className="cart-item-meta">
+                                            {item.size && <span className="cart-item-size">Size: {item.size}</span>}
+                                            <span className="cart-item-price-unit">Unit Price: ₹{item.price}</span>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        className="remove-item-btn show-mobile"
+                                        onClick={() => removeFromCart(item.productId, item.variationId || item.size, item.modelId)}
+                                    >
+                                        <TrashIcon /> Remove
+                                    </button>
                                 </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+
+                                <div className="cart-item-right">
+                                    <div className="quantity-selector">
                                         <button
+                                            className="q-btn"
                                             onClick={() => updateQuantity(item.productId, item.quantity - 1, item.variationId || item.size, item.modelId)}
-                                            style={{ padding: '0 0.5rem', cursor: 'pointer' }}
                                         >-</button>
 
-                                        <span>{item.quantity}</span>
+                                        <span className="q-count">{item.quantity}</span>
 
                                         <button
+                                            className="q-btn"
                                             onClick={() => {
                                                 if (item.approvedLimit && item.quantity >= item.approvedLimit) {
                                                     alert(`Limit Reached! Your request was approved for only ${item.approvedLimit} units.`);
@@ -78,37 +97,43 @@ export default function CartPage() {
                                                 }
                                                 updateQuantity(item.productId, item.quantity + 1, item.variationId || item.size, item.modelId)
                                             }}
-                                            style={{ padding: '0 0.5rem', cursor: 'pointer', opacity: (item.approvedLimit && item.quantity >= item.approvedLimit) ? 0.5 : 1 }}
                                             disabled={!!item.approvedLimit && item.quantity >= item.approvedLimit}
                                         >+</button>
                                     </div>
-                                    {item.approvedLimit && (
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--success)' }}>Max: {item.approvedLimit} (Approved)</span>
-                                    )}
-                                    <span style={{ fontWeight: 700, marginTop: '0.25rem', color: 'var(--text-primary)' }}>₹{item.price * item.quantity}</span>
-                                    <button onClick={() => removeFromCart(item.productId, item.variationId || item.size, item.modelId)} style={{ color: 'var(--danger)', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>Remove</button>
+
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                                        {item.approvedLimit && (
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--success)', fontWeight: 600 }}>Max: {item.approvedLimit} (Approved)</span>
+                                        )}
+                                        <span className="cart-item-total-price">₹{item.price * item.quantity}</span>
+                                        <button
+                                            className="remove-item-btn hide-mobile"
+                                            onClick={() => removeFromCart(item.productId, item.variationId || item.size, item.modelId)}
+                                        >
+                                            <TrashIcon /> Remove
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
-
                     </div>
 
                     {/* Summary */}
-                    <div className="card" style={{ height: 'fit-content' }}>
-                        <h3 style={{ marginBottom: '1rem', color: 'var(--text-primary)' }}>Order Summary</h3>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                    <div className="card summary-card">
+                        <h3 className="summary-title">Order Summary</h3>
+                        <div className="summary-row">
                             <span>Subtotal</span>
                             <span>₹{cartTotal}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        <div className="summary-row" style={{ fontSize: '0.9rem' }}>
                             <span>Tax (GST)</span>
                             <span>₹{Math.round(items.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0))}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', fontWeight: 700, fontSize: '1.2rem', borderTop: '1px solid var(--border)', paddingTop: '1rem', color: 'var(--text-primary)' }}>
+                        <div className="summary-row total">
                             <span>Total</span>
                             <span>₹{Math.round(cartTotal + items.reduce((acc, item) => acc + (item.price * item.quantity * ((item.gst_rate !== undefined ? item.gst_rate : 18) / 100)), 0))}</span>
                         </div>
-                        <Link href="/checkout" className="btn btn-primary" style={{ width: '100%', textAlign: 'center' }}>Proceed to Checkout</Link>
+                        <Link href="/checkout" className="btn btn-primary checkout-btn">Proceed to Checkout</Link>
                     </div>
                 </div>
 

@@ -19,6 +19,7 @@ interface Order {
         quantity: number;
     }>;
     invoiceNumber?: string;
+    shippingAddress: string;
 }
 
 export default function MyOrdersPage() {
@@ -156,30 +157,39 @@ export default function MyOrdersPage() {
                                         </div>
                                     </div>
 
-                                    <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
-                                        {order.items.slice(0, 4).map((item, idx) => (
-                                            <div key={idx} style={{ position: 'relative', width: '80px', height: '80px', flexShrink: 0, border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--background)' }}>
-                                                {item.product?.featured_image ? (
-                                                    <img
-                                                        src={item.product.featured_image.startsWith('http')
-                                                            ? item.product.featured_image
-                                                            : `/${item.product.featured_image.replace(/\\/g, '/')}`}
-                                                        alt={item.product.name}
-                                                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                                                    />
-                                                ) : (
-                                                    <div style={{ width: '100%', height: '100%', background: 'var(--surface-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>📦</div>
-                                                )}
-                                                <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.7rem', padding: '1px 5px', borderTopLeftRadius: '4px' }}>
-                                                    x{item.quantity}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.5rem', flexWrap: 'wrap' }}>
+                                        <div style={{ display: 'flex', gap: '1rem', overflowX: 'auto', paddingBottom: '0.5rem', flex: '1 1 200px' }}>
+                                            {order.items.slice(0, 4).map((item, idx) => (
+                                                <div key={idx} style={{ position: 'relative', width: '80px', height: '80px', flexShrink: 0, border: '1px solid var(--border)', borderRadius: '8px', overflow: 'hidden', background: 'var(--background)' }}>
+                                                    {item.product?.featured_image ? (
+                                                        <img
+                                                            src={item.product.featured_image.startsWith('http')
+                                                                ? item.product.featured_image
+                                                                : `/${item.product.featured_image.replace(/\\/g, '/')}`}
+                                                            alt={item.product.name}
+                                                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                                        />
+                                                    ) : (
+                                                        <div style={{ width: '100%', height: '100%', background: 'var(--surface-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>📦</div>
+                                                    )}
+                                                    <div style={{ position: 'absolute', bottom: 0, right: 0, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '0.7rem', padding: '1px 5px', borderTopLeftRadius: '4px' }}>
+                                                        x{item.quantity}
+                                                    </div>
                                                 </div>
+                                            ))}
+                                            {order.items.length > 4 && (
+                                                <div style={{ width: '80px', height: '80px', flexShrink: 0, background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600 }}>
+                                                    +{order.items.length - 4} more
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div style={{ flex: '1 1 200px', maxWidth: '300px', padding: '0.5rem', background: 'var(--surface-hover)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.5rem' }}>Shipping Address</div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: '1.5', whiteSpace: 'pre-wrap' }}>
+                                                {order.shippingAddress}
                                             </div>
-                                        ))}
-                                        {order.items.length > 4 && (
-                                            <div style={{ width: '80px', height: '80px', flexShrink: 0, background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', fontWeight: 600 }}>
-                                                +{order.items.length - 4} more
-                                            </div>
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
                             </div>

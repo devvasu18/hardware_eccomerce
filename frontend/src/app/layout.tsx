@@ -10,10 +10,12 @@ import { LanguageProvider } from '@/context/LanguageContext';
 import CartSidebar from './components/CartSidebar';
 import WishlistSidebar from './components/WishlistSidebar';
 import MobileBottomNav from './components/MobileBottomNav';
+import AppShellSetup from '@/components/AppShellSetup';
 
 export const metadata: Metadata = {
     title: 'Hardware Marketplace | Premium Quality Industrial Parts',
     description: 'Industrial-grade mechanical parts and hardware e-commerce platform.',
+    manifest: '/manifest.json',
 };
 
 // Force dynamic rendering for all pages to prevent build timeouts
@@ -58,6 +60,7 @@ export default function RootLayout({
                                         <CartSidebar />
                                         <WishlistSidebar />
                                         <MobileBottomNav />
+                                        <AppShellSetup />
                                     </WishlistProvider>
                                 </CartProvider>
                             </NotificationProvider>
