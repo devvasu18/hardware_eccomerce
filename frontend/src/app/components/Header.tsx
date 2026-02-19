@@ -33,6 +33,7 @@ const Header = () => {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [mobileSearchTerm, setMobileSearchTerm] = useState('');
     const [companyName, setCompanyName] = useState('Hardware Store');
+    const [isMobileSearchFocused, setIsMobileSearchFocused] = useState(false);
 
     // Close mobile menu on route change
     useEffect(() => {
@@ -98,10 +99,11 @@ const Header = () => {
     // Debounced search for suggestions
     useEffect(() => {
         const timer = setTimeout(async () => {
-            if (searchTerm.length >= 2) {
+            const activeTerm = searchTerm.length >= 2 ? searchTerm : (mobileSearchTerm.length >= 2 ? mobileSearchTerm : '');
+            if (activeTerm.length >= 2) {
                 try {
                     // We reuse the products API with keyword and limit 5
-                    const res = await fetch(`/api/products?keyword=${encodeURIComponent(searchTerm)}&limit=5`);
+                    const res = await fetch(`/api/products?keyword=${encodeURIComponent(activeTerm)}&limit=5`);
                     if (res.ok) {
                         const data = await res.json();
                         setSuggestions(Array.isArray(data) ? data : data.products || []);
@@ -115,7 +117,7 @@ const Header = () => {
         }, 300); // 300ms debounce
 
         return () => clearTimeout(timer);
-    }, [searchTerm]);
+    }, [searchTerm, mobileSearchTerm]);
 
     useEffect(() => {
         const fetchAllNavData = async () => {
@@ -195,7 +197,10 @@ const Header = () => {
                             className="search-input"
                             placeholder={t('search_placeholder')}
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => {
+                                setSearchTerm(e.target.value);
+                                if (mobileSearchTerm) setMobileSearchTerm('');
+                            }}
                             onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                             onFocus={() => setIsSearchFocused(true)}
                             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)} // Delay to allow click
@@ -509,8 +514,13 @@ const Header = () => {
                         className="mobile-search-input"
                         placeholder={t('search_mobile')}
                         value={mobileSearchTerm}
-                        onChange={(e) => setMobileSearchTerm(e.target.value)}
+                        onChange={(e) => {
+                            setMobileSearchTerm(e.target.value);
+                            if (searchTerm) setSearchTerm('');
+                        }}
                         onKeyDown={(e) => e.key === 'Enter' && handleMobileSearch()}
+                        onFocus={() => setIsMobileSearchFocused(true)}
+                        onBlur={() => setTimeout(() => setIsMobileSearchFocused(false), 200)}
                         suppressHydrationWarning
                     />
                     <button className="mobile-search-btn" onClick={handleMobileSearch}>
@@ -519,6 +529,67 @@ const Header = () => {
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
                     </button>
+
+                    {/* Mobile Search Dropdown */}
+                    {isMobileSearchFocused && (
+                        <div className="search-dropdown mobile-dropdown">
+                            {mobileSearchTerm.length >= 2 ? (
+                                <div className="suggestions-section">
+                                    <h4 className="dropdown-title">{t('suggestions')}</h4>
+                                    {suggestions.length > 0 ? (
+                                        <div className="suggestions-list">
+                                            {suggestions.map((product) => (
+                                                <Link
+                                                    key={product._id}
+                                                    href={`/products/${product._id}`}
+                                                    className="suggestion-item"
+                                                    onClick={() => setIsMobileSearchFocused(false)}
+                                                >
+                                                    <div className="suggestion-image-wrapper">
+                                                        <Image
+                                                            src={
+                                                                (product.featured_image || (product.gallery_images && product.gallery_images[0]))?.startsWith('http')
+                                                                    ? (product.featured_image || (product.gallery_images && product.gallery_images[0]))
+                                                                    : (product.featured_image || (product.gallery_images && product.gallery_images[0]))
+                                                                        ? `/${product.featured_image || (product.gallery_images && product.gallery_images[0])}`
+                                                                        : '/placeholder.png'
+                                                            }
+                                                            alt={getLocalizedName(product.title)}
+                                                            width={40}
+                                                            height={40}
+                                                            className="suggestion-image"
+                                                            style={{ objectFit: 'cover', borderRadius: '4px' }}
+                                                        />
+                                                    </div>
+                                                    <span className="suggestion-text">{getLocalizedName(product.title)}</span>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="no-suggestions">
+                                            {t('no_products_found')} "{mobileSearchTerm}"
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="popular-searches-section">
+                                    <h4 className="dropdown-title">{t('popular_categories')}</h4>
+                                    <div className="tags-grid">
+                                        {categories.slice(0, 5).map((category) => (
+                                            <Link
+                                                key={category._id}
+                                                href={`/products?category=${category.slug}`}
+                                                className="search-tag"
+                                                onClick={() => setIsMobileSearchFocused(false)}
+                                            >
+                                                <span className="trend-icon">↗</span> {getLocalizedName(category.name)}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </header>

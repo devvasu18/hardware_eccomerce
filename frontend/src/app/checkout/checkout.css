@@ -76,6 +76,14 @@
     outline: none;
 }
 
+input[type="radio"] {
+    accent-color: var(--primary);
+    cursor: pointer;
+    width: 1.1rem;
+    height: 1.1rem;
+    vertical-align: middle;
+}
+
 .address-list {
     margin-bottom: 1.5rem;
     display: flex;
@@ -98,6 +106,10 @@
 .address-card.selected {
     border-color: var(--primary);
     background: var(--surface-hover);
+}
+
+.address-card input[type="radio"] {
+    margin-top: 0.25rem;
 }
 
 .address-card-content {
@@ -155,9 +167,7 @@
 }
 
 .payment-card input[type="radio"] {
-    width: 20px;
-    height: 20px;
-    accent-color: var(--primary);
+    margin: 0;
 }
 
 .payment-icon {
@@ -454,6 +464,11 @@ body.loading-active {
         padding: 0.875rem;
         font-size: 1rem;
         border-radius: 8px;
+    }
+
+    input[type="radio"] {
+        width: 0.9rem;
+        height: 0.9rem;
     }
 
     /* Address cards - stack content */
