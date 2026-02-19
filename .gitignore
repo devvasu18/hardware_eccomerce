@@ -1,11 +1,32 @@
+# NodeJS
 node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-# Firebase Service Account (Sensitive)
+
+# NextJS
+frontend/.next/
+frontend/out/
+
+# Backend Logs
+backend/logs/
+backend/*.log
+frontend/src/app/admin/logs/
+
+# Backend Uploads (unless you want to track them)
+backend/uploads/
+backend/tokens/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Secrets
 backend/config/firebase-service-account.json

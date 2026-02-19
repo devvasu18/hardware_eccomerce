@@ -578,3 +578,24 @@
         bottom: 1rem;
     }
 }
+
+/* Small Screen Dot Fix - Override touch improvements */
+@media (max-width: 480px) {
+    .hero-dot {
+        min-width: 16px;
+        /* Significantly reduced touch target */
+        min-height: 16px;
+    }
+
+    .hero-dot::before {
+        width: 6px;
+        /* Smaller visual dot */
+        height: 6px;
+        border-width: 1.5px;
+    }
+
+    .hero-dots {
+        gap: 0.4rem;
+        bottom: 1rem;
+    }
+}
