@@ -235,7 +235,10 @@ const markAllAsRead = async (userId) => {
     return await Notification.updateMany({ userId, isRead: false }, { isRead: true });
 };
 
-// ... existing exports ...
+const clearSettingsCache = () => {
+    cachedSettings = null;
+    lastFetch = 0;
+};
 
 module.exports = {
     init,
@@ -244,5 +247,6 @@ module.exports = {
     getUnreadCount,
     getNotifications,
     markAllAsRead,
-    registerDeviceToken
+    registerDeviceToken,
+    clearSettingsCache
 };

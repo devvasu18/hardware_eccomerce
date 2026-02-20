@@ -671,37 +671,7 @@ export default function SystemSettingsPage() {
                                     </>
                                 )}
 
-                                <label style={{ position: 'relative', display: 'inline-block', width: '60px', height: '30px', cursor: 'pointer' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={settings.notificationSoundEnabled !== false}
-                                        onChange={(e) => handleChange('notificationSoundEnabled', e.target.checked)}
-                                        style={{ opacity: 0, width: 0, height: 0 }}
-                                    />
-                                    <span style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        backgroundColor: settings.notificationSoundEnabled !== false ? '#10B981' : '#cbd5e1',
-                                        borderRadius: '30px',
-                                        transition: '0.3s',
-                                        cursor: 'pointer'
-                                    }}>
-                                        <span style={{
-                                            position: 'absolute',
-                                            content: '""',
-                                            height: '22px',
-                                            width: '22px',
-                                            left: settings.notificationSoundEnabled !== false ? '34px' : '4px',
-                                            bottom: '4px',
-                                            backgroundColor: 'white',
-                                            borderRadius: '50%',
-                                            transition: '0.3s'
-                                        }}></span>
-                                    </span>
-                                </label>
+
                             </div>
                         </div>
 
@@ -906,37 +876,7 @@ export default function SystemSettingsPage() {
                                     </>
                                 )}
 
-                                <label style={{ position: 'relative', display: 'inline-block', width: '60px', height: '30px', cursor: 'pointer' }}>
-                                    <input
-                                        type="checkbox"
-                                        checked={settings.notificationSoundEnabled !== false} // Default to true if undefined
-                                        onChange={(e) => handleChange('notificationSoundEnabled', e.target.checked)}
-                                        style={{ opacity: 0, width: 0, height: 0 }}
-                                    />
-                                    <span style={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        backgroundColor: settings.notificationSoundEnabled !== false ? '#10B981' : '#cbd5e1',
-                                        borderRadius: '30px',
-                                        transition: '0.3s',
-                                        cursor: 'pointer'
-                                    }}>
-                                        <span style={{
-                                            position: 'absolute',
-                                            content: '""',
-                                            height: '22px',
-                                            width: '22px',
-                                            left: settings.notificationSoundEnabled !== false ? '34px' : '4px',
-                                            bottom: '4px',
-                                            backgroundColor: 'white',
-                                            borderRadius: '50%',
-                                            transition: '0.3s'
-                                        }}></span>
-                                    </span>
-                                </label>
+
                             </div>
                         </div>
 

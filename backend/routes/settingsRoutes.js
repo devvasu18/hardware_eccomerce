@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const SystemSettings = require('../models/SystemSettings');
 const { protect, admin } = require('../middleware/authMiddleware');
+const notificationService = require('../services/notificationService');
 
 const upload = require('../middleware/uploadMiddleware');
 
@@ -115,6 +116,9 @@ router.put('/system', protect, admin, async (req, res) => {
         if (paymentSuccessSound !== undefined) settings.paymentSuccessSound = paymentSuccessSound;
 
         await settings.save();
+
+        // Clear cached settings so new notifications use the updated sounds immediately
+        notificationService.clearSettingsCache();
 
         res.json({ success: true, message: 'Settings updated successfully', settings });
     } catch (error) {
