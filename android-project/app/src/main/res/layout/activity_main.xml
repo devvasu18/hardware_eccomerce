@@ -10,9 +10,153 @@
         android:id="@+id/webview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- NATIVE SKELETON OVERLAY (Phase 1) -->
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/native_skeleton"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FFFFFF"
+        android:visibility="visible"
+        android:elevation="10dp">
+
+        <!-- 1. Header Area -->
+        <View
+            android:id="@+id/sk_header_bg"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="#FFFFFF"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Logo / Menu Icon Placeholder -->
+        <View
+            android:id="@+id/sk_menu_icon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="#E0E0E0"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/sk_header_bg"
+            app:layout_constraintBottom_toBottomOf="@id/sk_header_bg"/>
+
+        <!-- Logo Text Placeholder -->
+        <View
+            android:id="@+id/sk_logo_text"
+            android:layout_width="100dp"
+            android:layout_height="20dp"
+            android:background="#E0E0E0"
+            android:layout_marginStart="16dp"
+            app:layout_constraintStart_toEndOf="@id/sk_menu_icon"
+            app:layout_constraintTop_toTopOf="@id/sk_header_bg"
+            app:layout_constraintBottom_toBottomOf="@id/sk_header_bg"/>
+
+        <!-- Cart/Profile Icons Placeholder -->
+        <View
+            android:id="@+id/sk_icons_right"
+            android:layout_width="80dp"
+            android:layout_height="24dp"
+            android:background="#E0E0E0"
+            android:layout_marginEnd="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@id/sk_header_bg"
+            app:layout_constraintBottom_toBottomOf="@id/sk_header_bg"/>
+
+
+        <!-- 2. Search Bar Area -->
+        <View
+            android:id="@+id/sk_search_bar"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginTop="8dp"
+            android:background="#F5F5F5"
+            app:layout_constraintTop_toBottomOf="@id/sk_header_bg"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"/>
+
+        <!-- 3. Scroll Content Placeholder -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintTop_toBottomOf="@id/sk_search_bar"
+            app:layout_constraintBottom_toTopOf="@id/sk_bottom_nav">
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+                
+                <!-- Hero Banner -->
+                <View
+                     android:layout_width="match_parent"
+                     android:layout_height="200dp"
+                     android:layout_marginTop="16dp"
+                     android:background="#F5F5F5"/>
+
+                <!-- Category Circles Row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="100dp"
+                    android:orientation="horizontal"
+                    android:weightSum="4"
+                    android:paddingTop="16dp">
+                    <View android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:layout_margin="8dp" android:background="#F5F5F5"/>
+                    <View android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:layout_margin="8dp" android:background="#F5F5F5"/>
+                    <View android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:layout_margin="8dp" android:background="#F5F5F5"/>
+                    <View android:layout_width="0dp" android:layout_height="60dp" android:layout_weight="1" android:layout_margin="8dp" android:background="#F5F5F5"/>
+                </LinearLayout>
+
+                <!-- Product Grid (2 Rows) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2"
+                    android:padding="8dp">
+                     <View android:layout_width="0dp" android:layout_height="180dp" android:layout_weight="1" android:layout_margin="8dp" android:background="#F5F5F5"/>
+                     <View android:layout_width="0dp" android:layout_height="180dp" android:layout_weight="1" android:layout_margin="8dp" android:background="#F5F5F5"/>
+                </LinearLayout>
+                 <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:weightSum="2"
+                    android:padding="8dp">
+                     <View android:layout_width="0dp" android:layout_height="180dp" android:layout_weight="1" android:layout_margin="8dp" android:background="#F5F5F5"/>
+                     <View android:layout_width="0dp" android:layout_height="180dp" android:layout_weight="1" android:layout_margin="8dp" android:background="#F5F5F5"/>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- 4. Bottom Nav Placeholder -->
+        <View
+            android:id="@+id/sk_bottom_nav_bg"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:background="#FFFFFF"
+            android:elevation="12dp"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+        <LinearLayout
+            android:id="@+id/sk_bottom_nav"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:orientation="horizontal"
+            android:weightSum="4"
+            android:elevation="12dp"
+            app:layout_constraintBottom_toBottomOf="parent">
+            
+            <View android:layout_width="0dp" android:layout_height="24dp" android:layout_weight="1" android:layout_gravity="center" android:background="#E0E0E0" android:layout_margin="16dp"/>
+            <View android:layout_width="0dp" android:layout_height="24dp" android:layout_weight="1" android:layout_gravity="center" android:background="#E0E0E0" android:layout_margin="16dp"/>
+            <View android:layout_width="0dp" android:layout_height="24dp" android:layout_weight="1" android:layout_gravity="center" android:background="#E0E0E0" android:layout_margin="16dp"/>
+            <View android:layout_width="0dp" android:layout_height="24dp" android:layout_weight="1" android:layout_gravity="center" android:background="#E0E0E0" android:layout_margin="16dp"/>
+         </LinearLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

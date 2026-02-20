@@ -4,6 +4,7 @@ import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import Loader from '@/app/components/Loader';
 import { useLanguage } from '@/context/LanguageContext';
+import HomeSkeleton from '@/app/components/skeletons/HomeSkeleton';
 
 // Lazy load components for performance
 const HeroSlider = lazy(() => import('@/app/components/HeroSlider'));
@@ -25,7 +26,7 @@ const FlashSale = () => {
     const { t } = useLanguage();
     return <div className="p-10 text-center bg-gray-100 my-4 rounded-xl" suppressHydrationWarning>{t('flash_sale_coming_soon')}</div>;
 };
-const TrustBadges = lazy(() => import('@/app/components/WhyChooseUs')); // Reuse WhyChooseUs or separate? WhyChooseUs seems to handle trust badges.
+const TrustBadges = lazy(() => import('@/app/components/WhyChooseUs'));
 const Testimonials = () => {
     const { t } = useLanguage();
     return <div className="p-10 text-center bg-gray-100 my-4 rounded-xl" suppressHydrationWarning>{t('testimonials_coming_soon')}</div>;
@@ -59,20 +60,28 @@ const SectionPlaceholder = () => (
 const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: any[], pageSlug?: string }) => {
     const { t } = useLanguage();
     const [layout, setLayout] = useState<any[]>(previewLayout || []);
-    const [loading, setLoading] = useState(!previewLayout);
+    const [loading, setLoading] = useState(!previewLayout); // If no preview layout, we are loading
     const [hasError, setHasError] = useState(false);
     const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+
+    // Signal Android that the Web App Shell is ready (Header + Skeleton painted)
+    useEffect(() => {
+        if (typeof window !== 'undefined' && (window as any).Android && (window as any).Android.onAppReady) {
+            // Small delay to ensure paint
+            setTimeout(() => {
+                (window as any).Android.onAppReady();
+            }, 100);
+        }
+    }, []);
 
     const fetchData = async () => {
         setLoading(true);
         setHasError(false);
 
         try {
-            // Add timeout for build-time to prevent hanging
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-            // Fetch specific page layout
             const response = await fetch(`/api/home-layout?page=${pageSlug}`, {
                 signal: controller.signal
             });
@@ -81,16 +90,13 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
             if (!response.ok) throw new Error('Failed to fetch');
             const data = await response.json();
             setLayout(data);
-
-            // Artificial delay to show off the loader if it was too fast, or ensure smooth transition
-            await new Promise(resolve => setTimeout(resolve, 800));
+            // Artificial delay not needed for UX, but maybe for smooth transition? 
+            // Removing it for performance.
         } catch (error: any) {
             console.error('Error fetching layout:', error);
-            // Don't set error during build time (when window is undefined during SSR)
             if (typeof window !== 'undefined') {
                 setHasError(true);
             } else {
-                // During build, just set empty layout
                 setLayout([]);
             }
         } finally {
@@ -119,8 +125,7 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
                 })));
             }
         } catch (error) {
-            console.error('Error fetching featured products:', error);
-            // Silently fail during build
+            // Silently fail
         }
     };
 
@@ -128,77 +133,69 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
         if (previewLayout) {
             setLayout(previewLayout);
             setLoading(false);
-            // Fetch featured products even if layout is provided
             fetchFeatured();
         } else {
+            // Only fetch if no preview layout provided (Client-side fetch)
             fetchData();
             fetchFeatured();
         }
     }, [previewLayout, pageSlug]);
 
 
-    if (loading) {
-        return (
-            <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Header />
-                <Loader onRetry={fetchData} />
-                <div className="flex-grow"></div>
-                <Footer />
-            </main>
-        );
-    }
-
     if (hasError) {
         return (
             <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
                 <Header />
-                <Loader status="error" text={t('server_unreachable')} onRetry={fetchData} />
-                <div className="flex-grow"></div>
-                <Footer />
-            </main>
-        );
-    }
-
-    // Handle empty layout (connected but no content)
-    if (layout.length === 0) {
-        // Optionally show a "Maintenance" or just keep the loader
-        return (
-            <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Header />
-                <div className="flex-grow flex items-center justify-center min-h-[50vh]">
-                    <div className="text-center">
-                        <h2 className="text-2xl font-bold text-gray-400" suppressHydrationWarning>{t('under_maintenance')}</h2>
-                        <p className="text-gray-500 mt-2" suppressHydrationWarning>{t('maintenance_desc')}</p>
+                <div className="flex-grow flex items-center justify-center">
+                    <div className="text-center p-4">
+                        <p>{t('server_unreachable')}</p>
+                        <button onClick={fetchData} className="mt-4 px-4 py-2 bg-brand-primary text-white rounded">
+                            {t('retry')}
+                        </button>
                     </div>
                 </div>
-                <Footer />
+                {/* Show footer even on error? Maybe not. */}
             </main>
         );
     }
 
     return (
-        <main>
+        <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
             <Header />
 
-            {layout.map((item) => {
-                const Component = componentMap[item.componentType];
-                if (!Component) return null;
+            {loading ? (
+                <HomeSkeleton />
+            ) : (
+                <>
+                    {layout.length === 0 ? (
+                        <div className="flex-grow flex items-center justify-center min-h-[50vh]">
+                            <div className="text-center">
+                                <h2 className="text-2xl font-bold text-gray-400" suppressHydrationWarning>{t('under_maintenance')}</h2>
+                                <p className="text-gray-500 mt-2" suppressHydrationWarning>{t('maintenance_desc')}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        layout.map((item) => {
+                            const Component = componentMap[item.componentType];
+                            if (!Component) return null;
 
-                // Pass specific props based on component type if needed
-                let props: any = { config: item.config };
+                            let props: any = { config: item.config };
+                            if (item.componentType === 'FEATURED_PRODUCTS') {
+                                props.products = featuredProducts;
+                            }
 
-                if (item.componentType === 'FEATURED_PRODUCTS') {
-                    props.products = featuredProducts;
-                }
+                            return (
+                                <Suspense key={item._id} fallback={<SectionPlaceholder />}>
+                                    <Component {...props} />
+                                </Suspense>
+                            );
+                        })
+                    )}
+                </>
+            )}
 
-                return (
-                    <Suspense key={item._id} fallback={<SectionPlaceholder />}>
-                        <Component {...props} />
-                    </Suspense>
-                );
-            })}
-
-            <Footer />
+            {/* Footer only visible after loading to prevent jump */}
+            {!loading && <Footer />}
         </main>
     );
 };

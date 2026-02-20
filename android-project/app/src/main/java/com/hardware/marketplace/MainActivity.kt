@@ -32,6 +32,7 @@ import android.os.Build
 class MainActivity : AppCompatActivity() {
 
     private lateinit var webView: WebView
+    private lateinit var nativeSkeleton: androidx.constraintlayout.widget.ConstraintLayout
     
     // Configure your domain here
     private val APP_DOMAIN = "hardware-eccomerce.vercel.app"
@@ -50,6 +51,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         webView = findViewById(R.id.webview)
+        nativeSkeleton = findViewById(R.id.native_skeleton)
+        
         setupWebView()
         
         // Request Notification Permission for Android 13+
@@ -85,6 +88,18 @@ class MainActivity : AppCompatActivity() {
 
         if (savedInstanceState == null) {
             webView.loadUrl(START_URL)
+        }
+    }
+
+    fun hideSkeleton() {
+         if (nativeSkeleton.visibility == android.view.View.VISIBLE) {
+             webView.alpha = 0f
+             webView.visibility = android.view.View.VISIBLE
+             webView.animate().alpha(1f).setDuration(300).start()
+             
+             nativeSkeleton.animate().alpha(0f).setDuration(400).withEndAction {
+                 nativeSkeleton.visibility = android.view.View.GONE
+             }.start()
         }
     }
 
