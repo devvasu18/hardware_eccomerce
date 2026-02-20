@@ -31,7 +31,8 @@ export default function SystemSettingsPage() {
         codEnabled: false,
         notificationSoundEnabled: true,
         notificationSound: '/sounds/order_alert.mp3',
-        orderNotificationSound: '/sounds/payment_success.mp3'
+        orderNotificationSound: '/sounds/payment_success.mp3',
+        paymentSuccessSound: '/sounds/payment_success.mp3'
     });
 
     useEffect(() => {
@@ -57,6 +58,7 @@ export default function SystemSettingsPage() {
 
     const [uploadingSound, setUploadingSound] = useState(false);
     const [uploadingOrderSound, setUploadingOrderSound] = useState(false);
+    const [uploadingPaymentSound, setUploadingPaymentSound] = useState(false);
     const [playingSound, setPlayingSound] = useState<string | null>(null);
 
     const playPreview = (url: string) => {
@@ -87,7 +89,7 @@ export default function SystemSettingsPage() {
         }
     };
 
-    const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'notificationSound' | 'orderNotificationSound') => {
+    const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'notificationSound' | 'orderNotificationSound' | 'paymentSuccessSound') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -108,7 +110,8 @@ export default function SystemSettingsPage() {
         formData.append('sound', file);
 
         if (field === 'notificationSound') setUploadingSound(true);
-        else setUploadingOrderSound(true);
+        else if (field === 'orderNotificationSound') setUploadingOrderSound(true);
+        else setUploadingPaymentSound(true);
 
         try {
             const res = await api.post('/admin/settings/upload-sound', formData, {
@@ -127,7 +130,8 @@ export default function SystemSettingsPage() {
             showError(error.response?.data?.message || 'Failed to upload sound');
         } finally {
             if (field === 'notificationSound') setUploadingSound(false);
-            else setUploadingOrderSound(false);
+            else if (field === 'orderNotificationSound') setUploadingOrderSound(false);
+            else setUploadingPaymentSound(false);
             e.target.value = ''; // Reset input
         }
     };
@@ -766,6 +770,92 @@ export default function SystemSettingsPage() {
                                         }}></span>
                                     </span>
                                 </label>
+                            </div>
+                        </div>
+
+                        {/* Payment Success Sound Setting */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <FiCreditCard size={20} color="#3B82F6" />
+                                <div>
+                                    <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>Payment Success Notification Sound (only customer)</p>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
+                                        Ringtone played when a customer's payment is successfully processed
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                {settings.notificationSoundEnabled && (
+                                    <select
+                                        value={settings.paymentSuccessSound || 'default'}
+                                        onChange={(e) => handleChange('paymentSuccessSound', e.target.value)}
+                                        style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', maxWidth: '150px' }}
+                                    >
+                                        <option value="default">Default</option>
+                                        <option value="/sounds/payment_success_chime.mp3">Modern Payment Chime</option>
+                                        <option value="/sounds/payment_success.mp3">Payment Success</option>
+                                        <option value="/sounds/order_alert.mp3">Order Alert</option>
+                                        <option value="custom">Custom Sound</option>
+                                        {settings.paymentSuccessSound && !['default', '/sounds/payment_success.mp3', '/sounds/order_alert.mp3', 'custom'].includes(settings.paymentSuccessSound) && (
+                                            <option value={settings.paymentSuccessSound}>Uploaded Sound</option>
+                                        )}
+                                    </select>
+                                )}
+
+                                {settings.notificationSoundEnabled && (
+                                    <button
+                                        type="button"
+                                        onClick={() => playPreview(settings.paymentSuccessSound)}
+                                        disabled={playingSound === settings.paymentSuccessSound}
+                                        style={{
+                                            padding: '0.4rem 0.6rem',
+                                            borderRadius: '6px',
+                                            border: '1px solid #cbd5e1',
+                                            background: '#fff',
+                                            fontSize: '0.85rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem',
+                                            color: '#3b82f6'
+                                        }}
+                                        title="Test Sound"
+                                    >
+                                        {playingSound === settings.paymentSuccessSound ? <FiRefreshCw className="spin" /> : <FiPlay />}
+                                        Test
+                                    </button>
+                                )}
+
+                                {settings.notificationSoundEnabled && (
+                                    <>
+                                        <input
+                                            type="file"
+                                            id="payment-sound-upload"
+                                            accept=".mp3,.wav"
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => handleSoundUpload(e, 'paymentSuccessSound')}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => document.getElementById('payment-sound-upload')?.click()}
+                                            disabled={uploadingPaymentSound}
+                                            style={{
+                                                padding: '0.4rem 0.8rem',
+                                                borderRadius: '6px',
+                                                border: '1px solid #cbd5e1',
+                                                background: '#fff',
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem'
+                                            }}
+                                        >
+                                            {uploadingPaymentSound ? <FiRefreshCw className="spin" /> : <FiPhone />}
+                                            Upload
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

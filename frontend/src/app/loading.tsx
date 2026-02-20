@@ -1,5 +1,5 @@
-import Loader from '@/app/components/Loader';
+import HomeSkeleton from '@/app/components/skeletons/HomeSkeleton';
 
 export default function Loading() {
-    return <Loader />;
+    return <HomeSkeleton />;
 }

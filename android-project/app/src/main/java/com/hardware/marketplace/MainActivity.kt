@@ -253,7 +253,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val data: Uri? = intent?.data
+        var data: Uri? = intent?.data
+        
+        // Fallback to 'url' extra (FCM background notifications)
+        if (data == null && intent?.hasExtra("url") == true) {
+            val urlStr = intent.getStringExtra("url")
+            if (urlStr != null && urlStr.isNotEmpty()) {
+                val fullUrl = if (urlStr.startsWith("http")) urlStr else "https://$APP_DOMAIN$urlStr"
+                data = Uri.parse(fullUrl)
+            }
+        }
+
         if (data != null && data.host == APP_DOMAIN) {
             webView.loadUrl(data.toString())
         }

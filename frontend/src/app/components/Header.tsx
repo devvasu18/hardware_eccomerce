@@ -10,6 +10,7 @@ import { useWishlist } from '../../context/WishlistContext'; // Import WishlistC
 import { useNotification, Notification } from '../../context/NotificationContext'; // Import NotificationContext
 import { useLanguage } from '../../context/LanguageContext';
 import { getSystemSettings } from '../utils/systemSettings';
+import { cache } from '@/utils/cache';
 import './Header.css';
 
 const Header = () => {
@@ -24,15 +25,15 @@ const Header = () => {
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-    const [categories, setCategories] = useState<any[]>([]);
-    const [subCategories, setSubCategories] = useState<Record<string, any[]>>({});
+    const [categories, setCategories] = useState<any[]>(() => cache.get<any[]>('nav_categories') || []);
+    const [subCategories, setSubCategories] = useState<Record<string, any[]>>(() => cache.get<Record<string, any[]>>('nav_subcategories') || {});
     const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [mobileSearchTerm, setMobileSearchTerm] = useState('');
-    const [companyName, setCompanyName] = useState('Hardware Store');
+    const [companyName, setCompanyName] = useState(() => cache.get<string>('company_name') || 'Hardware Store');
     const [isMobileSearchFocused, setIsMobileSearchFocused] = useState(false);
 
     // Close mobile menu on route change
@@ -121,6 +122,9 @@ const Header = () => {
 
     useEffect(() => {
         const fetchAllNavData = async () => {
+            // Check if cache is expired
+            if (!cache.isExpired('nav_categories') && categories.length > 0) return;
+
             try {
                 // Fetch categories
                 const res = await fetch('/api/categories');
@@ -142,10 +146,11 @@ const Header = () => {
                     }
                 }));
 
-                // Update both states
+                // Update both states and cache
                 setCategories(navCategories);
                 setSubCategories(subCatMap);
-                console.log('Final Navigation Data Loaded:', { categories: navCategories, subCategories: subCatMap });
+                cache.set('nav_categories', navCategories, 60); // 60 mins
+                cache.set('nav_subcategories', subCatMap, 60); // 60 mins
             } catch (error) {
                 console.error('Failed to load navigation data:', error);
             }
@@ -155,9 +160,12 @@ const Header = () => {
 
     useEffect(() => {
         const fetchSettings = async () => {
+            if (!cache.isExpired('company_name')) return;
+
             const settings = await getSystemSettings();
             if (settings && settings.companyName) {
                 setCompanyName(settings.companyName);
+                cache.set('company_name', settings.companyName, 120); // 120 mins
             }
         };
         fetchSettings();

@@ -184,6 +184,8 @@ const sendNotification = async ({ userId, role, title, message, type, redirectUr
 
             if (isOrderPlaced && isCustomer) {
                 sound = settings.orderNotificationSound || 'default';
+            } else if (type === 'PAYMENT_SUCCESS' && isCustomer) {
+                sound = settings.paymentSuccessSound || 'default';
             } else {
                 sound = settings.notificationSound || 'default';
             }

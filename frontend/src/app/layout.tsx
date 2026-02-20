@@ -1,5 +1,5 @@
-
 import type { Metadata } from 'next';
+import { Inter, Poppins } from 'next/font/google';
 import './globals.css';
 import { NotificationProvider } from '@/context/NotificationContext';
 import { AuthProvider } from '@/context/AuthContext';
@@ -11,6 +11,19 @@ import CartSidebar from './components/CartSidebar';
 import WishlistSidebar from './components/WishlistSidebar';
 import MobileBottomNav from './components/MobileBottomNav';
 import AppShellSetup from '@/components/AppShellSetup';
+
+const inter = Inter({
+    subsets: ['latin'],
+    variable: '--font-inter',
+    display: 'swap',
+});
+
+const poppins = Poppins({
+    weight: ['400', '500', '600', '700', '800', '900'],
+    subsets: ['latin'],
+    variable: '--font-poppins',
+    display: 'swap',
+});
 
 export const metadata: Metadata = {
     title: 'Hardware Marketplace | Premium Quality Industrial Parts',
@@ -27,7 +40,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang="en" suppressHydrationWarning className={`${inter.variable} ${poppins.variable}`}>
             <head>
                 <script
                     dangerouslySetInnerHTML={{

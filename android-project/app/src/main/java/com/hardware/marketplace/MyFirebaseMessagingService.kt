@@ -22,21 +22,30 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "Hardware System"
         val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "New notification received"
         val sound = remoteMessage.data["sound"] ?: remoteMessage.notification?.sound ?: "default"
+        val url = remoteMessage.data["url"] ?: ""
         
-        android.util.Log.d("FCM", "Title: $title, Body: $body, Sound: $sound")
-        sendNotification(title, body, sound)
+        android.util.Log.d("FCM", "Title: $title, Body: $body, Sound: $sound, URL: $url")
+        sendNotification(title, body, sound, url)
     }
 
     override fun onNewToken(token: String) {
         // Send token to server if needed
     }
 
-    private fun sendNotification(title: String, messageBody: String, soundName: String) {
+    private fun sendNotification(title: String, messageBody: String, soundName: String, url: String) {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        
+        // Handle Deep Linking
+        if (url.isNotEmpty()) {
+            val fullUrl = if (url.startsWith("http")) url else "https://hardware-eccomerce.vercel.app$url"
+            intent.data = Uri.parse(fullUrl)
+            android.util.Log.d("FCM", "Setting intent data to: $fullUrl")
+        }
+
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
-            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         // Determine sound URI
@@ -59,7 +68,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         }
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
-            .setSmallIcon(R.drawable.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setColor(androidx.core.content.ContextCompat.getColor(this, R.color.brand_primary))
             .setContentTitle(title)
             .setContentText(messageBody)
             .setAutoCancel(true)

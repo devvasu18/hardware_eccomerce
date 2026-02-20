@@ -1,15 +1,15 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import './FeaturedProducts.css'; // Reuse CSS
 import api from '@/app/utils/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { cache } from '@/utils/cache';
 
 export default function RecentlyViewed({ config }: { config?: any }) {
     const { t, language } = useLanguage();
-    const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [products, setProducts] = useState<any[]>(() => cache.get<any[]>('recently_viewed_products') || []);
+    const [loading, setLoading] = useState(() => !cache.get('recently_viewed_products'));
 
     const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
         ? config.titleHindi
@@ -20,16 +20,19 @@ export default function RecentlyViewed({ config }: { config?: any }) {
         : (config?.subtitle || t('recently_viewed_subtitle'));
 
     useEffect(() => {
-        const fetchRecentlyViewed = async () => {
+        const fetchRecentlyViewed = async (isBackground = false) => {
+            if (!isBackground) setLoading(true);
             try {
                 const viewedRaw = localStorage.getItem('recently_viewed');
                 if (!viewedRaw) {
                     setLoading(false);
+                    setProducts([]);
                     return;
                 }
                 const viewedIds = JSON.parse(viewedRaw);
                 if (!Array.isArray(viewedIds) || viewedIds.length === 0) {
                     setLoading(false);
+                    setProducts([]);
                     return;
                 }
 
@@ -38,30 +41,29 @@ export default function RecentlyViewed({ config }: { config?: any }) {
                 const res = await api.get(`/products?ids=${idsParam}`);
 
                 let productList = [];
-                // Handle different response structures
                 if (Array.isArray(res.data)) {
                     productList = res.data;
                 } else if (res.data && Array.isArray(res.data.products)) {
                     productList = res.data.products;
                 }
 
-                // Sort by index in viewedIds to maintain "most recent" order?
-                // actually localStorage usually pushes to front.
-                // So index 0 is most recent.
-                // We want to show most recent first? Yes.
                 productList.sort((a: any, b: any) => {
                     return viewedIds.indexOf(a._id) - viewedIds.indexOf(b._id);
                 });
 
                 setProducts(productList);
+                cache.set('recently_viewed_products', productList, 15); // 15 mins
             } catch (err) {
                 console.error('Error fetching recently viewed:', err);
             } finally {
-                setLoading(false);
+                if (!isBackground) setLoading(false);
             }
         };
 
-        fetchRecentlyViewed();
+        const isExpired = cache.isExpired('recently_viewed_products');
+        if (isExpired || products.length === 0) {
+            fetchRecentlyViewed(products.length > 0);
+        }
     }, []);
 
     if (loading || products.length === 0) return null;

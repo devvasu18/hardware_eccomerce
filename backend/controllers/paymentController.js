@@ -206,6 +206,19 @@ exports.verifyPayment = async (req, res) => {
                         if (order.user) {
                             const Cart = require('../models/Cart');
                             await Cart.findOneAndDelete({ user: order.user });
+
+                            // 🔔 Send Notification
+                            const notificationService = require('../services/notificationService');
+                            notificationService.sendNotification({
+                                userId: order.user,
+                                role: 'USER',
+                                title: 'Payment Successful',
+                                message: `Your payment for order #${order.invoiceNumber || order._id} has been processed successfully.`,
+                                type: 'PAYMENT_SUCCESS',
+                                entityId: order._id,
+                                redirectUrl: `/orders/${order._id}`,
+                                priority: 'NORMAL'
+                            });
                         }
                     }
                 }

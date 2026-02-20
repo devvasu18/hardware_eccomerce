@@ -30,14 +30,11 @@ interface ProductGridContentProps {
     offerInfo?: any;
 }
 
+import { cache } from '@/utils/cache';
+
 function ProductGridContent({ offerInfo }: ProductGridContentProps) {
     const { t, getLocalized } = useLanguage();
     const searchParams = useSearchParams();
-    const [products, setProducts] = useState<Product[]>([]);
-    const [categories, setCategories] = useState<any[]>([]);
-    const [brands, setBrands] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
 
     const category = searchParams.get('category');
     const brand = searchParams.get('brand');
@@ -45,17 +42,28 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
     const subcategory = searchParams.get('subcategory');
     const offerSlug = searchParams.get('offer');
 
-    const fetchData = async () => {
-        setLoading(true);
+    const cacheKey = `products_grid_${category || 'all'}_${brand || 'all'}_${keyword || 'none'}_${subcategory || 'all'}_${offerSlug || 'none'}`;
+    const filtersCacheKey = 'global_filters';
+
+    const [products, setProducts] = useState<Product[]>(() => cache.get<Product[]>(cacheKey) || []);
+    const [categories, setCategories] = useState<any[]>(() => cache.get<any[]>(`${filtersCacheKey}_categories`) || []);
+    const [brands, setBrands] = useState<any[]>(() => cache.get<any[]>(`${filtersCacheKey}_brands`) || []);
+    const [loading, setLoading] = useState(() => !cache.get(cacheKey));
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchData = async (isBackground = false) => {
+        if (!isBackground) setLoading(true);
         setError(null);
         try {
-            // Fetch filters
+            // Fetch filters (Long TTL 60 mins for masters)
             const [catRes, brandRes] = await Promise.all([
                 api.get('/categories'),
                 api.get('/brands/featured')
             ]);
             setCategories(catRes.data);
             setBrands(brandRes.data);
+            cache.set(`${filtersCacheKey}_categories`, catRes.data, 60);
+            cache.set(`${filtersCacheKey}_brands`, brandRes.data, 60);
 
             // Fetch products
             let url = '/products?';
@@ -68,29 +76,37 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
             const prodRes = await api.get(url);
             const data = prodRes.data.products || prodRes.data;
 
-            setProducts(data.map((p: any) => {
+            const processed = data.map((p: any) => {
                 let finalPrice = p.selling_price_a || p.discountedPrice || p.mrp || 0;
 
-                // Apply offer discount if available
                 return {
                     ...p,
                     name: p.title || p.name,
                     basePrice: p.mrp || p.basePrice,
-                    discountedPrice: finalPrice, // Just the base price, ProductCard handles discount
+                    discountedPrice: finalPrice,
                     offerApplied: !!offerInfo
                 };
-            }));
+            });
+
+            setProducts(processed);
+            // Save to cache (TTL 10 mins for product listing)
+            cache.set(cacheKey, processed, 10);
         } catch (error: any) {
             console.error("Failed to fetch products", error);
-            setError(error.message || "Failed to load products");
+            if (!isBackground || products.length === 0) {
+                setError(error.message || "Failed to load products");
+            }
         } finally {
-            setLoading(false);
+            if (!isBackground) setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchData();
-    }, [category, brand, keyword, subcategory, offerSlug, offerInfo]); // Re-run when offerInfo changes
+        const isExpired = cache.isExpired(cacheKey);
+        if (isExpired || products.length === 0) {
+            fetchData(products.length > 0);
+        }
+    }, [category, brand, keyword, subcategory, offerSlug, offerInfo]);
 
     return (
         <div className="container products-content-container py-10">
@@ -131,18 +147,16 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
     );
 }
 
+import ProductListSkeleton from './skeletons/ProductListSkeleton';
+
 export default function FilteredProducts({ config }: { config?: any }) {
     const { t, getLocalized } = useLanguage();
     const searchParams = useSearchParams();
     const [offerInfo, setOfferInfo] = useState<any>(null);
-    const category = searchParams.get('category');
-    const brand = searchParams.get('brand');
-    const keyword = searchParams.get('keyword');
     const offerSlug = searchParams.get('offer');
 
     useEffect(() => {
         const fetchOfferInfo = async () => {
-            // Only fetch if offerSlug exists and is not 'undefined' or 'null' string
             if (offerSlug && offerSlug !== 'undefined' && offerSlug !== 'null') {
                 try {
                     const res = await api.get(`/offers?slug=${offerSlug}`);
@@ -161,27 +175,27 @@ export default function FilteredProducts({ config }: { config?: any }) {
 
     return (
         <section className="filtered-products-section">
-            {/* dynamic hero based on filter */}
             <div className="products-hero">
                 <div className="container">
+                    {/* ... header content ... */}
                     <h3 className="text-2xl font-bold text-slate-900 mb-2">
                         {offerInfo ? (
                             <>
                                 {getLocalized(offerInfo.title)} <span className="text-orange-600">({offerInfo.percentage}% {t('off')})</span>
                             </>
-                        ) : keyword ? `${t('search_results')}: "${keyword}"` : (brand ? `${t('brand_label')}: ${brand}` : (category ? `${t('category_label')}: ${category}` : (getLocalized(config?.title) || t('industrial_catalog'))))}
+                        ) : searchParams.get('keyword') ? `${t('search_results')}: "${searchParams.get('keyword')}"` : (searchParams.get('brand') ? `${t('brand_label')}: ${searchParams.get('brand')}` : (searchParams.get('category') ? `${t('category_label')}: ${searchParams.get('category')}` : (getLocalized(config?.title) || t('industrial_catalog'))))}
                     </h3>
                     <p className="text-lg text-slate-500 max-w-2xl">
                         {offerInfo
                             ? t('discover_promotion', { title: getLocalized(offerInfo.title), percentage: offerInfo.percentage })
-                            : category
-                                ? t('explore_category', { category: category })
+                            : searchParams.get('category')
+                                ? t('explore_category', { category: searchParams.get('category') })
                                 : (getLocalized(config?.subtitle) || t('browse_catalog'))}
                     </p>
                 </div>
             </div>
 
-            <Suspense fallback={<div className="p-20 text-center">{t('loading_component')}</div>}>
+            <Suspense fallback={<ProductListSkeleton />}>
                 <ProductGridContent offerInfo={offerInfo} />
             </Suspense>
         </section>

@@ -52,6 +52,10 @@ const systemSettingsSchema = new mongoose.Schema({
         type: String,
         default: 'default'
     },
+    paymentSuccessSound: {
+        type: String,
+        default: 'default'
+    },
     passwordResetNotificationsEnabled: {
         type: Boolean,
         default: true
