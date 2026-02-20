@@ -6,6 +6,7 @@ import ProductCard from './ProductCard';
 import api from '../utils/api';
 import './CategoryProductListing.css';
 import { useLanguage } from '../../context/LanguageContext';
+import { ProductGridSkeleton } from './skeletons/HomeSkeleton';
 
 interface CategoryProductListingProps {
     config?: {
@@ -100,11 +101,7 @@ const CategoryProductListing: React.FC<CategoryProductListingProps> = ({ config 
                 </div>
 
                 {loading ? (
-                    <div className="products-grid loading-state">
-                        {[...Array(limit)].map((_, i) => (
-                            <div key={i} className="skeleton-card-premium"></div>
-                        ))}
-                    </div>
+                    <ProductGridSkeleton />
                 ) : products.length === 0 ? (
                     <div className="empty-category-message">
                         <p>{t('no_products_found')}</p>

@@ -6,6 +6,8 @@ import './FeaturedProducts.css'; // Reuse CSS
 import api from '@/app/utils/api';
 import { useLanguage } from '../../context/LanguageContext';
 
+import { ProductGridSkeleton } from './skeletons/HomeSkeleton';
+
 export default function DealOfTheDay({ config }: { config?: any }) {
     const { t, language } = useLanguage();
     const [products, setProducts] = useState<any[]>([]);
@@ -20,6 +22,7 @@ export default function DealOfTheDay({ config }: { config?: any }) {
         : (config?.subtitle || t('limited_time_offers'));
 
     useEffect(() => {
+        let mounted = true;
         const fetchDeals = async () => {
             try {
                 const res = await api.get('/products/daily-offers');
@@ -27,19 +30,21 @@ export default function DealOfTheDay({ config }: { config?: any }) {
                 if (!Array.isArray(data) && data.products) {
                     data = data.products;
                 }
-                if (Array.isArray(data)) {
+                if (Array.isArray(data) && mounted) {
                     setProducts(data);
                 }
             } catch (e) {
                 console.error("Deal fetch failed", e);
             } finally {
-                setLoading(false);
+                if (mounted) setLoading(false);
             }
         };
         fetchDeals();
+        return () => { mounted = false; };
     }, []);
 
-    if (loading || products.length === 0) return null;
+    if (loading) return <ProductGridSkeleton />;
+    if (products.length === 0) return null;
 
     return (
         <section className="featured-section deal-of-day">

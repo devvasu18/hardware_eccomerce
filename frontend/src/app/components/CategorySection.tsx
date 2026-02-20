@@ -10,9 +10,12 @@ import { useLanguage } from '../../context/LanguageContext';
 
 
 
+import { CategorySkeleton } from './skeletons/HomeSkeleton';
+
 export default function CategorySection({ config }: { config?: any }) {
     const { getLocalized, t, language } = useLanguage();
     const [categories, setCategories] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(8);
 
@@ -26,15 +29,19 @@ export default function CategorySection({ config }: { config?: any }) {
 
     // Fetch Categories
     useEffect(() => {
+        let mounted = true;
         const fetchCategories = async () => {
             try {
                 const res = await api.get('/categories');
-                setCategories(res.data);
+                if (mounted) setCategories(res.data);
             } catch (error) {
                 console.log("Category fetch fallback");
+            } finally {
+                if (mounted) setLoading(false);
             }
         };
         fetchCategories();
+        return () => { mounted = false; };
     }, []);
 
     // Responsive items per page
@@ -63,6 +70,7 @@ export default function CategorySection({ config }: { config?: any }) {
         return () => clearInterval(interval);
     }, [categories.length, itemsPerPage]);
 
+    if (loading) return <CategorySkeleton />;
     if (categories.length === 0) return null;
 
     return (

@@ -10,9 +10,12 @@ import { useLanguage } from '../../context/LanguageContext';
 
 
 
+import { CategorySkeleton } from './skeletons/HomeSkeleton';
+
 export default function BrandsSection({ config }: { config?: any }) {
     const { t, language } = useLanguage();
     const [brands, setBrands] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
         ? config.titleHindi
@@ -23,18 +26,23 @@ export default function BrandsSection({ config }: { config?: any }) {
         : (config?.subtitle || '');
 
     useEffect(() => {
+        let mounted = true;
         const fetchBrandsFromPublic = async () => {
             try {
                 const res = await api.get('/brands/featured');
                 // Show up to 12 brands in the grid
-                setBrands(res.data.slice(0, 12));
+                if (mounted) setBrands(res.data.slice(0, 12));
             } catch (e) {
                 console.error(e);
+            } finally {
+                if (mounted) setLoading(false);
             }
         }
         fetchBrandsFromPublic();
+        return () => { mounted = false; };
     }, []);
 
+    if (loading) return <CategorySkeleton />;
     if (brands.length === 0) return null;
 
     return (

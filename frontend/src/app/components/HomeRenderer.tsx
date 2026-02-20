@@ -107,6 +107,10 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
     const [featuredProducts, setFeaturedProducts] = useState<any[]>(() => {
         return cache.get<any[]>(featuredCacheKey) || [];
     });
+    const [loadingFeatured, setLoadingFeatured] = useState(() => {
+        if (previewLayout) return false;
+        return !cache.get(featuredCacheKey);
+    });
 
     // Signal Android that the Web App Shell is ready (Header + Skeleton painted)
     useEffect(() => {
@@ -157,6 +161,7 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
     };
 
     const fetchFeatured = async () => {
+        setLoadingFeatured(true);
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
@@ -181,6 +186,8 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
             }
         } catch (error) {
             // Silently fail
+        } finally {
+            setLoadingFeatured(false);
         }
     };
 
@@ -249,6 +256,7 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
                                 let props: any = { config: item.config };
                                 if (item.componentType === 'FEATURED_PRODUCTS') {
                                     props.products = featuredProducts;
+                                    props.loading = loadingFeatured;
                                 }
 
                                 return (

@@ -18,39 +18,43 @@ interface Category {
     isActive: boolean;
 }
 
+import { CategorySkeleton } from './skeletons/HomeSkeleton';
+
 export default function AllCategories({ config }: { config?: any }) {
     const { t, getLocalized } = useLanguage();
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchCategories = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            console.log('Fetching categories from /api/categories...');
-            const res = await api.get('/categories');
-            console.log('Categories response:', res.data);
-
-            // Backend already filters for isActive: true, so we can use the data directly
-            const activeCategories = res.data || [];
-            console.log('Active categories count:', activeCategories.length);
-
-            setCategories(activeCategories);
-        } catch (error: any) {
-            console.error('Error fetching categories:', error);
-            setError(error.response?.data?.message || error.message || 'Failed to load categories');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
+        let mounted = true;
+        const fetchCategories = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                console.log('Fetching categories from /api/categories...');
+                const res = await api.get('/categories');
+                console.log('Categories response:', res.data);
+
+                // Backend already filters for isActive: true, so we can use the data directly
+                const activeCategories = res.data || [];
+                console.log('Active categories count:', activeCategories.length);
+
+                if (mounted) setCategories(activeCategories);
+            } catch (error: any) {
+                console.error('Error fetching categories:', error);
+                if (mounted) setError(error.response?.data?.message || error.message || 'Failed to load categories');
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        };
+
         fetchCategories();
+        return () => { mounted = false; };
     }, []);
 
     if (loading) {
-        return <div className="py-20 flex justify-center"><Loader /></div>;
+        return <CategorySkeleton />;
     }
 
     if (error) {
@@ -58,7 +62,7 @@ export default function AllCategories({ config }: { config?: any }) {
             <div className="container py-20">
                 <ErrorState
                     message={error}
-                    onRetry={fetchCategories}
+                    onRetry={() => window.location.reload()}
                 />
             </div>
         );

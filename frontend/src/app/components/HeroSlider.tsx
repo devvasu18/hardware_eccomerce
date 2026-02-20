@@ -29,6 +29,8 @@ interface Banner {
     product_ids?: string[];
 }
 
+import { HeroSkeleton } from './skeletons/HomeSkeleton';
+
 export default function HeroSlider() {
     const { getLocalized, t } = useLanguage();
     const [slides, setSlides] = useState<Banner[]>([]);
@@ -36,12 +38,14 @@ export default function HeroSlider() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let mounted = true;
         fetch('/api/banners')
             .then(res => {
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 return res.json();
             })
             .then(data => {
+                if (!mounted) return;
                 if (data && data.length > 0) {
                     console.log('Banners loaded:', data);
                     console.log('First banner offer_id:', data[0]?.offer_id);
@@ -50,9 +54,11 @@ export default function HeroSlider() {
                 setLoading(false);
             })
             .catch(err => {
+                if (!mounted) return;
                 console.error("Failed to fetch banners", err);
                 setLoading(false);
             });
+        return () => { mounted = false; };
     }, []);
 
     useEffect(() => {
@@ -63,6 +69,7 @@ export default function HeroSlider() {
         return () => clearInterval(timer);
     }, [slides]);
 
+    if (loading) return <HeroSkeleton />;
     if (slides.length === 0) return null;
 
     return (

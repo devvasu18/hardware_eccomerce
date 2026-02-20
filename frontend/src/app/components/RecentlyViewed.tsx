@@ -5,6 +5,7 @@ import './FeaturedProducts.css'; // Reuse CSS
 import api from '@/app/utils/api';
 import { useLanguage } from '../../context/LanguageContext';
 import { cache } from '@/utils/cache';
+import { ProductGridSkeleton } from './skeletons/HomeSkeleton';
 
 export default function RecentlyViewed({ config }: { config?: any }) {
     const { t, language } = useLanguage();
@@ -66,7 +67,8 @@ export default function RecentlyViewed({ config }: { config?: any }) {
         }
     }, []);
 
-    if (loading || products.length === 0) return null;
+    if (loading) return <ProductGridSkeleton />;
+    if (products.length === 0) return null;
 
     return (
         <section className="featured-section">

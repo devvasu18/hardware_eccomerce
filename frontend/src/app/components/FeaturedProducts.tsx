@@ -17,13 +17,18 @@ interface Product {
     isOnDemand: boolean;
 }
 
+import { ProductGridSkeleton } from './skeletons/HomeSkeleton';
+
 interface FeaturedProductsProps {
     products: Product[];
     config?: any;
+    loading?: boolean;
 }
 
-export default function FeaturedProducts({ products, config }: FeaturedProductsProps) {
+export default function FeaturedProducts({ products, config, loading }: FeaturedProductsProps) {
     const { t, language } = useLanguage();
+
+    if (loading) return <ProductGridSkeleton />;
 
     // Determine title and subtitle based on language
     const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)

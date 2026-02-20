@@ -17,6 +17,8 @@ interface Product {
     isOnDemand: boolean;
 }
 
+import { ProductGridSkeleton } from './skeletons/HomeSkeleton';
+
 export default function NewArrivals({ config }: { config?: any }) {
     const { t, language } = useLanguage();
     const [products, setProducts] = useState<Product[]>([]);
@@ -31,30 +33,34 @@ export default function NewArrivals({ config }: { config?: any }) {
         : (config?.subtitle || t('check_out_latest'));
 
     useEffect(() => {
+        let mounted = true;
         const fetchNewArrivals = async () => {
             try {
                 const res = await fetch('/api/products/new-arrivals?limit=10');
                 if (res.ok) {
                     const data = await res.json();
-                    setProducts(data.map((p: any) => ({
-                        ...p,
-                        basePrice: p.mrp || p.basePrice,
-                        discountedPrice: p.selling_price_a || p.discountedPrice,
-                        title: p.title || p.name,
-                        name: p.title || p.name
-                    })));
+                    if (mounted) {
+                        setProducts(data.map((p: any) => ({
+                            ...p,
+                            basePrice: p.mrp || p.basePrice,
+                            discountedPrice: p.selling_price_a || p.discountedPrice,
+                            title: p.title || p.name,
+                            name: p.title || p.name
+                        })));
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching new arrivals:', error);
             } finally {
-                setLoading(false);
+                if (mounted) setLoading(false);
             }
         };
 
         fetchNewArrivals();
+        return () => { mounted = false; };
     }, []);
 
-    if (loading) return null;
+    if (loading) return <ProductGridSkeleton />;
     if (products.length === 0) return null;
 
     return (

@@ -6,6 +6,8 @@ import './FeaturedProducts.css'; // Reuse CSS
 import api from '@/app/utils/api';
 import { useLanguage } from '../../context/LanguageContext';
 
+import { ProductGridSkeleton } from './skeletons/HomeSkeleton';
+
 export default function RecommendedProducts({ config }: { config?: any }) {
     const { t, language } = useLanguage();
     const [products, setProducts] = useState<any[]>([]);
@@ -20,6 +22,7 @@ export default function RecommendedProducts({ config }: { config?: any }) {
         : (config?.subtitle || t('recommended_subtitle'));
 
     useEffect(() => {
+        let mounted = true;
         const fetchRecommendations = async () => {
             try {
                 // 1. Get user history
@@ -33,7 +36,7 @@ export default function RecommendedProducts({ config }: { config?: any }) {
                 }
 
                 if (!targetId) {
-                    setLoading(false);
+                    if (mounted) setLoading(false);
                     return;
                 }
 
@@ -45,20 +48,22 @@ export default function RecommendedProducts({ config }: { config?: any }) {
                     fetched = fetched.products;
                 }
 
-                if (Array.isArray(fetched)) {
+                if (Array.isArray(fetched) && mounted) {
                     setProducts(fetched);
                 }
             } catch (err) {
                 console.error('Error fetching recommendations:', err);
             } finally {
-                setLoading(false);
+                if (mounted) setLoading(false);
             }
         };
 
         fetchRecommendations();
+        return () => { mounted = false; };
     }, []);
 
-    if (loading || products.length === 0) return null;
+    if (loading) return <ProductGridSkeleton />;
+    if (products.length === 0) return null;
 
     return (
         <section className="featured-section">

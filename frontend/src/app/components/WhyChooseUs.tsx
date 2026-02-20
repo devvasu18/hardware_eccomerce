@@ -20,6 +20,8 @@ interface TrustIndicator {
     value: string;
 }
 
+import { GenericSectionSkeleton } from './skeletons/HomeSkeleton';
+
 export default function WhyChooseUs({ config }: { config?: any }) {
     const { t, language } = useLanguage();
     const [features, setFeatures] = useState<Feature[]>([]);
@@ -36,6 +38,7 @@ export default function WhyChooseUs({ config }: { config?: any }) {
         : (config?.subtitle || t('why_choose_us_desc'));
 
     useEffect(() => {
+        let mounted = true;
         async function fetchData() {
             try {
                 const [featuresRes, indicatorsRes] = await Promise.all([
@@ -45,26 +48,25 @@ export default function WhyChooseUs({ config }: { config?: any }) {
 
                 if (featuresRes.ok) {
                     const featuresData = await featuresRes.json();
-                    setFeatures(featuresData);
+                    if (mounted) setFeatures(featuresData);
                 }
 
                 if (indicatorsRes.ok) {
                     const indicatorsData = await indicatorsRes.json();
-                    setTrustIndicators(indicatorsData);
+                    if (mounted) setTrustIndicators(indicatorsData);
                 }
             } catch (error) {
                 console.error('Error fetching homepage data:', error);
             } finally {
-                setLoading(false);
+                if (mounted) setLoading(false);
             }
         }
 
         fetchData();
+        return () => { mounted = false; };
     }, []);
 
-    if (loading) {
-        return null; // Or loading skeleton
-    }
+    if (loading) return <GenericSectionSkeleton />;
 
     if (features.length === 0) {
         return null; // Don't show section if no features

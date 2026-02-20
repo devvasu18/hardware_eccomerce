@@ -31,6 +31,7 @@ interface ProductGridContentProps {
 }
 
 import { cache } from '@/utils/cache';
+import ProductListSkeleton from './skeletons/ProductListSkeleton';
 
 function ProductGridContent({ offerInfo }: ProductGridContentProps) {
     const { t, getLocalized } = useLanguage();
@@ -108,6 +109,8 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
         }
     }, [category, brand, keyword, subcategory, offerSlug, offerInfo]);
 
+    if (loading) return <ProductListSkeleton />;
+
     return (
         <div className="container products-content-container py-10">
             <div className="products-page-layout flex gap-8">
@@ -116,9 +119,7 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
 
                 {/* Product Grid */}
                 <section style={{ flex: 1 }}>
-                    {loading ? (
-                        <div className="py-20 flex justify-center"><Loader /></div>
-                    ) : error ? (
+                    {error ? (
                         <ErrorState message={error} onRetry={fetchData} />
                     ) : products.length === 0 ? (
                         <div className="products-empty-state text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
@@ -146,8 +147,6 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
         </div>
     );
 }
-
-import ProductListSkeleton from './skeletons/ProductListSkeleton';
 
 export default function FilteredProducts({ config }: { config?: any }) {
     const { t, getLocalized } = useLanguage();

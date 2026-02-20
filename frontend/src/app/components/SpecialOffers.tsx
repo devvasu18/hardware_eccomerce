@@ -34,6 +34,8 @@ interface SpecialOffer {
     isLimitedStock: boolean;
 }
 
+import { ProductGridSkeleton } from './skeletons/HomeSkeleton';
+
 export default function SpecialOffers({ config }: { config?: any }) {
     const { t, language } = useLanguage();
     const [offers, setOffers] = useState<SpecialOffer[]>([]);
@@ -49,20 +51,22 @@ export default function SpecialOffers({ config }: { config?: any }) {
         : (config?.subtitle || t('special_deals_subtitle'));
 
     useEffect(() => {
+        let mounted = true;
         // Fetch special offers from API
         async function fetchOffers() {
             try {
                 const res = await api.get('/special-offers');
                 const data = res.data;
-                setOffers(data);
+                if (mounted) setOffers(data);
             } catch (error) {
                 console.error('Error fetching special offers:', error);
             } finally {
-                setLoading(false);
+                if (mounted) setLoading(false);
             }
         }
 
         fetchOffers();
+        return () => { mounted = false; };
     }, []);
 
     useEffect(() => {
@@ -94,7 +98,10 @@ export default function SpecialOffers({ config }: { config?: any }) {
         return () => clearInterval(timer);
     }, [offers]);
 
-    if (loading || offers.length === 0) {
+    if (loading) {
+        return <ProductGridSkeleton />;
+    }
+    if (offers.length === 0) {
         return null;
     }
 
