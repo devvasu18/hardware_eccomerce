@@ -45,12 +45,16 @@ const Header = () => {
     useEffect(() => {
         if (isMobileMenuOpen) {
             document.body.style.overflow = 'hidden';
+            // Also prevent touchmove on body for better mobile support
+            const preventDefault = (e: TouchEvent) => e.preventDefault();
+            document.addEventListener('touchmove', preventDefault, { passive: false });
+            return () => {
+                document.body.style.overflow = '';
+                document.removeEventListener('touchmove', preventDefault);
+            };
         } else {
             document.body.style.overflow = '';
         }
-        return () => {
-            document.body.style.overflow = '';
-        };
     }, [isMobileMenuOpen]);
 
     const [isVisible, setIsVisible] = useState(true);
@@ -68,6 +72,11 @@ const Header = () => {
     useEffect(() => {
         const handleScroll = () => {
             const currentScrollY = window.scrollY;
+
+            if (isMobileMenuOpen) {
+                setIsVisible(true);
+                return;
+            }
 
             if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
                 setIsVisible(false);
@@ -174,7 +183,10 @@ const Header = () => {
 
 
     return (
-        <header className={`header-container ${isVisible ? 'header-visible' : 'header-hidden'}`}>
+        <header
+            className={`header-container ${isVisible ? 'header-visible' : 'header-hidden'}`}
+            style={{ zIndex: isMobileMenuOpen ? 30000 : 1000 }}
+        >
             {/* Top Bar: Logo, Search, Actions */}
             <div className="header-main-bar">
 

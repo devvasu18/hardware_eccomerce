@@ -1022,14 +1022,13 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ id: st
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                <a
+                                <Link
                                     href={`/orders/${order._id}/invoice`}
-                                    target="_blank"
                                     className="btn btn-primary"
                                     style={{ textAlign: 'center', textDecoration: 'none' }}
                                 >
-                                    📄 Download Invoice
-                                </a>
+                                    📄 View Invoice
+                                </Link>
                                 <Link
                                     href="/products"
                                     className="btn btn-outline"

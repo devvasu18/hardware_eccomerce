@@ -1,10 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { getSystemSettings } from '../../../utils/systemSettings';
+import Link from 'next/link';
 
-export default function InvoicePage({ params }: { params: { id: string } }) {
+export default function InvoicePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const [order, setOrder] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [companyName, setCompanyName] = useState('Hardware Store');
     const [companyAddress, setCompanyAddress] = useState('');
     const [companyGstNumber, setCompanyGstNumber] = useState('');
@@ -22,12 +26,50 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     }, []);
 
     useEffect(() => {
-        fetch(`/api/orders/${params.id}`)
-            .then(res => res.json())
-            .then(data => setOrder(data));
-    }, [params.id]);
+        const fetchOrder = async () => {
+            try {
+                setLoading(true);
+                const token = localStorage.getItem('token');
+                const headers: any = {};
+                if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    if (!order) return <div>Loading Invoice...</div>;
+                const res = await fetch(`/api/orders/${id}`, { headers });
+                const data = await res.json();
+
+                if (data.success && data.order) {
+                    setOrder(data.order);
+                } else {
+                    setError(data.message || 'Failed to fetch order details');
+                }
+            } catch (err: any) {
+                console.error('Error fetching invoice:', err);
+                setError(err.message || 'An unexpected error occurred');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (id) fetchOrder();
+    }, [id]);
+
+    if (loading) return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '1rem', fontFamily: 'Arial' }}>
+            <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #0F172A', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            <div>Loading Invoice...</div>
+            <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+        </div>
+    );
+
+    if (error) return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '1rem', fontFamily: 'Arial', textAlign: 'center', padding: '2rem' }}>
+            <div style={{ fontSize: '3rem' }}>⚠️</div>
+            <h2 style={{ margin: 0 }}>Unable to Load Invoice</h2>
+            <p style={{ color: '#666', maxWidth: '400px' }}>{error}</p>
+            <Link href="/" style={{ padding: '0.75rem 1.5rem', background: '#0F172A', color: 'white', textDecoration: 'none', borderRadius: '4px' }}>Return Home</Link>
+        </div>
+    );
+
+    if (!order) return null;
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString('en-IN', {
@@ -38,8 +80,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
     return (
         <div style={{ background: 'white', minHeight: '100vh', padding: '2rem', fontFamily: 'Arial, sans-serif', color: '#000' }}>
             {/* Print Control */}
-            <div className="no-print" style={{ textAlign: 'right', marginBottom: '2rem' }}>
-                <button onClick={() => window.print()} style={{ padding: '0.5rem 1rem', background: '#0F172A', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>🖨️ Print Invoice</button>
+            <div className="no-print" style={{ textAlign: 'right', marginBottom: '2rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                <Link href={`/orders/${id}`} style={{ padding: '0.5rem 1rem', background: '#f3f4f6', color: '#374151', textDecoration: 'none', border: '1px solid #d1d5db', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' }}>← Back to Order</Link>
+                <button onClick={() => window.print()} style={{ padding: '0.5rem 1rem', background: '#0F172A', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.9rem' }}>🖨️ Print Invoice</button>
             </div>
 
             {/* Invoice Header */}
@@ -52,7 +95,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 </div>
                 <div style={{ textAlign: 'right' }}>
                     <p style={{ margin: 0, fontSize: '1.2rem' }}><strong>Original Copy</strong></p>
-                    <h3 style={{ margin: '0.5rem 0', color: '#ef4444' }}>#{order.invoiceNumber || 'DRAFT'}</h3>
+                    <h3 style={{ margin: '0.5rem 0', color: '#ef4444' }}>#{order.invoiceNumber || order._id?.slice(-8).toUpperCase() || 'DRAFT'}</h3>
                     <p style={{ margin: 0 }}>Date: {formatDate(order.invoiceDate || order.createdAt)}</p>
                 </div>
             </div>
@@ -61,8 +104,9 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
             <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
                 <div style={{ flex: 1, border: '1px solid #ccc', padding: '1rem' }}>
                     <strong style={{ display: 'block', borderBottom: '1px solid #eee', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>Billed To:</strong>
-                    <p style={{ margin: 0 }}>{order.user ? 'Registered Customer' : 'Unregistered User'}</p>
+                    <p style={{ margin: 0 }}>{order.user ? order.user.username : 'Guest Customer'}</p>
                     <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{order.shippingAddress}</p>
+                    {order.user?.mobile && <p style={{ margin: 0 }}>Phone: {order.user.mobile}</p>}
                 </div>
                 <div style={{ flex: 1, border: '1px solid #ccc', padding: '1rem' }}>
                     <strong style={{ display: 'block', borderBottom: '1px solid #eee', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>Shipped To:</strong>
@@ -86,20 +130,20 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {order.items.map((item: any, idx: number) => {
+                    {order.items?.map((item: any, idx: number) => {
                         const gstAmt = (item.cgst || 0) + (item.sgst || 0) + (item.igst || 0);
                         const taxable = item.priceAtBooking * item.quantity;
                         return (
                             <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
                                 <td style={{ padding: '0.5rem' }}>{idx + 1}</td>
-                                <td style={{ padding: '0.5rem' }}>{item.product?.name}</td>
+                                <td style={{ padding: '0.5rem' }}>{item.product?.name || item.productTitle}</td>
                                 <td style={{ padding: '0.5rem', textAlign: 'center' }}>{item.product?.hsnCode || 'N/A'}</td>
                                 <td style={{ padding: '0.5rem', textAlign: 'center' }}>{item.quantity} {item.product?.unit || 'Nos'}</td>
                                 <td style={{ padding: '0.5rem', textAlign: 'right' }}>₹{item.priceAtBooking}</td>
                                 <td style={{ padding: '0.5rem', textAlign: 'right' }}>₹{taxable}</td>
                                 <td style={{ padding: '0.5rem', textAlign: 'right' }}>
                                     <div style={{ fontSize: '0.8rem' }}>
-                                        {item.igst ? `IGST ${item.gstRate}%` : `CGST+SGST`}
+                                        {item.igst || item.gstRate > 0 ? (item.igst ? `IGST ${item.gstRate}%` : `CGST+SGST (${item.gstRate}%)`) : 'Zero Rated'}
                                     </div>
                                     ₹{Math.round(gstAmt)}
                                 </td>
@@ -115,7 +159,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                 <div style={{ width: '300px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
                         <span>Total Taxable Amount:</span>
-                        <span>₹{order.totalAmount - order.taxTotal + (order.discountAmount || 0)}</span>
+                        <span>₹{order.totalAmount - (order.taxTotal || 0) + (order.discountAmount || 0)}</span>
                     </div>
                     {order.discountAmount > 0 && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', color: '#B91C1C' }}>
@@ -125,7 +169,7 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
                     )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0' }}>
                         <span>Total Tax (GST):</span>
-                        <span>₹{order.taxTotal}</span>
+                        <span>₹{order.taxTotal || 0}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.5rem 0', borderTop: '2px solid #000', borderBottom: '2px double #000', margin: '0.5rem 0' }}>
                         <span style={{ fontWeight: 800, fontSize: '1.2rem' }}>Grand Total:</span>
@@ -150,3 +194,4 @@ export default function InvoicePage({ params }: { params: { id: string } }) {
         </div>
     );
 }
+

@@ -19,6 +19,21 @@ const CartSidebar = () => {
         cartTotal
     } = useCart();
 
+    // Lock body scroll when cart is open
+    React.useEffect(() => {
+        if (isCartOpen) {
+            document.body.style.overflow = 'hidden';
+            const preventDefault = (e: TouchEvent) => e.preventDefault();
+            document.addEventListener('touchmove', preventDefault, { passive: false });
+            return () => {
+                document.body.style.overflow = '';
+                document.removeEventListener('touchmove', preventDefault);
+            };
+        } else {
+            document.body.style.overflow = '';
+        }
+    }, [isCartOpen]);
+
     if (pathname === '/checkout') return null;
     if (!isCartOpen) return null;
 

@@ -18,6 +18,21 @@ const WishlistSidebar = () => {
 
     const { addToCart } = useCart();
 
+    // Lock body scroll when wishlist is open
+    React.useEffect(() => {
+        if (isWishlistOpen) {
+            document.body.style.overflow = 'hidden';
+            const preventDefault = (e: TouchEvent) => e.preventDefault();
+            document.addEventListener('touchmove', preventDefault, { passive: false });
+            return () => {
+                document.body.style.overflow = '';
+                document.removeEventListener('touchmove', preventDefault);
+            };
+        } else {
+            document.body.style.overflow = '';
+        }
+    }, [isWishlistOpen]);
+
     if (!isWishlistOpen) return null;
 
     const handleMoveToCart = async (item: any) => {
