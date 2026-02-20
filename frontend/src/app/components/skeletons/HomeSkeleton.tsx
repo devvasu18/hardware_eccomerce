@@ -1,5 +1,6 @@
 import React from 'react';
 import ProductListSkeleton from './ProductListSkeleton';
+import '../HeroSlider.css';
 
 export { ProductListSkeleton };
 const Shimmer = () => (
@@ -7,7 +8,7 @@ const Shimmer = () => (
 );
 
 export const HeroSkeleton = () => (
-    <div className="relative w-full h-[200px] md:h-[400px] bg-gray-200 dark:bg-gray-800 overflow-hidden">
+    <div className="hero-slider w-full bg-gray-200 dark:bg-gray-800">
         <Shimmer />
     </div>
 );
