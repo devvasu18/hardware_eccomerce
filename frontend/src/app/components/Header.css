@@ -134,6 +134,29 @@
     background: #e05d0e;
 }
 
+.search-shortcut-hint {
+    position: absolute;
+    right: 3.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    pointer-events: none;
+    box-shadow: var(--shadow-xs);
+    opacity: 0.6;
+}
+
+@media (max-width: 900px) {
+    .search-shortcut-hint {
+        display: none;
+    }
+}
+
 /* ========================================
    🎬 ACTIONS AREA
    ======================================== */
@@ -1363,4 +1386,204 @@
     .suggestion-text {
         font-size: 0.85rem;
     }
+}
+
+/* ========================================
+   🚀 MEGA MENU - NEXT-GEN DESIGN
+   ======================================== */
+
+.megamenu-dropdown {
+    position: absolute;
+    top: 100%;
+    /* Anchor to the left of the links container for better alignment */
+    left: 0;
+    width: 100%;
+    /* Use the width of the container */
+    max-width: 1440px;
+    background: var(--surface);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid var(--border);
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+    border-radius: 0 0 24px 24px;
+    padding: 3rem;
+    z-index: 10000;
+    animation: megaMenuFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    margin-top: 0;
+}
+
+/* Need to make sure the parent doesn't constrain the width */
+.nav-links-container {
+    position: static;
+    /* Important to allow megamenu to span the width */
+}
+
+.header-nav-bar {
+    position: relative;
+    /* Container for megamenu */
+}
+
+@keyframes megaMenuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.megamenu-content {
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    gap: 4rem;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+.megamenu-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.megamenu-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.5px;
+}
+
+.megamenu-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.view-all-link {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #f37021;
+    text-decoration: none;
+    transition: all 0.2s;
+    display: inline-block;
+}
+
+.view-all-link:hover {
+    transform: translateX(5px);
+    color: #e05d0e;
+}
+
+.column-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-light);
+    padding-bottom: 0.5rem;
+}
+
+.subcategory-mega-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+}
+
+.megamenu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    background: transparent;
+}
+
+.megamenu-item:hover {
+    background: rgba(243, 112, 33, 0.05);
+    color: #f37021;
+    transform: translateX(4px);
+}
+
+.megamenu-item-icon {
+    font-size: 1.1rem;
+    filter: grayscale(1);
+    transition: filter 0.2s;
+}
+
+.megamenu-item:hover .megamenu-item-icon {
+    filter: grayscale(0);
+}
+
+.promo-column {
+    background: linear-gradient(135deg, rgba(243, 112, 33, 0.03) 0%, rgba(255, 140, 74, 0.03) 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 1px dashed rgba(243, 112, 33, 0.2);
+}
+
+.promo-card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+}
+
+.promo-badge {
+    align-self: flex-start;
+    padding: 0.25rem 0.75rem;
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 800;
+    border-radius: 50px;
+}
+
+.promo-card h4 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.promo-card p {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.promo-btn {
+    margin-top: auto;
+    padding: 0.75rem;
+    background: var(--text-primary);
+    color: white;
+    text-align: center;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 700;
+    transition: all 0.2s;
+}
+
+.promo-btn:hover {
+    background: #f37021;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(243, 112, 33, 0.2);
+}
+
+.nav-link.active {
+    color: #f37021;
+}
+
+.nav-link.active::after {
+    width: 100%;
+    background: #f37021;
 }

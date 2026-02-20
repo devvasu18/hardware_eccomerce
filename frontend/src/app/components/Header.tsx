@@ -106,6 +106,31 @@ const Header = () => {
         }
     };
 
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // '/' to focus search
+            if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+            // 'Esc' to close everything
+            if (e.key === 'Escape') {
+                setIsSearchFocused(false);
+                setIsUserDropdownOpen(false);
+                setIsNotificationOpen(false);
+                setIsLangDropdownOpen(false);
+                setIsMobileMenuOpen(false);
+                setHoveredCategory(null);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     // Debounced search for suggestions
     useEffect(() => {
         const timer = setTimeout(async () => {
@@ -213,6 +238,7 @@ const Header = () => {
                 <div className="header-search-area">
                     <div className="search-input-wrapper">
                         <input
+                            ref={searchInputRef}
                             type="text"
                             className="search-input"
                             placeholder={t('search_placeholder')}
@@ -226,6 +252,7 @@ const Header = () => {
                             onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)} // Delay to allow click
                             suppressHydrationWarning
                         />
+                        <div className="search-shortcut-hint" onClick={() => searchInputRef.current?.focus()}>/</div>
                         <button className="search-icon-btn" onClick={handleSearch}>
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <circle cx="11" cy="11" r="8"></circle>
@@ -449,6 +476,8 @@ const Header = () => {
                     {categories.length > 0 ? (
                         categories.map((category) => {
                             const hasSubCategories = subCategories[category._id]?.length > 0;
+                            const categoryUrl = `/products?category=${category.slug}`;
+
                             return (
                                 <div
                                     key={String(category._id)}
@@ -457,17 +486,18 @@ const Header = () => {
                                         if (hasSubCategories) {
                                             setHoveredCategory(String(category._id));
                                         }
+                                        // Predictive prefetching for categories
+                                        setTimeout(() => {
+                                            router.prefetch(categoryUrl);
+                                        }, 100);
                                     }}
                                     onMouseLeave={() => {
                                         setHoveredCategory(null);
                                     }}
                                 >
                                     <Link
-                                        href={`/products?category=${category.slug}`}
-                                        className="nav-link"
-                                        onMouseEnter={() => {
-                                            if (hasSubCategories) setHoveredCategory(String(category._id));
-                                        }}
+                                        href={categoryUrl}
+                                        className={`nav-link ${hoveredCategory === String(category._id) ? 'active' : ''}`}
                                         suppressHydrationWarning
                                     >
                                         {getLocalizedName(category.name)}
@@ -476,22 +506,58 @@ const Header = () => {
                                         )}
                                     </Link>
 
-                                    {/* Sub-category Dropdown */}
+                                    {/* Mega Menu Dropdown */}
                                     {hasSubCategories && hoveredCategory === String(category._id) && (
-                                        <div className="subcategory-dropdown">
-                                            <div className="subcategory-grid">
-                                                {subCategories[category._id].map((subCat: any) => (
+                                        <div className="megamenu-dropdown">
+                                            <div className="megamenu-content">
+                                                <div className="megamenu-column">
+                                                    <h3 className="megamenu-title">{getLocalizedName(category.name)}</h3>
+                                                    <p className="megamenu-subtitle">{t('explore_our_range_of')} {getLocalizedName(category.name)}</p>
                                                     <Link
-                                                        key={String(subCat._id)}
-                                                        href={`/products?category=${category.slug}&subcategory=${subCat.slug}`}
-                                                        className="subcategory-item"
+                                                        href={categoryUrl}
+                                                        className="view-all-link"
                                                         onClick={() => setHoveredCategory(null)}
-                                                        suppressHydrationWarning
                                                     >
-                                                        <span className="subcategory-icon">→</span>
-                                                        {getLocalizedName(subCat.name)}
+                                                        {t('view_all')} {getLocalizedName(category.name)} →
                                                     </Link>
-                                                ))}
+                                                </div>
+                                                <div className="megamenu-column subcategories-column">
+                                                    <h4 className="column-title">{t('sub_categories_label')}</h4>
+                                                    <div className="subcategory-mega-grid">
+                                                        {subCategories[category._id].map((subCat: any) => (
+                                                            <Link
+                                                                key={String(subCat._id)}
+                                                                href={`/products?category=${category.slug}&subcategory=${subCat.slug}`}
+                                                                className="megamenu-item"
+                                                                onClick={() => {
+                                                                    setHoveredCategory(null);
+                                                                }}
+                                                                onMouseEnter={() => {
+                                                                    // Aggressive prefetch for subcategories too
+                                                                    router.prefetch(`/products?category=${category.slug}&subcategory=${subCat.slug}`);
+                                                                }}
+                                                                suppressHydrationWarning
+                                                            >
+                                                                <span className="megamenu-item-icon">📦</span>
+                                                                <span className="megamenu-item-text">{getLocalizedName(subCat.name)}</span>
+                                                            </Link>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="megamenu-column promo-column">
+                                                    <div className="promo-card">
+                                                        <div className="promo-badge">HOT</div>
+                                                        <h4>{t('new_arrivals')}</h4>
+                                                        <p>{t('check_out_newest_parts')}</p>
+                                                        <Link
+                                                            href="/products?sort=newest"
+                                                            className="promo-btn"
+                                                            onClick={() => setHoveredCategory(null)}
+                                                        >
+                                                            {t('shop_now_btn')}
+                                                        </Link>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     )}

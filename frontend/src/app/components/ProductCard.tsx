@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWishlist } from '../../context/WishlistContext';
 import ProductImage from './ProductImage';
@@ -141,6 +142,23 @@ export default function ProductCard({ product }: { product: Product }) {
         finalPrice = Math.round(finalPrice * (1 - user.wholesaleDiscount / 100));
     }
 
+    const router = useRouter();
+    const prefetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const handleMouseEnter = () => {
+        // Predictive prefetching: if user hovers for > 100ms, prefetch the page
+        prefetchTimeoutRef.current = setTimeout(() => {
+            router.prefetch(`/products/${product._id}`);
+        }, 100);
+    };
+
+    const handleMouseLeave = () => {
+        if (prefetchTimeoutRef.current) {
+            clearTimeout(prefetchTimeoutRef.current);
+            prefetchTimeoutRef.current = null;
+        }
+    };
+
     const inWishlist = isInWishlist(product._id);
 
     const handleWishlistClick = async (e: React.MouseEvent) => {
@@ -164,7 +182,12 @@ export default function ProductCard({ product }: { product: Product }) {
     };
 
     return (
-        <Link href={`/products/${product._id}`} className="product-card">
+        <Link
+            href={`/products/${product._id}`}
+            className="product-card"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
             <div className="product-card-image-container">
                 {allImages.length > 0 ? (
                     <ProductImage

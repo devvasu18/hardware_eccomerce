@@ -36,11 +36,35 @@
     padding: 0 1rem;
 }
 
-/* Ensure flex-row on desktop */
-@media (min-width: 768px) {
+@media (min-width: 900px) {
     .products-page-layout {
         display: flex;
-        gap: 2rem;
+        gap: 3rem;
+        align-items: flex-start;
+    }
+
+    /* Target the ProductFilters component which is the first child */
+    .products-page-layout>*:first-child {
+        position: sticky;
+        top: 100px;
+        width: 300px;
+        flex-shrink: 0;
+        z-index: 10;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        padding-right: 1.5rem;
+        /* Custom scrollbar for sticky filters */
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+    }
+
+    .products-page-layout>*:first-child::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .products-page-layout>*:first-child::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 10px;
     }
 }
 

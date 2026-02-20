@@ -239,5 +239,9 @@
     "new_order_received": "New Order Received",
     "account_actions": "Account Actions",
     "sign_out": "Sign Out",
-    "sign_out_desc": "Securely log out of your account on this device."
+    "sign_out_desc": "Securely log out of your account on this device.",
+    "explore_our_range_of": "Explore our complete range of",
+    "sub_categories_label": "Subcategories",
+    "check_out_newest_parts": "Check out our newest industrial hardware parts",
+    "shop_now_btn": "Shop Now"
 }

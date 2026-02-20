@@ -375,9 +375,10 @@ exports.createOrder = async (req, res) => {
         }
 
         // Create the order
+        let order;
         try {
             // Create the order
-            const order = await Order.create(orderData);
+            order = await Order.create(orderData);
 
             // Create initial status log
             const statusLogData = {
@@ -497,8 +498,21 @@ exports.createOrder = async (req, res) => {
             });
 
         } catch (createErr) {
-            console.error('Order creation failed, rolling back stock:', createErr.message);
+            console.error('Order creation failed, rolling back:', createErr.message);
+
+            // 1. Rollback stock
             await rollbackStock(processedItems);
+
+            // 2. Delete the created order document if it exists to prevent "ghost orders"
+            if (order && order._id) {
+                try {
+                    await Order.findByIdAndDelete(order._id);
+                    console.log(`Ghost order ${order._id} deleted successfully during rollback.`);
+                } catch (delErr) {
+                    console.error('Critical: Failed to delete ghost order during failure rollback:', delErr.message);
+                }
+            }
+
             return res.status(500).json({ success: false, message: 'Failed to create order', error: createErr.message });
         }
 
