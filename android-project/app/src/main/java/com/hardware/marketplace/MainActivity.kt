@@ -24,6 +24,10 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateOptions
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.media.AudioAttributes
+import android.os.Build
 
 class MainActivity : AppCompatActivity() {
 
@@ -61,6 +65,9 @@ class MainActivity : AppCompatActivity() {
         // Start check for updates (Both Play Store and GitHub Fallback)
         checkForUpdates()
 
+        // Initialize Notification Channels
+        createNotificationChannels()
+        
         // Handle Deep Links
         handleIntent(intent)
         
@@ -211,9 +218,64 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleIntent(intent: Intent?) {
+        // Log all extras for debugging notification clicks
+        intent?.extras?.let { extras ->
+            for (key in extras.keySet()) {
+                android.util.Log.d("NotificationDebug", "Extra: $key = ${extras.get(key)}")
+            }
+        }
+
         val data: Uri? = intent?.data
         if (data != null && data.host == APP_DOMAIN) {
             webView.loadUrl(data.toString())
+        }
+    }
+
+    private fun createNotificationChannels() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = getSystemService(NotificationManager::class.java)
+            
+            // 1. Default Channel
+            val defaultChannel = NotificationChannel(
+                "hardware_notification_channel",
+                "General Notifications",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Used for general app notifications"
+            }
+            notificationManager.createNotificationChannel(defaultChannel)
+
+            // 2. Custom Sound Channels
+            val customSounds = listOf(
+                "notification",
+                "order_alert",
+                "payment_success",
+                "payment_success_chime"
+            )
+
+            for (soundName in customSounds) {
+                val resId = resources.getIdentifier(soundName, "raw", packageName)
+                if (resId != 0) {
+                    val soundUri = Uri.parse("android.resource://$packageName/$resId")
+                    val audioAttributes = AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                        .build()
+
+                    val channelId = "channel_$soundName"
+                    val channelName = soundName.replace("_", " ").capitalize()
+                    
+                    val channel = NotificationChannel(
+                        channelId,
+                        "$channelName Notifications",
+                        NotificationManager.IMPORTANCE_HIGH
+                    ).apply {
+                        setSound(soundUri, audioAttributes)
+                        description = "Notifications with $channelName sound"
+                    }
+                    notificationManager.createNotificationChannel(channel)
+                }
+            }
         }
     }
 

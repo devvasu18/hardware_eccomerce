@@ -72,11 +72,17 @@ const registerDeviceToken = async (userId, token, platform = 'android') => {
 };
 
 const sendPushNotification = async (userId, title, body, data = {}, sound = 'default') => {
-    if (!isInitialized()) return;
+    if (!isInitialized()) {
+        logger.warn('⚠️ Push skipped: Firebase Admin not initialized');
+        return;
+    }
 
     try {
         const devices = await Device.find({ user: userId });
-        if (!devices.length) return;
+        if (!devices.length) {
+            logger.info(`ℹ️ Push skipped: No registered devices for user ${userId}`);
+            return;
+        }
 
         const tokens = devices.map(d => d.token);
 
@@ -93,21 +99,37 @@ const sendPushNotification = async (userId, title, body, data = {}, sound = 'def
                 body
             },
             android: {
+                priority: 'high', // CRITICAL: Wake up device even if app is closed/dozing
                 notification: {
                     sound: soundName === 'default' ? 'default' : soundName,
-                    channelId: soundName === 'default' ? "hardware_notification_channel" : `channel_${soundName}`
+                    channelId: soundName === 'default' ? "hardware_notification_channel" : `channel_${soundName}`,
+                    clickAction: 'FLUTTER_NOTIFICATION_CLICK' // For consistency, though we use native
+                }
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        alert: { title, body },
+                        sound: soundName === 'default' ? 'default' : `${soundName}.aiff`, // iOS often likes extensions
+                        badge: 1
+                    }
+                },
+                headers: {
+                    'apns-priority': '10' // High priority for iOS
                 }
             },
             data: {
-                ...data, // Custom data like orderId, type
-                sound: soundName, // Also send in data for manual handling
-                click_action: "FLUTTER_NOTIFICATION_CLICK" // Standard action
+                ...data,
+                sound: soundName,
+                title,
+                body,
+                click_action: "FLUTTER_NOTIFICATION_CLICK"
             },
             tokens: tokens
         };
 
         const response = await admin.messaging().sendMulticast(message);
-        logger.info(`🔥 Push sent to ${response.successCount} devices (Failed: ${response.failureCount})`);
+        logger.info(`🔥 Push sent to ${response.successCount} devices (User: ${userId}, Failed: ${response.failureCount})`);
 
         if (response.failureCount > 0) {
             const failedTokens = [];

@@ -16,11 +16,14 @@ import com.google.firebase.messaging.RemoteMessage
 class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
+        android.util.Log.d("FCM", "Message received from: ${remoteMessage.from}")
+        
         // Handle FCM messages here.
-        val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "Hardware Marketplace"
-        val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "New Notification"
+        val title = remoteMessage.notification?.title ?: remoteMessage.data["title"] ?: "Hardware System"
+        val body = remoteMessage.notification?.body ?: remoteMessage.data["body"] ?: "New notification received"
         val sound = remoteMessage.data["sound"] ?: remoteMessage.notification?.sound ?: "default"
         
+        android.util.Log.d("FCM", "Title: $title, Body: $body, Sound: $sound")
         sendNotification(title, body, sound)
     }
 
