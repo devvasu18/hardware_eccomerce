@@ -94,20 +94,37 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
             cache.set(cacheKey, processed, 10);
         } catch (error: any) {
             console.error("Failed to fetch products", error);
-            if (!isBackground || products.length === 0) {
-                setError(error.message || "Failed to load products");
-            }
+            // Only set error if we don't have any products currently
+            setProducts(prev => {
+                if (!isBackground || prev.length === 0) {
+                    setError(error.message || "Failed to load products");
+                }
+                return prev;
+            });
         } finally {
             if (!isBackground) setLoading(false);
         }
     };
 
     useEffect(() => {
-        const isExpired = cache.isExpired(cacheKey);
-        if (isExpired || products.length === 0) {
-            fetchData(products.length > 0);
+        // When filters change, try to get from cache first
+        const cachedProducts = cache.get<Product[]>(cacheKey) || [];
+
+        if (cachedProducts.length > 0) {
+            setProducts(cachedProducts);
+            setLoading(false);
+        } else {
+            // Unrelated category change means we shouldn't show old products
+            setProducts([]);
+            setLoading(true);
         }
-    }, [category, brand, keyword, subcategory, offerSlug, offerInfo]);
+
+        const isExpired = cache.isExpired(cacheKey);
+
+        if (isExpired || cachedProducts.length === 0) {
+            fetchData(cachedProducts.length > 0);
+        }
+    }, [cacheKey, category, brand, keyword, subcategory, offerSlug, offerInfo]);
 
     if (loading) return <ProductListSkeleton />;
 

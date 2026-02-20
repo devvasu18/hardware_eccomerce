@@ -182,14 +182,21 @@ const sendNotification = async ({ userId, role, title, message, type, redirectUr
             const isOrderPlaced = type === 'ORDER_PLACED';
             const isCustomer = role === 'USER';
 
-            if (isOrderPlaced && isCustomer) {
-                sound = settings.orderNotificationSound || 'default';
-            } else if (type === 'PAYMENT_SUCCESS' && isCustomer) {
-                sound = settings.paymentSuccessSound || 'default';
-            } else if (type === 'ORDER_ARRIVING' && isCustomer) {
-                sound = settings.arrivalNotificationSound || 'default';
+            if (isCustomer) {
+                if (isOrderPlaced) {
+                    sound = settings.orderNotificationSound || 'default';
+                } else if (type === 'PAYMENT_SUCCESS') {
+                    sound = settings.paymentSuccessSound || 'default';
+                } else if (type === 'ORDER_ARRIVING') {
+                    sound = settings.arrivalNotificationSound || 'default';
+                } else if (type === 'ORDER_UPDATE') {
+                    sound = settings.orderUpdateSound || 'default';
+                } else {
+                    sound = settings.notificationSound || 'default';
+                }
             } else {
-                sound = settings.notificationSound || 'default';
+                // Not a customer (Admin/Staff)
+                sound = settings.adminNotificationSound || settings.notificationSound || 'default';
             }
         }
 

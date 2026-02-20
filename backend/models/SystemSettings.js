@@ -56,6 +56,14 @@ const systemSettingsSchema = new mongoose.Schema({
         type: String,
         default: 'default'
     },
+    orderUpdateSound: {
+        type: String,
+        default: 'default'
+    },
+    adminNotificationSound: {
+        type: String,
+        default: 'default'
+    },
     passwordResetNotificationsEnabled: {
         type: Boolean,
         default: true

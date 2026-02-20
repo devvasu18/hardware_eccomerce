@@ -49,9 +49,36 @@ export default function HeroSlider() {
                 if (data && data.length > 0) {
                     console.log('Banners loaded:', data);
                     console.log('First banner offer_id:', data[0]?.offer_id);
-                    setSlides(data);
+
+                    // Preload the first slide's image so the skeleton stays until it's ready
+                    const firstImage = data[0].image;
+                    if (firstImage) {
+                        const imgUrl = firstImage.startsWith('http') ? firstImage : `/${firstImage.startsWith('/') ? firstImage.slice(1) : firstImage}`;
+                        const img = new window.Image();
+                        let isFinished = false;
+
+                        const handleFinish = () => {
+                            if (!isFinished && mounted) {
+                                isFinished = true;
+                                setSlides(data);
+                                setLoading(false);
+                            }
+                        };
+
+                        img.onload = handleFinish;
+                        img.onerror = handleFinish;
+                        img.src = imgUrl;
+
+                        if (img.complete) {
+                            handleFinish();
+                        }
+                    } else {
+                        setSlides(data);
+                        setLoading(false);
+                    }
+                } else {
+                    setLoading(false);
                 }
-                setLoading(false);
             })
             .catch(err => {
                 if (!mounted) return;

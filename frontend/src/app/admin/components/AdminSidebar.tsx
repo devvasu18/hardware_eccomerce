@@ -113,14 +113,15 @@ export default function AdminSidebar({ collapsed, setCollapsed }: AdminSidebarPr
         { label: 'Banner Manager', path: '/admin/banners', icon: <FiImage />, roles: ['super_admin', 'ops_admin'] },
         // Grouped System Settings
         {
-            label: 'System Settings',
+            label: 'Settings',
             path: '#',
             icon: <FiSettings />,
             roles: ['super_admin'],
             children: [
                 { label: 'System Settings', path: '/admin/settings/system', roles: ['super_admin'] },
-                { label: 'System Logs', path: '/admin/logs', roles: ['super_admin'] },
-                { label: 'WhatsApp Integration', path: '/admin/settings/whatsapp', roles: ['super_admin'] }
+                { label: 'Notification Settings', path: '/admin/settings/notifications', roles: ['super_admin'] },
+                { label: 'WhatsApp Integration', path: '/admin/settings/whatsapp', roles: ['super_admin'] },
+                { label: 'System Logs', path: '/admin/logs', roles: ['super_admin'] }
 
             ]
         },
