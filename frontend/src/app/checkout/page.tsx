@@ -388,8 +388,8 @@ export default function CheckoutPage() {
                 }
 
                 if (payuResponse.bypass) {
-                    // Manual Bypass for Testing Pending State
-                    router.push(`/payment/success?status=pending&udf1=${results.orderId}&bypass=true`);
+                    // Manual Bypass for Testing
+                    router.push(`/payment/success?status=success&udf1=${results.orderId}&bypass=true`);
                     return;
                 }
 

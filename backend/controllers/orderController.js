@@ -347,7 +347,7 @@ exports.createOrder = async (req, res) => {
             billingAddress,
             paymentMethod: paymentMethod || 'Online',
             paymentStatus: paymentMethod === 'COD' ? 'COD' : 'Pending',
-            status: paymentMethod === 'COD' ? 'Order Placed' : 'Payment Pending',
+            status: 'Order Placed',  // Changed from 'Pending' to 'Order Placed' to match enum
             totalAmount: finalGrandTotal,  // Changed from 'total' to 'totalAmount'
             taxTotal: Math.round(totalTax),      // Changed from 'tax' to 'taxTotal'
             discountAmount: appliedDiscountAmount,
@@ -375,15 +375,14 @@ exports.createOrder = async (req, res) => {
         }
 
         // Create the order
-        let order;
         try {
             // Create the order
-            order = await Order.create(orderData);
+            const order = await Order.create(orderData);
 
             // Create initial status log
             const statusLogData = {
                 order: order._id,
-                status: paymentMethod === 'COD' ? 'Order Placed' : 'Payment Pending',
+                status: 'Order Placed',
                 updatedByName: 'System',
                 updatedByRole: 'system',
                 notes: 'Order created successfully',
@@ -498,21 +497,8 @@ exports.createOrder = async (req, res) => {
             });
 
         } catch (createErr) {
-            console.error('Order creation failed, rolling back:', createErr.message);
-
-            // 1. Rollback stock
+            console.error('Order creation failed, rolling back stock:', createErr.message);
             await rollbackStock(processedItems);
-
-            // 2. Delete the created order document if it exists to prevent "ghost orders"
-            if (order && order._id) {
-                try {
-                    await Order.findByIdAndDelete(order._id);
-                    console.log(`Ghost order ${order._id} deleted successfully during rollback.`);
-                } catch (delErr) {
-                    console.error('Critical: Failed to delete ghost order during failure rollback:', delErr.message);
-                }
-            }
-
             return res.status(500).json({ success: false, message: 'Failed to create order', error: createErr.message });
         }
 
@@ -627,13 +613,6 @@ exports.updateOrderStatus = async (req, res) => {
         if (!order) return res.status(404).json({ message: 'Order not found' });
 
         const oldStatus = order.status;
-
-        // Prevent processing if online payment is pending or failed
-        if (order.paymentMethod === 'Online' && ['Pending', 'Failed'].includes(order.paymentStatus)) {
-            if (['Packed', 'Assigned to Bus', 'Delivered'].includes(status)) {
-                return res.status(400).json({ message: 'Cannot process an order with pending or failed online payment.' });
-            }
-        }
 
         // Strict Workflow Validation: Prevent skipping steps
         if (status === 'Delivered' && oldStatus !== 'Assigned to Bus') {

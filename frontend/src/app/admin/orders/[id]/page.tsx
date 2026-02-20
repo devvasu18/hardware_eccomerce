@@ -686,12 +686,10 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                         <h3 style={{ marginBottom: '1rem' }}>Quick Actions</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                             {['Packed', 'Assigned to Bus', 'Delivered'].map(status => {
-                                const isOnlinePaymentPendingOrFailed = order.paymentMethod === 'Online' && (order.paymentStatus === 'Pending' || order.paymentStatus === 'Failed');
                                 const isDisabled = processing || order.status === 'Cancelled' || order.status === status ||
                                     (status === 'Packed' && order.status !== 'Order Placed') ||
                                     (status === 'Assigned to Bus' && order.status !== 'Packed') ||
-                                    (status === 'Delivered' && order.status !== 'Assigned to Bus') ||
-                                    isOnlinePaymentPendingOrFailed;
+                                    (status === 'Delivered' && order.status !== 'Assigned to Bus');
 
                                 return (
                                     <button
