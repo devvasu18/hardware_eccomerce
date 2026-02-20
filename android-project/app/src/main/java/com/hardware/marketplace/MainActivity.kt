@@ -252,8 +252,8 @@ class MainActivity : AppCompatActivity() {
             
             // 1. Default Channel
             val defaultChannel = NotificationChannel(
-                "hardware_notification_channel",
-                "General Notifications",
+                "hardware_notification_channel_v2",
+                "General Notifications v2",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Used for general app notifications"
@@ -277,12 +277,12 @@ class MainActivity : AppCompatActivity() {
                         .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                         .build()
 
-                    val channelId = "channel_$soundName"
+                    val channelId = "channel_${soundName}_v2"
                     val channelName = soundName.replace("_", " ").capitalize()
                     
                     val channel = NotificationChannel(
                         channelId,
-                        "$channelName Notifications",
+                        "$channelName Notifications v2",
                         NotificationManager.IMPORTANCE_HIGH
                     ).apply {
                         setSound(soundUri, audioAttributes)

@@ -102,7 +102,7 @@ const sendPushNotification = async (userId, title, body, data = {}, sound = 'def
                 priority: 'high', // CRITICAL: Wake up device even if app is closed/dozing
                 notification: {
                     sound: soundName === 'default' ? 'default' : soundName,
-                    channelId: soundName === 'default' ? "hardware_notification_channel" : `channel_${soundName}`,
+                    channelId: soundName === 'default' ? "hardware_notification_channel_v2" : `channel_${soundName}_v2`,
                     clickAction: 'FLUTTER_NOTIFICATION_CLICK' // For consistency, though we use native
                 }
             },
