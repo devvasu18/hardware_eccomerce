@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         createNotificationChannels()
         
         // Handle Deep Links
-        handleIntent(intent)
+        val isDeepLinkHandled = handleIntent(intent)
         
         // ... existing back button logic ...
         val callback = object : OnBackPressedCallback(true) {
@@ -99,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         }
         onBackPressedDispatcher.addCallback(this, callback)
 
-        if (savedInstanceState == null) {
+        if (savedInstanceState == null && !isDeepLinkHandled) {
             webView.loadUrl(START_URL)
         }
     }
@@ -245,7 +245,7 @@ class MainActivity : AppCompatActivity() {
         handleIntent(intent)
     }
 
-    private fun handleIntent(intent: Intent?) {
+    private fun handleIntent(intent: Intent?): Boolean {
         // Log all extras for debugging notification clicks
         intent?.extras?.let { extras ->
             for (key in extras.keySet()) {
@@ -266,7 +266,9 @@ class MainActivity : AppCompatActivity() {
 
         if (data != null && data.host == APP_DOMAIN) {
             webView.loadUrl(data.toString())
+            return true
         }
+        return false
     }
 
     private fun createNotificationChannels() {
