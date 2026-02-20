@@ -49,6 +49,18 @@ export default function PaymentSuccessPage() {
                             router.push('/');
                         }
                     }, 3000);
+                } else if (payuData.status === 'pending') {
+                    // Bypass Testing specifically for 'pending' simulation
+                    setVerified(false);
+                    setVerifying(false);
+                    // Redirect to order page anyway so user can see their pending order
+                    setTimeout(() => {
+                        if (payuData.udf1) {
+                            router.push(`/orders/${payuData.udf1}`);
+                        } else {
+                            router.push('/');
+                        }
+                    }, 3000);
                 } else {
                     setVerified(false);
                     setVerifying(false);
