@@ -3,12 +3,11 @@ import { Metadata } from 'next';
 
 import ProductOverview from './ProductOverview';
 import Header from '@/app/components/Header';
-import ProductImage from '../../components/ProductImage';
-import ProductCard from '../../components/ProductCard';
 import ProductBreadcrumb from './ProductBreadcrumb';
 import ProductDetailsTabs from './ProductDetailsTabs';
 import RelatedProducts from './RelatedProducts';
 import './product-detail.css';
+import AppReadySignaler from '@/components/AppReadySignaler';
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000').replace(/\/api$/, '') + '/api';
 
@@ -49,7 +48,6 @@ async function getProduct(id: string): Promise<Product | null> {
         const res = await fetch(`${API_URL}/products/${id}`, { cache: 'no-store' });
         if (!res.ok) return null;
         const data = await res.json();
-        // Map backend fields to frontend interface
         return {
             ...data,
             basePrice: data.mrp || data.basePrice,
@@ -57,7 +55,7 @@ async function getProduct(id: string): Promise<Product | null> {
             title: data.title || data.name,
             name: data.title || data.name
         };
-    } catch (e) {
+    } catch {
         return null;
     }
 }
@@ -67,7 +65,6 @@ async function getRelatedProducts(productId: string): Promise<Product[]> {
         const res = await fetch(`${API_URL}/products/${productId}/recommendations?limit=4`, { cache: 'no-store' });
         if (!res.ok) return [];
         const productsRaw = await res.json();
-
         return productsRaw.map((p: any) => ({
             ...p,
             basePrice: p.mrp || p.basePrice,
@@ -75,7 +72,7 @@ async function getRelatedProducts(productId: string): Promise<Product[]> {
             title: p.title || p.name,
             name: p.title || p.name
         }));
-    } catch (e) {
+    } catch {
         return [];
     }
 }
@@ -92,19 +89,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     };
 
     const title = getEn(product.meta_title) || getEn(product.title) || getEn(product.name) || 'Product';
-    const description = getEn(product.meta_description) || (getEn(product.description) ? getEn(product.description).replace(/<[^>]*>/g, '').slice(0, 160) : '');
-
-    let keywords = '';
-    if (product.keywords) {
-        if (Array.isArray(product.keywords)) keywords = product.keywords.join(', ');
-        else if (typeof product.keywords === 'object') keywords = (product.keywords as any).en?.join(', ') || '';
-    }
-
-    return {
-        title,
-        description,
-        keywords
-    };
+    return { title };
 }
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -114,45 +99,32 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     if (!product) {
         return (
             <div className="container" style={{ paddingTop: '4rem', paddingBottom: '4rem', textAlign: 'center' }}>
+                <Header />
                 <h1>Product Not Found</h1>
                 <Link href="/products" className="btn btn-primary">Back to Catalog</Link>
+                <AppReadySignaler />
             </div>
         )
     }
 
-    const categoryName = typeof product.category === 'object' && product.category !== null ? product.category.name : product.category;
-    const brandName = typeof product.brand === 'object' && product.brand !== null ? product.brand.name : product.brand;
-
+    const categoryName = typeof product.category === 'object' && product.category !== null ? (product.category as any).name : product.category;
+    const brandName = typeof product.brand === 'object' && product.brand !== null ? (product.brand as any).name : product.brand;
     const relatedProducts = await getRelatedProducts(product._id);
-    const discountPercentage = product.discountedPrice && product.discountedPrice < product.basePrice
-        ? Math.round(((product.basePrice - product.discountedPrice) / product.basePrice) * 100)
-        : 0;
-
-    // Combine featured_image and gallery_images into a single array for easier handling
-    const productImages = [
-        ...(product.featured_image ? [product.featured_image] : []),
-        ...(product.gallery_images || [])
-    ];
-    const productName = product.title || product.name || 'Product';
 
     return (
         <main>
             <Header />
+            {/* Signal Android that app is ready once meaningful content is rendered */}
+            <AppReadySignaler />
 
             <div className="product-detail-container">
-                {/* Breadcrumb */}
                 <ProductBreadcrumb categoryName={categoryName} />
-
                 <ProductOverview
                     product={product}
                     categoryName={categoryName}
                     brandName={brandName}
                 />
-
-                {/* Product Details Tabs */}
                 <ProductDetailsTabs product={product} brandName={brandName} />
-
-                {/* Related Products */}
                 <RelatedProducts products={relatedProducts} />
             </div>
         </main >

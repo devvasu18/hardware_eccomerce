@@ -48,14 +48,14 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
             if (resId != 0) {
                 soundUri = Uri.parse("android.resource://$packageName/${resId}")
                 // Use a specific channel for this sound to ensure it plays correctly
-                channelId = "channel_${soundName}_v2"
+                channelId = "channel_${soundName}_v3"
             } else {
-                soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                channelId = "hardware_notification_channel"
+                soundUri = Uri.parse("android.resource://$packageName/${R.raw.notification}")
+                channelId = "hardware_notification_channel_v3"
             }
         } else {
-            soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            channelId = "hardware_notification_channel_v2"
+            soundUri = Uri.parse("android.resource://$packageName/${R.raw.notification}")
+            channelId = "hardware_notification_channel_v3"
         }
 
         val notificationBuilder = NotificationCompat.Builder(this, channelId)
@@ -72,7 +72,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         // Create Channel for Oreo+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channelNameString = if (channelId.startsWith("channel_")) "Special Notifications" else "General Notifications"
-            val channelName = "$channelNameString v2"
+            val channelName = "$channelNameString v3"
             val channel = NotificationChannel(
                 channelId,
                 channelName,

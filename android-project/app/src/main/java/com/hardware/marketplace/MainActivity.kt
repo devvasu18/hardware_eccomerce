@@ -250,13 +250,20 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = getSystemService(NotificationManager::class.java)
             
-            // 1. Default Channel
+            // 1. Default Channel with Explicit Sound
+            val defaultSoundUri = Uri.parse("android.resource://$packageName/${R.raw.notification}")
+            val audioAttributes = AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .build()
+
             val defaultChannel = NotificationChannel(
-                "hardware_notification_channel_v2",
-                "General Notifications v2",
+                "hardware_notification_channel_v3",
+                "General Notifications v3",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Used for general app notifications"
+                setSound(defaultSoundUri, audioAttributes)
             }
             notificationManager.createNotificationChannel(defaultChannel)
 
@@ -277,12 +284,12 @@ class MainActivity : AppCompatActivity() {
                         .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                         .build()
 
-                    val channelId = "channel_${soundName}_v2"
+                    val channelId = "channel_${soundName}_v3"
                     val channelName = soundName.replace("_", " ").capitalize()
                     
                     val channel = NotificationChannel(
                         channelId,
-                        "$channelName Notifications v2",
+                        "$channelName Notifications v3",
                         NotificationManager.IMPORTANCE_HIGH
                     ).apply {
                         setSound(soundUri, audioAttributes)
