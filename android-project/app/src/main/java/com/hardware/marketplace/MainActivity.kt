@@ -57,9 +57,22 @@ class MainActivity : AppCompatActivity() {
         
         // Request Notification Permission for Android 13+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                androidx.core.app.ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATION_PERMISSION)
-            }
+             if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                 if (shouldShowRequestPermissionRationale(android.Manifest.permission.POST_NOTIFICATIONS)) {
+                     // Show rationale
+                     androidx.appcompat.app.AlertDialog.Builder(this)
+                         .setTitle("Notification Permission Required")
+                         .setMessage("This app uses notifications to update you on your order status. Please grant the permission to receive updates.")
+                         .setPositiveButton("Grant") { _, _ ->
+                             androidx.core.app.ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATION_PERMISSION)
+                         }
+                         .setNegativeButton("No Thanks", null)
+                         .show()
+                 } else {
+                     // Directly request
+                     androidx.core.app.ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), REQUEST_NOTIFICATION_PERMISSION)
+                 }
+             }
         }
 
         // Initialize Play Store update manager
