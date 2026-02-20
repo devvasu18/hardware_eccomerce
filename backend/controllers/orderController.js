@@ -347,7 +347,7 @@ exports.createOrder = async (req, res) => {
             billingAddress,
             paymentMethod: paymentMethod || 'Online',
             paymentStatus: paymentMethod === 'COD' ? 'COD' : 'Pending',
-            status: 'Order Placed',  // Changed from 'Pending' to 'Order Placed' to match enum
+            status: paymentMethod === 'COD' ? 'Order Placed' : 'Payment Pending',
             totalAmount: finalGrandTotal,  // Changed from 'total' to 'totalAmount'
             taxTotal: Math.round(totalTax),      // Changed from 'tax' to 'taxTotal'
             discountAmount: appliedDiscountAmount,
@@ -382,7 +382,7 @@ exports.createOrder = async (req, res) => {
             // Create initial status log
             const statusLogData = {
                 order: order._id,
-                status: 'Order Placed',
+                status: paymentMethod === 'COD' ? 'Order Placed' : 'Payment Pending',
                 updatedByName: 'System',
                 updatedByRole: 'system',
                 notes: 'Order created successfully',
@@ -613,6 +613,13 @@ exports.updateOrderStatus = async (req, res) => {
         if (!order) return res.status(404).json({ message: 'Order not found' });
 
         const oldStatus = order.status;
+
+        // Prevent processing if online payment is pending or failed
+        if (order.paymentMethod === 'Online' && ['Pending', 'Failed'].includes(order.paymentStatus)) {
+            if (['Packed', 'Assigned to Bus', 'Delivered'].includes(status)) {
+                return res.status(400).json({ message: 'Cannot process an order with pending or failed online payment.' });
+            }
+        }
 
         // Strict Workflow Validation: Prevent skipping steps
         if (status === 'Delivered' && oldStatus !== 'Assigned to Bus') {

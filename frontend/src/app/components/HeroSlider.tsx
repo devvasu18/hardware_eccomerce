@@ -30,61 +30,45 @@ interface Banner {
 }
 
 import { HeroSkeleton } from './skeletons/HomeSkeleton';
+import { cache } from '@/utils/cache';
 
 export default function HeroSlider() {
     const { getLocalized, t } = useLanguage();
-    const [slides, setSlides] = useState<Banner[]>([]);
+    const heroCacheKey = 'hero_banners';
+
+    const [slides, setSlides] = useState<Banner[]>(() => {
+        return cache.get<Banner[]>(heroCacheKey) || [];
+    });
     const [current, setCurrent] = useState(0);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(() => {
+        return !cache.get(heroCacheKey);
+    });
 
     useEffect(() => {
         let mounted = true;
-        fetch('/api/banners')
-            .then(res => {
-                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-                return res.json();
-            })
-            .then(data => {
-                if (!mounted) return;
-                if (data && data.length > 0) {
-                    console.log('Banners loaded:', data);
-                    console.log('First banner offer_id:', data[0]?.offer_id);
+        const isExpired = cache.isExpired(heroCacheKey);
 
-                    // Preload the first slide's image so the skeleton stays until it's ready
-                    const firstImage = data[0].image;
-                    if (firstImage) {
-                        const imgUrl = firstImage.startsWith('http') ? firstImage : `/${firstImage.startsWith('/') ? firstImage.slice(1) : firstImage}`;
-                        const img = new window.Image();
-                        let isFinished = false;
-
-                        const handleFinish = () => {
-                            if (!isFinished && mounted) {
-                                isFinished = true;
-                                setSlides(data);
-                                setLoading(false);
-                            }
-                        };
-
-                        img.onload = handleFinish;
-                        img.onerror = handleFinish;
-                        img.src = imgUrl;
-
-                        if (img.complete) {
-                            handleFinish();
-                        }
-                    } else {
+        if (isExpired || slides.length === 0) {
+            fetch('/api/banners')
+                .then(res => {
+                    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+                    return res.json();
+                })
+                .then(data => {
+                    if (!mounted) return;
+                    if (data && data.length > 0) {
                         setSlides(data);
-                        setLoading(false);
+                        cache.set(heroCacheKey, data, 10); // Cache for 10 minutes
                     }
-                } else {
                     setLoading(false);
-                }
-            })
-            .catch(err => {
-                if (!mounted) return;
-                console.error("Failed to fetch banners", err);
-                setLoading(false);
-            });
+                })
+                .catch(err => {
+                    if (!mounted) return;
+                    console.error("Failed to fetch banners", err);
+                    setLoading(false);
+                });
+        }
+
         return () => { mounted = false; };
     }, []);
 

@@ -1,5 +1,7 @@
 import React from 'react';
+import ProductListSkeleton from './ProductListSkeleton';
 
+export { ProductListSkeleton };
 const Shimmer = () => (
     <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 );
@@ -95,13 +97,13 @@ const HomeSkeleton = ({ layout }: HomeSkeletonProps) => {
                         case 'CATEGORIES':
                         case 'ALL_CATEGORIES': return <CategorySkeleton key={idx} />;
                         case 'IMAGE_BANNER': return <BannerSkeleton key={idx} config={item.config} />;
+                        case 'PRODUCT_CATALOG': return <ProductListSkeleton key={idx} />;
                         case 'FEATURED_PRODUCTS':
                         case 'NEW_ARRIVALS':
                         case 'SPECIAL_OFFERS':
                         case 'RECOMMENDED':
                         case 'DEAL_OF_THE_DAY':
                         case 'CATEGORY_PRODUCTS':
-                        case 'PRODUCT_CATALOG':
                         case 'RECENTLY_VIEWED':
                         case 'FLASH_SALE':
                             return <ProductGridSkeleton key={idx} />;

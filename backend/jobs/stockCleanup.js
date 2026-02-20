@@ -26,7 +26,7 @@ const runStockCleanup = () => {
             const abandonedOrders = await Order.find({
                 createdAt: { $lt: oneHourAgo },
                 paymentMethod: 'Online',
-                paymentStatus: 'Pending',
+                paymentStatus: { $in: ['Pending', 'Failed'] },
                 status: { $ne: 'Cancelled' }
             });
 

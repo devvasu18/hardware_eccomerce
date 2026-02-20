@@ -65,8 +65,10 @@ export default function OrderList() {
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'Delivered': return 'badge-success';
-            case 'Cancelled': return 'badge-danger';
+            case 'Cancelled':
+            case 'Payment Failed': return 'badge-danger';
             case 'Order Placed': return 'badge-info'; // Use info or warning
+            case 'Payment Pending': return 'badge-warning';
             default: return 'badge-warning';
         }
     };
@@ -92,6 +94,8 @@ export default function OrderList() {
                     onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                 >
                     <option value="">All Statuses</option>
+                    <option value="Payment Pending">Payment Pending</option>
+                    <option value="Payment Failed">Payment Failed</option>
                     <option value="Order Placed">Order Placed</option>
                     <option value="Packed">Packed</option>
                     <option value="Assigned to Bus">Assigned to Bus</option>

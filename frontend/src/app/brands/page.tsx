@@ -7,23 +7,30 @@ import api from '../utils/api';
 import { FiGrid } from "react-icons/fi";
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { cache } from '@/utils/cache';
 
 export default function BrandsPage() {
-    const [brands, setBrands] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [brands, setBrands] = useState<any[]>(() => cache.get<any[]>('all_brands') || []);
+    const [loading, setLoading] = useState(() => !cache.get('all_brands'));
 
     useEffect(() => {
-        const fetchBrands = async () => {
+        const fetchBrands = async (isBackground = false) => {
+            if (!isBackground) setLoading(true);
             try {
                 const res = await api.get('/brands');
                 setBrands(res.data);
+                cache.set('all_brands', res.data, 60); // Cache brands for 60 minutes
             } catch (error) {
                 console.error(error);
             } finally {
-                setLoading(false);
+                if (!isBackground) setLoading(false);
             }
         };
-        fetchBrands();
+
+        const isExpired = cache.isExpired('all_brands');
+        if (isExpired || brands.length === 0) {
+            fetchBrands(brands.length > 0);
+        }
     }, []);
 
     return (

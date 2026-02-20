@@ -193,13 +193,13 @@ exports.verifyPayment = async (req, res) => {
                             return res.status(400).json({ success: false, message: 'Payment Amount Mismatch' });
                         }
 
-                        order.paymentStatus = 'Completed';
+                        order.paymentStatus = 'Paid';
                         order.paymentDetails = {
                             provider: 'PayU',
                             transactionId: mihpayid,
                             txnId: txnid
                         };
-                        order.status = 'Processing';
+                        order.status = 'Order Placed';
                         await order.save();
 
                         // Clear Cart after successful payment
@@ -230,6 +230,14 @@ exports.verifyPayment = async (req, res) => {
                 });
             } else {
                 // Payment failed or pending
+                if (udf1) {
+                    const order = await Order.findById(udf1);
+                    if (order && order.status === 'Payment Pending') {
+                        order.paymentStatus = 'Failed';
+                        order.status = 'Payment Failed';
+                        await order.save();
+                    }
+                }
                 res.json({
                     success: false,
                     message: `Payment ${status}`,

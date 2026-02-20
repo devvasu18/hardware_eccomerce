@@ -73,7 +73,9 @@ export default function MyOrdersPage() {
             case 'Packed': return 'bg-yellow-100 text-yellow-800';
             case 'Assigned to Bus': return 'bg-purple-100 text-purple-800';
             case 'Delivered': return 'bg-green-100 text-green-800';
-            case 'Cancelled': return 'bg-red-100 text-red-800';
+            case 'Cancelled':
+            case 'Payment Failed': return 'bg-red-100 text-red-800';
+            case 'Payment Pending': return 'bg-yellow-100 text-yellow-800';
             default: return 'bg-gray-100 text-gray-800';
         }
     };
@@ -86,7 +88,9 @@ export default function MyOrdersPage() {
             case 'Packed': return { background: 'rgba(245, 158, 11, 0.1)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.2)' };
             case 'Assigned to Bus': return { background: 'rgba(139, 92, 246, 0.1)', color: '#7c3aed', border: '1px solid rgba(139, 92, 246, 0.2)' };
             case 'Delivered': return { background: 'rgba(16, 185, 129, 0.1)', color: '#059669', border: '1px solid rgba(16, 185, 129, 0.2)' };
-            case 'Cancelled': return { background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.2)' };
+            case 'Cancelled':
+            case 'Payment Failed': return { background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', border: '1px solid rgba(239, 68, 68, 0.2)' };
+            case 'Payment Pending': return { background: 'rgba(245, 158, 11, 0.1)', color: '#d97706', border: '1px solid rgba(245, 158, 11, 0.2)' };
             default: return { background: 'var(--surface-hover)', color: 'var(--text-secondary)', border: '1px solid var(--border)' };
         }
     };

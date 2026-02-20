@@ -9,11 +9,11 @@ import HomeSkeleton, {
     CategorySkeleton,
     BannerSkeleton,
     ProductGridSkeleton,
-    GenericSectionSkeleton
+    GenericSectionSkeleton,
+    ProductListSkeleton
 } from '@/app/components/skeletons/HomeSkeleton';
 
-// Lazy load components for performance
-const HeroSlider = lazy(() => import('@/app/components/HeroSlider'));
+import HeroSlider from '@/app/components/HeroSlider';
 const CategorySection = lazy(() => import('@/app/components/CategorySection'));
 const BrandsSection = lazy(() => import('@/app/components/BrandsSection'));
 const FeaturedProducts = lazy(() => import('@/app/components/FeaturedProducts'));
@@ -68,13 +68,14 @@ const SmartSectionPlaceholder = ({ type, config }: { type: string; config?: any 
             return <CategorySkeleton />;
         case 'IMAGE_BANNER':
             return <BannerSkeleton config={config} />;
+        case 'PRODUCT_CATALOG':
+            return <ProductListSkeleton />;
         case 'FEATURED_PRODUCTS':
         case 'NEW_ARRIVALS':
         case 'SPECIAL_OFFERS':
         case 'RECOMMENDED':
         case 'DEAL_OF_THE_DAY':
         case 'CATEGORY_PRODUCTS':
-        case 'PRODUCT_CATALOG':
         case 'RECENTLY_VIEWED':
         case 'FLASH_SALE':
             return <ProductGridSkeleton />;
