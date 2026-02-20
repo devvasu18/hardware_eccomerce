@@ -4,7 +4,13 @@ import Header from '@/app/components/Header';
 import Footer from '@/app/components/Footer';
 import Loader from '@/app/components/Loader';
 import { useLanguage } from '@/context/LanguageContext';
-import HomeSkeleton from '@/app/components/skeletons/HomeSkeleton';
+import HomeSkeleton, {
+    HeroSkeleton,
+    CategorySkeleton,
+    BannerSkeleton,
+    ProductGridSkeleton,
+    GenericSectionSkeleton
+} from '@/app/components/skeletons/HomeSkeleton';
 
 // Lazy load components for performance
 const HeroSlider = lazy(() => import('@/app/components/HeroSlider'));
@@ -52,10 +58,30 @@ const componentMap: Record<string, React.ComponentType<any>> = {
     'IMAGE_BANNER': ImageBanner
 };
 
-// Replaced ugly skeleton with invisible placeholder for smoother transition
-const SectionPlaceholder = () => (
-    <div className="w-full h-96 bg-transparent animate-pulse" />
-);
+// Smart Skeleton that matches the component type
+const SmartSectionPlaceholder = ({ type }: { type: string }) => {
+    switch (type) {
+        case 'HERO_SLIDER':
+            return <HeroSkeleton />;
+        case 'CATEGORIES':
+        case 'ALL_CATEGORIES':
+            return <CategorySkeleton />;
+        case 'IMAGE_BANNER':
+            return <BannerSkeleton />;
+        case 'FEATURED_PRODUCTS':
+        case 'NEW_ARRIVALS':
+        case 'SPECIAL_OFFERS':
+        case 'RECOMMENDED':
+        case 'DEAL_OF_THE_DAY':
+        case 'CATEGORY_PRODUCTS':
+        case 'PRODUCT_CATALOG':
+        case 'RECENTLY_VIEWED':
+        case 'FLASH_SALE':
+            return <ProductGridSkeleton />;
+        default:
+            return <GenericSectionSkeleton />;
+    }
+};
 
 const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: any[], pageSlug?: string }) => {
     const { t } = useLanguage();
@@ -90,8 +116,6 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
             if (!response.ok) throw new Error('Failed to fetch');
             const data = await response.json();
             setLayout(data);
-            // Artificial delay not needed for UX, but maybe for smooth transition? 
-            // Removing it for performance.
         } catch (error: any) {
             console.error('Error fetching layout:', error);
             if (typeof window !== 'undefined') {
@@ -154,7 +178,6 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
                         </button>
                     </div>
                 </div>
-                {/* Show footer even on error? Maybe not. */}
             </main>
         );
     }
@@ -169,27 +192,31 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
                 <>
                     {layout.length === 0 ? (
                         <div className="flex-grow flex items-center justify-center min-h-[50vh]">
+                            {/* ... maintenance UI ... */}
                             <div className="text-center">
                                 <h2 className="text-2xl font-bold text-gray-400" suppressHydrationWarning>{t('under_maintenance')}</h2>
                                 <p className="text-gray-500 mt-2" suppressHydrationWarning>{t('maintenance_desc')}</p>
                             </div>
                         </div>
                     ) : (
-                        layout.map((item) => {
-                            const Component = componentMap[item.componentType];
-                            if (!Component) return null;
+                        <div className="flex-grow min-h-screen">
+                            {/* Wrapper to ensure min height */}
+                            {layout.map((item) => {
+                                const Component = componentMap[item.componentType];
+                                if (!Component) return null;
 
-                            let props: any = { config: item.config };
-                            if (item.componentType === 'FEATURED_PRODUCTS') {
-                                props.products = featuredProducts;
-                            }
+                                let props: any = { config: item.config };
+                                if (item.componentType === 'FEATURED_PRODUCTS') {
+                                    props.products = featuredProducts;
+                                }
 
-                            return (
-                                <Suspense key={item._id} fallback={<SectionPlaceholder />}>
-                                    <Component {...props} />
-                                </Suspense>
-                            );
-                        })
+                                return (
+                                    <Suspense key={item._id} fallback={<SmartSectionPlaceholder type={item.componentType} />}>
+                                        <Component {...props} />
+                                    </Suspense>
+                                );
+                            })}
+                        </div>
                     )}
                 </>
             )}
