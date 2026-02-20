@@ -111,6 +111,15 @@ const systemSettingsSchema = new mongoose.Schema({
         default: false
     },
 
+    arrivalNotificationEnabled: {
+        type: Boolean,
+        default: true
+    },
+    arrivalNotificationSound: {
+        type: String,
+        default: 'default'
+    },
+
     // Single Document Pattern (Only one settings document)
     _id: {
         type: String,

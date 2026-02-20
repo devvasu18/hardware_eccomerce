@@ -29,6 +29,8 @@ export default function SystemSettingsPage() {
         lowStockAlertsEnabled: true,
         onlinePaymentEnabled: true,
         codEnabled: false,
+        arrivalNotificationEnabled: true,
+        arrivalNotificationSound: 'default',
         notificationSoundEnabled: true,
         notificationSound: '/sounds/order_alert.mp3',
         orderNotificationSound: '/sounds/payment_success.mp3',
@@ -59,6 +61,7 @@ export default function SystemSettingsPage() {
     const [uploadingSound, setUploadingSound] = useState(false);
     const [uploadingOrderSound, setUploadingOrderSound] = useState(false);
     const [uploadingPaymentSound, setUploadingPaymentSound] = useState(false);
+    const [uploadingArrivalSound, setUploadingArrivalSound] = useState(false);
     const [playingSound, setPlayingSound] = useState<string | null>(null);
 
     const playPreview = (url: string) => {
@@ -89,7 +92,7 @@ export default function SystemSettingsPage() {
         }
     };
 
-    const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'notificationSound' | 'orderNotificationSound' | 'paymentSuccessSound') => {
+    const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'notificationSound' | 'orderNotificationSound' | 'paymentSuccessSound' | 'arrivalNotificationSound') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -111,6 +114,7 @@ export default function SystemSettingsPage() {
 
         if (field === 'notificationSound') setUploadingSound(true);
         else if (field === 'orderNotificationSound') setUploadingOrderSound(true);
+        else if (field === 'arrivalNotificationSound') setUploadingArrivalSound(true);
         else setUploadingPaymentSound(true);
 
         try {
@@ -131,6 +135,7 @@ export default function SystemSettingsPage() {
         } finally {
             if (field === 'notificationSound') setUploadingSound(false);
             else if (field === 'orderNotificationSound') setUploadingOrderSound(false);
+            else if (field === 'arrivalNotificationSound') setUploadingArrivalSound(false);
             else setUploadingPaymentSound(false);
             e.target.value = ''; // Reset input
         }
@@ -538,6 +543,168 @@ export default function SystemSettingsPage() {
                                 </span>
                             </label>
                         </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <FiClock size={20} color="#F59E0B" />
+                                <div>
+                                    <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>Arrival Notification (15 min before)</p>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
+                                        Send a notification 15 minutes before the expected arrival time
+                                    </p>
+                                </div>
+                            </div>
+                            <label style={{ position: 'relative', display: 'inline-block', width: '60px', height: '30px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={settings.arrivalNotificationEnabled !== false}
+                                    onChange={(e) => handleChange('arrivalNotificationEnabled', e.target.checked)}
+                                    style={{ opacity: 0, width: 0, height: 0 }}
+                                />
+                                <span style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                    backgroundColor: settings.arrivalNotificationEnabled !== false ? '#10B981' : '#cbd5e1',
+                                    borderRadius: '30px',
+                                    transition: '0.3s',
+                                    cursor: 'pointer'
+                                }}>
+                                    <span style={{
+                                        position: 'absolute',
+                                        content: '""',
+                                        height: '22px',
+                                        width: '22px',
+                                        left: settings.arrivalNotificationEnabled !== false ? '34px' : '4px',
+                                        bottom: '4px',
+                                        backgroundColor: 'white',
+                                        borderRadius: '50%',
+                                        transition: '0.3s'
+                                    }}></span>
+                                </span>
+                            </label>
+                        </div>
+
+                        {/* Arrival Notification Sound Setting */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <FiBell size={20} color="#F59E0B" />
+                                <div>
+                                    <p style={{ fontWeight: 600, color: '#1E293B', margin: 0 }}>Arrival Notification Sound</p>
+                                    <p style={{ fontSize: '0.85rem', color: '#64748B', margin: '0.25rem 0 0' }}>
+                                        Specific ringtone for the 15-minute arrival notification
+                                    </p>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                {settings.notificationSoundEnabled && (
+                                    <select
+                                        value={settings.arrivalNotificationSound || 'default'}
+                                        onChange={(e) => handleChange('arrivalNotificationSound', e.target.value)}
+                                        style={{ padding: '0.4rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.9rem', maxWidth: '150px' }}
+                                    >
+                                        <option value="default">Default</option>
+                                        <option value="/sounds/payment_success_chime.mp3">Modern Payment Chime</option>
+                                        <option value="/sounds/payment_success.mp3">Payment Success</option>
+                                        <option value="/sounds/order_alert.mp3">Order Alert</option>
+                                        <option value="custom">Custom Sound</option>
+                                        {settings.arrivalNotificationSound && !['default', '/sounds/payment_success.mp3', '/sounds/order_alert.mp3', 'custom'].includes(settings.arrivalNotificationSound) && (
+                                            <option value={settings.arrivalNotificationSound}>Uploaded Sound</option>
+                                        )}
+                                    </select>
+                                )}
+
+                                {settings.notificationSoundEnabled && (
+                                    <button
+                                        type="button"
+                                        onClick={() => playPreview(settings.arrivalNotificationSound)}
+                                        disabled={playingSound === settings.arrivalNotificationSound}
+                                        style={{
+                                            padding: '0.4rem 0.6rem',
+                                            borderRadius: '6px',
+                                            border: '1px solid #cbd5e1',
+                                            background: '#fff',
+                                            fontSize: '0.85rem',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.4rem',
+                                            color: '#3b82f6'
+                                        }}
+                                        title="Test Sound"
+                                    >
+                                        {playingSound === settings.arrivalNotificationSound ? <FiRefreshCw className="spin" /> : <FiPlay />}
+                                        Test
+                                    </button>
+                                )}
+
+                                {settings.notificationSoundEnabled && (
+                                    <>
+                                        <input
+                                            type="file"
+                                            id="arrival-sound-upload"
+                                            accept=".mp3,.wav"
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => handleSoundUpload(e, 'arrivalNotificationSound')}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => document.getElementById('arrival-sound-upload')?.click()}
+                                            disabled={uploadingArrivalSound}
+                                            style={{
+                                                padding: '0.4rem 0.8rem',
+                                                borderRadius: '6px',
+                                                border: '1px solid #cbd5e1',
+                                                background: '#fff',
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '0.5rem'
+                                            }}
+                                        >
+                                            {uploadingArrivalSound ? <FiRefreshCw className="spin" /> : <FiPhone />}
+                                            Upload
+                                        </button>
+                                    </>
+                                )}
+
+                                <label style={{ position: 'relative', display: 'inline-block', width: '60px', height: '30px', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.notificationSoundEnabled !== false}
+                                        onChange={(e) => handleChange('notificationSoundEnabled', e.target.checked)}
+                                        style={{ opacity: 0, width: 0, height: 0 }}
+                                    />
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: settings.notificationSoundEnabled !== false ? '#10B981' : '#cbd5e1',
+                                        borderRadius: '30px',
+                                        transition: '0.3s',
+                                        cursor: 'pointer'
+                                    }}>
+                                        <span style={{
+                                            position: 'absolute',
+                                            content: '""',
+                                            height: '22px',
+                                            width: '22px',
+                                            left: settings.notificationSoundEnabled !== false ? '34px' : '4px',
+                                            bottom: '4px',
+                                            backgroundColor: 'white',
+                                            borderRadius: '50%',
+                                            transition: '0.3s'
+                                        }}></span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <FiBell size={20} color="#F59E0B" />

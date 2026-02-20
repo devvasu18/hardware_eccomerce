@@ -293,9 +293,72 @@ Thank you for shopping with us 🙏`;
     });
 }
 
+/**
+ * 5. ARRIVAL SOON NOTIFICATION (15 mins before arrival)
+ */
+async function sendArrivalSoonNotification(order, customer) {
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const shipmentToken = Buffer.from(`${order._id}:${Date.now()}`).toString('base64');
+    const shipmentTrackingLink = `${frontendUrl}/shipment/${shipmentToken}`;
+
+    const emailTemplate = `Hi {{customer_name}},
+
+Your order from {{company_name}} is about to reach you! 🚚
+
+🧾 Order ID: {{order_id}}
+🕘 Estimated Arrival: In approx 15 minutes
+
+Please be ready at your address/station to receive the order.
+
+🚍 Shipment Details:
+- Bus Number: {{bus_number}}
+- Driver Contact: {{driver_contact}}
+
+🔗 Track Live:
+{{shipment_tracking_link}}
+
+For support:
+📞 {{support_contact_number}}
+
+See you soon! 👋  
+{{company_name}}`;
+
+    const whatsappTemplate = `Hello {{customer_name}} 👋 
+
+Your order from *{{company_name}}* will reach you in approx *15 minutes*! 🚚
+
+🧾 Order ID: {{order_id}}
+🚌 Bus No: {{bus_number}}
+👤 Driver: {{driver_contact}}
+
+Please be available at your delivery location.
+
+🔗 Live Tracking:
+{{shipment_tracking_link}}
+
+Thank you for your patience 🙏`;
+
+    return await sendNotification({
+        email: customer.email,
+        mobile: customer.mobile,
+        subject: 'Your order is arriving soon! 🚚 | {{company_name}}',
+        emailBody: emailTemplate,
+        whatsappBody: whatsappTemplate,
+        variables: {
+            customer_name: customer.name,
+            order_id: order.invoiceNumber || order._id.toString(),
+            bus_number: order.busDetails?.busNumber || 'TBD',
+            driver_contact: order.busDetails?.driverContact || 'TBD',
+            shipment_tracking_link: shipmentTrackingLink
+        },
+        userSettings: customer.settings
+    });
+}
+
 module.exports = {
     sendOrderConfirmation,
     sendOnDemandRequestConfirmation,
     sendMixedOrderConfirmation,
-    sendShipmentDispatchNotification
+    sendShipmentDispatchNotification,
+    sendArrivalSoonNotification
 };

@@ -59,7 +59,7 @@ const componentMap: Record<string, React.ComponentType<any>> = {
 };
 
 // Smart Skeleton that matches the component type
-const SmartSectionPlaceholder = ({ type }: { type: string }) => {
+const SmartSectionPlaceholder = ({ type, config }: { type: string; config?: any }) => {
     switch (type) {
         case 'HERO_SLIDER':
             return <HeroSkeleton />;
@@ -67,7 +67,7 @@ const SmartSectionPlaceholder = ({ type }: { type: string }) => {
         case 'ALL_CATEGORIES':
             return <CategorySkeleton />;
         case 'IMAGE_BANNER':
-            return <BannerSkeleton />;
+            return <BannerSkeleton config={config} />;
         case 'FEATURED_PRODUCTS':
         case 'NEW_ARRIVALS':
         case 'SPECIAL_OFFERS':
@@ -252,7 +252,7 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
                                 }
 
                                 return (
-                                    <Suspense key={item._id} fallback={<SmartSectionPlaceholder type={item.componentType} />}>
+                                    <Suspense key={item._id} fallback={<SmartSectionPlaceholder type={item.componentType} config={item.config} />}>
                                         <Component {...props} />
                                     </Suspense>
                                 );

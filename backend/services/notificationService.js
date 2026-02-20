@@ -186,6 +186,8 @@ const sendNotification = async ({ userId, role, title, message, type, redirectUr
                 sound = settings.orderNotificationSound || 'default';
             } else if (type === 'PAYMENT_SUCCESS' && isCustomer) {
                 sound = settings.paymentSuccessSound || 'default';
+            } else if (type === 'ORDER_ARRIVING' && isCustomer) {
+                sound = settings.arrivalNotificationSound || 'default';
             } else {
                 sound = settings.notificationSound || 'default';
             }

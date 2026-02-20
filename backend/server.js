@@ -144,11 +144,13 @@ app.use('/api/admin/analytics', require('./routes/analyticsRoutes')); // Admin A
 // Status Tracking
 const runStockCleanup = require('./jobs/stockCleanup');
 const { initTallyPullJobs } = require('./jobs/tallyPullJob');
+const initArrivalNotificationJob = require('./jobs/arrivalNotificationJob');
 
 // Initialize Cron Jobs
 runStockCleanup();
 startTallyHealthCheckJob();
 initTallyPullJobs();
+initArrivalNotificationJob();
 
 // Start Workers
 const whatsappWorker = require('./whatsappWorker');

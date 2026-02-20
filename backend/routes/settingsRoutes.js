@@ -69,6 +69,8 @@ router.put('/system', protect, admin, async (req, res) => {
             lowStockAlertsEnabled,
             onlinePaymentEnabled,
             codEnabled,
+            arrivalNotificationEnabled,
+            arrivalNotificationSound,
             notificationSoundEnabled,
             notificationSound,
             orderNotificationSound,
@@ -105,6 +107,8 @@ router.put('/system', protect, admin, async (req, res) => {
         if (lowStockAlertsEnabled !== undefined) settings.lowStockAlertsEnabled = lowStockAlertsEnabled;
         if (onlinePaymentEnabled !== undefined) settings.onlinePaymentEnabled = onlinePaymentEnabled;
         if (codEnabled !== undefined) settings.codEnabled = codEnabled;
+        if (arrivalNotificationEnabled !== undefined) settings.arrivalNotificationEnabled = arrivalNotificationEnabled;
+        if (arrivalNotificationSound !== undefined) settings.arrivalNotificationSound = arrivalNotificationSound;
         if (notificationSoundEnabled !== undefined) settings.notificationSoundEnabled = notificationSoundEnabled;
         if (notificationSound !== undefined) settings.notificationSound = notificationSound;
         if (orderNotificationSound !== undefined) settings.orderNotificationSound = orderNotificationSound;

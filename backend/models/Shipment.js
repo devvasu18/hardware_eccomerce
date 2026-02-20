@@ -80,6 +80,11 @@ const shipmentSchema = new mongoose.Schema({
     notes: {
         type: String,
         trim: true
+    },
+
+    arrivalNotificationSent: {
+        type: Boolean,
+        default: false
     }
 
 }, { timestamps: true });

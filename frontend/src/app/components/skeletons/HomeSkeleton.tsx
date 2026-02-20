@@ -25,11 +25,32 @@ export const CategorySkeleton = () => (
     </div>
 );
 
-export const BannerSkeleton = () => (
-    <div className="relative mx-4 h-32 md:h-64 bg-gray-200 dark:bg-gray-800 rounded-2xl my-4 overflow-hidden">
-        <Shimmer />
-    </div>
-);
+export const BannerSkeleton = ({ config }: { config?: any }) => {
+    if (!config) {
+        return (
+            <div className="relative mx-4 h-32 md:h-64 bg-gray-200 dark:bg-gray-800 rounded-2xl my-4 overflow-hidden">
+                <Shimmer />
+            </div>
+        );
+    }
+
+    const height = config.height || '450px';
+    const isFullWidth = config.isFullWidth ?? false;
+
+    const sectionClass = isFullWidth ? 'w-full py-0' : 'container mx-auto px-4 py-8';
+    const roundedClass = isFullWidth ? '' : 'rounded-3xl';
+
+    return (
+        <section className={`image-banner-section ${sectionClass}`}>
+            <div
+                className={`relative bg-gray-200 dark:bg-gray-800 overflow-hidden ${roundedClass}`}
+                style={{ height }}
+            >
+                <Shimmer />
+            </div>
+        </section>
+    );
+};
 
 export const ProductGridSkeleton = () => (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4">
@@ -73,7 +94,7 @@ const HomeSkeleton = ({ layout }: HomeSkeletonProps) => {
                         case 'HERO_SLIDER': return <HeroSkeleton key={idx} />;
                         case 'CATEGORIES':
                         case 'ALL_CATEGORIES': return <CategorySkeleton key={idx} />;
-                        case 'IMAGE_BANNER': return <BannerSkeleton key={idx} />;
+                        case 'IMAGE_BANNER': return <BannerSkeleton key={idx} config={item.config} />;
                         case 'FEATURED_PRODUCTS':
                         case 'NEW_ARRIVALS':
                         case 'SPECIAL_OFFERS':
