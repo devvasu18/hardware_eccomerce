@@ -128,7 +128,7 @@ const sendPushNotification = async (userId, title, body, data = {}, sound = 'def
             tokens: tokens
         };
 
-        const response = await admin.messaging().sendMulticast(message);
+        const response = await admin.messaging().sendEachForMulticast(message);
         logger.info(`🔥 Push sent to ${response.successCount} devices (User: ${userId}, Failed: ${response.failureCount})`);
 
         if (response.failureCount > 0) {
