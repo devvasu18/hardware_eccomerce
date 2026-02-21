@@ -334,6 +334,11 @@ class MainActivity : AppCompatActivity() {
         settings.allowFileAccess = false // Security: Disable file access
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW // Security: HTTPS only
         
+        // Disable Zoom Support
+        settings.setSupportZoom(false)
+        settings.builtInZoomControls = false
+        settings.displayZoomControls = false
+        
         // Custom User Agent
         settings.userAgentString = settings.userAgentString + USER_AGENT_SUFFIX
 

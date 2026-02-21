@@ -449,7 +449,8 @@ button {
   padding: 0.875rem 1.25rem;
   border: 2px solid var(--border);
   border-radius: var(--radius-md);
-  font-size: 0.95rem;
+  font-size: 16px;
+  /* Prevents auto-zoom on mobile focus */
   color: var(--text-primary);
   background: var(--background);
   transition: var(--transition-base);
