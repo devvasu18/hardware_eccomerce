@@ -9,8 +9,8 @@ import { ProductGridSkeleton } from './skeletons/HomeSkeleton';
 
 export default function RecentlyViewed({ config }: { config?: any }) {
     const { t, language } = useLanguage();
-    const [products, setProducts] = useState<any[]>(() => cache.get<any[]>('recently_viewed_products') || []);
-    const [loading, setLoading] = useState(() => !cache.get('recently_viewed_products'));
+    const [products, setProducts] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
     const displayTitle = (language === 'hi' && config?.showHindi && config?.titleHindi)
         ? config.titleHindi
@@ -21,6 +21,13 @@ export default function RecentlyViewed({ config }: { config?: any }) {
         : (config?.subtitle || t('recently_viewed_subtitle'));
 
     useEffect(() => {
+        // Hydrate from cache immediately on mount to avoid flash
+        const cached = cache.get<any[]>('recently_viewed_products');
+        if (cached) {
+            setProducts(cached);
+            setLoading(false);
+        }
+
         const fetchRecentlyViewed = async (isBackground = false) => {
             if (!isBackground) setLoading(true);
             try {

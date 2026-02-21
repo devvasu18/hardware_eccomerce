@@ -64,11 +64,10 @@ class WhatsAppSessionManager {
                         }
 
                         this.connectedNumbers.set(sessionId, myNumber);
-                        console.log(`[INFO] Session ${sessionId} linked to +${myNumber}`);
                         return myNumber;
                     }
                 } catch (methodError) {
-                    console.log(`[DEBUG] Attempt ${i + 1} failed for ${sessionId}:`, methodError.message);
+                    // Fail silently for retry
                 }
 
                 await new Promise(r => setTimeout(r, 2000)); // Wait 2s
@@ -87,24 +86,20 @@ class WhatsAppSessionManager {
 
         const isEnabled = await this.isIntegrationEnabled();
         if (!isEnabled) {
-            console.log(`[WhatsApp] Integration is DISABLED. Skipping session start for ${sessionId}.`);
             this.status.set(sessionId, 'disabled');
             return null;
         }
 
-        console.log(`Starting WhatsApp session: ${sessionId}`);
         this.status.set(sessionId, 'initializing');
 
         try {
             const client = await wppconnect.create({
                 session: sessionId,
                 catchQR: (base64Qr, asciiQR) => {
-                    console.log(`QR Code received for session ${sessionId}`);
                     this.qrCodes.set(sessionId, base64Qr);
                     this.status.set(sessionId, 'qr_ready');
                 },
                 statusFind: (statusSession, session) => {
-                    console.log(`Session Status ${session}: ${statusSession}`);
                     this.status.set(sessionId, statusSession);
                     if (statusSession === 'inChat' || statusSession === 'isLogged') {
                         this.qrCodes.delete(sessionId);
@@ -211,7 +206,6 @@ class WhatsAppSessionManager {
         try {
             if (fs.existsSync(tokenPath)) {
                 fs.rmSync(tokenPath, { recursive: true, force: true });
-                console.log(`Deleted token data for ${sessionId}`);
             }
         } catch (error) {
             console.error(`Error deleting token path ${tokenPath}:`, error);

@@ -32,9 +32,7 @@ const protect = async (req, res, next) => {
                 return res.status(401).json({ message: 'User not found. Please login again.' });
             }
 
-            if (process.env.NODE_ENV !== 'production') {
-                console.log(`🔐 Auth - User authenticated: ${req.user._id}`);
-            }
+
 
             // High Priority: Enforcement of active account
             if (!req.user.isActive) {
@@ -68,18 +66,12 @@ const protect = async (req, res, next) => {
 const admin = (req, res, next) => {
     const adminRoles = ['super_admin', 'ops_admin', 'logistics_admin', 'accounts_admin', 'support_staff', 'admin'];
 
-    const logInfo = `🔑 Admin Check - User: ${req.user?.username} | Role: ${req.user?.role} | Required: ${adminRoles}`;
-    console.log(logInfo);
 
 
     if (req.user && adminRoles.includes(req.user.role)) {
-        const successLog = '✅ Admin Check - Access granted';
-        console.log(successLog);
 
         next();
     } else {
-        const failLog = `❌ Admin Check - Access denied for role: ${req.user?.role}`;
-        console.log(failLog);
 
         res.status(401).json({
             message: 'Not authorized as an admin',
@@ -101,7 +93,6 @@ const optionalProtect = async (req, res, next) => {
             }
         } catch (error) {
             // Token failed, but it's optional, so we just proceed as guest
-            if (process.env.NODE_ENV !== 'production') console.log("Optional Auth Token Failed:", error.message);
         }
     }
     next();

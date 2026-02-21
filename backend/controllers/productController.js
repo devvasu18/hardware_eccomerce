@@ -120,11 +120,6 @@ exports.getAdminProductById = async (req, res) => {
 // @access  Admin
 exports.createProduct = async (req, res) => {
     try {
-        if (process.env.NODE_ENV !== 'production') {
-            console.log('Create Product Request Recieved');
-            // console.log('Body:', req.body); // Too verbose/sensitive
-        }
-
         // Parse Title if JSON string
         if (req.body.title && typeof req.body.title === 'string') {
             try {
@@ -320,14 +315,6 @@ exports.createProduct = async (req, res) => {
 // @access  Admin
 exports.updateProduct = async (req, res) => {
     try {
-        if (process.env.NODE_ENV !== 'production') {
-            console.log(`Update Product Request: ${req.params.id}`);
-            console.log('Request Body Keys:', Object.keys(req.body));
-            if (!req.body.category) console.warn('⚠️ Category missing in request body!');
-            if (!req.body.mrp) console.warn('⚠️ MRP missing in request body!');
-            console.log('Files uploaded:', req.files?.map(f => f.fieldname));
-        }
-
         const product = await Product.findById(req.params.id);
         if (!product) {
             return res.status(404).json({ message: 'Product not found' });
@@ -640,8 +627,6 @@ exports.updateProduct = async (req, res) => {
 
         // Apply updates
         product.set(updates);
-
-        console.log('Product object before save:', product);
         const updatedProduct = await product.save();
         await logAction({ action: 'UPDATE_PRODUCT_ADMIN', req, targetResource: 'Product', targetId: req.params.id, details: { title: updatedProduct.title } });
         res.json(updatedProduct);

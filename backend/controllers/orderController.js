@@ -738,7 +738,6 @@ exports.updateOrderStatus = async (req, res) => {
             // We don't await this to keep the API response fast. 
             // Tally sync happens in background/async.
             tallyService.syncOrderToTally(order._id)
-                .then(result => console.log(`Auto-Sync Tally [${order._id}]:`, result.success ? 'Success' : result.error))
                 .catch(err => console.error('Auto-Sync Tally Failed:', err));
         }
 

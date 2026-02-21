@@ -18,10 +18,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const { i18n, t } = useTranslation();
 
     const setLanguage = (lang: Language) => {
-        console.log(`[LanguageContext] Changing language to: ${lang}`);
-        i18n.changeLanguage(lang).then(() => {
-            console.log(`[LanguageContext] Language changed to: ${i18n.language}`);
-        }).catch(err => {
+        i18n.changeLanguage(lang).catch(err => {
             console.error(`[LanguageContext] Error changing language:`, err);
         });
         if (typeof window !== 'undefined') {

@@ -8,7 +8,7 @@ const Shimmer = () => (
 );
 
 export const HeroSkeleton = () => (
-    <div className="hero-slider w-full bg-gray-200 dark:bg-gray-800">
+    <div className="hero-slider hero-skeleton w-full">
         <Shimmer />
     </div>
 );

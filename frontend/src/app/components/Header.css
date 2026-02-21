@@ -175,7 +175,7 @@
     align-items: center;
     gap: 0.5rem;
     cursor: pointer;
-    color: #0f0f23;
+    color: var(--text-primary);
     text-decoration: none;
     padding: 0.4rem;
     border-radius: 8px;
@@ -467,8 +467,8 @@
     padding: 0.625rem 1.125rem;
     border: 2px solid rgba(243, 112, 33, 0.15);
     border-radius: 50px;
-    background: linear-gradient(135deg, #fafbff 0%, #fff8f5 100%);
-    color: #64748b;
+    background: var(--surface-hover);
+    color: var(--text-secondary);
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;

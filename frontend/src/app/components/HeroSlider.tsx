@@ -36,15 +36,18 @@ export default function HeroSlider() {
     const { getLocalized, t } = useLanguage();
     const heroCacheKey = 'hero_banners';
 
-    const [slides, setSlides] = useState<Banner[]>(() => {
-        return cache.get<Banner[]>(heroCacheKey) || [];
-    });
+    const [slides, setSlides] = useState<Banner[]>([]);
     const [current, setCurrent] = useState(0);
-    const [loading, setLoading] = useState(() => {
-        return !cache.get(heroCacheKey);
-    });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Hydrate from cache immediately on mount
+        const cached = cache.get<Banner[]>(heroCacheKey);
+        if (cached && cached.length > 0) {
+            setSlides(cached);
+            setLoading(false);
+        }
+
         let mounted = true;
         const isExpired = cache.isExpired(heroCacheKey);
 
@@ -101,12 +104,6 @@ export default function HeroSlider() {
                     ? `/products?offer=${slide.offer_id.slug}`
                     : '/products';
 
-                // Debug logging
-                if (index === current) {
-                    console.log('Current slide:', slide.title);
-                    console.log('Offer ID:', slide.offer_id);
-                    console.log('Explore href:', exploreHref);
-                }
 
                 return (
                     <div

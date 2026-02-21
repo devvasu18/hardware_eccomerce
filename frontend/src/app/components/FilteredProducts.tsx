@@ -46,10 +46,10 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
     const cacheKey = `products_grid_${category || 'all'}_${brand || 'all'}_${keyword || 'none'}_${subcategory || 'all'}_${offerSlug || 'none'}`;
     const filtersCacheKey = 'global_filters';
 
-    const [products, setProducts] = useState<Product[]>(() => cache.get<Product[]>(cacheKey) || []);
-    const [categories, setCategories] = useState<any[]>(() => cache.get<any[]>(`${filtersCacheKey}_categories`) || []);
-    const [brands, setBrands] = useState<any[]>(() => cache.get<any[]>(`${filtersCacheKey}_brands`) || []);
-    const [loading, setLoading] = useState(() => !cache.get(cacheKey));
+    const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
+    const [brands, setBrands] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchData = async (isBackground = false) => {
@@ -107,6 +107,12 @@ function ProductGridContent({ offerInfo }: ProductGridContentProps) {
     };
 
     useEffect(() => {
+        // Hydrate from cache
+        const cachedCats = cache.get<any[]>(`${filtersCacheKey}_categories`);
+        const cachedBrands = cache.get<any[]>(`${filtersCacheKey}_brands`);
+        if (cachedCats) setCategories(cachedCats);
+        if (cachedBrands) setBrands(cachedBrands);
+
         // When filters change, try to get from cache first
         const cachedProducts = cache.get<Product[]>(cacheKey) || [];
 

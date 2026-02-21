@@ -10,10 +10,16 @@ import Footer from '../components/Footer';
 import { cache } from '@/utils/cache';
 
 export default function BrandsPage() {
-    const [brands, setBrands] = useState<any[]>(() => cache.get<any[]>('all_brands') || []);
-    const [loading, setLoading] = useState(() => !cache.get('all_brands'));
+    const [brands, setBrands] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const cachedBrands = cache.get<any[]>('all_brands');
+        if (cachedBrands) {
+            setBrands(cachedBrands);
+            setLoading(false);
+        }
+
         const fetchBrands = async (isBackground = false) => {
             if (!isBackground) setLoading(true);
             try {

@@ -147,6 +147,13 @@ body {
   transition: background-color var(--transition-base), color var(--transition-base);
 }
 
+/* ⚡ DISABLE TRANSITIONS DURING INITIALIZATION */
+.theme-initializing,
+.theme-initializing * {
+  transition: none !important;
+}
+
+
 @media (max-width: 1024px) {
   body {
     padding-bottom: calc(85px + env(safe-area-inset-bottom));

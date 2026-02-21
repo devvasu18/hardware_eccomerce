@@ -92,26 +92,11 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
     const featuredCacheKey = `featured_products`;
 
     // Initialize from cache if available to prevent skeleton flicker
-    const [layout, setLayout] = useState<any[]>(() => {
-        if (previewLayout) return previewLayout;
-        const cached = cache.get<any[]>(layoutCacheKey);
-        return cached || [];
-    });
-
-    const [loading, setLoading] = useState(() => {
-        if (previewLayout) return false;
-        // If we have cache, we don't show the initial skeleton
-        return !cache.get(layoutCacheKey);
-    });
-
+    const [layout, setLayout] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
-    const [featuredProducts, setFeaturedProducts] = useState<any[]>(() => {
-        return cache.get<any[]>(featuredCacheKey) || [];
-    });
-    const [loadingFeatured, setLoadingFeatured] = useState(() => {
-        if (previewLayout) return false;
-        return !cache.get(featuredCacheKey);
-    });
+    const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+    const [loadingFeatured, setLoadingFeatured] = useState(true);
 
     // Signal Android that the Web App Shell is ready (Header + Skeleton painted)
     useEffect(() => {
@@ -198,17 +183,30 @@ const HomeRenderer = ({ previewLayout, pageSlug = 'home' }: { previewLayout?: an
             setLoading(false);
             fetchFeatured();
         } else {
+            // Hydrate from cache
+            const cachedLayout = cache.get<any[]>(layoutCacheKey);
+            const cachedProducts = cache.get<any[]>(featuredCacheKey);
+
+            if (cachedLayout) {
+                setLayout(cachedLayout);
+                setLoading(false);
+            }
+            if (cachedProducts) {
+                setFeaturedProducts(cachedProducts);
+                setLoadingFeatured(false);
+            }
+
             // 1. Check if cache is expired or missing
             const isLayoutExpired = cache.isExpired(layoutCacheKey);
             const isProductExpired = cache.isExpired(featuredCacheKey);
 
-            if (isLayoutExpired || layout.length === 0) {
+            if (isLayoutExpired || (cachedLayout ? false : true) || layout.length === 0) {
                 // If missing, fetch normally (shows skeleton if layout.length === 0)
                 // If expired but present, fetch in background
-                fetchData(layout.length > 0);
+                fetchData(layout.length > 0 || !!cachedLayout);
             }
 
-            if (isProductExpired || featuredProducts.length === 0) {
+            if (isProductExpired || (cachedProducts ? false : true) || featuredProducts.length === 0) {
                 fetchFeatured();
             }
         }

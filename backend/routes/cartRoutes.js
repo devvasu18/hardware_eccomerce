@@ -236,14 +236,11 @@ router.post('/add', authenticateToken, async (req, res) => {
             }
         }
 
-        console.log('Saving cart...');
         await cart.save();
-        console.log('Cart saved. Populating...');
         await cart.populate({
             path: 'items.product',
             select: 'title basePrice discountedPrice featured_image gallery_images stock isOnDemand category isActive gst_rate models variations offers'
         });
-        console.log('Cart populated.');
 
         const validItems = cart.items.filter(item => item.product); // Filter nulls
         const total = validItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);

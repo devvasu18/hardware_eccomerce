@@ -9,7 +9,6 @@ router.get('/', protect, async (req, res) => {
     try {
         // Check if user exists (protect middleware might set req.user to null)
         if (!req.user || !req.user._id) {
-            console.log('❌ No valid user found in request');
             return res.status(401).json({ message: 'User not found. Please login again.' });
         }
 
@@ -41,32 +40,21 @@ router.get('/', protect, async (req, res) => {
 // Add item to wishlist
 router.post('/add', protect, async (req, res) => {
     try {
-        console.log('🎯 Add to wishlist request:', {
-            userId: req.user?._id,
-            productId: req.body.productId
-        });
-
         const { productId } = req.body;
 
         if (!productId) {
-            console.log('❌ No product ID provided');
             return res.status(400).json({ message: 'Product ID is required' });
         }
 
         // Check if product exists
-        console.log('🔍 Checking if product exists:', productId);
         const product = await Product.findById(productId);
         if (!product) {
-            console.log('❌ Product not found:', productId);
             return res.status(404).json({ message: 'Product not found' });
         }
-        console.log('✅ Product found:', product.name);
 
         let wishlist = await Wishlist.findOne({ user: req.user._id });
-        console.log('📋 Existing wishlist:', wishlist ? 'Found' : 'Not found');
 
         if (!wishlist) {
-            console.log('📝 Creating new wishlist for user:', req.user._id);
             wishlist = new Wishlist({ user: req.user._id, items: [] });
         }
 
@@ -76,27 +64,22 @@ router.post('/add', protect, async (req, res) => {
         );
 
         if (existingItem) {
-            console.log('ℹ️ Product already in wishlist');
             return res.status(400).json({ message: 'Product already in wishlist' });
         }
 
         // Add product to wishlist
-        console.log('➕ Adding product to wishlist');
         wishlist.items.push({ product: productId });
         await wishlist.save();
-        console.log('💾 Wishlist saved successfully');
 
         // Populate and return updated wishlist
         await wishlist.populate({
             path: 'items.product',
             select: 'title basePrice discountedPrice featured_image gallery_images stock category isActive offers'
         });
-        console.log('🔄 Wishlist populated');
 
         const validItems = wishlist.items.filter(item =>
             item.product && item.product.isActive !== false
         );
-        console.log('✅ Returning wishlist with', validItems.length, 'items');
 
         res.json({
             message: 'Product added to wishlist',

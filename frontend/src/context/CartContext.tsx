@@ -332,7 +332,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     // Add to cart
     const addToCart = async (newItem: CartItem) => {
-        console.log('Adding to cart:', newItem);
         if (user) {
             // Logged-in: Add to database
             try {
@@ -394,8 +393,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         // NOTE: The 'size' parameter here is often used as a generic 'variant identifier' in legacy code.
         // We should check if it looks like a MongoID (24 hex chars) - if so treat as variationId.
         const isVariationId = size && size.length === 24 && /^[0-9a-fA-F]+$/.test(size);
-
-        console.log('Removing from cart:', { productId, size, isVariationId, modelId });
 
         if (user) {
             // Logged-in: Remove from database

@@ -62,7 +62,16 @@ export default function RootLayout({
                   document.documentElement.setAttribute('data-theme', resolvedTheme);
                   if (resolvedTheme === 'dark') {
                     document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
                   }
+                  // Prevent flickering transitions on load
+                  document.documentElement.classList.add('theme-initializing');
+                  window.addEventListener('load', function() {
+                    setTimeout(function() {
+                      document.documentElement.classList.remove('theme-initializing');
+                    }, 500);
+                  });
                 } catch (e) {}
               })();
             `,

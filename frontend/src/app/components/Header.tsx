@@ -25,15 +25,15 @@ const Header = () => {
     const [suggestions, setSuggestions] = useState<any[]>([]);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
-    const [categories, setCategories] = useState<any[]>(() => cache.get<any[]>('nav_categories') || []);
-    const [subCategories, setSubCategories] = useState<Record<string, any[]>>(() => cache.get<Record<string, any[]>>('nav_subcategories') || {});
+    const [categories, setCategories] = useState<any[]>([]);
+    const [subCategories, setSubCategories] = useState<Record<string, any[]>>({});
     const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
     const [isNotificationOpen, setIsNotificationOpen] = useState(false);
     const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [mobileSearchTerm, setMobileSearchTerm] = useState('');
-    const [companyName, setCompanyName] = useState(() => cache.get<string>('company_name') || 'Hardware Store');
+    const [companyName, setCompanyName] = useState('Hardware Store');
     const [isMobileSearchFocused, setIsMobileSearchFocused] = useState(false);
 
     // Close mobile menu on route change
@@ -156,6 +156,14 @@ const Header = () => {
 
     useEffect(() => {
         const fetchAllNavData = async () => {
+            // Check cache first in useEffect to avoid hydration mismatch
+            const cachedCats = cache.get<any[]>('nav_categories');
+            if (cachedCats && cachedCats.length > 0) {
+                setCategories(cachedCats);
+                const cachedSubCats = cache.get<Record<string, any[]>>('nav_subcategories');
+                if (cachedSubCats) setSubCategories(cachedSubCats);
+            }
+
             // Check if cache is expired
             if (!cache.isExpired('nav_categories') && categories.length > 0) return;
 
@@ -194,6 +202,9 @@ const Header = () => {
 
     useEffect(() => {
         const fetchSettings = async () => {
+            const cachedName = cache.get<string>('company_name');
+            if (cachedName) setCompanyName(cachedName);
+
             if (!cache.isExpired('company_name')) return;
 
             const settings = await getSystemSettings();

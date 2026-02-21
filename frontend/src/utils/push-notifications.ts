@@ -19,14 +19,12 @@ export const requestNotificationPermission = () => {
 
         // Listen for the callback
         window.onReceiveFCMToken = async (token) => {
-            console.log("🔥 FCM Token Received from Native:", token);
             await saveTokenToBackend(token);
         };
     } else if ('Notification' in window) {
         // Web Push Flow (if you add PWA push later)
         Notification.requestPermission().then((permission) => {
             if (permission === 'granted') {
-                console.log('Web Notification permission granted.');
             }
         });
     }
@@ -45,7 +43,6 @@ const saveTokenToBackend = async (token: string) => {
             },
             body: JSON.stringify({ token, platform: 'android' })
         });
-        console.log('✅ FCM Token saved to backend');
     } catch (e) {
         console.error('Failed to save FCM token', e);
     }

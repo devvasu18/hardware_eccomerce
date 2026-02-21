@@ -207,7 +207,6 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
     // Add to wishlist
     const addToWishlist = async (productId: string) => {
-        console.log('🎯 Adding to wishlist:', { productId, hasUser: !!user, userObj: user });
 
         try {
             if (user) {
@@ -226,7 +225,6 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                 if (response.ok) {
                     const data = await response.json();
                     setWishlistItems(processWishlistData(data.items || []));
-                    console.log('✅ Successfully added to wishlist (authenticated)');
                 } else {
                     const errorText = await response.text();
                     console.error('❌ API Error Response:', errorText);
@@ -234,7 +232,6 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
                 }
             } else {
                 // Guest user - save to localStorage
-                console.log('👤 Guest user, saving to localStorage...');
                 const guestWishlist = localStorage.getItem('guestWishlist');
                 const productIds = guestWishlist ? JSON.parse(guestWishlist) : [];
 

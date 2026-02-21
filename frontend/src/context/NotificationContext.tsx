@@ -77,7 +77,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             // Create a silent buffer and play it to unlock audio context
             const audio = new Audio();
             audio.play().then(() => {
-                console.log('🔊 Audio Context Unlocked');
                 setAudioUnlocked(true);
                 window.removeEventListener('click', unlockAudio);
                 window.removeEventListener('touchstart', unlockAudio);
@@ -98,7 +97,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     const playSound = (type: string) => {
         const settings = settingsRef.current;
         if (!settings.enabled) {
-            console.log('🔊 Sound is disabled in settings');
             return;
         }
 
@@ -124,7 +122,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             }
         }
 
-        console.log(`🔊 [${type}] Attempting to play sound: ${audioPath}`);
+
 
         try {
             const audio = new Audio(audioPath);
@@ -134,7 +132,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             if (playPromise !== undefined) {
                 playPromise
                     .then(() => {
-                        console.log('✅ Audio played successfully');
                     })
                     .catch((error) => {
                         console.warn('❌ Audio playback prevented by browser. User must click on page first.', error);
@@ -147,7 +144,6 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
     // Use a ref for the latest notification handler to avoid stale closure issues
     const handleNotification = (notification: Notification) => {
-        console.log('🔔 RECEIVED:', notification.title, 'Type:', notification.type);
 
         // Avoid duplicates if same notification received multiple times (e.g. from role + user rooms)
         setNotifications((prev) => {
@@ -204,7 +200,7 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
             backendUrl = backendUrl.replace(/\/api$/, '').replace(/\/api\/$/, '');
         }
 
-        console.log('📡 Initializing Socket.IO connection to:', backendUrl || 'relative origin');
+
 
         const newSocket = io(backendUrl || undefined, {
             path: '/socket.io',
@@ -235,13 +231,10 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
 
         newSocket.on('connect', () => {
             const userId = (user as any)._id || user.id;
-            console.log('✅ Connected to Notification Service!', newSocket.id);
-            console.log('✨ Joining rooms for User:', userId);
             newSocket.emit('join', userId);
 
             // Join role-based room
             if (user.role === 'admin' || user.role === 'super_admin' || user.role === 'ops_admin') {
-                console.log('🛡️ Joining role room: admin');
                 newSocket.emit('join_role', 'admin');
             }
 
