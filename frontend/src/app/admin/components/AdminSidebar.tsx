@@ -81,6 +81,7 @@ export default function AdminSidebar({ collapsed, setCollapsed }: AdminSidebarPr
 
         { label: 'Coupons', path: '/admin/coupons', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
         { label: 'Special Deals', path: '/admin/special-deals', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
+        { label: 'Push Campaigns', path: '/admin/campaigns', icon: <FiTag />, roles: ['super_admin', 'ops_admin'] },
         { label: 'Pages', path: '/admin/pages', icon: <FiGrid />, roles: ['super_admin', 'ops_admin'] },
 
 

@@ -28,9 +28,15 @@ export default function LoginPage() {
             if (res.ok) {
                 login(data.token, data.user);
 
-                // Redirect based on role
                 const adminRoles = ['super_admin', 'ops_admin', 'logistics_admin', 'accounts_admin', 'support_staff', 'admin'];
-                if (adminRoles.includes(data.user.role)) {
+
+                // Check if there is a pending redirect from a deep link/notification
+                const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+
+                if (redirectUrl) {
+                    sessionStorage.removeItem('redirectAfterLogin');
+                    router.push(redirectUrl);
+                } else if (adminRoles.includes(data.user.role)) {
                     router.push('/admin');
                 } else {
                     router.push('/');

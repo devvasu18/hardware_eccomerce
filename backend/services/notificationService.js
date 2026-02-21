@@ -124,6 +124,7 @@ const sendPushNotification = async (userId, title, body, data = {}, sound = 'def
                 title,
                 body,
                 click_action: "FLUTTER_NOTIFICATION_CLICK"
+                // 'url' or 'route' is handled by ...data
             },
             tokens: tokens
         };
@@ -147,6 +148,109 @@ const sendPushNotification = async (userId, title, body, data = {}, sound = 'def
 
     } catch (error) {
         logger.error('Push Notification Error:', error);
+    }
+};
+
+const sendPushNotificationToTokens = async (tokens, title, body, data = {}, sound = 'default', imageUrl = '') => {
+    if (!isInitialized()) {
+        logger.warn('⚠️ Push skipped: Firebase Admin not initialized');
+        return;
+    }
+
+    if (!tokens || tokens.length === 0) {
+        return;
+    }
+
+    try {
+        let soundName = 'default';
+        if (sound && sound !== 'default') {
+            soundName = sound.split('/').pop().split('.')[0];
+        }
+
+        let finalImageUrl = imageUrl || '';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || process.env.FRONTEND_URL || 'https://hardware-eccomerce-l4npq0ufy-vasus-projects-8c7b5fb1.vercel.app';
+        if (finalImageUrl && finalImageUrl.startsWith('/')) {
+            finalImageUrl = `${baseUrl}${finalImageUrl}`;
+        }
+
+        // Sanitize deep links for Flutter WebView (requires fully qualified URLs)
+        if (data) {
+            if (data.url && data.url.startsWith('/')) data.url = `${baseUrl}${data.url}`;
+            if (data.route && data.route.startsWith('/')) data.route = `${baseUrl}${data.route}`;
+            if (data.redirectUrl && data.redirectUrl.startsWith('/')) data.redirectUrl = `${baseUrl}${data.redirectUrl}`;
+        }
+
+        const message = {
+            notification: {
+                title,
+                body,
+                ...(finalImageUrl ? { imageUrl: finalImageUrl } : {})
+            },
+            android: {
+                priority: 'high',
+                notification: {
+                    sound: soundName === 'default' ? 'default' : soundName,
+                    channelId: soundName === 'default' ? "hardware_notification_channel_v3" : `channel_${soundName}_v3`,
+                    clickAction: 'FLUTTER_NOTIFICATION_CLICK',
+                    ...(finalImageUrl ? { imageUrl: finalImageUrl } : {})
+                }
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        alert: { title, body },
+                        sound: soundName === 'default' ? 'default' : `${soundName}.aiff`,
+                        badge: 1,
+                        'mutable-content': 1
+                    }
+                },
+                ...(finalImageUrl ? {
+                    fcm_options: {
+                        image: finalImageUrl
+                    }
+                } : {})
+            },
+            data: {
+                ...data,
+                sound: soundName,
+                title,
+                body,
+                click_action: "FLUTTER_NOTIFICATION_CLICK",
+                ...(finalImageUrl ? { image: finalImageUrl } : {})
+            },
+            tokens: tokens
+        };
+
+        // Chunking, FCM sendEachForMulticast accepts up to 500 tokens at a time
+        const chunkSize = 500;
+        let successCount = 0;
+        let failureCount = 0;
+        const failedTokens = [];
+
+        for (let i = 0; i < tokens.length; i += chunkSize) {
+            const chunk = tokens.slice(i, i + chunkSize);
+            message.tokens = chunk;
+            const response = await admin.messaging().sendEachForMulticast(message);
+            successCount += response.successCount;
+            failureCount += response.failureCount;
+
+            if (response.failureCount > 0) {
+                response.responses.forEach((resp, idx) => {
+                    if (!resp.success) {
+                        failedTokens.push(chunk[idx]);
+                    }
+                });
+            }
+        }
+
+        logger.info(`🔥 Push Multi-sent: ${successCount} success, ${failureCount} failed`);
+
+        if (failedTokens.length > 0) {
+            await Device.deleteMany({ token: { $in: failedTokens } });
+            logger.info(`🗑️ Removed ${failedTokens.length} invalid tokens`);
+        }
+    } catch (error) {
+        logger.error('Push Multicast Error:', error);
     }
 };
 
@@ -255,5 +359,6 @@ module.exports = {
     getNotifications,
     markAllAsRead,
     registerDeviceToken,
-    clearSettingsCache
+    clearSettingsCache,
+    sendPushNotificationToTokens
 };

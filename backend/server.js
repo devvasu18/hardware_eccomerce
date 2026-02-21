@@ -163,7 +163,7 @@ app.use('/api/whatsapp', require('./routes/whatsappRoutes')); // WhatsApp Automa
 app.use('/api/email', require('./routes/emailRoutes')); // Email Monitoring Routes
 app.use('/api/admin/settings', require('./routes/settingsRoutes')); // System Settings
 app.use('/api/notifications', require('./routes/notificationRoutes')); // Notification System
-
+app.use('/api/campaigns', require('./routes/campaignRoutes')); // Custom Push Campaigns
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
     logger.info(`Server running on port ${PORT}`);
